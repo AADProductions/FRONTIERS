@@ -161,37 +161,37 @@ public class ActionManager <T> : Manager
 
 	public void AddMouseWheelUp (T action)
 	{
-		throw new System.NotImplementedException ();
+		//throw new System.NotImplementedException ();
 	}
 
 	public void AddMouseWheelDown (T action)
 	{
-		throw new System.NotImplementedException ();
+		//throw new System.NotImplementedException ();
 	}
 
 	public void AddJoystickAxisPos (string axisName, T action)
 	{
-		throw new System.NotImplementedException ();
+		//throw new System.NotImplementedException ();
 	}
 
 	public void AddJoystickAxisNeg (string axisName, T action)
 	{
-		throw new System.NotImplementedException ();
+		//throw new System.NotImplementedException ();
 	}
 
 	public void AddJoystickButtonDown (string buttonName, T action)
 	{
-		throw new System.NotImplementedException ();
+		//throw new System.NotImplementedException ();
 	}
 
 	public void AddJoystickButtonUp (string buttonName, T action)
 	{
-		throw new System.NotImplementedException ();
+		//throw new System.NotImplementedException ();
 	}
 
 	public void AddJoystickButtonHold (string buttonName, T action)
 	{
-		throw new System.NotImplementedException ();
+		//throw new System.NotImplementedException ();
 	}
 
 	public void Update ()
@@ -254,7 +254,7 @@ public class ActionManager <T> : Manager
 
 	protected void CheckControllerMovement ()
 	{
-		throw new System.NotImplementedException ();
+		//throw new System.NotImplementedException ();
 	}
 
 	protected void CheckButtonKeyCombos ()

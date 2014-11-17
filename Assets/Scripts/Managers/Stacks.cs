@@ -284,11 +284,31 @@ namespace Frontiers
 					if (stack.Group == WIGroups.Get.Player && item.IsQuestItem) {
 						Player.Local.Inventory.AddQuestItem (item.QuestName);
 					}
-
+					//flattening worlditems into stack items - these are treated asymmetrically
+					//worlditems are kept 'live' automatically
+					//stack items are kept stack items automatically
+					//so if you want stack items to be turned into worlditems
+					//you need to use StackPushMode.Manual
 					IWIBase newTopItem = item;
-					if (newTopItem.UnloadWhenStacked && newTopItem.IsWorldItem && pushMode == StackPushMode.Auto) {
-						//if we use template, just get a template and we're done
-						newTopItem = item.GetStackItem (WIMode.Unloaded);
+					//if it's supposed to unload when stacked
+					if (newTopItem.UnloadWhenStacked) {
+						//and it's a worlditem, and we're using auto push mode
+						if (newTopItem.IsWorldItem && pushMode == StackPushMode.Auto) {
+							//if we use template, just get a template and we're done
+							newTopItem = item.GetStackItem (WIMode.Unloaded);
+						}
+					} else if (!newTopItem.IsWorldItem && pushMode == StackPushMode.Manual) {
+						//if it's NOT supposed to unload when stacked and push mode is manual
+						//turn it into a worlditem first
+						WorldItem newWorldItem = null;
+						if (WorldItems.CloneFromStackItem (item.GetStackItem (WIMode.Stacked), stack.Group, out newWorldItem)) {
+							newTopItem = newWorldItem;
+						} else {
+							//whoops something went wrong
+							Debug.LogError ("Couldn't clone from stack item in PUSH operation");
+							error = WIStackError.InvalidOperation;
+							return false;
+						}
 					}
 
 					if (newTopItem.IsStackContainer) { //Debug.Log ("Item is stack container - setting group to new group " + stack.Group.name);
@@ -599,6 +619,15 @@ namespace Frontiers
 				mItemsToRemove.Clear ();
 				stack.Items.Clear ();
 			}
+
+			//safely un-links an enabler from the top item in its enabler stack
+			//without destroying the item
+			public static void Enabler (WIStackEnabler enabler)
+			{
+				if (enabler.HasEnablerTopItem) {
+					enabler.EnablerStack.Clear ();
+				}
+			}
 		}
 
 		public static class Find
@@ -725,10 +754,12 @@ namespace Frontiers
 				if (stack.HasTopItem) {
 					IWIBase oldTopItem = stack.TopItem;
 					stack.Items [stack.Items.Count - 1] = newTopItem;
-					if (removeExistingFromGame && oldTopItem.IsWorldItem) {	//set the top item's OnRemovedFromStack to null
+					if (removeExistingFromGame) {
+						//set the top item's OnRemovedFromStack to null
 						//we're here seeing it so we don't need to double up on calls
+						oldTopItem.OnRemoveFromGroup = null;
 						oldTopItem.OnRemoveFromStack = null;
-						oldTopItem.worlditem.SetMode (WIMode.RemovedFromGame);
+						oldTopItem.RemoveFromGame ();
 					}
 					result = true;
 				}
@@ -869,6 +900,8 @@ namespace Frontiers
 		{
 			public static bool TopItemToWorldItem (WIStack stack, out WorldItem newTopItem)
 			{
+				//worst case scenario, the top item is a sack or something, and is being displayed in an enabler
+				//so swapping it out could make its items appear to vanish if we're not careful
 				IWIBase topItem = null;
 				newTopItem = null;
 				bool result = false;
@@ -881,10 +914,11 @@ namespace Frontiers
 						newTopItem.Props.Local.Mode = WIMode.Frozen;
 						newTopItem.Props.Local.PreviousMode = WIMode.Stacked;
 						//now swap the top
-						if (Swap.Top (stack, newTopItem, true)) {	//if it's not a world item
+						if (Swap.Top (stack, newTopItem, true)) {//if it's not a world item
 							//and we're able to create a world item from the top item
 							//and we're able to set the top item to the new world item
 							result = true;
+							stack.Refresh ();
 						} else {//TODO
 							//clean up created worlditem
 						}
@@ -919,6 +953,18 @@ namespace Frontiers
 				}
 
 				return result;
+			}
+
+			public static void UnloadedItemsToWorldItems (WIStack stack) {
+				for (int i = 0; i < stack.Items.Count; i++) {
+					if (stack.Items [i] != null && !stack.Items [i].UnloadWhenStacked && !stack.Items [i].IsWorldItem) {
+						WorldItem newWorldItem = null;
+						if (WorldItems.CloneFromStackItem (stack.Items [i].GetStackItem (WIMode.Stacked), stack.Group, out newWorldItem)) {
+							stack.Items [i] = newWorldItem;
+						}
+					}
+				}
+				stack.Refresh ();
 			}
 		}
 
@@ -993,9 +1039,10 @@ namespace Frontiers
 				if (enabler.HasEnablerStack) {
 					if (enabler.HasEnablerTopItem) {
 						//if we have an enabler top item then we can't add the new one
+						throw new System.InvalidOperationException ("Can't display item in enabler when enabler already has top item");
 						return false;
 					}
-					//set the reference to this item
+					//add this item to the items list
 					enabler.EnablerStack.Items.Add (item);
 					//tell the enabler to refresh it's owners
 					enabler.Refresh ();
@@ -1100,15 +1147,15 @@ namespace Frontiers
 
 	public interface IStackOwner //TODO have IStackOwner implement IItemOfInterest
 	{
-		WorldItem			worlditem				{ get; }
-		bool				IsWorldItem				{ get; }
-		string				DisplayName				{ get; }
-		string				StackName				{ get; }
-		string				FileName				{ get; }
-		string				QuestName				{ get; }
-		bool				UseRemoveItemSkill (HashSet <string> removeItemSkillNames, ref IStackOwner useTarget);
-		List <string>		RemoveItemSkills		{ get; }
-		WISize				Size					{ get; }
-		void				Refresh ();
+		WorldItem worlditem { get; }
+		bool IsWorldItem { get; }
+		string DisplayName { get; }
+		string StackName { get; }
+		string FileName { get; }
+		string QuestName { get; }
+		bool UseRemoveItemSkill (HashSet <string> removeItemSkillNames, ref IStackOwner useTarget);
+		List <string> RemoveItemSkills { get; }
+		WISize Size { get; }
+		void Refresh ();
 	}
 }
