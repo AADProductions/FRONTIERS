@@ -95,7 +95,7 @@ namespace Frontiers.GUI
 			//skill usage
 			bool useSkillToRemove = false;
 
-			if (Input.GetKey (KeyCode.LeftControl)) {//TODO move this into UserActions or InterfaceActions
+			if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.RightControl)) {//TODO move this into UserActions or InterfaceActions
 				splitStack = true;
 			}
 			//right-clicking will show a menu
@@ -144,35 +144,45 @@ namespace Frontiers.GUI
 				//if our stack has items
 				if (selectedStack.HasTopItem) {
 					//and the selected stack ALSO has items
-					//------Special cases------//
-					//LIQUID CONTAINER CHECK - can we put the thing we're holding into the thing we've clicked?
-					if (FillLiquidContainer (mStack.TopItem, selectedStack.TopItem, selectedStack)) {
-						playSound = true;
-						soundName = "FillLiquidContainer";
-					} else if (Stacks.Can.Stack (mStack.TopItem.StackName, selectedStack.TopItem.StackName)) {
-						//if the selected stack's items can stack with our stack's items,
-						//then we're putting items IN the stack
-						//this is only allowed if the stack isn't owned
-						if (useSkillToRemove) {
-							//play an error and get out
-							MasterAudio.PlaySound (MasterAudio.SoundType.PlayerInterface, SoundNameFailure);
-							return;
-						} else {
-							//otherwise try to add the items normally
-							playSound = Stacks.Add.Items (selectedStack, mStack, ref error);
+					//----SHIFT CLICK CHECK----//
+					//check for shift click - this bypasses everything and adds the item to the player's inventory
+					//this only works if the stack does not already belong to the player's group
+					if (mStack.Group != WIGroups.Get.Player && (Input.GetKey (KeyCode.LeftShift) || Input.GetKeyDown (KeyCode.RightShift))) {//TODO move this into UserActions or InterfaceActions
+						if (Player.Local.Inventory.AddItems (mStack, ref error)) {
+							soundName = "InventoryPickUpStack";
+							playSound = true;
 						}
 					} else {
-						//if the selected stack's items can't be stacked
-						//then we're swapping the stack
-						//ie, we're removing items FROM the stack
-						//this is only allowed if the stack isn't owned
-						if (useSkillToRemove) {
-							//so play an error and get out
-							MasterAudio.PlaySound (MasterAudio.SoundType.PlayerInterface, SoundNameFailure);
-							return;
+						//------Special cases------//
+						//LIQUID CONTAINER CHECK - can we put the thing we're holding into the thing we've clicked?
+						if (FillLiquidContainer (mStack.TopItem, selectedStack.TopItem, selectedStack)) {
+							playSound = true;
+							soundName = "FillLiquidContainer";
+						} else if (Stacks.Can.Stack (mStack.TopItem.StackName, selectedStack.TopItem.StackName)) {
+							//if the selected stack's items can stack with our stack's items,
+							//then we're putting items IN the stack
+							//this is only allowed if the stack isn't owned
+							if (useSkillToRemove) {
+								//play an error and get out
+								MasterAudio.PlaySound (MasterAudio.SoundType.PlayerInterface, SoundNameFailure);
+								return;
+							} else {
+								//otherwise try to add the items normally
+								playSound = Stacks.Add.Items (selectedStack, mStack, ref error);
+							}
 						} else {
-							//otherwise try to swap stacks normally
-							playSound = Stacks.Swap.Stacks (mStack, selectedStack, ref error);
+							//if the selected stack's items can't be stacked
+							//then we're swapping the stack
+							//ie, we're removing items FROM the stack
+							//this is only allowed if the stack isn't owned
+							if (useSkillToRemove) {
+								//so play an error and get out
+								MasterAudio.PlaySound (MasterAudio.SoundType.PlayerInterface, SoundNameFailure);
+								return;
+							} else {
+								//otherwise try to swap stacks normally
+								playSound = Stacks.Swap.Stacks (mStack, selectedStack, ref error);
+							}
 						}
 					}
 				} else {
