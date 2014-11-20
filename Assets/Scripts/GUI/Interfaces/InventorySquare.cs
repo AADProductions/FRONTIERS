@@ -90,17 +90,22 @@ namespace Frontiers.GUI
 			WIStackError error = WIStackError.None;
 			bool playSound = false;
 			bool splitStack = false;
+			bool quickAdd = false;
 			bool showMenu = false;
 			string soundName = "InventoryPlaceStack";
 			//skill usage
 			bool useSkillToRemove = false;
 
-			if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.RightControl)) {//TODO move this into UserActions or InterfaceActions
-				splitStack = true;
-			}
 			//right-clicking will show a menu
 			if (UserActionManager.LastMouseClick == 1) {
 				showMenu = true;
+			} else {
+				//left clicking can pick up, split, or quick-add
+				if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.RightControl)) {//TODO move this into UserActions or InterfaceActions
+					splitStack = true;
+				} else if (Input.GetKey (KeyCode.LeftShift) || Input.GetKey (KeyCode.RightShift)) {//TODO move this into UserActions or InterfaceActions
+					quickAdd = true;
+				}
 			}
 
 			if (showMenu) {
@@ -131,10 +136,15 @@ namespace Frontiers.GUI
 
 			mRemoveItemSkillNames.Clear ();
 
-			if (mStack.HasOwner (out mSkillUseTarget) && mSkillUseTarget != Player.Local) {
-				//SKILL USE
-				if (mSkillUseTarget.UseRemoveItemSkill (mRemoveItemSkillNames, ref mSkillUseTarget)) {
-					useSkillToRemove = true;
+			if (mStack.HasOwner (out mSkillUseTarget)) {
+				if (mSkillUseTarget != Player.Local) {
+					//SKILL USE
+					if (mSkillUseTarget.UseRemoveItemSkill (mRemoveItemSkillNames, ref mSkillUseTarget)) {
+						useSkillToRemove = true;
+					}
+				} else {
+					//can't use quick add when the player is the owner
+					quickAdd = false;
 				}
 			}
 
@@ -144,77 +154,81 @@ namespace Frontiers.GUI
 				//if our stack has items
 				if (selectedStack.HasTopItem) {
 					//and the selected stack ALSO has items
-					//----SHIFT CLICK CHECK----//
-					//check for shift click - this bypasses everything and adds the item to the player's inventory
-					//this only works if the stack does not already belong to the player's group
-					if (mStack.Group != WIGroups.Get.Player && (Input.GetKey (KeyCode.LeftShift) || Input.GetKeyDown (KeyCode.RightShift))) {//TODO move this into UserActions or InterfaceActions
-						if (Player.Local.Inventory.AddItems (mStack, ref error)) {
-							soundName = "InventoryPickUpStack";
-							playSound = true;
-						}
-					} else {
-						//------Special cases------//
-						//LIQUID CONTAINER CHECK - can we put the thing we're holding into the thing we've clicked?
-						if (FillLiquidContainer (mStack.TopItem, selectedStack.TopItem, selectedStack)) {
-							playSound = true;
-							soundName = "FillLiquidContainer";
-						} else if (Stacks.Can.Stack (mStack.TopItem.StackName, selectedStack.TopItem.StackName)) {
-							//if the selected stack's items can stack with our stack's items,
-							//then we're putting items IN the stack
-							//this is only allowed if the stack isn't owned
-							if (useSkillToRemove) {
-								//play an error and get out
-								MasterAudio.PlaySound (MasterAudio.SoundType.PlayerInterface, SoundNameFailure);
-								return;
-							} else {
-								//otherwise try to add the items normally
-								playSound = Stacks.Add.Items (selectedStack, mStack, ref error);
-							}
-						} else {
-							//if the selected stack's items can't be stacked
-							//then we're swapping the stack
-							//ie, we're removing items FROM the stack
-							//this is only allowed if the stack isn't owned
-							if (useSkillToRemove) {
-								//so play an error and get out
-								MasterAudio.PlaySound (MasterAudio.SoundType.PlayerInterface, SoundNameFailure);
-								return;
-							} else {
-								//otherwise try to swap stacks normally
-								playSound = Stacks.Swap.Stacks (mStack, selectedStack, ref error);
-							}
-						}
-					}
-				} else {
-					//if the selected stack does NOT have any items
-					//we're putting items IN the stack
-					if (splitStack && mStack.NumItems > 1) {
-						//we're splitting the stack and adding the contents to the selected stack
+					//------Special cases------//
+					//LIQUID CONTAINER CHECK - can we put the thing we're holding into the thing we've clicked?
+					if (FillLiquidContainer (mStack.TopItem, selectedStack.TopItem, selectedStack)) {
+						playSound = true;
+						soundName = "FillLiquidContainer";
+					} else if (Stacks.Can.Stack (mStack.TopItem.StackName, selectedStack.TopItem.StackName)) {
+						//if the selected stack's items can stack with our stack's items,
+						//then we're putting items IN the stack
 						//this is only allowed if the stack isn't owned
-						if (useSkillToRemove) { 
+						if (useSkillToRemove) {
 							//play an error and get out
 							MasterAudio.PlaySound (MasterAudio.SoundType.PlayerInterface, SoundNameFailure);
 							return;
+						} else {
+							//otherwise try to add the items normally
+							playSound = Stacks.Add.Items (selectedStack, mStack, ref error);
 						}
-						int numToAdd = mStack.NumItems / 2;
-						bool addResult = true;
-						//IWIBase topItem = null;
-						for (int i = 0; i < numToAdd; i++) {
-							if (!Stacks.Pop.AndPush (mStack, selectedStack, ref error)) {
-								addResult = false;
-								break;
-							}
-						}
-						playSound = addResult;
 					} else {
-						//if we're not splitting stacks
-						//THIS is where we finally REMOVE items from this stack using a skill
+						//if the selected stack's items can't be stacked
+						//then we're swapping the stack
+						//ie, we're removing items FROM the stack
+						//this is only allowed if the stack isn't owned
 						if (useSkillToRemove) {
-							UseSkillsToRemoveStack ();
+							//so play an error and get out
+							MasterAudio.PlaySound (MasterAudio.SoundType.PlayerInterface, SoundNameFailure);
 							return;
-						} else if (Stacks.Add.Items (mStack, selectedStack, ref error)) {
-							playSound = true;
+						} else {
+							//otherwise try to swap stacks normally
+							playSound = Stacks.Swap.Stacks (mStack, selectedStack, ref error);
+						}
+					}
+				} else {
+					//----SHIFT CLICK CHECK----//
+					//check for shift click - this bypasses everything and adds the item to the player's inventory
+					//this only works if the stack does not already belong to the player's group
+					if (quickAdd) {
+						Debug.Log ("Starting quick add..");
+						if (Player.Local.Inventory.AddItems (mStack, ref error)) {
 							soundName = "InventoryPickUpStack";
+							playSound = true;
+							Debug.Log ("Added with quick add");
+						} else {
+							Debug.Log ("Couldn't add item with shift");
+						}
+					} else {
+						//if the selected stack does NOT have any items
+						//we're putting items IN the stack
+						if (splitStack && mStack.NumItems > 1) {
+							//we're splitting the stack and adding the contents to the selected stack
+							//this is only allowed if the stack isn't owned
+							if (useSkillToRemove) { 
+								//play an error and get out
+								MasterAudio.PlaySound (MasterAudio.SoundType.PlayerInterface, SoundNameFailure);
+								return;
+							}
+							int numToAdd = mStack.NumItems / 2;
+							bool addResult = true;
+							//IWIBase topItem = null;
+							for (int i = 0; i < numToAdd; i++) {
+								if (!Stacks.Pop.AndPush (mStack, selectedStack, ref error)) {
+									addResult = false;
+									break;
+								}
+							}
+							playSound = addResult;
+						} else {
+							//if we're not splitting stacks
+							//THIS is where we finally REMOVE items from this stack using a skill
+							if (useSkillToRemove) {
+								UseSkillsToRemoveStack ();
+								return;
+							} else if (Stacks.Add.Items (mStack, selectedStack, ref error)) {
+								playSound = true;
+								soundName = "InventoryPickUpStack";
+							}
 						}
 					}
 				}
