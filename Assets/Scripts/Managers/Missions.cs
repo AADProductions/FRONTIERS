@@ -65,7 +65,7 @@ namespace Frontiers {
 
 		public override void OnGameLoadStart ()
 		{
-			List <string> missionNames = Mods.Get.Available (ModType.Mission);
+			List <string> missionNames = Mods.Get.Available ("Mission");
 			foreach (string missionName in missionNames) {
 				MissionState missionState = null;
 				if (Mods.Get.Runtime.LoadMod <MissionState> (ref missionState, "Mission", missionName)) {
@@ -280,7 +280,7 @@ namespace Frontiers {
 		public List <MissionState> MissionStatesByStatus (MissionStatus status)
 		{
 			List <MissionState> missionStates = new List <MissionState> ();
-			List <string> missionNames = Mods.Get.Available (ModType.Mission);
+			List <string> missionNames = Mods.Get.Available ("Mission");
 			for (int i = 0; i < missionNames.Count; i++) {
 				MissionState missionState = Missions.Get.MissionStateByName (missionNames [i]);
 				if (Flags.Check <MissionStatus> (missionState.Status, status, Flags.CheckType.MatchAny)) {
