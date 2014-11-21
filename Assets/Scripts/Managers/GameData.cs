@@ -259,21 +259,13 @@ namespace Frontiers
 				{
 					string directory = gGlobalWorldsPath;
 
-					//////Debug.Log ("Final directory: " + directory);
 					List <string> filesInDirectory	= new List <string> ();
-					//#if UNITY_STANDALONE_WIN
 					if (Directory.Exists (directory)) {
-						//////Debug.Log ("Directory " + directory + " exists");
 						System.IO.DirectoryInfo filesDirectory = new System.IO.DirectoryInfo (directory);
 						foreach (System.IO.FileInfo file in filesDirectory.GetFiles ( )) {
-							//////Debug.Log ("Adding file in directory " + file.Name);
 							filesInDirectory.Add (System.IO.Path.GetFileNameWithoutExtension (file.Name));
 						}
 					}
-					//				else {
-					//					//////Debug.LogWarning ("path " + directory + " doesn't exist.");
-					//				}
-					//#endif
 					return filesInDirectory;
 				}
 
@@ -281,15 +273,12 @@ namespace Frontiers
 				{
 					bool result = false;
 					string dataPath = GetDataPath (type);
-					string directory	= System.IO.Path.Combine (dataPath, directoryName);
+					string directory = System.IO.Path.Combine (dataPath, directoryName);
 
-					//////Debug.Log ("Final directory: " + directory);
 					if (Directory.Exists (directory)) {
 						result = true;
-						//////Debug.Log ("Directory " + directory + " exists");
 						System.IO.DirectoryInfo filesDirectory = new System.IO.DirectoryInfo (directory);
 						foreach (System.IO.FileInfo file in filesDirectory.GetFiles ( )) {
-							//////Debug.Log ("Adding file in directory " + file.Name);
 							if (!file.Name.StartsWith ("_")) {
 								if (includeExtension) {
 									fileNames.Add (file.Name);
@@ -299,10 +288,8 @@ namespace Frontiers
 							}
 						}
 					} else {
-						//////Debug.LogWarning ("path " + directory + " doesn't exist.");
 						result = false;
 					}
-					//#endif
 					return result;
 				}
 
@@ -310,23 +297,19 @@ namespace Frontiers
 				{
 					bool result = false;
 					string dataPath = GetDataPath (type);
-					string directory	= System.IO.Path.Combine (dataPath, directoryName);
+					string directory = System.IO.Path.Combine (dataPath, directoryName);
 
-					//////Debug.Log ("Final directory: " + directory);
 					if (Directory.Exists (directory)) {
 						result = true;
 						System.IO.DirectoryInfo directoryInfo = new System.IO.DirectoryInfo (directory);
 						foreach (System.IO.DirectoryInfo folderName in directoryInfo.GetDirectories ( )) {
-							//////Debug.Log (folderName.Name);
 							if (folderName.Name != "_ignore" && folderName.Name != "_trash") {
 								folderNames.Add (folderName.Name);
 							}
 						}
 					} else {
-						////////Debug.LogWarning ("path " + directory + " doesn't exist.");
 						result = false;
 					}
-					//#endif
 					return result;
 				}
 
@@ -334,16 +317,13 @@ namespace Frontiers
 				{
 					System.IO.DirectoryInfo profileDirectory = new System.IO.DirectoryInfo (path);
 					List <string> folderNames = new List <string> ();
-					//////Debug.Log ("Getting names in directory " + path);
 					if (Directory.Exists (path)) {
 						foreach (System.IO.DirectoryInfo folderName in profileDirectory.GetDirectories ( )) {
-							//////Debug.Log (folderName.Name);
 							if (!folderName.Name.StartsWith ("_")) {
 								folderNames.Add (folderName.Name);
 							}
 						}
 					}
-					//#endif
 					return folderNames;
 				}
 
