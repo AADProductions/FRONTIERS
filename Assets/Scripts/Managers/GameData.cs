@@ -15,6 +15,8 @@ using System.Text.RegularExpressions;
 using Hydrogen.Serialization;
 using ICSharpCode.SharpZipLib.Core;
 using ICSharpCode.SharpZipLib.Zip;
+using System.Linq;
+using System.Reflection;
 
 namespace Frontiers
 {
@@ -138,6 +140,10 @@ namespace Frontiers
 					if (!Directory.Exists (gBaseWorldModsPath)) {
 						errorMessage += ("Base world mods path not found at " + gBaseWorldModsPath + "\n");
 						result = false;
+					}
+
+					if (gLoadedMaps == null) {
+						gLoadedMaps = new Dictionary<string, Texture2D> ();
 					}
 
 					return result;
@@ -1060,6 +1066,8 @@ namespace Frontiers
 
 				public static bool LoadTerrainMap (ref Texture2D map, int resolution, TextureFormat format, bool linear, string chunkName, string mapName)
 				{
+					//Debug.Log ("Loading terrain map " + mapName + " for " + chunkName);
+
 					string directory = System.IO.Path.Combine (gBaseWorldModsPath, "ChunkMap");
 					string fullPath = System.IO.Path.Combine (directory, (chunkName + "-" + mapName + gImageExtension));
 
@@ -1090,6 +1098,8 @@ namespace Frontiers
 
 				public static bool LoadTerrainHeights (float[,] heights, int resolution, string chunkName, string rawFileName)
 				{
+					//Debug.Log ("Loading terrain heights for " + chunkName);
+
 					string directory = System.IO.Path.Combine (gBaseWorldModsPath, System.IO.Path.Combine ("Chunk", chunkName));
 					string fullPath = System.IO.Path.Combine (directory, (rawFileName + gHeightMapExtension));
 					FileMode mode = FileMode.Open;
@@ -1218,6 +1228,15 @@ namespace Frontiers
 			protected static string gNextValue;
 			protected static string gCharacterFirstName;
 			protected static string gPlayerFirstName;
+			//for normalizing / expanding slider values
+			//i find this arithmatic really tedious and easy to get wrong
+			public static float NormSValue (float value, float min, float max) {
+				return (value - min) / (max - min);
+			}
+
+			public static float ExpSValue (float value, float min, float max) {
+				return (value * (max - min)) + min;
+			}
 
 			public static string InterpretScripts (string script, PlayerCharacter character, Frontiers.Story.Conversations.Conversation source)
 			{
@@ -1434,6 +1453,19 @@ namespace Frontiers
 				return newText.ToString();
 			}
 
+			public static string CommaJoinWithLast (List <string> stringList, string last)
+			{
+				string finalString = string.Empty;
+				if (stringList.Count == 1) {
+					finalString = stringList [0];
+				} else if (stringList.Count == 2) {
+					finalString = stringList [0] + " and " + stringList [1];
+				} else {
+					finalString = String.Join (", ", stringList.Take (stringList.Count - 1).ToArray ()) + " " + last + " " + stringList.LastOrDefault ();
+				}
+				return finalString;
+			}
+
 			public static int WrapIndex (int currentIndex, int count)
 			{	//TODO this has been moved into an extension method, get rid of it
 				currentIndex++;
@@ -1459,6 +1491,44 @@ namespace Frontiers
 				return currentIndex;
 			}
 
+			public static void SetField (System.Object var, string fieldName, string fieldVal)
+			{	//use reflection to set the variable of an object
+				//this functionality is duplicated in a bunch fo places
+				//i'm trying to change them all to use this function instead
+				FieldInfo tagField = var.GetType ().GetField (fieldName);
+				if (tagField != null) {
+					if (tagField.GetType ().IsEnum) { //if it's an enum try to parse it
+						tagField.SetValue (var, Enum.Parse (tagField.GetType (), fieldVal));
+					} else {//otherwise it'll be an int, bool, float or string
+						System.Object convertedValue = null;
+						switch (tagField.FieldType.Name) {
+						case "Int32":
+							convertedValue = (int)Int32.Parse (fieldVal);
+							break;
+
+						case "Boolean":
+							convertedValue = (bool)Boolean.Parse (fieldVal);
+							break;
+
+						case "Single":
+							convertedValue = (float)Single.Parse (fieldVal);
+							break;
+
+						case "List`1":
+							string[] splitValues = fieldVal.Split (new string [] { "," }, StringSplitOptions.RemoveEmptyEntries);
+							List <string> convertedList = new List <string> (splitValues);
+							convertedValue = convertedList;
+							break;
+
+						default://probably string but who knows
+							convertedValue = fieldVal;
+							break;
+						}
+						tagField.SetValue (var, convertedValue);
+					}
+				}
+			}
+
 			public static void GetTextureFormat (string mapName, ref int resolution, ref TextureFormat format, ref bool linear)
 			{	//TODO move actual resolutions into Globals
 				resolution = 128;
@@ -1474,18 +1544,18 @@ namespace Frontiers
 				case "TerrainData":
 					format = TextureFormat.ARGB32;
 					linear = true;
-					resolution = 128;
+					resolution = Globals.WorldChunkDataMapResolution;//128;
 					break;
 
 				case "Splat1":
 				case "Splat2":
-					resolution = 1024;
+					resolution = Globals.WorldChunkSplatMapResolution;//1024;
 					format = TextureFormat.RGBA32;
 					linear = true;
 					break;
 
 				case "ColorOverlay":
-					resolution = 512;
+					resolution = Globals.WorldChunkColorOverlayResolution;//512;
 					break;
 
 				default:

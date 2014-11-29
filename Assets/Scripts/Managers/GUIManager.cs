@@ -161,6 +161,12 @@ namespace Frontiers {
 			}
 		}
 
+		public float ScreenAspectRatio {
+			get {
+				return (((float)Screen.width) / ((float)Screen.height));
+			}
+		}
+
 		public void Update ()
 		{
 			if (!mInitialized) {
@@ -194,6 +200,18 @@ namespace Frontiers {
 				NGUIBaseCamera.useMouse = false;
 
 				NGUISecondaryCamera.enabled = false;
+			}
+
+			if (ScreenAspectRatio < Globals.ScreenAspectRatioSqueezeMaximum) {
+				//adjust the screen to fit
+				float normalizedScreenAdjust = (Globals.ScreenAspectRatioSqueezeMaximum - ScreenAspectRatio) / (Globals.ScreenAspectRatioSqueezeMaximum - Globals.ScreenAspectRatioSqueezeMinimum);
+				NGUIPrimaryRoot.manualHeight = Mathf.FloorToInt (Mathf.Lerp (Globals.ScreenAspectRatioMax, Globals.ScreenAspectRatioMin, normalizedScreenAdjust));
+				NGUISecondaryRoot.manualHeight = NGUIPrimaryRoot.manualHeight;
+				NGUIBaseRoot.manualHeight = NGUIPrimaryRoot.manualHeight;
+			} else {
+				NGUIPrimaryRoot.manualHeight = Globals.ScreenAspectRatioMax;
+				NGUISecondaryRoot.manualHeight = Globals.ScreenAspectRatioMax;
+				NGUIBaseRoot.manualHeight = Globals.ScreenAspectRatioMax;
 			}
 
 			#if UNITY_EDITOR
@@ -673,12 +691,28 @@ namespace Frontiers {
 			}
 		}
 
+		public static void PostGainedItem (Frontiers.World.PurseState purseState) {
+			Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage (
+				"Added " + purseState.TotalValue.ToString () + " to bank",
+				0.0,
+				"Currency",
+				GainedSomethingType.Currency);
+		}
+
 		public static void PostGainedItem (MobileReference structure) {
 			Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage (
 				"You have aquired a structure",
 				0.0,
 				structure.FullPath,
 				GainedSomethingType.Structure);
+		}
+
+		public static void PostGainedItem (Frontiers.World.Book book) {
+			Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage (
+				book.CleanTitle + " added to Log (L)",
+				0.0,
+				book.Name,
+				GainedSomethingType.Book);
 		}
 
 		public static void PostGainedItem (Skill skill)
@@ -688,6 +722,14 @@ namespace Frontiers {
 				0.0,
 				skill.name,
 				GainedSomethingType.Skill);
+		}
+
+		public static void PostGainedItem (int currency, Frontiers.World.WICurrencyType type) {
+			Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage (
+				"Added " + currency.ToString () + Frontiers.World.Currency.TypeToString (type) + " to Currency (TAB)",
+				0.0,
+				"Currency",
+				GainedSomethingType.Currency);
 		}
 
 		public static void PostGainedItem (int credentials, string credentialsFlagset)

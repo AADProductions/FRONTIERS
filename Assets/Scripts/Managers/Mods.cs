@@ -247,6 +247,13 @@ namespace Frontiers
 				return GameData.IO.LoadTerrainMap (ref map, resolution, format, linear, chunkName, mapName);
 			}
 
+			public void UnloadChunkMap (Texture2D map)
+			{	//remove it from the global lookup
+				GameData.IO.gLoadedMaps.Remove (map.name);
+				//destroy it to release memory
+				GameObject.Destroy (map);
+			}
+
 			public bool ChunkPlantPrototype (ref GameObject prototype, string prototypeName)
 			{
 				prototype = Resources.Load ("TerrainPlantPrototypes/" + prototypeName) as GameObject;
@@ -424,6 +431,13 @@ namespace Frontiers
 			public bool LoadGame (ref PlayerGame game, string worldName, string gameName)
 			{
 				return GameData.IO.LoadGame (ref game, worldName, gameName);
+			}
+
+			public void DeleteGame (string gameName)
+			{
+				if (gameName != GameData.IO.gLiveGameFolderName) {
+					GameData.IO.DeleteGameData (gameName);
+				}
 			}
 
 			public void SaveGame (PlayerGame game)
@@ -707,7 +721,7 @@ namespace Frontiers
 			{
 				noneOption = "(" + noneOption + ")";
 				List <string> available = null;
-				if (!gAvailable.TryGetValue (modType, out available)) {
+				if (!gAvailable.TryGetValue (modType, out available) || available.Count == 0) {
 					if (!Manager.IsAwake <Mods> ()) {
 						Manager.WakeUp <Mods> ("__MODS");
 						Mods.Get.Editor.InitializeEditor (true);
@@ -727,12 +741,17 @@ namespace Frontiers
 				if (currentItemIndex < 0 || currentItemIndex >= available.Count) {
 					currentItemIndex = 0;
 				}
-				string newItem = available [currentItemIndex];
-				if (newItem == noneOption) {
-					return string.Empty;
+				string newItem = currentItem;
+				try {
+					newItem = available [currentItemIndex];
+					if (newItem == noneOption) {
+						return string.Empty;
+					}
+					//take it out again just in case
+					available.Remove (noneOption);
+				} catch (Exception e){
+					Debug.LogError ("Exception with available " + modType + " - num available: " + available.Count.ToString () + " " + e.ToString ());
 				}
-				//take it out again just in case
-				available.Remove (noneOption);
 				return newItem;
 			}
 			#endif
