@@ -52,7 +52,7 @@ namespace Frontiers
 				}
 
 				if (fromStack.IsEmpty) {
-					Debug.Log ("From stack is now empty");
+					//Debug.Log ("From stack is now empty");
 					//we cleared out the whole stack
 					result = true;
 				}
@@ -206,21 +206,11 @@ namespace Frontiers
 				WorldItem worlditem = null;
 				WIStackError error = WIStackError.None;
 				for (int i = 0; i < numItems; i++) {
-					if (Top (stack, out topItem, group, ref error)) {
-						if (topItem.IsWorldItem) {
-							worlditem = topItem.worlditem;
-						} else if (WorldItems.CloneFromStackItem (topItem.GetStackItem (WIMode.Stacked), group, out worlditem)) {
-							worlditem.Props.Local.Transform = new STransform (worldPosition, worlditem.Props.Global.BaseRotation, Vector3.one);
-							worlditem.Props.Local.FreezeOnStartup = false;
-							worlditem.Props.Local.Mode = WIMode.World;
-						}
-						worlditem.Initialize ();
-						worlditem.transform.position = worldPosition;
-						//worlditem.transform.Rotate (worlditem.Props.Global.BaseRotation);
-						worlditem.ActiveState = WIActiveState.Active;
+					if (Convert.TopItemToWorldItem (stack, out worlditem) && Pop.Top (stack, out topItem, group, ref error)) {
 						worlditem.SetMode (WIMode.World);
-					} else {
-						break;
+						worlditem.ActiveState = WIActiveState.Active;
+						worlditem.transform.position = worldPosition;
+						worlditem.LastActiveDistanceToPlayer = 0f;
 					}
 				}
 				stack.Refresh ();
@@ -606,14 +596,8 @@ namespace Frontiers
 				mItemsToRemove.AddRange (stack.Items);
 				for (int i = 0; i < mItemsToRemove.Count; i++) {
 					IWIBase item = mItemsToRemove [i];
-					if (item != null) {
-						if (destroyClearedItems) {
-							if (item.IsWorldItem) {
-								item.worlditem.RemoveFromGame ();
-							} else {
-								item.GetStackItem (WIMode.None).RemoveFromGame ();
-							}
-						}
+					if (destroyClearedItems && item != null) {
+						item.RemoveFromGame ();
 					}
 				}
 				mItemsToRemove.Clear ();
@@ -1038,12 +1022,12 @@ namespace Frontiers
 				//use sparingly
 				if (enabler.HasEnablerStack) {
 					if (enabler.HasEnablerTopItem) {
-						//if we have an enabler top item then we can't add the new one
-						throw new System.InvalidOperationException ("Can't display item in enabler when enabler already has top item");
-						return false;
+						//just set the top item to the new item
+						enabler.EnablerStack.Items [0] = item;
+					} else {
+						//add this item to the items list
+						enabler.EnablerStack.Items.Add (item);
 					}
-					//add this item to the items list
-					enabler.EnablerStack.Items.Add (item);
 					//tell the enabler to refresh it's owners
 					enabler.Refresh ();
 				}
@@ -1060,6 +1044,19 @@ namespace Frontiers
 				if (enablerContainer.StackList.Count > 0) {
 					stack = enablerContainer.StackList.First ();
 					stack.Items.Add (itemToHold);
+				}
+				return stack;
+			}
+
+			public static WIStack ItemsInContainer (WIStack itemsToHold, WIStackContainer enablerContainer)
+			{
+				WIStack stack = null;
+				//this places an item in an enabler for display purposes
+				//the item is not moved from its current stack
+				//use sparingly
+				if (enablerContainer.StackList.Count > 0) {
+					stack = enablerContainer.StackList.First ();
+					stack.Items.AddRange (itemsToHold.Items);
 				}
 				return stack;
 			}
@@ -1142,7 +1139,7 @@ namespace Frontiers
 		Generic,
 		Enabler,
 		Wearable,
-		Recepticle,
+		Receptacle,
 	}
 
 	public interface IStackOwner //TODO have IStackOwner implement IItemOfInterest
