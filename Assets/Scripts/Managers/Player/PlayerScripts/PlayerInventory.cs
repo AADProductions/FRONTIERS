@@ -16,6 +16,7 @@ namespace Frontiers {
 		public WIStack SelectedStack = null;
 		public WIStackEnabler QuickslotEnabler = null;
 		public List <WIStackEnabler> InventoryEnablers = new List <WIStackEnabler> ();
+		public List <string> NoSpaceNeededItems = new List <string> { "BookAvatar", "Currency", "Purse", "Key" };
 
 		public override bool LockQuickslots {
 			get {
@@ -115,6 +116,22 @@ namespace Frontiers {
 			}
 		}
 
+		public void FillInventory (string inventoryFillCategory)
+		{
+			WICategory startupCategory = null;
+			WIStackError error = WIStackError.None;
+			if (WorldItems.Get.Category (inventoryFillCategory, out startupCategory)) {
+				foreach (GenericWorldItem item in startupCategory.GenericWorldItems) {
+					WorldItem worlditem = null;
+					if (WorldItems.CloneFromStackItem (item.ToStackItem (), WIGroups.Get.Player, out worlditem)) {
+						if (!AddItems (worlditem, ref error)) {
+							Debug.Log ("PLAYERINVENTORY: Couldn't add item, error: " + error.ToString ());
+						}
+					}
+				}
+			}
+		}
+
 		public override void OnGameLoadStart ()
 		{
 			if (State.InventoryStacks == null || State.InventoryStacks.Count != Globals.NumInventoryStackContainers) {	//if it's null after setting state then we haven't created it before
@@ -175,26 +192,6 @@ namespace Frontiers {
 			}
 		}
 
-		public override void OnLocalPlayerSpawn ()
-		{
-			if (SpawnManager.Get.CurrentStartupPosition != null) {
-				if (!string.IsNullOrEmpty (SpawnManager.Get.CurrentStartupPosition.InventoryFillCategory)) {
-					WICategory startupCategory = null;
-					WIStackError error = WIStackError.None;
-					if (WorldItems.Get.Category (SpawnManager.Get.CurrentStartupPosition.InventoryFillCategory, out startupCategory)) {
-						foreach (GenericWorldItem item in startupCategory.GenericWorldItems) {
-							StackItem stackItem = null;
-							if (WorldItems.Get.StackItemFromGenericWorldItem (item, out stackItem)) {
-								if (!AddItems (stackItem, ref error)) {
-									Debug.Log ("PLAYERINVENTORY: Couldn't add stack item, error: " + error.ToString ());
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
 		#endregion
 
 		public bool PopAQIIntoWorld (out WorldItem aqi, WIGroup toGroup, ref WIStackError error)
@@ -214,23 +211,20 @@ namespace Frontiers {
 
 		public void ClearInventory (bool destroyItems)
 		{
-			try {
-				for (int i = 0; i < InventoryEnablers.Count; i++) {
-					Stacks.Clear.Items (InventoryEnablers [i], destroyItems);
-				}
-				Stacks.Clear.Items (QuickslotEnabler, destroyItems);
-				Stacks.Clear.Items (State.QuickslotsStackCarry, destroyItems);
-				//always add a single sack, even if we've cleared everything else
-				StackItem containerItem = null;
-				WIStackError error = WIStackError.None;
-				if (WorldItems.Get.StackItemFromPack ("Containers", "Sack 1", out containerItem)) {
-					if (!AddItems (containerItem.GetDuplicate (true), ref error)) {
-						Debug.Log ("Couldn't add container item, error: " + error.ToString ());
-					}
-				}
+			for (int i = 0; i < InventoryEnablers.Count; i++) {
+				Stacks.Clear.Items (InventoryEnablers [i], destroyItems);
 			}
-			catch (Exception e) {
-				Debug.LogException (e);
+			Stacks.Clear.Items (QuickslotEnabler, destroyItems);
+			Stacks.Clear.Items (State.QuickslotsStackCarry, destroyItems);
+			mActiveQuickslotItem = null;
+			mActiveCarryItem = null;
+			Player.Get.AvatarActions.ReceiveAction (AvatarAction.ItemAQIChange, WorldClock.Time);
+			Player.Get.AvatarActions.ReceiveAction (AvatarAction.ItemACIChange, WorldClock.Time);
+			//always add a single sack, even if we've cleared everything else
+			WorldItem containerItem = null;
+			WIStackError error = WIStackError.None;
+			if (WorldItems.CloneWorldItem ("Containers", "Sack 1", STransform.zero, false, WIGroups.Get.Player, out containerItem)) {
+				AddItems (containerItem, ref error);
 			}
 		}
 
@@ -358,6 +352,7 @@ namespace Frontiers {
 		{
 			if (item == null) {
 				error = WIStackError.InvalidOperation;
+				Debug.Log ("Was null");
 				return false;
 			}
 
@@ -374,17 +369,12 @@ namespace Frontiers {
 			}
 
 			if (!item.Is <Stackable> ()) {
+				Debug.Log ("Not stackable");
 				//can't add non-stackable items, dummy
 				return false;
 			}
 
 			//-----SPECIAL CASES-----//
-			if (item.Is <Currency> ()) {
-				State.PlayerBank.Add (Mathf.FloorToInt (item.BaseCurrencyValue), item.CurrencyType);
-				item.RemoveFromGame ();
-				return true;
-			}
-
 			if (item.Is <Purse> ()) {
 				PurseState purseState = null;
 				if (item.IsWorldItem) {	
@@ -400,12 +390,20 @@ namespace Frontiers {
 						purseState = (PurseState)purseStateObject;
 					}
 				}
+				GUIManager.PostGainedItem (purseState);
 				//add the contents of our purse to the bank, then destroy the item
 				State.PlayerBank.Add (purseState.Bronze, WICurrencyType.A_Bronze);
 				State.PlayerBank.Add (purseState.Silver, WICurrencyType.B_Silver);
 				State.PlayerBank.Add (purseState.Gold, WICurrencyType.C_Gold);
 				State.PlayerBank.Add (purseState.Lumen, WICurrencyType.D_Luminite);
 				State.PlayerBank.Add (purseState.Warlock, WICurrencyType.E_Warlock);
+				item.RemoveFromGame ();
+				return true;
+			}
+
+			if (item.Is <Currency> ()) {
+				GUIManager.PostGainedItem (Mathf.Max (Mathf.FloorToInt (item.BaseCurrencyValue), 1), item.CurrencyType);
+				State.PlayerBank.Add (Mathf.Max (Mathf.FloorToInt (item.BaseCurrencyValue), 1), item.CurrencyType);
 				item.RemoveFromGame ();
 				return true;
 			}
@@ -598,15 +596,13 @@ namespace Frontiers {
 				return false;
 			}
 
+			IWIBase topItem = null;
 			while (!stack.IsEmpty) {
-				if (!AddItems (stack.TopItem, ref error)) {
-					WIGroup group = WIGroups.Get.World;
-					if (player.Surroundings.IsVisitingLocation) {
-						group = player.Surroundings.CurrentLocation.LocationGroup;
-					}
-					Stacks.Pop.ContentsIntoWorld (stack, Int32.MaxValue, Player.Local.Grabber.transform.position, group);
-				} else {
-					Stacks.Pop.Force (stack, false);
+				if (!Stacks.Pop.Top (stack, out topItem, WIGroups.Get.Player, ref error)) {
+					return false;
+				} else if (!AddItems (topItem, ref error)) {
+					Stacks.Push.Item (stack, topItem, ref error);
+					return false;
 				}
 			}
 			return true;
@@ -614,9 +610,30 @@ namespace Frontiers {
 
 		public bool CanItemFit (IWIBase item)
 		{
-			WIStack mostRelevantStack = null;
+			WIStack stack = null;
 			WIStackError error = WIStackError.None;
-			return FindMostRelevantStack (out mostRelevantStack, item, false, ref error);
+			return item.HasAtLeastOne (NoSpaceNeededItems) || FindMostRelevantStack (out stack, item, true, ref error);
+//			if (QuickslotEnabler.HasEnablerContainer) {
+//				if (Stacks.Can.Fit (item.Size, QuickslotEnabler.EnablerContainer.Size)) {
+//					for (int j = 0; j < QuickslotEnabler.EnablerContainer.StackList.Count; j++) {
+//						if (!QuickslotEnabler.EnablerContainer.StackList [j].IsFull) {
+//							return true;
+//						}
+//					}
+//				}
+//			}
+//			for (int i = 0; i < InventoryEnablers.Count; i++) {
+//				if (InventoryEnablers [i].HasEnablerContainer) {
+//					if (Stacks.Can.Fit (item.Size, InventoryEnablers [i].EnablerContainer.Size)) {
+//						for (int j = 0; j < InventoryEnablers [i].EnablerContainer.StackList.Count; j++) {
+//							if (!InventoryEnablers [i].EnablerContainer.StackList [j].IsFull) {
+//								return true;
+//							}
+//						}
+//					}
+//				}
+//			}
+			return false;
 		}
 
 		public bool PushSelectedStack ()
