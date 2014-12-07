@@ -133,7 +133,7 @@ namespace Frontiers
 						}
 					}
 					//finally, see if we've aquired this book
-					if (Flags.Check <BookStatus> (book.Status, BookStatus.Received, Flags.CheckType.MatchAny)) {
+					if (Flags.Check ((uint)book.Status, (uint)BookStatus.Received, Flags.CheckType.MatchAny)) {
 						AquiredBooks.Add (book.Name);
 					}
 				}
@@ -573,8 +573,8 @@ namespace Frontiers
 			foreach (string aquiredBook in AquiredBooks) {
 				Book book = null;
 				if (Mods.Get.Runtime.LoadMod <Book> (ref book, "Book", aquiredBook)) {
-					if (Flags.Check <BookStatus> (book.Status, bookStatus, Flags.CheckType.MatchAny)
-						&&	Flags.Check <BookType> (book.TypeOfBook, bookType, Flags.CheckType.MatchAny)) {
+					if (Flags.Check ((uint)book.Status, (uint)bookStatus, Flags.CheckType.MatchAny)
+						&&	Flags.Check ((uint)book.TypeOfBook, (uint)bookType, Flags.CheckType.MatchAny)) {
 						books.Add (book);
 					}
 				}

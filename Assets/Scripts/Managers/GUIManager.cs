@@ -67,6 +67,7 @@ namespace Frontiers {
 
 		//Main interface
 		//TODO move anchors into dictionary
+		public UILabel VersionNumber;
 		public UICamera NGUIPrimaryCamera;
 		public UIRoot NGUIPrimaryRoot;
 		public UIAnchor NGUIPrimaryCenterAnchor;
@@ -123,7 +124,7 @@ namespace Frontiers {
 		public override void WakeUp ()
 		{
 			Get = this;
-			StartCoroutine (RefreshObjectsOverTime ());
+			VersionNumber.text = "Frontiers Beta v." + GameManager.Version;
 		}
 
 		public override void Initialize ()
@@ -214,10 +215,6 @@ namespace Frontiers {
 				NGUIBaseRoot.manualHeight = Globals.ScreenAspectRatioMax;
 			}
 
-			#if UNITY_EDITOR
-			UnityEditor.EditorUtility.SetDirty (this);
-			#endif
-
 			if (GameManager.Is (FGameState.GamePaused)) {
 				if (HasActiveInterface) {
 					switch (TopInterface.Pause) {
@@ -252,6 +249,12 @@ namespace Frontiers {
 					}
 				}
 			}
+
+			RefreshObjects ();
+
+			#if UNITY_EDITOR
+			UnityEditor.EditorUtility.SetDirty (this);
+			#endif
 		}
 
 		#region refreshing
@@ -259,37 +262,31 @@ namespace Frontiers {
 		public static void RefreshObject (GUIObject guiObject)
 		{
 			if (gRefreshingGUIObjects) {
-				gObjectsToRefreshNextFrame.Add (guiObject);
+				gObjectsToRefreshNextFrame.SafeAdd (guiObject);
 			} else {
-				gObjectsToRefresh.Add (guiObject);
+				gObjectsToRefresh.SafeAdd (guiObject);
 			}
 		}
 
-		protected IEnumerator RefreshObjectsOverTime ()
-		{
-			while (Application.isPlaying) {
-				yield return null;
-				gRefreshingGUIObjects = true;
-				if (gObjectsToRefresh.Count > 0) {
-					//////Debug.Log ("Refreshing " + gObjectsToRefresh.Count + " objects in GUIManager");
-					foreach (GUIObject objectToRefresh in gObjectsToRefresh) {
-						if (objectToRefresh != null && !objectToRefresh.IsDestroyed) {
-							objectToRefresh.Refresh ();
-						}
-					}
+		protected void RefreshObjects ( ) {
+			gRefreshingGUIObjects = true;
+			for (int i = 0; i < gObjectsToRefresh.Count; i++) {
+				//foreach (GUIObject objectToRefresh in gObjectsToRefresh) {
+				if (gObjectsToRefresh [i] != null && !gObjectsToRefresh [i].IsDestroyed) {
+					gObjectsToRefresh [i].Refresh ();
 				}
-				gObjectsToRefresh.Clear ();
-				foreach (GUIObject objectToRefreshNextFrame in gObjectsToRefreshNextFrame) {
-					gObjectsToRefresh.Add (objectToRefreshNextFrame);
-				}
-				gObjectsToRefreshNextFrame.Clear ();
-				gRefreshingGUIObjects = false;
-				yield return null;
 			}
+			gObjectsToRefresh.Clear ();
+			for (int i = 0; i < gObjectsToRefreshNextFrame.Count; i++) {
+				//foreach (GUIObject objectToRefreshNextFrame in gObjectsToRefreshNextFrame) {
+				gObjectsToRefresh.Add (gObjectsToRefreshNextFrame [i]);
+			}
+			gObjectsToRefreshNextFrame.Clear ();
+			gRefreshingGUIObjects = false;
 		}
 
-		protected static HashSet <GUIObject> gObjectsToRefresh = new HashSet <GUIObject> ();
-		protected static HashSet <GUIObject> gObjectsToRefreshNextFrame = new HashSet<GUIObject> ();
+		protected static List <GUIObject> gObjectsToRefresh = new List <GUIObject> ();
+		protected static List <GUIObject> gObjectsToRefreshNextFrame = new List <GUIObject> ();
 		protected static bool gRefreshingGUIObjects = false;
 
 		#endregion
