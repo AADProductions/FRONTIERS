@@ -479,10 +479,10 @@ namespace Frontiers
 		[Serializable]
 		public class DifficultySetting : Mod
 		{
-				public bool IsDefined(string creaturesNeverHostile)
+				public bool IsDefined(string setting)
 				{
-						if (DifficultyFlags != null) {
-								return DifficultyFlags.Contains(creaturesNeverHostile);
+						if (DifficultyFlags != null && !string.IsNullOrEmpty(setting)) {
+								return DifficultyFlags.Contains(setting);
 						}
 						return false;
 				}
@@ -724,6 +724,7 @@ namespace Frontiers
 				public BiomeWeatherSetting WeatherSpring = new BiomeWeatherSetting();
 				public BiomeWeatherSetting WeatherAutumn = new BiomeWeatherSetting();
 				public BiomeWeatherSetting WeatherWinter = new BiomeWeatherSetting();
+
 				[XmlIgnore]
 				[NonSerialized]
 				public WeatherSetting[] Almanac = null;

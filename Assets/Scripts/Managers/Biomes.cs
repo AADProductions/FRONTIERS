@@ -318,9 +318,8 @@ namespace Frontiers
 								//a civilized structure always has a nice warm temperature
 								return temp;
 						} else if (underground) {
-								//no sun underground therefore no variation
-								//it's always the coldest it can possibly be
-								temp = GameWorld.Get.CurrentBiome.StatusTempsWinter.StatusTempQuarterNight;
+								//use an average temperature to make caves useful as shelter
+								temp = AverageStatusTemperature();
 						} else {
 								//get the normal temp for the area
 								temp = StatusTemperature(worldPosition);
@@ -335,10 +334,25 @@ namespace Frontiers
 						}
 						return temp;
 				}
+				public TemperatureRange AverageStatusTemperature ( ) {
+						//TODO use gameworld to cache current season since it seldom changes
+						BiomeStatusTemps currentSeason = null;
+						if (WorldClock.IsTimeOfYear(TimeOfYear.SeasonWinter)) {
+								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsWinter;
+						} else if (WorldClock.IsTimeOfYear(TimeOfYear.SeasonSpring)) {
+								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsSpring;
+						} else if (WorldClock.IsTimeOfYear(TimeOfYear.SeasonSummer)) {
+								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsSummer;
+						} else {
+								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsAutumn;
+						}
+						return currentSeason.StatusTempsAverage;
+				}
 				//returns a raw temperature based on time of day, time of year and elevation
 				//this is not modified by civilization or anything 'man-made'
 				public TemperatureRange StatusTemperature(Vector3 worldPosition)
 				{		//TODO incorporate elevation using worldPosition
+						//TODO use gameworld to cache current season since it seldom changes
 						TemperatureRange statusTemp = TemperatureRange.C_Warm;
 						int hourOfDay = WorldClock.Get.HourOfDay;
 						if (UseTimeOfDayOverride) {
@@ -500,7 +514,6 @@ namespace Frontiers
 				protected void UpdateWeather()
 				{
 						if (GameManager.Is(FGameState.InGame)) {
-								////Debug.Log ("Updating weather - day of year: " + WorldClock.Get.DayOfYear.ToString ( ) + ", hour of day " + WorldClock.Get.HourOfDay.ToString ());
 								WeatherQuarter weather = GameWorld.Get.CurrentBiome.GetWeather(WorldClock.Get.DayOfYear, WorldClock.Get.HourOfDay);
 								if (weather != null) {
 										GameWorld.Get.Sky.Components.Weather.Weather = weather.Weather;
@@ -526,7 +539,7 @@ namespace Frontiers
 								mLightningThunder = Mathf.Lerp(mLightningThunder, 0f, 0.125f);
 
 								mLightningCheck++;
-								if (mLightningCheck > 1000) {
+								if (mLightningCheck > 500) {
 										if (UnityEngine.Random.value < weather.LightningFrequency) {
 												SpawnRandomLightning();
 										}
