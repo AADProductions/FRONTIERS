@@ -203,6 +203,11 @@ namespace Frontiers
 						if (State.IsSleeping)
 								return false;
 
+						if (player.Status.HasCondition("BurnedByFire")) {
+								GUIManager.PostDanger("You're on fire! Put yourself out first!");
+								return false;
+						}
+
 						if (player.Surroundings.IsInDanger) {
 								GUIManager.PostDanger("You can't sleep while you're in danger");
 								return false;
@@ -306,7 +311,6 @@ namespace Frontiers
 						for (int i = 0; i < State.ActiveConditions.Count; i++) {
 								Condition activeCondition = State.ActiveConditions[i];
 								if (string.Equals(activeCondition.Name, conditionName) && !activeCondition.HasExpired) {	//double its duration so it'll last twice as long
-										////Debug.Log ("Increasing duration on existing condition " + conditionName);
 										activeCondition.IncreaseDuration(activeCondition.Duration * Globals.StatusKeeperTimecale);
 										return;
 								}
@@ -316,11 +320,9 @@ namespace Frontiers
 						if (Frontiers.Conditions.Get.ConditionByName(conditionName, out condition)) {	//if we have no active conditions try looking it up
 								condition.Initialize();
 								State.ActiveConditions.Add(condition);
-								////Debug.Log ("Adding new condition");
 								for (int i = 0; i < StatusKeepers.Count; i++) {
 										StatusKeeper statusKeeper = StatusKeepers[i];
 										if (condition.HasSymptomFor(statusKeeper.Name)) {
-												////Debug.Log ("Applying condition " + condition.Name + " to " + statusKeeper.Name);
 												statusKeeper.ReceiveCondition(condition);
 										}
 								}

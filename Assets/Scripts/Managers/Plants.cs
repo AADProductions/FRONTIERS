@@ -43,6 +43,17 @@ namespace Frontiers
 						return mKnownPlantsResult;
 				}
 
+				public int TotalPlantsInClimate(ClimateType selectedClimate, bool aboveGround)
+				{
+						int totalPlants = 0;
+						for (int i = 0; i < PlantList.Count; i++) {
+								if (PlantList[i].AboveGround == aboveGround && PlantList[i].Climate == selectedClimate) {
+										totalPlants++;
+								}
+						}
+						return totalPlants;
+				}
+
 				protected List <Plant> mKnownPlantsResult = new List <Plant>();
 
 				public bool GetTerrainGroundTexture(string terrainGroundTextureName, out Texture2D terrainGroundTexture)
@@ -161,8 +172,6 @@ namespace Frontiers
 												WorldPlant worldPlant = worlditem.GetComponent <WorldPlant>();
 												ActivePlants.Add(worldPlant);
 												PlantInstanceMappings.Add(worldPlant, PlantInstanceTemplate.Empty);
-										} else {
-												////Debug.Log ("COULDN'T CLONE WORLD ITEM");
 										}
 								}
 						}
@@ -259,8 +268,6 @@ namespace Frontiers
 						newPlant.ThornVariation = UnityEngine.Random.Range(0, ThornBaseMeshes.Meshes.Count);
 						newPlant.ThornTexture = UnityEngine.Random.Range(0, ThornTextures.Count);
 
-						////Debug.Log ("body: " + newPlant.BodyType + ", bvar: " + newPlant.BodyVariation + ", flower: " + newPlant.FlowerType + ", fvar: " + newPlant.FlowerVariation);
-
 						newPlant.FlowerType = UnityEngine.Random.Range(0, FlowerBaseMeshes.Count);
 						newPlant.FlowerVariation = UnityEngine.Random.Range(0, FlowerBaseMeshes[newPlant.FlowerType].Meshes.Count);
 						newPlant.FlowerTexture = UnityEngine.Random.Range(0, FlowerTextures[newPlant.FlowerType].Textures.Count);
@@ -268,64 +275,65 @@ namespace Frontiers
 						StartCoroutine(BuildPlantSeasonalMesh(newPlant, season));
 
 						/*
-			float xPos = 0;
-			GameObject plantObj = null;
-			for (int i = 0; i < BodyBaseMeshes.Count; i++) {
+						 * these steps are no longer necessary
+							float xPos = 0;
+							GameObject plantObj = null;
+							for (int i = 0; i < BodyBaseMeshes.Count; i++) {
 
-				PlantBodyMeshList bodyMeshList = BodyBaseMeshes [i];
-				int bodyVariation = UnityEngine.Random.Range (0, bodyMeshList.Meshes.Count);
-				int textureVariation = UnityEngine.Random.Range (0, BodyTextures [i].Textures.Count);
+								PlantBodyMeshList bodyMeshList = BodyBaseMeshes [i];
+								int bodyVariation = UnityEngine.Random.Range (0, bodyMeshList.Meshes.Count);
+								int textureVariation = UnityEngine.Random.Range (0, BodyTextures [i].Textures.Count);
 
-				plantObj = new GameObject ("Plant " + i);
-				plantObj.AddComponent <MeshFilter> ().sharedMesh = bodyMeshList.Meshes [bodyVariation];
-				MeshRenderer bodyMr = plantObj.AddComponent <MeshRenderer> ();
-				bodyMr.material = BodyMaterial;
-				bodyMr.material.SetTexture ("_MainTex", BodyTextures [i].Textures [textureVariation]);
+								plantObj = new GameObject ("Plant " + i);
+								plantObj.AddComponent <MeshFilter> ().sharedMesh = bodyMeshList.Meshes [bodyVariation];
+								MeshRenderer bodyMr = plantObj.AddComponent <MeshRenderer> ();
+								bodyMr.material = BodyMaterial;
+								bodyMr.material.SetTexture ("_MainTex", BodyTextures [i].Textures [textureVariation]);
 
-				int rootType = UnityEngine.Random.Range (0, RootBaseMeshes.Count);
-				PlantMeshList rootMeshList = RootBaseMeshes [rootType];
-				int rootVariation = UnityEngine.Random.Range (0, rootMeshList.Meshes.Count);
-				int rootTextureVariation = UnityEngine.Random.Range (0, RootTextures [rootType].Textures.Count);
-				GameObject rootObj = plantObj.CreateChild ("Root").gameObject;
-				rootObj.AddComponent <MeshFilter> ().sharedMesh = rootMeshList.Meshes [rootVariation];
-				MeshRenderer rMr = rootObj.AddComponent <MeshRenderer> ();
-				rMr.material = RootMaterial;
-				rMr.material.SetTexture ("_MainTex", RootTextures [rootType].Textures [rootTextureVariation]);
+								int rootType = UnityEngine.Random.Range (0, RootBaseMeshes.Count);
+								PlantMeshList rootMeshList = RootBaseMeshes [rootType];
+								int rootVariation = UnityEngine.Random.Range (0, rootMeshList.Meshes.Count);
+								int rootTextureVariation = UnityEngine.Random.Range (0, RootTextures [rootType].Textures.Count);
+								GameObject rootObj = plantObj.CreateChild ("Root").gameObject;
+								rootObj.AddComponent <MeshFilter> ().sharedMesh = rootMeshList.Meshes [rootVariation];
+								MeshRenderer rMr = rootObj.AddComponent <MeshRenderer> ();
+								rMr.material = RootMaterial;
+								rMr.material.SetTexture ("_MainTex", RootTextures [rootType].Textures [rootTextureVariation]);
 
 
-				int thornVariation = UnityEngine.Random.Range (0, ThornBaseMeshes.Meshes.Count);
-				Mesh thornMesh = ThornBaseMeshes.Meshes [thornVariation];
-				int thornTextureVariation = UnityEngine.Random.Range (0, ThornTextures.Count);
+								int thornVariation = UnityEngine.Random.Range (0, ThornBaseMeshes.Meshes.Count);
+								Mesh thornMesh = ThornBaseMeshes.Meshes [thornVariation];
+								int thornTextureVariation = UnityEngine.Random.Range (0, ThornTextures.Count);
 
-				int flowerType = UnityEngine.Random.Range (0, FlowerBaseMeshes.Count);
-				int flowerVariation = UnityEngine.Random.Range (0, FlowerBaseMeshes [flowerType].Meshes.Count);
-				////Debug.Log ("Getting flower type " + flowerType + " variation " + flowerVariation);
-				Mesh flowerMesh = FlowerBaseMeshes [flowerType].Meshes [flowerVariation];
-				int flowerTextureVariation = UnityEngine.Random.Range (0, FlowerTextures [flowerType].Textures.Count);
+								int flowerType = UnityEngine.Random.Range (0, FlowerBaseMeshes.Count);
+								int flowerVariation = UnityEngine.Random.Range (0, FlowerBaseMeshes [flowerType].Meshes.Count);
+								////Debug.Log ("Getting flower type " + flowerType + " variation " + flowerVariation);
+								Mesh flowerMesh = FlowerBaseMeshes [flowerType].Meshes [flowerVariation];
+								int flowerTextureVariation = UnityEngine.Random.Range (0, FlowerTextures [flowerType].Textures.Count);
 
-				List <STransform> thornList = bodyMeshList.ThornPoints [bodyVariation];
-				List <STransform> flowerList = bodyMeshList.FlowerPoints [bodyVariation];
-				foreach (STransform thornPoint in thornList) {
-					GameObject thorn = plantObj.CreateChild ("Thorn").gameObject;
-					thorn.AddComponent <MeshFilter> ().sharedMesh = thornMesh;
-					MeshRenderer thornMr = thorn.AddComponent <MeshRenderer> ();
-					thornMr.material = ThornMaterial;
-					thornMr.material.SetTexture ("_MainTex", ThornTextures [thornTextureVariation]);
-					thornPoint.ApplyTo (thorn.transform, false);
-				}
+								List <STransform> thornList = bodyMeshList.ThornPoints [bodyVariation];
+								List <STransform> flowerList = bodyMeshList.FlowerPoints [bodyVariation];
+								foreach (STransform thornPoint in thornList) {
+									GameObject thorn = plantObj.CreateChild ("Thorn").gameObject;
+									thorn.AddComponent <MeshFilter> ().sharedMesh = thornMesh;
+									MeshRenderer thornMr = thorn.AddComponent <MeshRenderer> ();
+									thornMr.material = ThornMaterial;
+									thornMr.material.SetTexture ("_MainTex", ThornTextures [thornTextureVariation]);
+									thornPoint.ApplyTo (thorn.transform, false);
+								}
 
-				foreach (STransform flowerPoint in flowerList) {
-					GameObject flower = plantObj.CreateChild ("Flower").gameObject;
-					flower.AddComponent <MeshFilter> ().sharedMesh = flowerMesh;
-					MeshRenderer fMr = flower.AddComponent <MeshRenderer> ();
-					fMr.material = FlowerMaterial;
-					fMr.material.SetTexture ("_MainTex", FlowerTextures [flowerType].Textures [flowerTextureVariation]);
-					flowerPoint.ApplyTo (flower.transform, false);
-				}
-				plantObj.transform.position = new Vector3 (xPos, 0f, 0f);
-				xPos += 1f;
-			}
-			*/
+								foreach (STransform flowerPoint in flowerList) {
+									GameObject flower = plantObj.CreateChild ("Flower").gameObject;
+									flower.AddComponent <MeshFilter> ().sharedMesh = flowerMesh;
+									MeshRenderer fMr = flower.AddComponent <MeshRenderer> ();
+									fMr.material = FlowerMaterial;
+									fMr.material.SetTexture ("_MainTex", FlowerTextures [flowerType].Textures [flowerTextureVariation]);
+									flowerPoint.ApplyTo (flower.transform, false);
+								}
+								plantObj.transform.position = new Vector3 (xPos, 0f, 0f);
+								xPos += 1f;
+							}
+							*/
 				}
 
 				public bool PlantProps(string plantName, ref Plant plantProps)
@@ -345,10 +353,9 @@ namespace Frontiers
 						//Dried - after picked
 						Dictionary <TimeOfYear,GameObject> seasonLookup = null;
 						GameObject plantPrototype = null;
-						if (mPlantPrototypeLookup.TryGetValue(plantName, out seasonLookup)) {
+						if (plantName != null && mPlantPrototypeLookup.TryGetValue(plantName, out seasonLookup)) {
 								//Debug.Log ("Found plant " + plantName);
 								if (seasonLookup.TryGetValue(season, out plantPrototype)) {
-										//////Debug.Log ("Found season " + season);
 										//we can just instantiate the prototype, because it doesn't have anything tricky attached to it
 										//no WIscripts etc.
 										//find or create a copy of the prefab child in the plant child
@@ -356,11 +363,7 @@ namespace Frontiers
 										CreatePlantStateChild(plantPrototype, worldPlantGameObject, "Raw");
 										CreatePlantStateChild(plantPrototype, worldPlantGameObject, "Cooked");
 										return true;
-								} else {
-										//Debug.Log ("Couldn't find lookup for season " + season.ToString ());
 								}
-						} else {
-								//Debug.Log ("Couldn't find plant lookup for plant name " + plantName);
 						}
 						return false;
 						//done!
@@ -479,6 +482,7 @@ namespace Frontiers
 								Dispose(worldPlant);
 						}
 				}
+
 				//Temp
 				public List <Plant> PlantList = new List<Plant>();
 				public List <List <Plant>> BGPlantsByClimate = new List <List <Plant>>();
@@ -516,7 +520,7 @@ namespace Frontiers
 				public System.Random ElevationNumberGenerator = null;
 
 				public IEnumerator UpdateWorldPlants()
-				{	//updat the plants surrounding the player
+				{	//update the plants surrounding the player
 						while (GameWorld.Get.WorldLoaded) {
 								while (!GameManager.Is(FGameState.InGame) || !mPlantsLoaded) {
 										yield return null;
@@ -550,7 +554,7 @@ namespace Frontiers
 												//it will spawn
 												if (plantsByClimate != null && plantsByClimate.Count > 0) {
 														Plant currentPlant = null;
-														int currentIndex = ((int)(closestPlant.X + closestPlant.Y + closestPlant.Z) + Mathf.Abs (closestPlant.GetHashCode())) % plantsByClimate.Count;
+														int currentIndex = ((int)(closestPlant.X + closestPlant.Y + closestPlant.Z) + Mathf.Abs(closestPlant.GetHashCode())) % plantsByClimate.Count;
 														int elevationCheck = 0;
 														int elevationDifference = 0;
 														int plantElevation = (int)closestPlant.Y;
@@ -566,7 +570,7 @@ namespace Frontiers
 																currentPlant = plantsByClimate[currentIndex];
 																if (currentPlant.AboveGround) {
 																		//if we're above ground do an elevation check
-																		elevationDifference = Mathf.Abs (Plant.ElevationTypeToInt(currentPlant.Elevation) - plantElevation);
+																		elevationDifference = Mathf.Abs(Plant.ElevationTypeToInt(currentPlant.Elevation) - plantElevation);
 																		if (elevationDifference > elevationCheck) {
 																				//the difference is too high, skip this one, it's not for us
 																				continue;
@@ -580,9 +584,7 @@ namespace Frontiers
 														if (string.IsNullOrEmpty(plantName)) {
 																//couldn't find a plant, oh well!
 																//Debug.Log ("Plant name was empty");
-																//yield break;
-														} else {
-																//Debug.Log ("We're adding plant " + plantName);
+																yield break;
 														}
 
 														closestPlant.HasInstance = true;
@@ -595,10 +597,8 @@ namespace Frontiers
 														irrelevantInstance.worlditem.SetMode(WIMode.Frozen);
 														irrelevantInstance.State.TimePicked = -1f;//just in case
 														//update the plant data
-														//if (!String.Equals (irrelevantInstance.State.PlantName.ToLower (), plantName.ToLower ())) {
 														irrelevantInstance.State.PlantName = plantName;
 														irrelevantInstance.RefreshPlantProps();
-														//}
 														//we can guarantee that instance mappings will have an entry
 														//but we don't know if it will be null or not
 														PlantInstanceTemplate existingPlant = PlantInstanceMappings[irrelevantInstance];
@@ -634,8 +634,6 @@ namespace Frontiers
 
 						gPlantBuilderHelper.localRotation = Quaternion.identity;
 						gPlantBuilderHelper.localPosition = Vector3.zero;
-
-						//////Debug.Log ("Building plant " + plant.Name + " for season " + seasonalSettings.Seasonality.ToString ( ));
 
 						MeshCombiner.MeshInput rootInput = new MeshCombiner.MeshInput();
 						gPlantBuilderHelper.localScale = Vector3.one * (int)plant.RootSize;
@@ -687,7 +685,6 @@ namespace Frontiers
 						}
 
 						if (plant.HasThorns) {
-								//////Debug.Log ("Adding thorns");
 								List <STransform> thornPoints = BodyBaseMeshes[plant.BodyType].ThornPoints[plant.BodyVariation];
 								gPlantBuilderHelper.localScale = Vector3.one;
 								foreach (STransform thornPoint in thornPoints) {
@@ -702,14 +699,12 @@ namespace Frontiers
 								}
 						}
 
-						//////Debug.Log ("Combining " + plant.Name);
 						PlantCombiner.Combine(PlantCombinerCallback);
 						mWaitingForCallback = true;
 						while (mWaitingForCallback) {
 								PlantCombiner.Check();
 								yield return null;
 						}
-						//////Debug.Log ("Plant combiner is finished building " + plant.Name);
 						//get the final mesh object from the combiner
 						if (mCurrentMeshOutputs != null && mCurrentMeshOutputs.Length > 0) {
 								MeshCombiner.MeshObject newPlantMesh = PlantCombiner.CreateMeshObject(mCurrentMeshOutputs[0], mPlantMaterialLookup);
@@ -794,8 +789,7 @@ namespace Frontiers
 										case MeshTopology.Lines:
 										case MeshTopology.LineStrip:
 										case MeshTopology.Points:
-					//Debug.LogWarning ("The MeshCombiner does not support this meshes (" +
-					//bufferedMesh.Name + "topology (" + bufferedMesh.Topology [i] + ")");
+												Debug.LogWarning ("The MeshCombiner does not support this meshes (" + bufferedMesh.Name + "topology (" + bufferedMesh.Topology [i] + ")");
 												break;
 								}
 								bufferedMesh.Indexes.Add(mesh.GetIndices(i));
@@ -809,17 +803,14 @@ namespace Frontiers
 						SortPlantsByClimateAndSeason();
 						//create the meshes for the plant
 						for (int i = 0; i < PlantList.Count; i++) {
-								//Debug.Log ("Building plant list " + i.ToString ());
 								yield return StartCoroutine(BuildPlantMeshes(PlantList[i]));
 						}
-						//Debug.Log ("FINISHED building plants");
 						mPlantsLoaded = true;
 						yield break;
 				}
 
 				protected void SortPlantsByClimateAndSeason()
 				{
-						//Debug.Log ("PLANTS: Sort plant by climate and season");
 						Plant plant = null;
 						int[] climateTypes = null;
 						List <List <Plant>> plantsByClimate = null;
@@ -916,52 +907,7 @@ namespace Frontiers
 				protected Transform gPlantBuilderHelper;
 
 				public static void Examine(Plant props, List<WIExamineInfo> examine)
-				{
-						/*
-			don't know all seasons
-			I know that it grows in the [spring, summer, autumn, winter], but I'm not sure whether it grows in the [spring, summer, autumn, winter].
-			know all season
-			It grows in the [s,s,a,w].
-
-			if encountered and grows below ground
-			It grows underground.
-
-			don't know all seasons
-			I know that it flowers in the [s,s,a,w], but I'm not sure whether it flowers in the [ssaw]
-			know all seasons
-			It flowers in the [ssaw]
-
-			don't know cooked or raw
-			I don't know whether it's edible or not.
-
-			know one but not the other
-			I don't know if it's edible [raw/cooked], but I know it's edible [raw/cooked]
-
-			knows both and 1 edible
-			It's edible when [raw/cooked] but not when [raw/cooked]
-
-			knows both and 2 edible
-			It's edible when cooked and when raw.
-
-			knows both & neither
-			It's inedible.
-
-			if 1 state is edible and not poisonous:
-			When it's [raw/cooked], it's good for a [snack/small meal/full meal].
-				if poisonous and known
-				However it's also [mildly/moderately/powerfully] poisonous so I should eat it with care.
-				if medicinal (and known)
-				It's also [mildly/moderately/powerfully] medicinal.
-				if hallucinogenic (and known)
-				I have to be careful though, because it's [mildly/moderately/powerfully] hallucinogenic.
-				
-			if 2 states are edible
-			And when it's [blah blah blah]
-
-			if doesn't know whether poisonous
-			It could be poisonous, or not. I'm not sure.
-			*/
-						//just create a bunch of garbage, i don't care right now
+				{		//just create a bunch of garbage, i don't care right now
 						//we'll clean this up later
 						List <string> unknownTimesOfYear = new List <string>() {
 								TimeOfYear.SeasonSummer.ToString(),

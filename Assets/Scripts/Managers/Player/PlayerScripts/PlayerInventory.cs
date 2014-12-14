@@ -985,7 +985,7 @@ namespace Frontiers {
 				yield return new WaitForSeconds (0.025f);//non-realtime seconds
 
 				//---Check to see if anything has changed
-				try {
+				//try {
 					mChangingAqi = false;
 					//do we want to change our active quickslot item?
 					changeAQI = false;
@@ -1015,12 +1015,12 @@ namespace Frontiers {
 						changeAQI |= (hasItemNow && !qsEnabledNow);
 						changeAQI |= (qsEnabledPrev && !qsEnabledNow);
 					}
-				}
-				catch (Exception e) {
-					//f'ing coroutines...
-					Debug.LogException (e);
-					restartLoop = true;
-				}
+//				}
+//				catch (Exception e) {
+//					//f'ing coroutines...
+//					Debug.LogException (e);
+//					restartLoop = true;
+//				}
 
 				if (restartLoop) {
 					yield return null;

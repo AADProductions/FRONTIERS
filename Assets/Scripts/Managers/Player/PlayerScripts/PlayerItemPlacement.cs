@@ -33,8 +33,7 @@ namespace Frontiers
 				public Vector3 PlacementPreferredPointSmooth = Vector3.zero;
 				public IItemOfInterest PlacementPreferredObject = null;
 				public float ThrowForce = 8.0f;
-//TODO put this in globals
-				public GameObject LastItemDropped;
+				public GameObject LastItemDropped;//TODO put this in globals
 				public GameObject LastItemCarried;
 				public GameObject LastItemPlaced;
 				public Vector3 GrabberIdealPosition	= new Vector3(-0.5f, -0.15f, 2.5f);
@@ -316,14 +315,14 @@ namespace Frontiers
 						WorldItemUsable usable = null;
 						if (Player.Local.Surroundings.IsWorldItemInRange) {
 								worldItemInRange = Player.Local.Surroundings.WorldItemFocus.worlditem;
-								usable = worldItemInRange.MakeUsable();
+								usable = worldItemInRange.gameObject.GetOrAdd<WorldItemUsable> ();
 								usable.RequirePlayerFocus = true;
 								usable.ShowDoppleganger = true;
 
 						} else if (Player.Local.Surroundings.IsTerrainInRange &&
 						        Player.Local.Surroundings.TerrainFocus.IOIType == ItemOfInterestType.WorldItem) {
 								worldItemInRange = Player.Local.Surroundings.TerrainFocus.worlditem;
-								usable = worldItemInRange.MakeUsable();
+								usable = worldItemInRange.gameObject.GetOrAdd<WorldItemUsable> ();
 								usable.RequirePlayerFocus = false;
 								usable.ShowDoppleganger = false;
 								//there might be a body of water we want to drink from
@@ -584,6 +583,7 @@ namespace Frontiers
 												}
 												ItemToPlace.Props.Local.FreezeOnStartup	= true;
 												ItemToPlace.LastActiveDistanceToPlayer = 0f;
+												ItemToPlace.OnPlayerPlace.SafeInvoke();
 												ItemToPlace = null;
 										}
 								}

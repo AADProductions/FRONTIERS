@@ -93,6 +93,8 @@ namespace Frontiers
 
 			bool Has<T> () where T : WIScript;
 
+			bool HasAtLeastOne (List <string> scriptNames);
+
 			void Add (string scriptName);
 
 			bool GetStateOf<T> (out object stateObject) where T : WIScript;
@@ -144,6 +146,8 @@ namespace Frontiers
 	public interface IGUIChildEditor<R> : IGUIChildEditor
 	{
 		void ReceiveFromParentEditor (R editObject, ChildEditorCallback<R> callBack);
+
+		void Finish ();
 	}
 
 	public interface IGUIParentEditor
