@@ -259,14 +259,18 @@ public class ActionManager <T> : Manager
 
 	protected void CheckButtonKeyCombos ()
 	{
-		foreach (KeyValuePair <int, KeyCode> key in mButtonKeyCombos.Keys) {
+		var enumerator = mButtonKeyCombos.GetEnumerator ();
+		while (enumerator.MoveNext ()) {
+		//foreach (KeyValuePair <int, KeyCode> key in mButtonKeyCombos) {
+			keyCombo = enumerator.Current;
+			key = keyCombo.Key;
 			if (Input.GetKey (key.Value)) {
 				if (Input.GetMouseButtonDown (key.Key)) {
 					mKeysUsedInCombos.Add (key.Value);
 					mButtonsUsedInCombos.Add (key.Key);
 					List <T> actions;
 					if (mButtonKeyCombos.TryGetValue (key, out actions)) {
-						for (int i = 0; i < actions.Count; i++){
+						for (int i = 0; i < actions.Count; i++) {
 							Send (actions [i], TimeStamp);
 						}
 					}
@@ -274,6 +278,8 @@ public class ActionManager <T> : Manager
 			}
 		}
 	}
+	protected KeyValuePair <KeyValuePair <int, KeyCode>, List <T>> keyCombo;
+	protected KeyValuePair <int, KeyCode> key;
 
 	protected void Send (T action, double timeStamp)
 	{	
@@ -290,7 +296,10 @@ public class ActionManager <T> : Manager
 			return;
 		}
 
-		foreach (KeyValuePair <bool, List <T>> hoverMapping in mHoverMappings) {
+		var enumerator = mHoverMappings.GetEnumerator ();
+		while (enumerator.MoveNext ()) {
+		//foreach (KeyValuePair <bool, List <T>> hoverMapping in mHoverMappings) {
+			hoverMapping = enumerator.Current;
 			if (mHover == hoverMapping.Key) {
 				for (int i = 0; i < hoverMapping.Value.Count; i++){
 					Send (hoverMapping.Value [i], TimeStamp);
@@ -298,10 +307,14 @@ public class ActionManager <T> : Manager
 			}
 		}
 	}
+	protected KeyValuePair <bool, List <T>> hoverMapping;
 
 	protected void CheckKeyDownMappings ()
 	{
-		foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyDownMappings) {
+		var enumerator = mKeyDownMappings.GetEnumerator ();
+		while (enumerator.MoveNext ()) {
+		//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyDownMappings) {
+			keyMapping = enumerator.Current;
 			if (Input.GetKeyDown (keyMapping.Key) && !mKeysUsedInCombos.Contains (keyMapping.Key)) {
 				LastKey = keyMapping.Key;
 				for (int i = 0; i < keyMapping.Value.Count; i++){
@@ -310,10 +323,14 @@ public class ActionManager <T> : Manager
 			}
 		}
 	}
+	protected KeyValuePair <KeyCode, List <T>> keyMapping;
 
 	protected void CheckKeyHoldMappings ()
 	{
-		foreach (KeyValuePair<KeyCode, List<T>> keyMapping in mKeyHoldMappings) {
+		var enumerator = mKeyHoldMappings.GetEnumerator ();
+		while (enumerator.MoveNext ()) {
+		//foreach (KeyValuePair<KeyCode, List<T>> keyMapping in mKeyHoldMappings) {
+			keyMapping = enumerator.Current;
 			if (Input.GetKey (keyMapping.Key) && !mKeysUsedInCombos.Contains (keyMapping.Key)) {
 				for (int i = 0; i < keyMapping.Value.Count; i++){
 					Send (keyMapping.Value [i], TimeStamp);
@@ -324,7 +341,10 @@ public class ActionManager <T> : Manager
 
 	protected void CheckKeyUpMappings ()
 	{
-		foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyUpMappings) {
+		var enumerator = mKeyUpMappings.GetEnumerator ();
+		while (enumerator.MoveNext ()) {
+		//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyUpMappings) {
+			keyMapping = enumerator.Current;
 			if (Input.GetKeyUp (keyMapping.Key) && !mKeysUsedInCombos.Contains (keyMapping.Key)) {
 				for (int i = 0; i < keyMapping.Value.Count; i++){
 					Send (keyMapping.Value [i], TimeStamp);
@@ -335,7 +355,10 @@ public class ActionManager <T> : Manager
 
 	protected void CheckKeyDoubleTapMappings ()
 	{
-		foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyDoubleTapMappings) {
+		var enumerator = mKeyDoubleTapMappings.GetEnumerator ();
+		//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyDoubleTapMappings) {
+		while (enumerator.MoveNext ()) {
+			keyMapping = enumerator.Current;
 			if (Input.GetKeyDown (keyMapping.Key) && !mKeysUsedInCombos.Contains (keyMapping.Key)) {
 				if (mSingleTaps.ContainsKey (keyMapping.Key)) {
 					float doubleTapTime = mSingleTaps [keyMapping.Key];
@@ -360,7 +383,10 @@ public class ActionManager <T> : Manager
 			mClickEventSent = false;
 			return;
 		}
-		foreach (KeyValuePair <int, List<T>> buttonMapping in mButtonDownMappings) {
+		var enumerator = mButtonDownMappings.GetEnumerator ();
+		//foreach (KeyValuePair <int, List<T>> buttonMapping in mButtonDownMappings) {
+		while (enumerator.MoveNext ()) {
+			buttonMapping = enumerator.Current;
 			for (int i = 0; i < buttonMapping.Value.Count; i++){
 				Send (buttonMapping.Value [i], TimeStamp);
 			}
@@ -368,20 +394,27 @@ public class ActionManager <T> : Manager
 
 		mClickEventSent = true;
 	}
+	protected KeyValuePair <int, List<T>> buttonMapping;
 
 	protected void CheckDoubleClickMappings ()
 	{
 		if (!mDoubleClick) {
 			return;
 		}
-		foreach (T action in mDoubleClickMappings) {
+		var enumerator = mDoubleClickMappings.GetEnumerator ();
+		while (enumerator.MoveNext ( )) {
+		//foreach (T action in mDoubleClickMappings) {
+			T action = enumerator.Current;
 			Send (action, TimeStamp);
 		}
 	}
 
 	protected void CheckMouseButtonDownMappings ()
 	{
-		foreach (KeyValuePair <int, List <T>> buttonMapping in mButtonDownMappings) {
+		var enumerator = mButtonDownMappings.GetEnumerator ();
+		while (enumerator.MoveNext ()) {
+		//foreach (KeyValuePair <int, List <T>> buttonMapping in mButtonDownMappings) {
+			buttonMapping = enumerator.Current;
 			if (Input.GetMouseButtonDown (buttonMapping.Key) && !mButtonsUsedInCombos.Contains (buttonMapping.Key)) {
 				LastMouseClick = buttonMapping.Key;
 				for (int i = 0; i < buttonMapping.Value.Count; i++){
@@ -393,7 +426,10 @@ public class ActionManager <T> : Manager
 
 	protected void CheckMouseButtonUpMappings ()
 	{
-		foreach (KeyValuePair <int, List <T>> buttonMapping in mButtonUpMappings) {
+		var enumerator = mButtonUpMappings.GetEnumerator ();
+		while (enumerator.MoveNext ()) {
+		//foreach (KeyValuePair <int, List <T>> buttonMapping in mButtonUpMappings) {
+			buttonMapping = enumerator.Current;
 			if (Input.GetMouseButtonUp (buttonMapping.Key) && !mButtonsUsedInCombos.Contains (buttonMapping.Key)) {
 				LastMouseClick = buttonMapping.Key;
 				for (int i = 0; i < buttonMapping.Value.Count; i++){
@@ -405,7 +441,10 @@ public class ActionManager <T> : Manager
 
 	protected void CheckMouseButtonHoldMappings ()
 	{
-		foreach (KeyValuePair<int, List<T>> buttonMapping in mButtonHoldMappings) {
+		var enumerator = mButtonHoldMappings.GetEnumerator ();
+		while (enumerator.MoveNext ()) {
+		//foreach (KeyValuePair<int, List<T>> buttonMapping in mButtonHoldMappings) {
+			buttonMapping = enumerator.Current;
 			if (Input.GetMouseButton (buttonMapping.Key) && !mButtonsUsedInCombos.Contains (buttonMapping.Key)) {
 				LastMouseClick = buttonMapping.Key;
 				for (int i = 0; i < buttonMapping.Value.Count; i++){
@@ -434,17 +473,22 @@ public class ActionManager <T> : Manager
 
 	protected void PurgeUnusedTaps ()
 	{
-		List <KeyCode> keysToRemove = new List <KeyCode> ();
-		foreach (KeyValuePair <KeyCode, float> singleTap in mSingleTaps) {
+		mKeysToRemove.Clear ();
+		var enumerator = mSingleTaps.GetEnumerator ();
+		while (enumerator.MoveNext ()) {
+		//foreach (KeyValuePair <KeyCode, float> singleTap in mSingleTaps) {
+			singleTap = enumerator.Current;
 			if (Time.time > singleTap.Value) {
-				keysToRemove.Add (singleTap.Key);
+				mKeysToRemove.Add (singleTap.Key);
 			}
 		}
-
-		foreach (KeyCode key in keysToRemove) {
-			mSingleTaps.Remove (key);
+		for (int i = 0; i < mKeysToRemove.Count; i++) {
+		//foreach (KeyCode key in keysToRemove) {
+			mSingleTaps.Remove (mKeysToRemove [i]);
 		}
 	}
+	protected KeyValuePair <KeyCode, float> singleTap;
+	protected List <KeyCode> mKeysToRemove = new List<KeyCode> ( );
 
 	protected Dictionary <KeyCode, List <T>> mKeyDoubleTapMappings	= new Dictionary <KeyCode, List <T>> ();
 	protected Dictionary <KeyCode, List <T>> mKeyDownMappings = new Dictionary <KeyCode, List <T>> ();

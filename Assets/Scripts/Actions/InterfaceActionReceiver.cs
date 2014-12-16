@@ -27,7 +27,7 @@ namespace Frontiers {
 
 		protected bool SubscriptionCheck (InterfaceActionType subscription, InterfaceActionType action)
 		{
-			return Flags.Check <InterfaceActionType> (subscription, action, Flags.CheckType.MatchAny);
+			return Flags.Check ((uint)subscription, (uint)action, Flags.CheckType.MatchAny);
 		}
 	}
 

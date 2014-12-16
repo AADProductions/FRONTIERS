@@ -33,7 +33,7 @@ public class TimeActionReceiver : ActionFilter <TimeActionType>
 	public bool SubscriptionCheck (TimeActionType subscription, TimeActionType action)
 	{
 		if (subscription != TimeActionType.NoAction && action != TimeActionType.NoAction) {
-			return Flags.Check <TimeActionType> (subscription, action, Flags.CheckType.MatchAny);
+			return Flags.Check ((uint)subscription, (uint)action, Flags.CheckType.MatchAny);
 		}
 		return false;
 	}

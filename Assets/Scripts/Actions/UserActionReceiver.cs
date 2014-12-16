@@ -33,7 +33,7 @@ public class UserActionReceiver : ActionFilter <UserActionType>
 	public bool SubscriptionCheck (UserActionType subscription, UserActionType action)
 	{
 		if (subscription != UserActionType.NoAction && action != UserActionType.NoAction) {
-			return Flags.Check <UserActionType> (subscription, action, Flags.CheckType.MatchAny);
+			return Flags.Check ((uint)subscription, (uint)action, Flags.CheckType.MatchAny);
 		}
 		return false;
 	}

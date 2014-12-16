@@ -24,23 +24,30 @@ namespace Frontiers
 
 		public virtual void Update ()
 		{
-			List<ActionListener> listners;
 			mUpdating = true;
-			foreach (KeyValuePair<T,float> actionPair in mActionList) {
-				listners = null;
-				if (mListeners.TryGetValue (actionPair.Key, out listners)) {
-					CallListeners (listners, actionPair.Key, actionPair.Value);
+			var enumerator = mActionList.GetEnumerator ();
+			while (enumerator.MoveNext ()) {
+			//foreach (KeyValuePair<T,float> actionPair in mActionList) {
+				actionPair = enumerator.Current;
+				mListenerCheck = null;
+				if (mListeners.TryGetValue (actionPair.Key, out mListenerCheck)) {
+					CallListeners (mListenerCheck, actionPair.Key, actionPair.Value);
 				}
 			}
 			mUpdating = false;
 			mActionList.Clear ();
 
-			foreach (KeyValuePair<T,float> updateAction in mActionListDuringUpdate) {
+			enumerator = mActionListDuringUpdate.GetEnumerator ();
+			while (enumerator.MoveNext ( )) {
+			//foreach (KeyValuePair<T,float> updateAction in mActionListDuringUpdate) {
+				updateAction = enumerator.Current;
 				mActionList.Add (updateAction);
 			}
 
 			mActionListDuringUpdate.Clear ();
 		}
+		protected KeyValuePair<T,float> updateAction;
+		protected KeyValuePair<T,float> actionPair;
 
 		public virtual bool GainFocus ()
 		{
@@ -92,9 +99,9 @@ namespace Frontiers
 			}
 
 			if (isSubscribed) {
-				List <ActionListener> listenerList = null;
-				if (mListeners.TryGetValue (action, out listenerList)) {
-					CallListeners (listenerList, action, timeStamp);
+				mListenerCheck = null;
+				if (mListeners.TryGetValue (action, out mListenerCheck)) {
+					CallListeners (mListenerCheck, action, timeStamp);
 				}
 			}
 			return passThrough;
@@ -114,12 +121,12 @@ namespace Frontiers
 
 		public virtual void Subscribe (T action, ActionListener listner)
 		{
-			List <ActionListener> listnerList;
-			if (mListeners.TryGetValue (action, out listnerList) == false) {
-				listnerList = new List <ActionListener> ();
-				mListeners.Add (action, listnerList);
+			mListenerCheck = null;
+			if (mListeners.TryGetValue (action, out mListenerCheck) == false) {
+				mListenerCheck = new List <ActionListener> ();
+				mListeners.Add (action, mListenerCheck);
 			}
-			listnerList.Add (listner);
+			mListenerCheck.Add (listner);
 			if (mSubscriptionAdd != null) {
 				mSubscriptionAdd (ref mSubscribed, action);
 				//take care of queued subscriptions at this point
@@ -136,6 +143,7 @@ namespace Frontiers
 			mSubscribed = mDefault;
 		}
 
+		protected List <ActionListener> mListenerCheck;
 		protected SubscriptionAdd <T> mSubscriptionAdd;
 		protected SubscriptionCheck <T> mSubscriptionCheck;
 		protected T mSubscribed;

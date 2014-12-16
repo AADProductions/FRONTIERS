@@ -30,7 +30,7 @@ public class AvatarActionReceiver : ActionFilter <PlayerAvatarAction>
 
 	public bool SubscriptionCheck (PlayerAvatarAction subscription, PlayerAvatarAction action)
 	{
-		return Flags.Check <AvatarActionType> (subscription.ActionType, action.ActionType, Flags.CheckType.MatchAny);
+		return Flags.Check ((uint)subscription.ActionType, (uint)action.ActionType, Flags.CheckType.MatchAny);
 		//&& Flags.Check <PlayerIDFlag> (subscription.PlayerID, action.PlayerID, Flags.CheckType.MatchAny));
 	}
 
@@ -66,7 +66,7 @@ public struct PlayerAvatarAction : IEqualityComparer <PlayerAvatarAction>
 
 	public bool Equals (PlayerAvatarAction pa1, PlayerAvatarAction pa2)
 	{
-		return (pa1.Action == pa2.Action && Flags.Check <PlayerIDFlag> (pa1.PlayerID, pa2.PlayerID, Flags.CheckType.MatchAny));
+		return (pa1.Action == pa2.Action && Flags.Check ((uint)pa1.PlayerID, (uint)pa2.PlayerID, Flags.CheckType.MatchAny));
 	}
 
 	public int GetHashCode (PlayerAvatarAction a)
@@ -160,7 +160,7 @@ public enum PlayerIDFlag : int
 }
 
 [Flags]
-public enum AvatarActionType
+public enum AvatarActionType : int
 {
 	NoAction = 1,
 	System = 2,
@@ -183,7 +183,7 @@ public enum AvatarActionType
 	FlagsAll = NoAction | System | Npc | Barter | Move | Location | Survival | Surroundings | Magic | Skill | Item | Path | Travel | Mission | Book | Tool | Control | Trigger
 }
 
-public enum AvatarAction
+public enum AvatarAction : int
 {
 	NoAction,
 	//	System
