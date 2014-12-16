@@ -382,7 +382,11 @@ namespace Frontiers
 						}
 				}
 
-				public bool IsOutside { get { return State.IsOutside; } }
+				public bool IsOutside {
+						get {
+								return State.IsOutside;
+						}
+				}
 
 				public bool IsInCivilization {
 						get {//TODO link this to following a path
@@ -398,7 +402,7 @@ namespace Frontiers
 
 								return (IsVisitingLocation && CurrentLocation.State.IsCivilized)
 								|| TerrainType.b > 0f
-								|| (Paths.HasActivePath && Paths.ActivePath.IsAttachedToCivilization);
+								|| (Paths.HasActivePath);
 						}
 				}
 
@@ -606,7 +610,7 @@ namespace Frontiers
 						if (visitable.worlditem.Is <Location>(out location)) {
 								if (VisitingLocations.SafeAdd(location)) {
 										VisitingLocations.Sort();
-										State.VisitingLocations.Add(location.worlditem.StaticReference);
+										State.VisitingLocations.SafeAdd(location.worlditem.StaticReference);
 										State.LastLocationVisited = location.worlditem.StaticReference;
 										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.LocationVisit), WorldClock.Time);
 								}
@@ -682,6 +686,14 @@ namespace Frontiers
 				{
 						//we have to do this every frame to identify moving platforms etc
 						RaycastAllDown();
+						//check to see if we have field of view overrides
+						if (!GameManager.Is(FGameState.Cutscene)) {
+								if (IsVisitingLocation && CurrentLocation.State.RenderDistanceOverride > 0f) {
+										GameManager.Get.GameCamera.farClipPlane = Globals.ClippingDistanceFar * CurrentLocation.State.RenderDistanceOverride;
+								} else {
+										GameManager.Get.GameCamera.farClipPlane = Globals.ClippingDistanceFar;
+								}
+						}
 				}
 
 				#region hostiles and danger

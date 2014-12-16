@@ -250,13 +250,13 @@ namespace Frontiers
 						//Debug.Log("Adding game time offset");
 						if (firstStartupPosition.AbsoluteTime) {
 								WorldClock.ResetAbsoluteTime();
-								Profile.Get.CurrentGame.SetGameTimeOffset(
+								Profile.Get.CurrentGame.SetWorldTimeOffset(
 										firstStartupPosition.TimeHours,
 										firstStartupPosition.TimeDays,
 										firstStartupPosition.TimeMonths,
 										firstStartupPosition.TimeYears);
 						} else {
-								Profile.Get.CurrentGame.AddGameTimeOffset(
+								Profile.Get.CurrentGame.AddWorldTimeOffset(
 										firstStartupPosition.TimeHours,
 										firstStartupPosition.TimeDays,
 										firstStartupPosition.TimeMonths,

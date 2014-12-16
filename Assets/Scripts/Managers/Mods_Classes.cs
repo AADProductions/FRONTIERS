@@ -724,7 +724,6 @@ namespace Frontiers
 				public BiomeWeatherSetting WeatherSpring = new BiomeWeatherSetting();
 				public BiomeWeatherSetting WeatherAutumn = new BiomeWeatherSetting();
 				public BiomeWeatherSetting WeatherWinter = new BiomeWeatherSetting();
-
 				[XmlIgnore]
 				[NonSerialized]
 				public WeatherSetting[] Almanac = null;

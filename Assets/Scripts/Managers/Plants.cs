@@ -537,8 +537,10 @@ namespace Frontiers
 										if (closestPlant != PlantInstanceTemplate.Empty) {
 												if (closestPlant.Climate < 0 || closestPlant.Climate > AGPlantsByClimate.Count) {
 														//the climate hasn't been assigned yet - do that now
-														Color32 regionData = GameWorld.Get.RegionDataAtPosition(closestPlant.Position);
-														closestPlant.Climate = regionData.b;
+//														Color32 regionData = GameWorld.Get.RegionDataAtPosition(closestPlant.Position);
+//														closestPlant.Climate = regionData.b;
+														//use the player's climate instead, odds of them being different are slim
+														closestPlant.Climate = GameWorld.Get.CurrentRegionData.b;
 												}
 												//get the plants by climate
 												List <Plant> plantsByClimate = null;

@@ -328,7 +328,7 @@ namespace Frontiers
 				Initialize <T> ();
 			}
 			catch (Exception e) {
-				Debug.LogError ("ERROR DURING INTIALIZING " + typeof (T).ToString ( ) + " : " + e.InnerException.ToString ());
+				Debug.LogError ("ERROR DURING INTIALIZING " + typeof (T).ToString ( ) + " : " + e.ToString ());
 			}
 			while (!objectInitialized) {
 				////Debug.Log ("Waiting for " + typeof(T).ToString () + " to initialize");

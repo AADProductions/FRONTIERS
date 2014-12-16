@@ -133,7 +133,6 @@ namespace Frontiers
 
 						bool showDoppleganger = false;
 						if (PlacementModeEnabled) {
-								//Debug.Log ("Placing something, carried it long enough, now trying to find preferred recepticle");
 								FindPreferredReceptacle();
 
 								//TODO tie this to player strength?
@@ -267,7 +266,7 @@ namespace Frontiers
 								} else {
 										if (!mShowingHUD) {
 												mShowingHUD = true;
-												GUIHud.Get.ShowControls(KeyCode.E, "Place", PlacementDoppleganger.transform, GameManager.Get.GameCamera);
+												GUIHud.Get.ShowControls(KeyCode.E, "Place", 3, "Rotate", PlacementDoppleganger.transform, GameManager.Get.GameCamera);
 										}
 								}
 						} else {
@@ -560,7 +559,6 @@ namespace Frontiers
 								if (Player.Local.Inventory.PopAQIIntoWorld(out aqi, locationGroup, ref error)) {
 										aqi.ActiveState = WIActiveState.Active;
 										if (PlacementResultsInDrop) {
-												//////Debug.Log ("Dropping item");
 												//don't bother with offsets just drop it
 												ItemToPlace.Props.Local.FreezeOnStartup = false;
 												ItemToPlace.SetMode(WIMode.World);
@@ -570,7 +568,6 @@ namespace Frontiers
 												ItemToPlace.LastActiveDistanceToPlayer = 0f;
 												ItemToPlace = null;
 										} else if (PlacementInReceptaclePossible) {
-												Debug.Log("Adding item to recepticle");
 												PlacementPreferredReceptacle.AddToReceptacle(ItemToPlace);
 										} else {
 												ItemToPlace.SetMode(WIMode.Frozen);
@@ -659,22 +656,22 @@ namespace Frontiers
 								return true;
 						}
 
+						if (PlacementModeEnabled) {
+								//toggle it
+								PlacementModeEnabled = false;
+								return true;
+						}
+
 						if (IsCarryingSomething) {
 								//this can't be disabled if we're carrying something
 								//just set it to true and get out
 								ItemToPlace = CarryObject;
 								PlacementModeEnabled = true;
-								return true;
-						}
-
-						PlacementModeEnabled = !PlacementModeEnabled;
-						//toggle
-						if (PlacementModeEnabled) {
-								if (!IsCarryingSomething && Player.Local.Tool.IsEquipped) {
-										//if we're not carrying something
-										//then the equipped worlditem takes priority
-										ItemToPlace = Player.Local.Tool.worlditem;
-								}
+						} else if (Player.Local.Tool.IsEquipped) {
+								//if we're not carrying something
+								//then the equipped worlditem takes priority
+								ItemToPlace = Player.Local.Tool.worlditem;
+								PlacementModeEnabled = true;
 						}
 						return true;
 				}

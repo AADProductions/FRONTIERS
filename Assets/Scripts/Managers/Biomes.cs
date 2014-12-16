@@ -120,6 +120,11 @@ namespace Frontiers
 										GameWorld.Get.Sky.Cycle.Hour = Cutscene.CurrentCutscene.ApparentHourOfDay;
 								}
 						}
+						//update tide
+						Biome biome = GameWorld.Get.CurrentBiome;
+						double minorVariation = Math.Abs(Math.Sin(WorldClock.AdjustedRealTime * biome.WaveSpeed * Globals.WaveSpeed)) * biome.WaveIntensity;
+						double tideWaterElevation = Math.Abs(Math.Sin(WorldClock.DayCycleCurrentNormalized)) * (GameWorld.Get.TideBaseElevationAtPlayerPosition * biome.TideVariation) + biome.TideBaseElevation;
+						TideWaterElevation = (float)(tideWaterElevation + minorVariation);
 						//TODO update rain and wind based on biomes
 						PrecipitationIntensity = Mathf.Lerp(PrecipitationIntensity, mTargetPrecipitationIntensity, (float)WorldClock.ARTDeltaTime);
 						WindIntensity = Mathf.Lerp(WindIntensity, mBaseWindIntensity, (float)WorldClock.ARTDeltaTime);
@@ -161,103 +166,101 @@ namespace Frontiers
 								transitionTime = (float)(Player.Local.Surroundings.State.TimeSinceExitedUnderground / WorldClock.RTSecondsToGameSeconds(Globals.AmbientLightTransitionTime));
 						}
 
-						//if the world hasn't loaded that's all we need to do right now
-						if (!GameWorld.Get.WorldLoaded) {
-								return;
-						}
+						if (GameWorld.Get.WorldLoaded) {
+								//update season effects based on biome
+								UpdateSeason();
 
-						//update season effects based on biome
-						UpdateSeason ();
-
-						//update screen effects with biome information
-						CameraFX.Get.Default.SunShaftsEffect.sunColor = GameWorld.Get.Sky.SunColor;
-						if (isOutside) {
-								CameraFX.Get.Default.SunShaftsEffect.sunShaftIntensity = 0.25f * GameWorld.Get.Sky.Atmosphere.AmbientIntensityMultiplier;
-						} else {
-								CameraFX.Get.Default.SunShaftsEffect.sunShaftIntensity = 1f * GameWorld.Get.Sky.Atmosphere.AmbientIntensityMultiplier;
-						}
-						//check if color correction is correct based on biome
-						if (CameraFX.Get.LUTName != GameWorld.Get.CurrentBiome.ColorSetting) {
-								Texture2D colorSetting = null;
-								if (GameData.IO.LoadLUT(ref colorSetting, GameWorld.Get.CurrentBiome.ColorSetting)) {
-										CameraFX.Get.SetLUT(colorSetting);
+								//update screen effects with biome information
+								CameraFX.Get.Default.SunShaftsEffect.sunColor = GameWorld.Get.Sky.SunColor;
+								if (isOutside) {
+										CameraFX.Get.Default.SunShaftsEffect.sunShaftIntensity = 0.25f * GameWorld.Get.Sky.Atmosphere.AmbientIntensityMultiplier;
 								} else {
-										Debug.Log("Couldn't load LUT setting");
+										CameraFX.Get.Default.SunShaftsEffect.sunShaftIntensity = 1f * GameWorld.Get.Sky.Atmosphere.AmbientIntensityMultiplier;
 								}
-						}
-						//finally update fog and ambient light based on biome
-						float lightIntensityLerpTime = 0.1f;
-						float ambientIntensityLerpTime = 0.1f;
-
-						//since we clear to color this will prevent black outlines
-						if (GameManager.Is(FGameState.GameLoading)) {
-								mAmbientLightIntensity = Mathf.Lerp(mAmbientLightIntensity, 0f, 0.5f);
-						} else {
-								mAmbientColor = Color.black;
-								//g = forest * 0.5
-								//b = civilization * 1.05
-								Color terrainType = Player.Local.Surroundings.TerrainType;
-								//at night, forests are pitch black
-								//in daytime, they're half dark
-								//at night, civilization is lighter than usual
-								//in daytime, it's normal
-								if (isUnderground) {
-										mAmbientLightIntensity = Globals.AmbientLightIntensityUnderground;
-										mSunlightIntensity = 0f;
-										lightIntensityLerpTime = 5f;
-										ambientIntensityLerpTime = 3f;
-										mAmbientColor = Colors.Get.BelowGroundAmbientColor;
-								} else {
-										mShadowStrengthBooster = terrainType.g;
-										if (WorldClock.IsDay) {
-												if (isOutside) {
-														mAmbientColor = Colors.Get.AboveGroundDayAmbientColor;
-														mAmbientLightIntensity = Globals.AmbientLightIntensityDay;//Mathf.Lerp (Globals.AmbientLightIntensity, Globals.AmbientLightIntensityForest, terrainType.g);
-														mSunlightIntensity = 1.0f + (terrainType.g * 2);//adding the sunlight intensity offsets the loss of the ambient light
-												} else {
-														mAmbientColor = Colors.Get.InteriorAmbientColorDay;
-														mAmbientLightIntensity = Globals.AmbientLightIntensityInteriorDay;
-														mSunlightIntensity = 1.0f / Globals.AmbientLightIntensityInteriorDay;//adding the sunlight intensity offsets the loss of the ambient light
-												}
-												mSunlightIntensity = 1.0f;
+								//check if color correction is correct based on biome
+								if (CameraFX.Get.LUTName != GameWorld.Get.CurrentBiome.ColorSetting) {
+										Texture2D colorSetting = null;
+										if (GameData.IO.LoadLUT(ref colorSetting, GameWorld.Get.CurrentBiome.ColorSetting)) {
+												CameraFX.Get.SetLUT(colorSetting);
 										} else {
-												if (isOutside) {
-														mAmbientColor = Colors.Get.AboveGroundNightAmbientColor;
-														mAmbientLightIntensity = Mathf.Lerp(Globals.AmbientLightIntensityNight, Globals.AmbientLightIntensityForest, terrainType.g);
-														mSunlightIntensity = 1.0f + (terrainType.g * 2);//adding the sunlight intensity offsets the loss of the ambient light
-												} else {
-														mAmbientColor = Colors.Get.InteriorAmbientColorNight;
-														mAmbientLightIntensity = Globals.AmbientLightIntensityNight * Globals.AmbientLightIntensityInteriorNight;
-														mSunlightIntensity = 1.0f / Globals.AmbientLightIntensityInteriorNight;//adding the sunlight intensity offsets the loss of the ambient light
-												}
+												Debug.Log("Couldn't load LUT setting");
 										}
 								}
-								mAmbientLightIntensity *= GameWorld.Get.CurrentBiome.AmbientLightMultiplier;
-								mSunlightIntensity *= GameWorld.Get.CurrentBiome.SunlightIntensityMultiplier;
-						}
+								//finally update fog and ambient light based on biome
+								float lightIntensityLerpTime = 0.1f;
+								float ambientIntensityLerpTime = 0.1f;
 
-						mFogDistance = Globals.DefaultFogDistance * GameWorld.Get.CurrentBiome.FogDistanceMultiplier;
-						//reduce fog intensity by rain amount
-						//the more rain, the more fog
-						mFogDistance = mFogDistance * (1.0f - RainIntensity);
-
-						if (mCurrentWeatherQuarter != null) {
-								if (mCurrentWeatherQuarter.Weather == TOD_Weather.WeatherType.Fog) {
-										mFogDistance = mFogDistance * 0.5f;
+								//since we clear to color this will prevent black outlines
+								if (GameManager.Is(FGameState.GameLoading)) {
+										mAmbientLightIntensity = Mathf.Lerp(mAmbientLightIntensity, 0f, 0.5f);
+								} else {
+										mAmbientColor = Color.black;
+										//g = forest * 0.5
+										//b = civilization * 1.05
+										Color terrainType = Player.Local.Surroundings.TerrainType;
+										//at night, forests are pitch black
+										//in daytime, they're half dark
+										//at night, civilization is lighter than usual
+										//in daytime, it's normal
+										if (isUnderground) {
+												mAmbientLightIntensity = Globals.AmbientLightIntensityUnderground;
+												mSunlightIntensity = 0f;
+												lightIntensityLerpTime = 5f;
+												ambientIntensityLerpTime = 3f;
+												mAmbientColor = Colors.Get.BelowGroundAmbientColor;
+										} else {
+												mShadowStrengthBooster = terrainType.g;
+												if (WorldClock.IsDay) {
+														if (isOutside) {
+																mAmbientColor = Colors.Get.AboveGroundDayAmbientColor;
+																mAmbientLightIntensity = Globals.AmbientLightIntensityDay;//Mathf.Lerp (Globals.AmbientLightIntensity, Globals.AmbientLightIntensityForest, terrainType.g);
+																mSunlightIntensity = 1.0f + (terrainType.g * 2);//adding the sunlight intensity offsets the loss of the ambient light
+														} else {
+																mAmbientColor = Colors.Get.InteriorAmbientColorDay;
+																mAmbientLightIntensity = Globals.AmbientLightIntensityInteriorDay;
+																mSunlightIntensity = 1.0f / Globals.AmbientLightIntensityInteriorDay;//adding the sunlight intensity offsets the loss of the ambient light
+														}
+														mSunlightIntensity = 1.0f;
+												} else {
+														if (isOutside) {
+																mAmbientColor = Colors.Get.AboveGroundNightAmbientColor;
+																mAmbientLightIntensity = Mathf.Lerp(Globals.AmbientLightIntensityNight, Globals.AmbientLightIntensityForest, terrainType.g);
+																mSunlightIntensity = 1.0f + (terrainType.g * 2);//adding the sunlight intensity offsets the loss of the ambient light
+														} else {
+																mAmbientColor = Colors.Get.InteriorAmbientColorNight;
+																mAmbientLightIntensity = Globals.AmbientLightIntensityNight * Globals.AmbientLightIntensityInteriorNight;
+																mSunlightIntensity = 1.0f / Globals.AmbientLightIntensityInteriorNight;//adding the sunlight intensity offsets the loss of the ambient light
+														}
+												}
+										}
+										mAmbientLightIntensity *= GameWorld.Get.CurrentBiome.AmbientLightMultiplier;
+										mSunlightIntensity *= GameWorld.Get.CurrentBiome.SunlightIntensityMultiplier;
 								}
-						}
-						//mAmbientLightIntensity = Mathf.Lerp (mAmbientLightIntensity, 1.0f * primaryChunk.BiomeData.AmbientLightMultiplier, terrainType.b);
-						mSmoothAmbientLightIntensity = Mathf.Lerp(mSmoothAmbientLightIntensity, mAmbientLightIntensity, (float)(WorldClock.RTDeltaTime * ambientIntensityLerpTime));
-						mSmoothSunlightIntensity = Mathf.Lerp(mSmoothSunlightIntensity, mSunlightIntensity, (float)(WorldClock.RTDeltaTime * lightIntensityLerpTime));
-						mSmoothShadowStrengthBooster = Mathf.Lerp(mSmoothShadowStrengthBooster, mShadowStrengthBooster, (float)WorldClock.RTDeltaTime);
-						mAmbientColor = Color.Lerp(Color.black, mAmbientColor, mSmoothAmbientLightIntensity);
-						mAmbientColor = Color.Lerp(GameWorld.Get.Sky.AmbientColor, mAmbientColor, 0.5f);
-						mAmbientColorSmooth = Color.Lerp(mAmbientColorSmooth, mAmbientColor, (float)WorldClock.ARTDeltaTime);
-						mSmoothFogDistance = Mathf.Lerp(mSmoothFogDistance, mFogDistance, lightIntensityLerpTime);
 
-						GameWorld.Get.Sky.Atmosphere.AmbientIntensityMultiplier = mSmoothAmbientLightIntensity;
-						GameWorld.Get.Sky.Day.LightIntensityMultiplier = mSmoothSunlightIntensity;
-						GameWorld.Get.Sky.Day.ShadowStrengthBooster = mSmoothShadowStrengthBooster;
+								mFogDistance = Globals.DefaultFogDistance * GameWorld.Get.CurrentBiome.FogDistanceMultiplier;
+								//reduce fog intensity by rain amount
+								//the more rain, the more fog
+								mFogDistance = mFogDistance * (1.0f - RainIntensity);
+
+								if (mCurrentWeatherQuarter != null) {
+										if (mCurrentWeatherQuarter.Weather == TOD_Weather.WeatherType.Fog) {
+												mFogDistance = mFogDistance * 0.5f;
+										}
+								}
+								//mAmbientLightIntensity = Mathf.Lerp (mAmbientLightIntensity, 1.0f * primaryChunk.BiomeData.AmbientLightMultiplier, terrainType.b);
+								mSmoothAmbientLightIntensity = Mathf.Lerp(mSmoothAmbientLightIntensity, mAmbientLightIntensity, (float)(WorldClock.RTDeltaTime * ambientIntensityLerpTime));
+								mSmoothSunlightIntensity = Mathf.Lerp(mSmoothSunlightIntensity, mSunlightIntensity, (float)(WorldClock.RTDeltaTime * lightIntensityLerpTime));
+								mSmoothShadowStrengthBooster = Mathf.Lerp(mSmoothShadowStrengthBooster, mShadowStrengthBooster, (float)WorldClock.RTDeltaTime);
+								mAmbientColor = Color.Lerp(Color.black, mAmbientColor, mSmoothAmbientLightIntensity);
+								mAmbientColor = Color.Lerp(GameWorld.Get.Sky.AmbientColor, mAmbientColor, 0.5f);
+								mAmbientColorSmooth = Color.Lerp(mAmbientColorSmooth, mAmbientColor, (float)WorldClock.ARTDeltaTime);
+								mSmoothFogDistance = Mathf.Lerp(mSmoothFogDistance, mFogDistance, lightIntensityLerpTime);
+
+								GameWorld.Get.Sky.Atmosphere.AmbientIntensityMultiplier = mSmoothAmbientLightIntensity;
+								GameWorld.Get.Sky.Day.LightIntensityMultiplier = mSmoothSunlightIntensity;
+								GameWorld.Get.Sky.Day.ShadowStrengthBooster = mSmoothShadowStrengthBooster;
+						}
+						//do lightning flashes even if gameworld isn't loaded
 						if (mLightningFlash > 0f) {
 								RenderSettings.ambientLight = Color.Lerp(Colors.Get.LightningFlashColor, mAmbientColorSmooth, mLightningFlash);
 								GameWorld.Get.Sky.Atmosphere.Brightness = mDefaultBrightness + mLightningFlash;
@@ -267,6 +270,11 @@ namespace Frontiers
 								}
 						} else {
 								RenderSettings.ambientLight = mAmbientColorSmooth;
+						}
+
+						if (Profile.Get.HasSelectedProfile) {
+								//finally, add the ambient light booster to ambient lighting
+								RenderSettings.ambientLight = Color.Lerp(RenderSettings.ambientLight, Color.white, Profile.Get.CurrentPreferences.Video.AmbientLightBooster * Globals.MaxAmbientLightBoost);
 						}
 
 						RenderSettings.fog = true;
@@ -334,7 +342,9 @@ namespace Frontiers
 						}
 						return temp;
 				}
-				public TemperatureRange AverageStatusTemperature ( ) {
+
+				public TemperatureRange AverageStatusTemperature()
+				{
 						//TODO use gameworld to cache current season since it seldom changes
 						BiomeStatusTemps currentSeason = null;
 						if (WorldClock.IsTimeOfYear(TimeOfYear.SeasonWinter)) {

@@ -10,7 +10,9 @@ using Frontiers.World;
 using Frontiers.World.Locations;
 using Hydrogen.Threading.Jobs;
 using System.IO;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 namespace Frontiers
 {

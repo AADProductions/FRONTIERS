@@ -73,7 +73,6 @@ namespace Frontiers
 						if (GameManager.Get.TestingEnvironment)
 								return;
 
-						////Debug.Log ("PLAYER STATUS: Initialize");
 						Player.Get.AvatarActions.Subscribe(AvatarAction.ItemCraft, new ActionListener(ItemCraft));
 						Player.Get.AvatarActions.Subscribe(AvatarAction.ItemCraft, new ActionListener(ItemCarry));
 
@@ -352,7 +351,6 @@ namespace Frontiers
 
 				public void RestoreStatus(float restore, string type)
 				{
-						Debug.Log("Restoring status " + type);
 						StatusKeeper status = null;
 						if (GetStatusKeeper(type, out status)) {
 								status.ChangeValue(restore, StatusSeekType.Positive);
@@ -363,17 +361,6 @@ namespace Frontiers
 				{
 						StatusKeeper status = null;
 						if (GetStatusKeeper(type, out status)) {
-								switch (status.Name) {
-										default:
-												break;
-
-										case "Health":
-												//TODO this is a kludge, make skills capable of intercepting status keeper changes
-												if (Skills.Get.HasLearnedSkill("Tough")) {
-														reduce /= 2.0f;
-												}
-												break;
-								}
 								status.ChangeValue(reduce, StatusSeekType.Negative);
 								if (status.Value < 0f) {
 										//we're taking away from something that's already really low
@@ -634,8 +621,6 @@ namespace Frontiers
 								while (!GameManager.Is(FGameState.InGame) || GameManager.Get.JustLookingMode) {
 										yield return null;
 								}
-
-								//Debug.Log ("Checking status keeper");
 
 								while (player.IsDead || !player.HasSpawned) {
 										//wait until we're not dead

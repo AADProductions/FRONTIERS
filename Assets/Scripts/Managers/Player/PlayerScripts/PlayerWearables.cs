@@ -161,6 +161,7 @@ namespace Frontiers
 				}
 
 				#endregion
+
 				//TODO move these into globals
 				public int MaxColdRange = 25;
 				public int MaxHeatRange = 25;

@@ -91,7 +91,7 @@ namespace Frontiers
 			GlobalReputation = (int)Mathf.Clamp (GlobalReputation + reputationGain, Globals.MinReputation, Globals.MaxReputation);
 			Player.Get.AvatarActions.ReceiveAction (AvatarAction.NpcReputationGain, WorldClock.Time);
 			Player.Get.AvatarActions.ReceiveAction (AvatarAction.NpcReputationChange, WorldClock.Time);
-			GUIManager.PostSuccess ("Gained " + reputationGain.ToString () + " reputation");
+			GUIManager.PostSuccess ("Gained " + reputationGain.ToString () + " reputation in general");
 		}
 
 		public void LoseGlobalReputation (int reputationLoss)
@@ -99,10 +99,10 @@ namespace Frontiers
 			GlobalReputation = (int)Mathf.Clamp (GlobalReputation - reputationLoss, Globals.MinReputation, Globals.MaxReputation);
 			Player.Get.AvatarActions.ReceiveAction (AvatarAction.NpcReputationLose, WorldClock.Time);
 			Player.Get.AvatarActions.ReceiveAction (AvatarAction.NpcReputationChange, WorldClock.Time);
-			GUIManager.PostDanger ("Lost " + reputationLoss.ToString () + " reputation");
+			GUIManager.PostDanger ("Lost " + reputationLoss.ToString () + " reputation in general");
 		}
 
-		public void GainPersonalReputation (string characterName, int reputationGain)
+		public void GainPersonalReputation (string characterName, string characterDisplayName, int reputationGain)
 		{
 			ReputationState rep = null;
 			if (!CharacterReputation.TryGetValue (characterName, out rep)) {
@@ -112,10 +112,12 @@ namespace Frontiers
 			rep.PersonalReputation = (int)Mathf.Clamp (rep.PersonalReputation + reputationGain, Globals.MinReputation, Globals.MaxReputation);
 			Player.Get.AvatarActions.ReceiveAction (AvatarAction.NpcReputationGain, WorldClock.Time);
 			Player.Get.AvatarActions.ReceiveAction (AvatarAction.NpcReputationChange, WorldClock.Time);
-			GUIManager.PostSuccess ("Gained " + reputationGain.ToString () + " reputation");
+			if (!string.IsNullOrEmpty (characterDisplayName)) {
+				GUIManager.PostSuccess ("Gained " + reputationGain.ToString () + " reputation with " + characterDisplayName);
+			}
 		}
 
-		public void LosePersonalReputation (string characterName, int reputationLoss)
+		public void LosePersonalReputation (string characterName, string characterDisplayName, int reputationLoss)
 		{
 			ReputationState rep = null;
 			if (!CharacterReputation.TryGetValue (characterName, out rep)) {
@@ -125,10 +127,12 @@ namespace Frontiers
 			rep.PersonalReputation = (int)Mathf.Clamp (rep.PersonalReputation - reputationLoss, Globals.MinReputation, Globals.MaxReputation);
 			Player.Get.AvatarActions.ReceiveAction (AvatarAction.NpcReputationLose, WorldClock.Time);
 			Player.Get.AvatarActions.ReceiveAction (AvatarAction.NpcReputationChange, WorldClock.Time);
-			GUIManager.PostDanger ("Lost " + reputationLoss.ToString () + " reputation");
+			if (!string.IsNullOrEmpty (characterDisplayName)) {
+				GUIManager.PostDanger ("Lost " + reputationLoss.ToString () + " reputation with " + characterDisplayName);
+			}
 		}
 
-		public void SetPersonalReputation (string characterName, int reputationValue)
+		public void SetPersonalReputation (string characterName, string characterDisplayName, int reputationValue)
 		{
 			ReputationState rep = null;
 			if (!CharacterReputation.TryGetValue (characterName, out rep)) {

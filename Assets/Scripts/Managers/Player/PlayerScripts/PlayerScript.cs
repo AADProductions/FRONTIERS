@@ -216,6 +216,7 @@ namespace Frontiers
 				protected bool mStateLoaded = false;
 
 				#region xml
+
 				//TODO put these in GameData where they belong
 				protected static string XmlSerializeToString(object objectInstance)
 				{
@@ -261,5 +262,6 @@ namespace Frontiers
 				}
 
 				#endregion
+
 		}
 }

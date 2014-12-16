@@ -215,7 +215,7 @@ namespace Frontiers.World
 								Player.Local.Status.RestoreStatus(Props.CustomRestore, Props.CustomStatusKeeperReduce);
 						}
 
-						if (!foodstuff.worlditem.IsTemplate) {
+						if (foodstuff.worlditem != null && !foodstuff.worlditem.IsTemplate) {
 								foodstuff.OnEat.SafeInvoke();
 								if (foodstuff.State.ConsumeOnEat) {
 										//Debug.Log ("FOODSTUFF: Setting mode to RemovedFromGame");
