@@ -7,26 +7,25 @@ using Frontiers.World.Gameplay;
 
 namespace Frontiers.World.Gameplay
 {
-	public class Potions : Skill
-	{
-		public override bool DoesContextAllowForUse (IItemOfInterest targetObject)
+		public class Potions : Skill
 		{
-			if (base.DoesContextAllowForUse (targetObject)) {
-				CraftingItem craftingItem = targetObject.gameObject.GetComponent <CraftingItem> ();
-				if (craftingItem.SkillToUse == name) {
-					return true;
+				public override bool DoesContextAllowForUse(IItemOfInterest targetObject)
+				{
+						if (base.DoesContextAllowForUse(targetObject)) {
+								CraftingItem craftingItem = targetObject.gameObject.GetComponent <CraftingItem>();
+								if (craftingItem.SkillToUse == name) {
+										return true;
+								}
+						}
+						return false;
 				}
-			}
-			return false;
-		}
 
-		public override bool Use (IItemOfInterest targetObject, int flavorIndex)
-		{
-			//assume we're looking at a crafting object by this point
-			targetObject.gameObject.SendMessage ("OpenCraftingInterface");
-			return true;
+				public override bool Use(IItemOfInterest targetObject, int flavorIndex)
+				{
+						//assume we're looking at a crafting object by this point
+						targetObject.gameObject.SendMessage("OpenCraftingInterface");
+						return true;
+				}
+				//TODO override requirements met with potion-specific rules
 		}
-
-		//TODO override requirements met with potion-specific rules
-	}
 }
