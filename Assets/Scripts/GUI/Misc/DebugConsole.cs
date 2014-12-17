@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Frontiers.World;
 using Steamworks;
 using Frontiers.Data;
+using Frontiers.World.Gameplay;
 
 namespace Frontiers
 {
@@ -260,7 +261,7 @@ namespace Frontiers
 														lastIndex = Log.LastIndex();
 
 														try {
-																GameManager.ConsoleCommand(ConsoleText);
+																ConsoleCommand(ConsoleText);
 														} catch (Exception e) {
 																Log.Add("#" + e.ToString());
 																Log.Add("#(This usually means you're not following the format)");
@@ -529,5 +530,611 @@ namespace Frontiers
 								}
 						}
 				}
+
+				public static void ConsoleCommand(string command)
+				{		//hahaha this function sucks so much
+						//parse command
+						string[] splitCommand = command.Split(new string [] { " " }, StringSplitOptions.RemoveEmptyEntries);
+						//wrap this in a try because it's bound to go wrong
+						//spawn or set
+						switch (splitCommand[0].Trim().ToLower()) {
+								case "clearfocus":
+										GUIManager.Get.ClearFocus();
+										break;
+
+								case "unlock":
+										Locked locked = null;
+										if (Player.Local.Surroundings.IsWorldItemInPlayerFocus && Player.Local.Surroundings.WorldItemFocus.worlditem.Is <Locked>(out locked)) {
+												locked.State.HasBeenUnlocked = true;
+										}
+										break;
+
+								case "justlooking":
+										GameManager.Get.JustLookingMode = !GameManager.Get.JustLookingMode;
+										DebugConsole.Get.Log.Add("#Just looking mode set to " + GameManager.Get.JustLookingMode.ToString());
+										break;
+
+								case "wordcount":
+										GameObject counterObject = new GameObject("DataImporter");
+										DataImporter counter = counterObject.GetOrAdd <DataImporter>();
+										counter.WordCounter();
+										GameObject.Destroy(counterObject);
+										break;
+
+								case "die":
+										Player.Local.Die("Consoleitis");
+										break;
+
+								case "time":
+										int hoursToSkip = Int32.Parse(splitCommand[1].Trim());
+										float timeToSkip = (float)(hoursToSkip * WorldClock.gHourCycleSeconds);
+										//WorldClock.AddTime (timeToSkip);
+										break;
+
+								case "list":
+										string typeOfObject = splitCommand[1].Trim();
+										string startsWith = string.Empty;
+										if (splitCommand.Length > 2) {
+												startsWith = splitCommand[2].Trim();
+										}
+										List <string> objects = Mods.Get.Available(typeOfObject);
+										DebugConsole.Get.Log.Add("#------");
+										for (int i = objects.LastIndex(); i >= 0; i--) {
+												if (string.IsNullOrEmpty(startsWith)) {
+														DebugConsole.Get.Log.Add("#" + objects[i]);
+												} else if (objects[i].ToLower().StartsWith(startsWith.ToLower())) {
+														DebugConsole.Get.Log.Add("#" + objects[i]);
+												}
+										}
+										DebugConsole.Get.Log.Add("#------");
+										if (!string.IsNullOrEmpty(startsWith)) {
+												DebugConsole.Get.Log.Add("#Listing all " + typeOfObject + " that start with " + startsWith + " (" + objects.Count.ToString() + " found)");
+										} else {
+												DebugConsole.Get.Log.Add("#Listing all " + typeOfObject + "(" + objects.Count.ToString() + " found)");
+										}
+										break;
+
+								case "talk":
+										Characters.Get.InitiateConversation();
+										break;
+
+								case "set":
+										switch (splitCommand[1]) {
+												case "character":
+														switch (splitCommand[2]) {
+																case "talkative":
+																		string conversationName = splitCommand[3].Trim().ToLower();
+																		conversationName = DataImporter.GetNameFromDialogName(conversationName);
+																		Characters.Get.SetTalkativeOnSelectedCharacter(conversationName);
+																		break;
+
+																default:
+																		//splitCharacterSetCommand
+																		//0		1			2				3
+																		//set 	character 	characterName 	wiScript.Variable=Value
+																		string setCharacterName = splitCommand[2];
+																		string[] splitCharacterSetCommand = splitCommand[3].Split(new string [] {
+																				"=",
+																				"."
+																		}, StringSplitOptions.RemoveEmptyEntries);
+																		string scriptName = splitCharacterSetCommand[0];
+																		string scriptStateVar = splitCharacterSetCommand[1];
+																		string scriptStateVal = splitCharacterSetCommand[2];
+																		Character spawnedCharacter = null;
+																		if (Characters.Get.SpawnedCharacter(setCharacterName, out spawnedCharacter)) {
+																				WIScript script = null;
+																				if (spawnedCharacter.worlditem.Is(scriptName, out script)) {
+																						//see if the script has a script state object
+																						System.Reflection.FieldInfo scriptStateField = script.GetType().GetField("State");
+																						if (scriptStateField != null) {	//get the state field for the state object
+																								System.Object stateObject = scriptStateField.GetValue(script);
+																								//get the variable field for the state object
+																								System.Reflection.FieldInfo stateField = stateObject.GetType().GetField(scriptStateVar);
+																								if (stateField != null) {
+																										stateField.SetValue(stateObject, scriptStateVal);
+																										//Debug.Log ("Setting state field " + stateField.GetType ().Name + " var " + scriptStateVar + " to " + scriptStateVal);
+																								} else {
+																										DebugConsole.Get.Log.Add("Character " + setCharacterName + " script " + scriptName + " doesn't have state field " + scriptStateVar);
+																								}
+																						} else {
+																								DebugConsole.Get.Log.Add("Character " + setCharacterName + " script " + scriptName + " doesn't have state field");
+																						}
+																				} else {
+																						DebugConsole.Get.Log.Add("Character " + setCharacterName + " doesn't have script " + scriptName);
+																				}
+																		} else {
+																				DebugConsole.Get.Log.Add("Couldn't find character " + setCharacterName);
+																		}
+																		break;
+														}
+														break;
+
+												case "mission":
+														break;
+
+												case "questitem":
+														if (Player.Local.Surroundings.IsWorldItemInRange) {
+																WorldItem wi = Player.Local.Surroundings.ClosestObjectInRange.worlditem;
+																QuestItem qi = wi.GetOrAdd <QuestItem>();
+																qi.State.QuestName = splitCommand[2].Trim();
+																wi.Props.Name.QuestName = qi.State.QuestName;
+														} else if (Player.Local.Tool.HasWorldItem) {
+																WorldItem wi = Player.Local.Tool.worlditem;
+																QuestItem qi = wi.GetOrAdd <QuestItem>();
+																qi.State.QuestName = splitCommand[2].Trim();
+																wi.Props.Name.QuestName = qi.State.QuestName;
+														}
+														break;
+										}
+										break;
+
+								case "mission":
+										string missionCommand = splitCommand[1].Trim();
+										string missionItem = splitCommand[2].Trim();
+										string missionName = string.Empty;
+										string objectiveName = string.Empty;
+										string variableName = string.Empty;
+										switch (missionCommand) {
+												case "variable":
+														missionName = missionItem;
+														variableName = splitCommand[3].Trim();
+														int variableValue = Int32.Parse(splitCommand[4].Trim());
+														Missions.Get.SetVariableValue(missionName, variableName, variableValue);
+														break;
+
+												case "activate":
+														switch (missionItem) {
+																case "objective":
+																		missionName = splitCommand[3].Trim();
+																		objectiveName = splitCommand[4].Trim();
+																		Missions.Get.ActivateObjective(missionName, objectiveName, MissionOriginType.None, string.Empty);
+																		break;
+
+																default:
+																		Missions.Get.ActivateMission(missionItem, MissionOriginType.None, string.Empty);
+																		break;
+
+														}
+														break;
+
+												case "complete":
+														switch (missionItem) {
+																case "objective":
+																		missionName = splitCommand[3].Trim();
+																		objectiveName = splitCommand[4].Trim();
+																		Missions.Get.ForceCompleteObjective(missionName, objectiveName);
+																		break;
+
+																default:
+																		Missions.Get.ForceCompleteMission(missionItem);
+																		break;
+														}
+														break;
+
+												case "fail":
+														switch (missionItem) {
+																case "objective":
+																		missionName = splitCommand[3].Trim();
+																		objectiveName = splitCommand[4].Trim();
+																		Missions.Get.ForceFailObjective(missionName, objectiveName);
+																		break;
+
+																default:
+																		Missions.Get.ForceFailMission(missionItem);
+																		break;
+														}
+														break;
+
+												default:
+														DebugConsole.Get.Log.Add("Not activating or completing mission");
+														break;
+										}
+										break;
+
+								case "master":
+										string skillName = splitCommand[1].Trim();
+										DebugConsole.Get.Log.Add("#Mastering " + skillName);
+										Skills.Get.MasterSkill(skillName);
+										break;
+
+								case "learn":
+										string itemType = splitCommand[1].Trim();
+										DebugConsole.Get.Log.Add("#Learning " + itemType);
+										switch (itemType) {
+												case "skill":
+												default:
+														string learnSkillName = splitCommand[2].Trim();
+														Skill skillToLearn = null;
+														if (Skills.Get.SkillByName(learnSkillName, out skillToLearn)) {
+																skillToLearn.LearnSkill();
+														}
+														break;
+
+												case "blueprint":
+														string blueprintName = splitCommand[2].Trim();
+														DebugConsole.Get.Log.Add("#Learning blueprint " + blueprintName);
+														if (blueprintName == "all") {
+																List <string> allBlueprints = Mods.Get.Available("Blueprint");
+																foreach (string allBlueprint in allBlueprints) {
+																		Blueprints.Get.Reveal(allBlueprint, BlueprintRevealMethod.None, string.Empty);
+																}
+														} else {
+																Blueprints.Get.Reveal(blueprintName, BlueprintRevealMethod.None, string.Empty);
+														}
+														break;
+										}
+										break;
+
+								case "devsprint":
+										Player.Local.FPSController.DevSprint = !Player.Local.FPSController.DevSprint;
+										break;
+
+								case "add":
+										WIStackError error = WIStackError.None;
+										string packName = splitCommand[1].Trim();
+										if (packName.Contains("$")) {
+												//we're adding money
+												packName = packName.Replace("$", "");
+												int numBase = Int32.Parse(packName);
+												WICurrencyType currencyType = WICurrencyType.A_Bronze;
+												if (splitCommand.Length > 2) {
+														//we're adding it as something
+														string asType = splitCommand[2].Trim().ToLower();
+														switch (asType) {
+																case "grain":
+																case "bronze":
+																default:
+																		currencyType = WICurrencyType.A_Bronze;
+																		break;
+
+																case "quarter":
+																case "silver":
+																		currencyType = WICurrencyType.B_Silver;
+																		break;
+
+																case "dram":
+																case "gold":
+																		currencyType = WICurrencyType.C_Gold;
+																		break;
+
+																case "mark":
+																case "lumenite":
+																		currencyType = WICurrencyType.D_Luminite;
+																		break;
+
+																case "warlock":
+																		currencyType = WICurrencyType.E_Warlock;
+																		break;
+														}
+												}
+												Player.Local.Inventory.InventoryBank.Add(numBase, currencyType);
+										} else if (packName == "ingredients") {
+												string bpName = splitCommand[2].Trim();
+												WIBlueprint bp = null;
+												if (Blueprints.Get.Blueprint(bpName, out bp, false)) {
+														GenericWorldItem bpItem = null;
+														int numToAdd = 1;
+														for (int i = 0; i < bp.Row1.Count; i++) {
+																bpItem = bp.Row1[i];
+																numToAdd = bpItem.InstanceWeight;
+																for (int j = 0; j < numToAdd; j++) {
+																		Player.Local.Inventory.AddItem(bpItem.ToStackItem());
+																}
+														}
+														for (int i = 0; i < bp.Row2.Count; i++) {
+																bpItem = bp.Row2[i];
+																numToAdd = bpItem.InstanceWeight;
+																for (int j = 0; j < numToAdd; j++) {
+																		Player.Local.Inventory.AddItem(bpItem.ToStackItem());
+																}
+
+														}
+														for (int i = 0; i < bp.Row3.Count; i++) {
+																bpItem = bp.Row3[i];
+																numToAdd = bpItem.InstanceWeight;
+																for (int j = 0; j < numToAdd; j++) {
+																		Player.Local.Inventory.AddItem(bpItem.ToStackItem());
+																}
+														}
+												}
+										} else if (packName == "questitem") {
+												Player.Local.Inventory.State.QuestItemsAcquired.SafeAdd(splitCommand[2].Trim());
+												Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemQuestItemAddToInventory, WorldClock.Time);
+										} else {
+												if (splitCommand.Length < 2) {
+														//just add a random object from the pack
+														for (int i = 0; i < WorldItems.Get.WorldItemPacks.Count; i++) {
+																WorldItemPack pack = WorldItems.Get.WorldItemPacks[i];
+																if (pack.Name == packName) {
+																		int randomIndex = UnityEngine.Random.Range(0, pack.Prefabs.Count);
+																		StackItem item = pack.Prefabs[randomIndex].GetComponent <WorldItem>().GetStackItem(WIMode.None);
+																		Player.Local.Inventory.AddItems(item, ref error);
+																}
+																break;
+														}
+												} else {
+														string prefabName = splitCommand[2].Trim().Replace("_", " ");
+														string stateName = "Default";
+														int numToAdd = 1;
+														//see if we're setting the state too
+														if (splitCommand.Length == 4) {
+																if (!Int32.TryParse(splitCommand[3], out numToAdd)) {
+																		numToAdd = 1;
+																		stateName = splitCommand[3];
+																}
+														}
+														if (splitCommand.Length == 5) {
+																stateName = splitCommand[3];
+																numToAdd = Mathf.Max(1, Int32.Parse(splitCommand[4]));
+														}
+														StackItem stackItem = null;
+														int numAdded = 0;
+														for (int i = 0; i < numToAdd; i++) {
+																if (WorldItems.Get.StackItemFromPack(packName, prefabName, out stackItem)) {
+																		numAdded++;
+																		stackItem.SaveState.LastState = stateName;
+																		Player.Local.Inventory.AddItems(stackItem, ref error);
+																}
+														}
+														DebugConsole.Get.Log.Add("#Added " + numAdded.ToString() + " of " + packName + ", " + prefabName + " to inventory");
+												}
+										}
+										break;
+
+								case "status":
+										switch (splitCommand[1]) {
+												case "restore":
+														Player.Local.Status.RestoreStatus(0.25f, splitCommand[2]);
+														break;
+
+												case "reduce":
+														Player.Local.Status.ReduceStatus(0.25f, splitCommand[2]);
+														break;
+
+												default:
+														break;
+										}
+										break;
+
+								case "condition":
+										string conditionName = splitCommand[2];
+										switch (splitCommand[1]) {
+												case "cure":
+														foreach (Condition condition in Player.Local.Status.State.ActiveConditions) {
+																if (conditionName == "all") {
+																		condition.Cancel();
+																} else if (conditionName.ToLower() == condition.Name.ToLower()) {
+																		condition.Cancel();
+																}
+														}
+														break;
+
+												case "add":
+														Player.Local.Status.AddCondition(conditionName);
+														break;
+
+												default:
+														break;
+										}
+										break;
+
+								case "respawn":
+										Player.Local.Spawn();
+										break;
+
+								case "resetstatus":
+										Player.Local.Status.ResetStatusKeepers();
+										break;
+
+								case "spawn":
+										Vector3 characterSpawnPoint = GameManager.Get.GameCamera.transform.position - (Vector3.up * 1.25f);
+										characterSpawnPoint += GameManager.Get.GameCamera.transform.forward * 2.0f;
+										GameObject gameObject = new GameObject("SpawnActionNode");
+										gameObject.transform.position = characterSpawnPoint;
+										gameObject.transform.LookAt(GameManager.Get.GameCamera.transform.position - (Vector3.up * 1.25f));
+										ActionNode node = gameObject.AddComponent <ActionNode>();
+										Character character = null;
+
+										if (splitCommand[1] == "random") {
+												string randomCharacterName = splitCommand[2];
+												if (Characters.SpawnRandomCharacter(node, randomCharacterName, GameWorld.Get.Settings.DefaultResidentFlags, WIGroups.Get.World, out character)) {
+														DebugConsole.Get.Log.Add("#Spawned character " + randomCharacterName);
+												} else {
+														DebugConsole.Get.Log.Add("#Couldn't spawn " + randomCharacterName);
+												}
+										} else {
+												string spawnCharacterName = splitCommand[1];
+												if (Characters.GetOrSpawnCharacter(node, spawnCharacterName, WIGroups.Get.World, out character)) {
+														DebugConsole.Get.Log.Add("#Spawned character " + spawnCharacterName);
+												} else {
+														DebugConsole.Get.Log.Add("#Couldn't spawn " + spawnCharacterName);
+												}
+										}
+										break;
+
+								case "find":
+										List <string> chunks = Mods.Get.Available("Chunk");
+										List <ChunkTerrainData> terrainData = new List<ChunkTerrainData>();
+										List <ChunkTerrainData> otherTerrainData = new List<ChunkTerrainData>();
+										foreach (string chunkName in chunks) {
+												ChunkState cs = null;
+												if (Mods.Get.Runtime.LoadMod <ChunkState>(ref cs, "Chunk", chunkName)) {
+														ChunkTerrainData td = null;
+														if (Mods.Get.Runtime.LoadMod <ChunkTerrainData>(ref td, WorldChunk.ChunkDataDirectory(cs.Name), "Terrain")) {
+																if (cs.ID == 100 || cs.ID == 2 || cs.ID == 8) {
+																		terrainData.Add(td);
+																} else {
+																		otherTerrainData.Add(td);
+																}
+														}
+												}
+										}
+
+										Dictionary <string,int> sharedAssets = new Dictionary<string, int>();
+										foreach (ChunkTerrainData ctd in terrainData) {
+												for (int i = 0; i < ctd.TreeTemplates.Count; i++) {
+														if (!sharedAssets.ContainsKey(ctd.TreeTemplates[i].AssetName)) {
+																sharedAssets.Add(ctd.TreeTemplates[i].AssetName, 1);
+														} else {
+																sharedAssets[ctd.TreeTemplates[i].AssetName] = sharedAssets[ctd.TreeTemplates[i].AssetName] + 1;
+														}
+												}
+												for (int i = 0; i < ctd.DetailTemplates.Count; i++) {
+														if (!sharedAssets.ContainsKey(ctd.DetailTemplates[i].AssetName)) {
+																sharedAssets.Add(ctd.DetailTemplates[i].AssetName, 1);
+														} else {
+																sharedAssets[ctd.DetailTemplates[i].AssetName] = sharedAssets[ctd.DetailTemplates[i].AssetName] + 1;
+														}
+												}
+										}
+
+										foreach (ChunkTerrainData otherctd in otherTerrainData) {
+												for (int i = 0; i < otherctd.TreeTemplates.Count; i++) {
+														if (sharedAssets.ContainsKey(otherctd.TreeTemplates[i].AssetName)) {
+																sharedAssets.Remove(otherctd.TreeTemplates[i].AssetName);
+														}
+												}
+												for (int i = 0; i < otherctd.DetailTemplates.Count; i++) {
+														if (sharedAssets.ContainsKey(otherctd.DetailTemplates[i].AssetName)) {
+																sharedAssets.Remove(otherctd.DetailTemplates[i].AssetName);
+														}
+												}
+										}
+
+										foreach (KeyValuePair <string,int> assetCount in sharedAssets) {
+												if (assetCount.Value >= 3) {
+														DebugConsole.Get.Log.Add("Asset shared in all 3 chunks: " + assetCount.Value);
+												}
+										}
+										break;
+
+								case "reset":
+										if (splitCommand.Length < 2) {
+												Characters.Get.Reset();
+												Conversations.Get.Reset();
+												DebugConsole.Get.Log.Add("#Resetting game state");
+												Mods.Get.Runtime.ResetProfileData("all");
+										} else {
+												string dataType = splitCommand[1].Trim();
+												string dataName = splitCommand[2].Trim();
+												if (dataName == "all") {
+														Mods.Get.Runtime.ResetProfileData(dataType);
+														DebugConsole.Get.Log.Add("#Resetting all " + dataType + " to base state");
+												} else {
+														Mods.Get.Runtime.ResetProfileData(dataType, dataName);
+														DebugConsole.Get.Log.Add("#Resetting " + dataType + " " + dataName + " to base state");
+												}
+												if (string.Equals(dataType.Trim().ToLower(), "character")) {
+														//Debug.Log ("Resetting character...");
+														Characters.Get.ResetCharacter(dataName);
+												}
+												if (string.Equals(dataType.Trim().ToLower(), "player")) {
+														Player.Local.Inventory.State.QuestItemsAcquired.Clear();
+														Player.Local.Inventory.State.QuestItemsRemoved.Clear();
+														Player.Local.OnGameSave();
+												}
+												GameWorld.Get.State.DestroyedQuestItems.Clear();
+										}
+										break;
+
+								case "goto":
+										string startupPositionName = splitCommand[1];
+										Get.StartCoroutine(SpawnManager.Get.SendPlayerToStartupPosition(startupPositionName, 0f));
+										break;
+
+								case "book":
+										string bookAction = splitCommand[1];
+										string bookName = splitCommand[2];
+										if (bookAction == "read") {
+												if (bookName == "all") {
+														Books.ReadAll();
+												} else {
+														Books.ReadBook(bookName, null);
+												}
+										} else if (bookAction == "aquire") {
+												Books.AquireBook(bookName);
+										}
+										break;
+
+								case "grow":
+										switch (splitCommand[1]) {
+												case "prefabs":
+												default:
+														DebugConsole.Get.Log.Add("Instanitating all prefabs");
+														Plants.InstantiateAllPrefabs();
+														break;
+										}
+										break;
+
+								case "build":
+										DebugConsole.Get.Log.Add("Building something...");
+										string templateName = string.Empty;
+										switch (splitCommand[1]) {
+												case "structure":
+														templateName = splitCommand[2];
+														break;
+
+												case "prefabstructure":
+														templateName = splitCommand[2];
+														break;
+
+												case "prebuiltstructure":
+														templateName = splitCommand[2];
+														break;
+
+												case "prefabs":
+												default:
+														break;
+										}
+										break;
+
+								case "import":
+										Debug.Log("Importing data");
+										string importDataType = splitCommand[1];
+										string importDataName = splitCommand[2];
+										List <string> dataTypes = null;
+										List <string> dataNames = null;
+										if (importDataType == "all") {
+												dataTypes = new List <string>() {
+														"Book",
+														"Mission",
+														"Conversation",
+														"Character",
+														"Speech"
+												};
+										} else {
+												dataTypes = new List <string>() { importDataType };
+										}
+										if (importDataName == "all") {
+												dataNames = new List <string>();
+										} else {
+												dataNames = new List<string>() { importDataName };
+										}
+										GameObject importerObject = new GameObject("DataImporter");
+										DataImporter importer = importerObject.GetOrAdd <DataImporter>();
+										Debug.Log("Created data importer");
+										string errorMessage = string.Empty;
+										if (!GameData.IO.InitializeSystemPaths(out errorMessage)) {	//aw shit son what did you do
+												return;
+										}
+										if (!Manager.IsAwake <WorldItems>()) {
+												Manager.WakeUp <WorldItems>("Frontiers_WorldItems");
+										}
+										importer.ImportDataNames = dataNames;
+										importer.ImportDataTypes = dataTypes;
+										importer.ImportAssets();
+
+										if (DebugConsole.Get != null) {
+												DebugConsole.Get.Log.Add("#Data types " + dataTypes.JoinToString(", ") + " imported. You may need to reload to see changes");
+										}
+										break;
+
+
+								default:
+										DebugConsole.Get.Log.Add("#catch all for some reason - try help for commands");
+										break;
+						}
+				}
+
 		}
 }
