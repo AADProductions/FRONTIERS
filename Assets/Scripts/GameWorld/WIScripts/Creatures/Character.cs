@@ -102,6 +102,9 @@ namespace Frontiers.World
 
 				public override void OnInitialized()
 				{
+						Body.HairLength = State.HairLength;
+						Body.HairColor = State.HairColor;
+
 						animator = Body.GetComponent <CharacterAnimator>();
 
 						worlditem.OnGainPlayerFocus += OnGainPlayerFocus;
@@ -837,17 +840,18 @@ namespace Frontiers.World
 				public string ParentStructureName = string.Empty;
 				public float AssessmentInterval = 1.0f;
 				public float CheckDirectionInterval = 1.0f;
-				//[FrontiersCharacterBodyAttribute]
 				public string BodyName = string.Empty;
 				[FrontiersAvailableModsAttribute("Character/Body")]
 				public string BodyTextureName = string.Empty;
-				//	[FrontiersAvailableModsAttribute ("Character/Mask")]
 				public string BodyMaskTextureName = string.Empty;
-				//[FrontiersAvailableModsAttribute ("Character/Face")]
 				public string FaceTextureName = string.Empty;
 				public string FaceMaskTextureName = string.Empty;
 				public string TemplateName = string.Empty;
 				public bool BroadcastFocus = false;
+				public CharacterHairColor HairColor = CharacterHairColor.Gray;
+				public CharacterHairLength HairLength = CharacterHairLength.Short;
+				public CharacterEyeColor EyeColor = CharacterEyeColor.Black;
+				public CharacterFacialHair FacialHair = CharacterFacialHair.NoBeard;
 				public List <string> BodyAccessories = new List <string>();
 				public List <string> ActionNodesVisited = new List <string>();
 				public CharacterFlags Flags = new CharacterFlags();

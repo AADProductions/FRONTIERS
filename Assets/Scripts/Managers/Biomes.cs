@@ -272,10 +272,8 @@ namespace Frontiers
 								RenderSettings.ambientLight = mAmbientColorSmooth;
 						}
 
-						if (Profile.Get.HasSelectedProfile) {
-								//finally, add the ambient light booster to ambient lighting
-								RenderSettings.ambientLight = Color.Lerp(RenderSettings.ambientLight, Color.white, Profile.Get.CurrentPreferences.Video.AmbientLightBooster * Globals.MaxAmbientLightBoost);
-						}
+						//finally, add the ambient light booster to ambient lighting
+						RenderSettings.ambientLight = Color.Lerp(RenderSettings.ambientLight, Color.white, Profile.Get.CurrentPreferences.Video.AmbientLightBooster * Globals.MaxAmbientLightBoost);
 
 						RenderSettings.fog = true;
 						RenderSettings.fogMode = FogMode.Linear;

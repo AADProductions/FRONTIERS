@@ -252,8 +252,8 @@ namespace Frontiers
 	{
 		public string Name = "WorldItemPack";
 		public List <GameObject> Prefabs = new List <GameObject>();
-		public List <Mesh> MeshVariations = new List <Mesh>();
-		public List <Material> MaterialVariations = new List <Material>();
+		//public List <Mesh> MeshVariations = new List <Mesh>();
+		//public List <Material> MaterialVariations = new List <Material>();
 		public List <WorldItem> WorldItems = new List <WorldItem>();
 
 		public int CompareTo(WorldItemPack other)

@@ -67,6 +67,7 @@ namespace Frontiers
 				protected IEnumerator SpawnInBedOverTime(MobileReference bedReference, Action <Bed> OnFinishAction)
 				{
 						if (mSpawningPlayer) {
+								//whoops
 								yield break;
 						}
 						mSpawningPlayer = true;
@@ -89,7 +90,6 @@ namespace Frontiers
 						mSpawningPlayer = false;
 						yield break;
 				}
-
 				//this function is meant to be used with the HouseOfHealing skill
 				//i've only been able to get this process to work a few times
 				//the idea is to super-load the last visited HOH
@@ -98,6 +98,7 @@ namespace Frontiers
 				protected IEnumerator SpawnInClosestStructureOverTime(Vector3 despawnPosition, List <MobileReference> structureReferences, Action <Bed> OnFinishAction)
 				{
 						if (mSpawningPlayer) {
+								//whoops
 								yield break;
 						}
 						mSpawningPlayer = true;
@@ -230,6 +231,7 @@ namespace Frontiers
 				public IEnumerator SendPlayerToStartupPosition(string startupPositionName, float delay)
 				{
 						if (mSpawningPlayer) {
+								//whoops
 								yield break;
 						}
 
@@ -247,7 +249,6 @@ namespace Frontiers
 						}
 
 						//immediately add the game offset
-						//Debug.Log("Adding game time offset");
 						if (firstStartupPosition.AbsoluteTime) {
 								WorldClock.ResetAbsoluteTime();
 								Profile.Get.CurrentGame.SetWorldTimeOffset(
@@ -270,19 +271,20 @@ namespace Frontiers
 				public IEnumerator SendPlayerToStartupPosition(PlayerStartupPosition startupPosition)
 				{
 						if (mSpawningPlayer) {
-								//Debug.Log("Already spawning player, breaking");
+								//whoops
 								yield break;
 						}
 
 						mSpawningPlayer = true;
 
-						if (!GUILoading.IsLoading)
-								yield return StartCoroutine(GUILoading.LoadStart(GUILoading.Mode.FullScreenBlack));
+						if (!GUILoading.IsLoading) {
+								//let that go on its own, don't wait for it
+								StartCoroutine(GUILoading.LoadStart(GUILoading.Mode.FullScreenBlack));
+						}
 
 						//if the startup position is null
 						//use the character's state as a startup position
 						if (startupPosition == null) {
-								//Debug.Log("Getting startup position from player");
 								//the player state should be not-null by now
 								startupPosition = Player.Local.GetStartupPosition();
 						}
@@ -290,16 +292,26 @@ namespace Frontiers
 						if (Player.Local.HasSpawned) {
 								Player.Local.Despawn();
 						}
+						//set the current spawn position
+						CurrentStartupPosition = startupPosition;
+
 						//set all existing world chunks to unclaimed
+						mLoadingInfo = "Unloading chunks";
+						//suspend chunk loading so the player's position doesn't get the world confused
+						GameWorld.Get.SuspendChunkLoading = true;
 						for (int i = 0; i < GameWorld.Get.WorldChunks.Count; i++) {
 								if (GameWorld.Get.WorldChunks[i].State.ID != startupPosition.ChunkID) {
 										GameWorld.Get.WorldChunks[i].TargetMode = ChunkMode.Unloaded;
 								}
 						}
-
-						//set the current spawn position
-						CurrentStartupPosition = startupPosition;
-
+						//suspend worlditem loading so worlditems don't start spawning stuff till we're ready
+						WorldItems.Get.SuspendWorldItemUpdates = true;
+						WorldItems.Get.SetAllWorldItemsToInvisible();
+						//wait a moment to let that sink in
+						yield return new WaitForSeconds(1.0f);
+						//then unload anything we're not using
+						GC.Collect();
+						Resources.UnloadUnusedAssets();
 						//put the player in the middle of the chunk to be loaded first
 						WorldChunk startChunk = null;
 						if (GameWorld.Get.ChunkByID(startupPosition.ChunkID, out startChunk)) {
@@ -309,7 +321,10 @@ namespace Frontiers
 						}
 						//we send the player to the chunk / location specified in the world settings
 						mLoadingInfo = "Sending player to startup position";
-
+						//re-enable chunk loading so everything can load
+						GameWorld.Get.SuspendChunkLoading = false;
+						WorldItems.Get.SuspendWorldItemUpdates = false;
+						//set the primary chunk and let it load
 						GameWorld.Get.SetPrimaryChunk(startupPosition.ChunkID);
 						while (GameWorld.Get.PrimaryChunk.CurrentMode != ChunkMode.Primary) {
 								mLoadingInfo = "Waiting for primary chunk to load";
@@ -317,7 +332,6 @@ namespace Frontiers
 						}
 
 						//initialize time
-
 						if (startupPosition.RequiresStructure) {
 								mLoadingInfo = "Loading structures";
 								yield return StartCoroutine(SendPlayerToStructure(

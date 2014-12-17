@@ -86,7 +86,7 @@ namespace Frontiers.World
 
 				public bool IsImmobilized { get; set; }
 
-				public bool IsGrounded { get; set; }
+				public bool IsGrounded { get { return terrainHit.isGrounded; } set { terrainHit.isGrounded = value; } }
 
 				public bool IsRagdoll { get; set; }
 
@@ -194,7 +194,7 @@ namespace Frontiers.World
 								GoalObject.position = mTr.position + (mTr.forward * 0.5f);
 
 								terrainHit.overhangHeight = Globals.DefaultCharacterHeight;
-								terrainHit.groundedHeight = Mathf.Max(Globals.DefaultCharacterGroundedHeight, State.MotileProps.GroundedHeight);
+								terrainHit.groundedHeight = Mathf.Max (Globals.DefaultCharacterGroundedHeight, State.MotileProps.GroundedHeight) * 2f;
 								terrainHit.isGrounded = true;
 								terrainHit.hitTerrain = true;
 								terrainHit.feetPosition = mPosition;
@@ -553,7 +553,7 @@ namespace Frontiers.World
 						//if (worlditem.IsNObject && !worlditem.NObject.isMine)
 						//return;
 
-						if (!HasBody)//this shouldn't happen but whatever, just wait
+						if (!HasBody || rvoController == null)//this shouldn't happen but whatever, just wait
 							return;
 
 						mVisibleRotation = rvoController.targetRotation;
@@ -563,16 +563,13 @@ namespace Frontiers.World
 
 				public void FixedUpdate()
 				{
-						mCheckUpdate++;
-						if (mCheckUpdate < 5)
-								return;
-
-						mCheckUpdate = 0;
-
 						if (!GameManager.Is(FGameState.InGame))//don't update while paused
 							return;
 
 						if (WorldClock.SkippingAhead)
+								return;
+
+						if (!mInitialized)
 								return;
 
 						//if (worlditem.IsNObject && !worlditem.NObject.isMine)
@@ -611,7 +608,7 @@ namespace Frontiers.World
 						//if we're not immobilized
 						//figure out our world elevation
 						mCheckTerrainHeight++;
-						if (mCheckTerrainHeight > 2) {
+						if (mCheckTerrainHeight > 5) {
 								mCheckTerrainHeight = 0;
 								if (worlditem.Group.Props.Interior) {
 										AdjustedYPosition = GameWorld.Get.InteriorHeightAtInGamePosition(ref terrainHit);
@@ -627,7 +624,7 @@ namespace Frontiers.World
 						}
 
 						mCheckTopActionAnimation++;
-						if (mCheckTopActionAnimation > 3) {
+						if (mCheckTopActionAnimation > 6) {
 								mCheckTopActionAnimation = 0;
 								MotileAction topAction = TopAction;
 								Body.Animator.IdleAnimation = topAction.IdleAnimation;
@@ -993,13 +990,15 @@ namespace Frontiers.World
 								case MotileActionType.GoToActionNode:
 										//wait a tick to let the live target load
 										yield return null;
-										if (LastOccupiedNode != null) {	//////Debug.Log ("Vacating last action node");
+										if (LastOccupiedNode != null) {
 												LastOccupiedNode.VacateNode(worlditem);
 										}
 
 										if (!action.HasLiveTarget) {
 												//get live target
 												ActionNodeState nodeState = null;
+												//TODO re-implement this using WorldChunk's action node search
+												/*
 												if (GameWorld.Get.GetActionNodeState(ref nodeState, action.Target, false, false, null)) {	//if we could find the node
 														yield return null;
 														//wait a tick to let it load
@@ -1019,6 +1018,7 @@ namespace Frontiers.World
 														action.State = MotileActionState.Error;
 														action.Error = MotileActionError.TargetNotFound;
 												}
+												*/
 										}
 										started = true;
 										break;
@@ -1274,15 +1274,17 @@ namespace Frontiers.World
 
 				protected IEnumerator UpdateFollowGoal(MotileAction action)
 				{
+						action.IsInRange = false;
 						if (action.HasLiveTarget) {
 								GoalObject.position = action.LiveTarget.Position;
+								float distanceFromTarget = Vector3.Distance (worlditem.Position, GoalObject.position);
+								action.IsInRange = distanceFromTarget < action.Range;
 								if (action.IsInRange) {
 										rvoController.PositionLocked = true;
 										rvoController.RotationLocked = false;
 										TargetMovementSpeed = State.MotileProps.SpeedIdleWalk;
 										//TargetRotation = rvoController.targetRotation;
 								} else {
-										float distanceFromTarget = Vector3.Distance(transform.position, GoalObject.position);
 										if (distanceFromTarget <= action.Range * 2.0f) {
 												rvoController.PositionLocked = false;
 												rvoController.RotationLocked = false;
