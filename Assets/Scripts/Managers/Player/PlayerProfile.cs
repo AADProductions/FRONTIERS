@@ -87,10 +87,10 @@ namespace Frontiers
 				public void SetWorldTimeOffset(double hours, double days, double months, double years)
 				{
 						WorldTimeOffset = (
-								WorldClock.HoursToSeconds(hours) +
-								WorldClock.DaysToSeconds(days) +
-								WorldClock.MonthsToSeconds(months) +
-								WorldClock.YearsToSeconds(years));
+						        WorldClock.HoursToSeconds(hours) +
+						        WorldClock.DaysToSeconds(days) +
+						        WorldClock.MonthsToSeconds(months) +
+						        WorldClock.YearsToSeconds(years));
 				}
 
 				public void SetGameTimeOffset(double hours, double days, double months, double years)
@@ -170,6 +170,7 @@ namespace Frontiers
 
 				public void OnCreated()
 				{
+						//TODO move these defaults into globals
 						//chooses body + face / body textures
 						if (Gender == CharacterGender.Male) {
 								BodyName = "Body_C_U_2";
@@ -252,6 +253,7 @@ namespace Frontiers
 				public AccessibilityPrefs Accessibility;
 				public ModPrefs Mods;
 				public HashSet <string> HideDialogs;
+
 				[Serializable]
 				public class ImmersionPrefs
 				{
@@ -340,6 +342,7 @@ namespace Frontiers
 								}
 						}
 
+						public List <UserActionSetting> Settings = new List<UserActionSetting>();
 						public float MouseSensitivityFPSCamera = 5.0f;
 						public float MouseSensitivityInterface = 0.25f;
 						public bool MouseInvertYAxis = false;
@@ -389,6 +392,7 @@ namespace Frontiers
 								prefs.Shadows = 3;
 								prefs.LodDistance = 3;
 								prefs.AmbientLightBooster = 0f;
+								prefs.AdjustBrightness = 0;
 
 								prefs.TerrainGrassDistance = 100f;
 								prefs.TerrainGrassDensity = 0.5f;
@@ -411,6 +415,11 @@ namespace Frontiers
 
 						public VideoPrefs(VideoPrefs copyFrom)
 						{
+								CopyFrom(copyFrom);
+						}
+
+						public void CopyFrom(VideoPrefs copyFrom)
+						{		//TODO use reflection
 								Fullscreen = copyFrom.Fullscreen;
 								FieldOfView = copyFrom.FieldOfView;
 								PostFXBloom = copyFrom.PostFXBloom;
@@ -428,6 +437,7 @@ namespace Frontiers
 								Shadows = copyFrom.Shadows;
 								LodDistance = copyFrom.LodDistance;
 								AmbientLightBooster = copyFrom.AmbientLightBooster;
+								AdjustBrightness = copyFrom.AdjustBrightness;
 
 								TerrainGrassDistance = copyFrom.TerrainGrassDistance;
 								TerrainGrassDensity = copyFrom.TerrainGrassDensity;
@@ -525,8 +535,8 @@ namespace Frontiers
 														FindDefaultResolution();
 												}
 												if (Screen.currentResolution.width != ResolutionWidth
-												|| Screen.currentResolution.height != ResolutionHeight
-												|| Screen.fullScreen != Fullscreen) {
+												    || Screen.currentResolution.height != ResolutionHeight
+												    || Screen.fullScreen != Fullscreen) {
 														Screen.SetResolution(ResolutionWidth, ResolutionHeight, Fullscreen);
 												}
 										}
@@ -534,12 +544,14 @@ namespace Frontiers
 										if (Manager.IsAwake <Player>()) {
 												GameManager.Get.GameCamera.hdr = true;//HDR;			
 												GameManager.Get.GameCamera.fieldOfView = FieldOfView;
+
+												CameraFX.Get.AdjustBrightness = AdjustBrightness;
 		
 												SetOrDisablePostEffect(CameraFX.Get.Default.BloomEffect, false, ref PostFXBloom);
 												SetOrDisablePostEffect(CameraFX.Get.Default.SunShaftsEffect, false, ref PostFXGodRays);
 												SetOrDisablePostEffect(CameraFX.Get.Default.SSAO, true, ref PostFXSSAO);
 												SetOrDisablePostEffect(CameraFX.Get.Default.Grain, true, ref PostFXGrain);
-												SetOrDisablePostEffect(CameraFX.Get.Default.MotionBlur, true, ref PostFXMBlur);
+												//SetOrDisablePostEffect(CameraFX.Get.Default.MotionBlur, true, ref PostFXMBlur);
 												SetOrDisablePostEffect(CameraFX.Get.Default.AA, true, ref PostFXAA);
 										}
 
@@ -576,10 +588,10 @@ namespace Frontiers
 										PostFXGodRays = CameraFX.Get.Default.SunShaftsEffect.enabled;
 										PostFXSSAO = CameraFX.Get.Default.SSAO.enabled;
 										PostFXGrain = CameraFX.Get.Default.Grain.enabled;
-										PostFXMBlur = CameraFX.Get.Default.MotionBlur.enabled;
+										//PostFXMBlur = CameraFX.Get.Default.MotionBlur.enabled;
 										PostFXAA = CameraFX.Get.Default.AA.enabled;
 										HDR = GameManager.Get.GameCamera.hdr;
-						
+										AdjustBrightness = CameraFX.Get.AdjustBrightness;						
 								}		
 
 						}
@@ -600,6 +612,7 @@ namespace Frontiers
 						public int TextureResolution = 0;
 						public int Shadows = 3;
 						public float AmbientLightBooster = 0f;
+						public int AdjustBrightness = 50;
 						public bool ObjectShadows = true;
 						public bool TerrainShadows = true;
 						public bool StructureShadows = true;

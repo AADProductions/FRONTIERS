@@ -85,7 +85,7 @@ namespace Frontiers
 								AFS.afsUpdateRain();
 
 								WindowsMaterial.SetColor("_ReflectColor", Color.Lerp(Color.black, RenderSettings.ambientLight, 0.5f));
-								WaterWavesMaterial.SetFloat("_AnimSpeed", (float)WorldClock.Get.TimeScale);
+								//WaterWavesMaterial.SetFloat("_AnimSpeed", (float)WorldClock.Get.TimeScale);
 						}
 				}
 
@@ -111,18 +111,7 @@ namespace Frontiers
 				public Material DefaultDiffuseMaterial;
 				public Material WaveOverlayMaterial;
 				public Material SnowOverlayMaterial;
-				public Material DebugSphereMaterial;
 				public Material TrailRendererMaterial;
-				public Material WorldMapIconMouseOver;
-				public Material WorldMapIconLastVisitedMarker;
-				public Material WorldMapiconMouseOverMarker;
-				public Material WorldMapIconInRoute;
-				public Material WorldMapIconDestination;
-				public Material WorldMapIconBasic;
-				public Material WorldMapIconAvailable;
-				public Material WorldMapIconSelectedMarker;
-				public Material WorldPathOutlineOnlyInactive;
-				public Material WorldPathOutlineOnlyActive;
 				public Material WorldPathGroundMaterial;
 				public Material BloodSplatterMaterial;
 				public Material CharacterBodyMaterial;
@@ -134,25 +123,12 @@ namespace Frontiers
 				public Material FocusOutlineMaterial;
 				public Material FocusOutlineCutoutMaterial;
 				public Material AttentionOutlineMaterial;
-				public Material SpecialMaterial;
-				public Material DamageHighlightMaterial;
 				public Material CraftingDoppleGangerMaterial;
-				public Material WorldMapRoadMaterial;
-				public Material WorldMapIconAvailableMaterial;
-				public Material WorldMapIconBasicMaterial;
-				public Material WorldMapIconInRouteMaterial;
-				public Material WorldMapIconDestinationMaterial;
-				public Material WorldLocationAvatarOutlineMaterial;
-				public Material WorldPathOutlineOnlyShader;
-				public Material WorldMapAreaOutlineMaterial;
 				public Material InventoryRimMaterial;
 				public Material InventoryRimCutoutMaterial;
-				public Material SkyStarsMaterial;
 				public Material WindowsMaterial;
 				public Material LuminiteGlowMaterial;
 				public Material WaterSurfaceMaterial;
-				public Material WaterWavesMaterial;
-				public Material DefaultSkyMaterial;
 				public Material MagicEffectMaterial;
 				public Material SpellEffectProjectorMaterial;
 				public Material ReceptacleProjectorMaterial;

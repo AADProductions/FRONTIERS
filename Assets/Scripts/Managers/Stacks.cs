@@ -751,20 +751,22 @@ namespace Frontiers
 						}
 
 						public static bool Stacks(WIStack stack1, WIStack stack2, ref WIStackError error)
-						{	//TODO make this generally more efficient
+						{		//TODO make this generally more efficient
 								//should be able to cut 2 or 3 loops from this
 								if (stack1.NumItems > stack2.SpaceLeft || stack2.NumItems > stack1.SpaceLeft) {
 										return false;
 								}
 
 								//checking this way ensures that a large container with small items can still swap
-								foreach (IWIBase stack1Item in stack1.Items) {
-										if (Can.Add(stack1Item, stack2, ref error)) {
+								for (int i = 0; i < stack1.Items.Count; i++) {
+								//foreach (IWIBase stack1Item in stack1.Items) {
+										if (!Can.Add(stack1.Items [i], stack2, ref error)) {
 												return false;
 										}
 								}
-								foreach (IWIBase stack2Item in stack2.Items) {
-										if (Can.Add(stack2Item, stack1, ref error)) {
+								for (int i = 0; i < stack2.Items.Count; i++) {
+								//foreach (IWIBase stack2Item in stack2.Items) {
+										if (!Can.Add(stack2.Items [i], stack1, ref error)) {
 												return false;
 										}
 								}

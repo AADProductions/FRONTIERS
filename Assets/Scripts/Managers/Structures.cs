@@ -16,7 +16,6 @@ namespace Frontiers
 		public partial class Structures : Manager
 		{
 				public static Structures Get;
-
 				public static bool StructureShadows = true;
 				public static bool SceneryObjectShadows = true;
 				public static List <Structure> ExteriorsWaitingToLoad;
@@ -49,7 +48,6 @@ namespace Frontiers
 				public MeshCombiner ExteriorColliderCombiner;
 				public MeshCombiner InteriorColliderCombiner;
 				public MeshCombiner MinorColliderCombiner;
-
 				#if UNITY_EDITOR
 				//data for loading/refreshing structure packs
 				public string LocalStructurePacksPath;
@@ -67,7 +65,6 @@ namespace Frontiers
 				public string MeshesFolder;
 				public string TexturesFolder;
 				#endif
-
 				public List <Dynamic> DynamicTargets;
 				public List <StructurePackPaths> PackPaths;
 				public List <Material> SharedMaterials;
@@ -84,6 +81,47 @@ namespace Frontiers
 				public Texture2D DefaultDetailTexture;
 				public Texture2D DefaultDetailBump;
 				public Texture2D DefaultBump;
+
+				#region cached meshes
+
+				public Dictionary <string, List<Structure>> mCachedTemplateInstancesExterior;
+				//we only cache exterior meshes for now
+				//if that works well we'll do the same for interiors later
+				public bool GetCachedInstance (string templateName, Structure parentStructure, out Structure cachedInstance) {
+						cachedInstance = null;
+						List <Structure> instances = null;
+						if (!mCachedTemplateInstancesExterior.TryGetValue(templateName, out instances)) {
+								//add a list pre-emptively
+								//it makes things simpler
+								instances = new List<Structure>();
+								mCachedTemplateInstancesExterior.Add(templateName, instances);
+						}
+						//check each item to make sure it's actually in use
+						for (int i = instances.LastIndex(); i >= 0; i--) {
+								if (instances[i] == null || instances[i].Is(StructureLoadState.ExteriorUnloaded)) {
+										//this way we know how many 'live' copies
+										//of the meshes are out there
+										instances.RemoveAt(i);
+								} else if (parentStructure != instances [i]) {
+										//hooray we found a cached version
+										//i'm not positive that check is necessary but whatever
+										cachedInstance = instances[i];
+										break;
+								}
+						}
+						return cachedInstance != null;
+				}
+
+				public void AddCachedInstance (string templateName, Structure cachedInstance) {
+						List <Structure> instances = null;
+						if (!mCachedTemplateInstancesExterior.TryGetValue(templateName, out instances)) {
+								instances = new List<Structure>();
+								mCachedTemplateInstancesExterior.Add(templateName, instances);
+						}
+						instances.SafeAdd(cachedInstance);
+				}
+
+				#endregion
 
 				public MeshCollider MeshColliderFromPool()
 				{
@@ -130,9 +168,11 @@ namespace Frontiers
 				public override void WakeUp()
 				{
 						if (mIsAwake)//the editor will call this sometimes
-				return;
+							return;
 
 						Get = this;
+
+						mCachedTemplateInstancesExterior = new Dictionary<string, List<Structure>>();
 
 						ExteriorsWaitingToLoad = new List <Structure>();
 						InteriorsWaitingToLoad = new List <Structure>();
@@ -179,7 +219,7 @@ namespace Frontiers
 								MeshFilter mf = colliderMeshPrefab.GetComponent <MeshFilter>();
 
 								if (mf == null) {
-										Debug.Log ("MESH FILTER WAS NULL ON COLLIDER " + colliderMeshPrefab.name);
+										Debug.Log("MESH FILTER WAS NULL ON COLLIDER " + colliderMeshPrefab.name);
 								} else {
 										Mesh colliderMesh = mf.sharedMesh;
 										string lookupName = colliderMeshPrefab.name.Replace("_COL", "");
@@ -194,7 +234,7 @@ namespace Frontiers
 								MeshFilter mf = lodMeshPrefab.GetComponent <MeshFilter>();
 
 								if (mf == null) {
-										Debug.Log ("MESH FILTER WAS NULL ON LOD " + lodMeshPrefab.name);
+										Debug.Log("MESH FILTER WAS NULL ON LOD " + lodMeshPrefab.name);
 								} else {
 										Mesh lodMesh = mf.sharedMesh;
 										string lookupName = lodMeshPrefab.name;
@@ -600,8 +640,8 @@ namespace Frontiers
 						}
 
 						if (ExteriorBuilder.State == StructureBuilder.BuilderState.Dormant ||
-						 ExteriorBuilder.State == StructureBuilder.BuilderState.Error ||
-						 ExteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
+						    ExteriorBuilder.State == StructureBuilder.BuilderState.Error ||
+						    ExteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
 								//Debug.Log ("Exterior builder is finished, starting new load structure");
 								StartCoroutine(LoadStructures(
 										ExteriorsWaitingToLoad,
@@ -617,8 +657,8 @@ namespace Frontiers
 						}
 
 						if (InteriorBuilder.State == StructureBuilder.BuilderState.Dormant ||
-						 InteriorBuilder.State == StructureBuilder.BuilderState.Error ||
-						 InteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
+						    InteriorBuilder.State == StructureBuilder.BuilderState.Error ||
+						    InteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
 								//Debug.Log ("Interior builder is finished, starting new load structure");
 								StartCoroutine(LoadStructures(
 										InteriorsWaitingToLoad,
@@ -660,9 +700,9 @@ namespace Frontiers
 
 						mloadMinors++;
 						if (mloadMinors > 3 && MinorsWaitingToLoad.Count > 0 &&
-						 (MinorBuilder.State == StructureBuilder.BuilderState.Dormant ||
-						 MinorBuilder.State == StructureBuilder.BuilderState.Error ||
-						 MinorBuilder.State == StructureBuilder.BuilderState.Finished)) {
+						    (MinorBuilder.State == StructureBuilder.BuilderState.Dormant ||
+						    MinorBuilder.State == StructureBuilder.BuilderState.Error ||
+						    MinorBuilder.State == StructureBuilder.BuilderState.Finished)) {
 								mloadMinors = 0;
 								StartCoroutine(LoadMinorStructure(MinorsWaitingToLoad[0]));
 						}
@@ -715,10 +755,14 @@ namespace Frontiers
 												structure.LoadState = finalState;
 												LoadedStructures.SafeAdd(structure);
 												structure.OnLoadFinish(finalState);
-												//reset the builder state so we can use it again
+												//now that it's built, if it's an exterior, cache the meshes
+												if (structure.Is(StructureLoadState.ExteriorLoaded)) {
+														AddCachedInstance(mainTemplate.Name, structure);
+												}
 										} else {
 												Debug.Log("ERROR in structure builder when building " + mainTemplate.Name);
 										}
+										//reset the builder state so we can use it again
 										withBuilder.Reset();
 								}
 
