@@ -213,7 +213,7 @@ namespace Frontiers
 										blueprint.Revealed = true;
 										blueprint.RevealMethod = method;
 										blueprint.RevealSource = source;
-										GUIManager.PostGainedItem(blueprint);
+										GUI.GUIManager.PostGainedItem(blueprint);
 								}
 								blueprint.Instances++;
 								Mods.Get.Runtime.SaveMod(blueprint, "Blueprint", blueprintName);
@@ -529,54 +529,6 @@ namespace Frontiers
 						if (GUILayout.Button("\n LOAD FROM DISK \n")) {
 								LoadBlueprintsEditor();
 						}
-
-						//		GUILayout.BeginHorizontal ( );
-						//		GUILayout.Label ("Number of items: " + fillContainer.NumberOfItems);
-						//		if (GUILayout.Button ("+", GUILayout.Width (20f)))
-						//		{
-						//			fillContainer.NumberOfItems++;
-						//		}
-						//		if (GUILayout.Button ("-", GUILayout.Width (20f)))
-						//		{
-						//			if (fillContainer.NumberOfItems > 0)
-						//			{
-						//				fillContainer.NumberOfItems--;
-						//			}
-						//		}
-						//		GUILayout.EndHorizontal ( );
-						//
-						//		List <string> catsToRemove = new List<string> ( );
-						//		foreach (WICategory category in worlditems.Categories)
-						//		{
-						//			bool isIncluded = false;
-						//			foreach (string categoryName in fillContainer.WICatNames)
-						//			{
-						//				if (category.Name == categoryName)
-						//				{
-						//					isIncluded = true;
-						//				}
-						//			}
-						//			if (isIncluded)
-						//			{
-						//				UnityEngine.GUI.color = Color.green;
-						//				if (GUILayout.Button (category.Name + " (Click to remove)"))
-						//				{
-						//					catsToRemove.Add (category.Name);
-						//				}
-						//			}
-						//			else
-						//			{
-						//				UnityEngine.GUI.color = Color.cyan;
-						//				if (GUILayout.Button (category.Name))
-						//				{
-						//					fillContainer.WICatNames.Add (category.Name);
-						//				}
-						//			}
-						//		}
-						//		foreach (string catToRemove in catsToRemove)
-						//		{
-						//			fillContainer.WICatNames.Remove (catToRemove);
-						//		}	
 				}
 				#endif
 				protected Dictionary <string, List <string>> mCategories = null;
@@ -591,31 +543,7 @@ namespace Frontiers
 				protected GenericWorldItem mAssociationWorldItem;
 				// = new GenericWorldItem ( );
 		}
-		//	[Serializable]
-		//	public class WIBlueprintCategory
-		//	{
-		//		public string Name = "Crafting";
-		//		public List <WIBlueprintCategory> SubCategories = new List <WIBlueprintCategory> ();
-		//
-		//		public List <WIBlueprint> RevealedBlueprints {
-		//			get {
-		//				if (mRevealedBlueprints == null) {
-		//					mRevealedBlueprints = new List <WIBlueprint> ();
-		//					foreach (string revealedBlueprintName in RevealedBlueprintNames) {
-		//						WIBlueprint blueprint = null;
-		//						if (Blueprints.Get.Blueprint (revealedBlueprintName, out blueprint)) {
-		//							mRevealedBlueprints.Add (blueprint);
-		//						}
-		//					}
-		//				}
-		//				return mRevealedBlueprints;
-		//			}
-		//		}
-		//
-		//		public HashSet <string> BlueprintNames = new HashSet <string> ();
-		//		public HashSet <string> RevealedBlueprintNames = new HashSet <string> ();
-		//		protected List <WIBlueprint> mRevealedBlueprints = null;
-		//	}
+
 		[Serializable]
 		public class WIBlueprint : Mod
 		{

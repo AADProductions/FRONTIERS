@@ -1,9 +1,10 @@
 using UnityEngine;
 using System.Collections;
 using System;
-using Frontiers.Data;
 using System.Collections.Generic;
+using Frontiers.Data;
 using Frontiers.World;
+using Frontiers.GUI;
 
 namespace Frontiers
 {

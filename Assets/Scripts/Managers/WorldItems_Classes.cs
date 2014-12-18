@@ -54,6 +54,189 @@ namespace Frontiers.World
 				public List <string> Textures = new List <string>();
 		}
 
+		public class WIListResult
+		{
+				public string MessageType = "Question";
+				public string Message = "Dialog Question";
+				public bool ForceChoice = false;
+				public List <WIListOption> Options = new List <WIListOption>();
+				public List <WIListOption> SecondaryOptions = new List <WIListOption>();
+				public string Result = string.Empty;
+				public string SecondaryResult = string.Empty;
+				public int SecondaryResultFlavor = -1;
+				public Vector3 PositionTarget = Vector3.zero;
+		}
+
+		public class WIListOption
+		{
+				#region constructors
+
+				public static WIListOption Empty {
+						get {
+								if (mEmpty == null) {
+										mEmpty = new WIListOption();
+										mEmpty.IsValid = false;
+								}
+								return mEmpty;
+						}
+				}
+
+				protected static WIListOption mEmpty;
+
+				public WIListOption()
+				{
+						Divider = false;
+						CredentialsIconName = string.Empty;
+						IconName = string.Empty;
+						OptionText = "Option";
+						TextColor = Color.white;
+						BackgroundColor = Color.white;
+						Result = "Result";
+				}
+
+				public WIListOption(string optionText)
+				{
+						Divider = false;
+						IconName = string.Empty;
+						CredentialsIconName = string.Empty;
+						OptionText = optionText;
+						TextColor = Colors.Get.MenuButtonTextColorDefault;
+						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
+						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
+						Result = optionText;
+				}
+
+				public WIListOption(bool divider, string dividerText, Color textColor)
+				{
+						Divider = true;
+						OptionText = dividerText;
+						CredentialsIconName = string.Empty;
+						TextColor = textColor;
+						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
+						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
+				}
+
+				public WIListOption(string iconName, string optionText, Color textColor, Color backgroundColor, string result)
+				{
+						Divider = false;
+						IconName = iconName;
+						CredentialsIconName = string.Empty;
+						OptionText = optionText;
+						TextColor = textColor;
+						BackgroundColor = backgroundColor;
+						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
+						Result = result;
+				}
+
+				public WIListOption(string iconName, string optionText, Color textColor, string result)
+				{
+						Divider = false;
+						IconName = iconName;
+						CredentialsIconName = string.Empty;
+						OptionText = optionText;
+						TextColor = textColor;
+						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
+						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
+						Result = result;
+				}
+
+				public WIListOption(string optionText, Color textColor, Color backgroundColor, string result)
+				{
+						Divider = false;
+						IconName = string.Empty;
+						CredentialsIconName = string.Empty;
+						OptionText = optionText;
+						TextColor = textColor;
+						BackgroundColor = backgroundColor;
+						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
+						Result = result;
+				}
+
+				public WIListOption(string optionText, Color textColor, string result)
+				{
+						Divider = false;
+						IconName = string.Empty;
+						CredentialsIconName = string.Empty;
+						OptionText = optionText;
+						TextColor = textColor;
+						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
+						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
+						Result = result;
+				}
+
+				public WIListOption(string iconName, string optionText, string result)
+				{
+						Divider = false;
+						IconName = iconName;
+						CredentialsIconName = string.Empty;
+						OptionText = optionText;
+						TextColor = Colors.Get.MenuButtonTextColorDefault;
+						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
+						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
+						Result = result;
+				}
+
+				public WIListOption(string optionText, string result)
+				{
+						Divider = false;
+						IconName = string.Empty;
+						CredentialsIconName = string.Empty;
+						OptionText = optionText;
+						TextColor = Colors.Get.MenuButtonTextColorDefault;
+						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
+						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
+						Result = result;
+				}
+
+				#endregion
+
+				public bool IsValid {
+						get {
+								if (Divider) {
+										return true;
+								}
+
+								if (!mIsValid) {
+										return false;
+								}
+
+								if (string.IsNullOrEmpty(Result) || string.IsNullOrEmpty(OptionText)) {
+										return false;
+								}
+
+								return true;
+						}
+						set {
+								mIsValid = value;
+						}
+				}
+
+				public bool HasFlavors {
+						get {
+								return (Flavors.Count > 0);
+						}
+				}
+
+				public bool Divider = false;
+				public bool Disabled = false;
+				public string IconName = string.Empty;
+				public string CredentialsIconName	= string.Empty;
+				public string OptionText = string.Empty;
+				public Color TextColor = Colors.Get.MenuButtonTextColorDefault;
+				public Color BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
+				public Color OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
+				public Color IconColor = Color.white;
+				public bool NegateIcon = false;
+				public string Result = "Result";
+				public List <string> Flavors = new List <string>();
+				protected bool mIsValid = true;
+
+				public static bool IsNullOrInvalid(WIListOption option)
+				{
+						return (option == null || !option.IsValid);
+				}
+		}
+
 		[Serializable]
 		public class WIExamineInfo
 		{

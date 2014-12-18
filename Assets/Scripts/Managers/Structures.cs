@@ -768,7 +768,7 @@ namespace Frontiers
 
 								mainTemplate = null;
 								//TODO see if this is really necessary...
-								System.GC.Collect(0, System.GCCollectionMode.Forced);
+								//System.GC.Collect( );
 								yield return null;
 								yield return null;
 						}
@@ -829,7 +829,7 @@ namespace Frontiers
 
 								template = null;
 								//TODO see if this is really necessary
-								System.GC.Collect(0, System.GCCollectionMode.Forced);
+								//System.GC.Collect( );
 						}
 				}
 
@@ -1046,27 +1046,29 @@ namespace Frontiers
 
 						//get a chunk prefab from the pool
 						gCfo = Get.SceneryObjectPool.Pop();
+						//move / scale everything first
+						gCfo.tr.position = chunk.ChunkOffset + chunkPrefab.Transform.Position;
+						gCfo.tr.rotation = Quaternion.Euler(chunkPrefab.Transform.Rotation);
+						gCfo.PrimaryTransform.localScale = chunkPrefab.Transform.Scale.x * Vector3.one; //non-uniform scales NOT ALLOWED!
+						gCfo.LodTransform.localScale = Vector3.one;//gCfo.PrimaryTransform.localScale;
+
 						gCfo.Layer = Globals.LayerNumSolidTerrain;//chunkPrefab.Layer;
 						gCfo.TerrainType = chunkPrefab.TerrainType;
-						gCfo.go.SetActive(true);
-						gCfo.rb.detectCollisions = true;
+						//gCfo.go.SetActive(true);
+						//gCfo.rb.detectCollisions = true;
 						gCfo.go.name = chunkPrefab.Name;
 						gCfo.go.SetLayerRecursively(gCfo.Layer);
 						gCfo.go.tag = chunkPrefab.Tag;
 						gCfo.PrimaryMeshFilter.tag = chunkPrefab.Tag;
 						//gCfo.tr.parent = chunk.Transforms.AboveGroundStaticImmediate;
-						gCfo.tr.position = chunk.ChunkOffset + chunkPrefab.Transform.Position;
-						gCfo.tr.rotation = Quaternion.Euler(chunkPrefab.Transform.Rotation);
-						gCfo.PrimaryTransform.localScale = chunkPrefab.Transform.Scale.x * Vector3.one; //non-uniform scales NOT ALLOWED!
-						gCfo.LodTransform.localScale = gCfo.PrimaryTransform.localScale;
 						//update the chunk prefab - set the parent and move it into position
 						chunkPrefab.ParentChunk = chunk;
 						chunkPrefab.LoadedObject = gCfo;
 
 						if (chunkPrefab.UseMeshCollider) {
-								if (gCfoSpp.ColliderMesh != null) {
+								if (gCfoSpp.ColliderMesh != null && gCfo.PrimaryCollider.sharedMesh != gCfoSpp.ColliderMesh) {
 										gCfo.PrimaryCollider.sharedMesh = gCfoSpp.ColliderMesh;
-								} else {
+								} else if (gCfo.PrimaryCollider.sharedMesh != gCfoSpp.MFilter.sharedMesh) {
 										gCfo.PrimaryCollider.sharedMesh = gCfoSpp.MFilter.sharedMesh;
 								}
 								gCfo.PrimaryCollider.convex = chunkPrefab.UseConvexMesh;
@@ -1078,7 +1080,10 @@ namespace Frontiers
 						}
 
 						//add scripts
-						foreach (KeyValuePair <string,string> sceneryScript in chunkPrefab.SceneryScripts) {
+						var enumerator = chunkPrefab.SceneryScripts.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+								//foreach (KeyValuePair <string,string> sceneryScript in chunkPrefab.SceneryScripts) {
+								KeyValuePair <string,string> sceneryScript = enumerator.Current;
 								SceneryScript script = (SceneryScript)chunkPrefab.LoadedObject.go.GetOrAdd(sceneryScript.Key);
 								script.cfo = gCfo;
 								script.UpdateSceneryState(sceneryScript.Value, chunk);
@@ -1160,14 +1165,16 @@ namespace Frontiers
 						cfo.go = new GameObject("Chunk Prefab Object");
 						//cfo.go.transform.parent = transform;
 						cfo.go.SetActive(false);
-						cfo.go.isStatic = true;
+						cfo.go.isStatic = false;
 
 						cfo.rb = cfo.go.AddComponent <Rigidbody>();
 						cfo.rb.isKinematic = true;
 						cfo.rb.detectCollisions = false;
 						cfo.rb.constraints = RigidbodyConstraints.FreezeAll;
 
-						GameObject primaryObject = cfo.go.CreateChild("PrimaryObject").gameObject;
+						//we're going to make the primary object the main game object
+						//hopefully this will help us avoid physx lags
+						GameObject primaryObject = cfo.go;//.CreateChild("PrimaryObject").gameObject;
 						GameObject lodObject = cfo.go.CreateChild("LodObject").gameObject;
 						primaryObject.layer = Globals.LayerNumSolidTerrain;
 						lodObject.layer = Globals.LayerNumSolidTerrain;

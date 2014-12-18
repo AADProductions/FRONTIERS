@@ -6,6 +6,7 @@ using Frontiers.World;
 using System;
 using System.Xml.Serialization;
 using Frontiers.World.Gameplay;
+using Frontiers.GUI;
 
 namespace Frontiers
 {

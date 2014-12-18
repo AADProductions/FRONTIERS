@@ -81,7 +81,7 @@ namespace Frontiers
 				public List <string> GameNames(string worldName, bool toLower)
 				{
 						List <string> gameNames = null;
-			
+
 						if (HasCurrentProfile) {
 								if (!toLower) {
 										gameNames = GameData.IO.GetFolderNamesInDirectory(GameData.IO.gCurrentWorldPath);
@@ -228,7 +228,7 @@ namespace Frontiers
 						Debug.Log("PROFILE: Setting world name to " + worldName);
 						if (!HasSelectedProfile || !HasCurrentProfile)
 								return false;
-						
+
 						string errorMessage = string.Empty;
 						Debug.Log("PROFILE: INITIALIZE DATA PATHS TO : " + Current.Name + ", " + worldName + ", " + gameName);
 						if (!GameData.IO.InitializeLocalDataPaths(Current.Name, worldName, gameName, out errorMessage)) {
@@ -268,7 +268,7 @@ namespace Frontiers
 								CurrentGame.DifficultyName = difficultySettingName;
 								DifficultySetting.Apply(CurrentGame.Difficulty);
 						}
-						return true;					
+						return true;
 				}
 
 				public bool SetCharacter()
@@ -313,20 +313,20 @@ namespace Frontiers
 				public bool ValidateNewGameName(string worldName, string gameName, out string cleanAlternative, out string error)
 				{		//TODO remove error string we don't need it any more
 						error = "Enter a game name:";
-						cleanAlternative = GameData.IO.CleanProfileName(gameName);
+						cleanAlternative = GameData.IO.CleanGameName(gameName);
 						if (string.IsNullOrEmpty(cleanAlternative) || cleanAlternative == "(Enter name)") {
 								return false;
 						} else {
 								if (cleanAlternative.Length < Globals.MinProfileNameCharacters) {
 										error = ("Names must be at least " + Globals.MinProfileNameCharacters.ToString() + " long");
-										return false;					
+										return false;
 								}
-				
+
 								List <string> gameNames = GameNames(worldName, true);
 								if (gameNames.Contains(cleanAlternative.ToLower())) {
 										error = "That game name is taken";
 										return false;
-								}				
+								}
 						}
 						return true;
 				}
@@ -342,9 +342,9 @@ namespace Frontiers
 				}
 
 				public bool ValidateNewProfileName(string profileName, out string error, out string cleanAlternative)
-				{			
+				{
 						cleanAlternative = GameData.IO.CleanProfileName(profileName);
-			
+
 						if (string.IsNullOrEmpty(cleanAlternative) || cleanAlternative == "(Enter Name)") {
 								error = string.Empty;
 								cleanAlternative = string.Empty;
@@ -362,7 +362,7 @@ namespace Frontiers
 										return false;
 								}
 						}
-						error = string.Empty;		
+						error = string.Empty;
 						return true;
 				}
 

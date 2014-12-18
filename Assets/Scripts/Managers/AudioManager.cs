@@ -273,7 +273,7 @@ namespace Frontiers
 						if (!GameManager.Is(FGameState.InGame)) {
 								return true;
 						}
-						////////Debug.Log ("Entering or exiiting underground in audio manager");
+
 						AmbientAudio.IsUnderground = Player.Local.Surroundings.State.IsUnderground;
 						Color terrainType = Player.Local.Surroundings.TerrainType;
 						AmbientAudio.UpdateStackVolumes(Player.Local.Surroundings.TerrainType);

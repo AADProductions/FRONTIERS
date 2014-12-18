@@ -69,7 +69,7 @@ namespace Frontiers {
 			foreach (string missionName in missionNames) {
 				MissionState missionState = null;
 				if (Mods.Get.Runtime.LoadMod <MissionState> (ref missionState, "Mission", missionName)) {
-					if (Flags.Check <MissionStatus> (missionState.Status, MissionStatus.Active, Flags.CheckType.MatchAny)) {	//store all active missions in the lookup
+					if (Flags.Check ((uint)missionState.Status, (uint)MissionStatus.Active, Flags.CheckType.MatchAny)) {	//store all active missions in the lookup
 						CreateMissionFromState (missionState);
 					}
 				}
@@ -283,7 +283,7 @@ namespace Frontiers {
 			List <string> missionNames = Mods.Get.Available ("Mission");
 			for (int i = 0; i < missionNames.Count; i++) {
 				MissionState missionState = Missions.Get.MissionStateByName (missionNames [i]);
-				if (Flags.Check <MissionStatus> (missionState.Status, status, Flags.CheckType.MatchAny)) {
+				if (Flags.Check ((uint)missionState.Status, (uint)status, Flags.CheckType.MatchAny)) {
 					////Debug.Log ("Mission status has " + status.ToString ( ));
 					missionStates.Add (missionState);
 				}

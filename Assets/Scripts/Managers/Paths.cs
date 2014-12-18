@@ -1,13 +1,11 @@
 using System;
 using UnityEngine;
-
-//using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using Frontiers.Data;
 using Frontiers.World;
-using Frontiers.World.Locations;
+using Frontiers.GUI;
 using Frontiers.World.Gameplay;
-using System.Collections;
 
 namespace Frontiers
 {
