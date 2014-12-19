@@ -19,6 +19,8 @@ namespace Frontiers.World
 		public partial class WorldItems : Manager
 		{
 				public static WorldItems Get;
+
+				#if UNITY_EDITOR
 				public GameObject EditorStructureParent = null;
 				public string EditorSelectedItem = string.Empty;
 				public string EditorSepectedPack = string.Empty;
@@ -27,13 +29,12 @@ namespace Frontiers.World
 				public string PrefabsFolder = "Prefabs";
 				public string MeshesFolder = "Meshes";
 				public string TexturesFolder = "Textures";
+				#endif
+
 				public static bool ObjectShadows = true;
 				protected bool mUpdatingActiveStates = false;
-				//[HideInInspector]
 				public List <WorldItemPackPaths> PackPaths = new List<WorldItemPackPaths>();
-				//[HideInInspector]
 				public List <WorldItemPack> WorldItemPacks = new List <WorldItemPack>();
-				//[HideInInspector]
 				public List <WICategory> Categories = new List <WICategory>();
 				public List <KeyValuePair <WIGroup, Queue <StackItem>>> StackItemsToLoad = new List <KeyValuePair <WIGroup, Queue <StackItem>>>();
 
@@ -77,7 +78,7 @@ namespace Frontiers.World
 								int index = 0;
 								foreach (GameObject prefab in pack.Prefabs) {
 										if (prefab == null) {
-												//////////////Debug.Log ("Prefab was null in pack " + pack.Name + " at index " + index);
+												Debug.Log ("Prefab was null in pack " + pack.Name + " at index " + index);
 										}
 										index++;
 										WorldItem worlditem = null;
@@ -96,58 +97,6 @@ namespace Frontiers.World
 												worlditem.ClearStackItem();
 												worlditem.ClearStackContainer();
 												worlditem.InitializeTemplate();
-
-//						if (string.IsNullOrEmpty (worlditem.Props.Name.PrefabName)) {
-//							worlditem.Props.Name.PrefabName = prefab.name;
-//						}
-//						worlditem.Props.Name.PackName = pack.Name;
-//						if (string.IsNullOrEmpty (worlditem.Props.Name.FileName)) {
-//							worlditem.Props.Name.FileName = prefab.name;
-//						}
-//						if (string.IsNullOrEmpty (worlditem.Props.Name.DisplayName)) {
-//							worlditem.Props.Name.DisplayName = WorldItems.CleanWorldItemName (worlditem.Props.Name.PrefabName);
-//						}
-//						worlditem.Props.Local.PreviousMode = WIMode.Frozen;
-//						worlditem.Props.Local.Mode = WIMode.Frozen;
-//					}
-//					if (worlditem.rigidbody != null) {
-//						worlditem.Props.Global.UseRigidBody = true;
-//					} else {
-//						worlditem.Props.Global.UseRigidBody = false;
-//					}
-//
-//					if (worlditem.gameObject.tag == "Untagged") {
-//						worlditem.gameObject.tag = Globals.TagGroundStone;
-//					}
-//					worlditem.Props.Global.ParentTag = worlditem.gameObject.tag;
-//					worlditem.Props.Global.ParentLayer = worlditem.gameObject.layer;
-//
-//					if (worlditem.collider != null) {
-//						Type type = worlditem.collider.GetType ();
-//						switch (type.ToString ()) {
-//						case "BoxCollider":
-//							worlditem.Props.Global.ParentColliderType = WIColliderType.Box;
-//							break;
-//
-//						case "SphereCollider":
-//							worlditem.Props.Global.ParentColliderType = WIColliderType.Capsule;
-//							break;
-//
-//						case "CapsuleCollider":
-//							worlditem.Props.Global.ParentColliderType = WIColliderType.Sphere;
-//							break;
-//
-//						case "MeshCollider":
-//							MeshCollider mc = worlditem.GetComponent <MeshCollider> ();
-//							if (mc.convex) {
-//								worlditem.Props.Global.ParentColliderType = WIColliderType.ConvexMesh;
-//							} else {
-//								worlditem.Props.Global.ParentColliderType = WIColliderType.Mesh;
-//							}
-//							break;
-//						}
-//					} else {
-//						worlditem.Props.Global.ParentColliderType = WIColliderType.None;
 										}
 								}
 						}
@@ -187,25 +136,7 @@ namespace Frontiers.World
 										result = true;
 								}
 						}
-						if (!result) {
-								////Debug.Log ("Didn't find pack prefab " + worldItemPackName + "," + prefabName);
-						}
 						return result;
-				}
-
-				public Material PackMaterialVariation(string worldItemPackName, string materialName)
-				{
-						WorldItemPack pack = null;
-						if (mWorldItemPackLookup.TryGetValue(worldItemPackName, out pack)) {
-								foreach (Material variation in pack.MaterialVariations) {
-										if (variation.name == materialName) {
-												return variation;
-										}
-								}
-						} else {
-								//////////////Debug.Log ("Pack " + worldItemPackName + " doesn't exist");
-						}
-						return null;
 				}
 
 				protected Dictionary <string, WorldItemPack> mWorldItemPackLookup = new Dictionary <string, WorldItemPack>();
@@ -226,7 +157,6 @@ namespace Frontiers.World
 				public bool Category(string wiCatName, out WICategory category)
 				{
 						category = null;
-						//////////////Debug.Log ("Num in lookup: " + mWICategoryLookup.Count.ToString ());
 						if (!mWICategoryLookup.TryGetValue(wiCatName, out category)) {
 								category = WICategory.Empty;
 								return false;
@@ -1266,7 +1196,6 @@ namespace Frontiers.World
 						//this is a total kludge - treat the player differently
 						if (target.IOIType == ItemOfInterestType.Player) {
 								targetPosition = target.player.ChestPosition;
-								//ColoredDebug.Log ("Our target is player, using chest position", "Cyan");
 						} else {
 								targetPosition = target.Position;
 						}
@@ -1274,15 +1203,9 @@ namespace Frontiers.World
 
 						if (Physics.Linecast(startPosition, targetPosition, out mLineOfSightHit, Globals.LayersItemOfInterest)) {
 								hitPosition = mLineOfSightHit.point;
-								//ColoredDebug.Log ("HasLineOfSight: Hit a thing! " + mLineOfSightHit.collider.name, "Green");
 								if (GetIOIFromCollider(mLineOfSightHit.collider, out hitIOI)) {
-										//ColoredDebug.Log ("HasLineOfSight: the thing we hit was the thing we wanted to hit!", "Green");
 										return target == hitIOI;
-								} else {
-										//ColoredDebug.Log ("HasLineOfSight: hit something but it wasn't an item of interest! it's: " + mLineOfSightHit.collider.name, "Yellow");
 								}
-						} else {
-								//ColoredDebug.Log ("HasLineOfSight: Did NOT hit a thing!", "Red");
 						}
 						return false;
 				}

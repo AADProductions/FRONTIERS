@@ -209,7 +209,14 @@ namespace Frontiers
 
 				public bool Library(string libraryName, out Library library)
 				{
-						return mLibraryLookup.TryGetValue(libraryName, out library);
+						if (mLibraryLookup.TryGetValue(libraryName, out library)) {
+								//initialize the catalogue entries
+								for (int i = 0; i < library.CatalogueEntries.Count; i++) {
+										library.CatalogueEntries[i].Library = library;
+								}
+								return true;
+						}
+						return false;
 				}
 
 				public bool HasPlacedOrder(string libraryName, out LibraryCatalogueEntry order)
@@ -219,8 +226,13 @@ namespace Frontiers
 						if (mLibraryLookup.TryGetValue(libraryName, out library)) {
 								for (int i = 0; i < library.CatalogueEntries.Count; i++) {
 										LibraryCatalogueEntry catalogueEntry = library.CatalogueEntries[i];
-										if (catalogueEntry.HasBeenPlaced && !catalogueEntry.HasBeenDelivered) {
+										//only ask if it's been placed
+										//don't bother to ask if it's arrived
+										//if we're doing our job elsewhere only one will be placed at any time
+										if (catalogueEntry.HasBeenPlaced) {
+												//set the library of the order for convenience
 												order = catalogueEntry;
+												order.Library = library;
 												break;
 										}
 								}
@@ -232,7 +244,11 @@ namespace Frontiers
 				{
 						LibraryCatalogueEntry order = null;
 						if (HasPlacedOrder(libraryName, out order) && order.HasArrived && !order.HasBeenDelivered) {
+								//reset the order, it hasn't been placed any more
+								order.ARTOrderedTime = -1f;
+								//set the pickup time so it's marked as delibered
 								order.ARTPickUpTime = WorldClock.AdjustedRealTime;
+								Mods.Get.Runtime.SaveMod <Library>(order.Library, "Library", order.Library.Name);
 								AquireBook(order.BookName);
 						}
 				}
@@ -261,6 +277,9 @@ namespace Frontiers
 						}
 
 						order.ARTOrderedTime = WorldClock.AdjustedRealTime;
+						//just in case
+						order.ARTPickUpTime = -1f;
+						Mods.Get.Runtime.SaveMod <Library>(order.Library, "Library", order.Library.Name);
 						return true;
 				}
 
@@ -1055,6 +1074,10 @@ namespace Frontiers
 				public double ARTOrderedTime = -1;
 				public double ARTPickUpTime = -1;
 
+				[XmlIgnore]
+				[NonSerialized]
+				public Frontiers.Library Library = null;
+
 				public bool HasBeenPlaced {
 						get {
 								return ARTOrderedTime > 0;
@@ -1063,8 +1086,8 @@ namespace Frontiers
 
 				public bool HasArrived {
 						get {
-								if (HasBeenPlaced && !HasBeenDelivered) {
-										return WorldClock.AdjustedRealTime > (ARTOrderedTime + WorldClock.HoursToSeconds (DeliveryTimeInHours));
+								if (HasBeenPlaced) {
+										return WorldClock.AdjustedRealTime > (ARTOrderedTime + WorldClock.GameHoursToRTSeconds (DeliveryTimeInHours));
 								}
 								return false;
 						}
