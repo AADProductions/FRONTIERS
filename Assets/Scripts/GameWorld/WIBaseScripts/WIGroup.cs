@@ -361,15 +361,10 @@ namespace Frontiers.World
 												}
 										}
 										if (newChildItem != null) {
-												//Debug.Log ("Child item " + nextChild + " receiving state in group");
-												newChildItem.ReceiveState(stackItem);
+												newChildItem.ReceiveState(ref stackItem);
 												ChildItems.SafeAdd(newChildItem);
 												newChildItem.OnEditorLoad();
-										} else {
-												//Debug.Log ("COULDN'T FIND OR LOAD CHILD ITEM " + nextChild);
 										}
-								} else {
-										//Debug.Log ("COULDN'T LOAD STACK ITEM " + nextChild);
 								}
 						}
 

@@ -294,6 +294,7 @@ namespace Frontiers
 						}
 						//set the current spawn position
 						CurrentStartupPosition = startupPosition;
+						yield return null;
 
 						//set all existing world chunks to unclaimed
 						mLoadingInfo = "Unloading chunks";
@@ -306,12 +307,9 @@ namespace Frontiers
 						}
 						//suspend worlditem loading so worlditems don't start spawning stuff till we're ready
 						WorldItems.Get.SuspendWorldItemUpdates = true;
-						WorldItems.Get.SetAllWorldItemsToInvisible();
+						//WorldItems.Get.SetAllWorldItemsToInvisible();
 						//wait a moment to let that sink in
-						yield return new WaitForSeconds(1.0f);
-						//then unload anything we're not using
-						GC.Collect();
-						Resources.UnloadUnusedAssets();
+						yield return null;
 						//put the player in the middle of the chunk to be loaded first
 						WorldChunk startChunk = null;
 						if (GameWorld.Get.ChunkByID(startupPosition.ChunkID, out startChunk)) {
@@ -352,13 +350,19 @@ namespace Frontiers
 										0.1f));
 						}
 
+						//unload anything we're not using
+						GC.Collect();
+						Resources.UnloadUnusedAssets();
+						yield return null;
+
 						startupPosition.WorldPosition.Position = (GameWorld.Get.PrimaryChunk.ChunkOffset + startupPosition.ChunkPosition.Position);
 						startupPosition.WorldPosition.Rotation = startupPosition.ChunkPosition.Rotation;
 
 						Player.Local.SpawnAtPosition(startupPosition.WorldPosition);
 
-						if (GUILoading.IsLoading)
-								yield return StartCoroutine(GUILoading.LoadFinish());
+						if (GUILoading.IsLoading) {
+								StartCoroutine(GUILoading.LoadFinish());
+						}
 
 						mSpawningPlayer = false;
 						yield break;
@@ -376,10 +380,11 @@ namespace Frontiers
 						while (mStartupStructure == null) {
 								yield return null;
 						}
+
 						double startBuildTime = WorldClock.RealTime;
 						mStartupStructure.LoadPriority = StructureLoadPriority.SpawnPoint;
 						Structures.AddExteriorToLoad(mStartupStructure);
-						Debug.Log("GAMEWORLD: waiting for exerior to load");
+
 						while (!mStartupStructure.Is(StructureLoadState.ExteriorLoaded)) {
 								mLoadingInfo = "Waiting for exterior to build";
 								if ((WorldClock.RealTime - startBuildTime) > 20f) {
@@ -390,7 +395,7 @@ namespace Frontiers
 						}
 						Structures.AddInteriorToLoad(mStartupStructure);
 						startBuildTime = WorldClock.RealTime;
-						Debug.Log("GAMEWORLD: waiting for interior to load");
+
 						while (!mStartupStructure.Is(StructureLoadState.InteriorLoaded)) {
 								mLoadingInfo = "Waiting for interior to build";
 								if ((WorldClock.RealTime - startBuildTime) > 20f) {
@@ -407,8 +412,6 @@ namespace Frontiers
 								yield return null;
 						}
 						Player.Local.Surroundings.StartupStructure = mStartupStructure;
-						//Player.Local.Surroundings.LastStructureEntered = mStartupStructure;
-						//Player.Local.Surroundings.StructureEnter (mStartupStructure);
 						yield return null;
 						yield break;
 				}

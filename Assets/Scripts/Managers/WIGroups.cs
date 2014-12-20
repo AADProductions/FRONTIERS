@@ -83,10 +83,6 @@ namespace Frontiers
 						Plants.Initialize();
 						Special.Initialize();
 						Rivers.Initialize();
-
-						//move the graveyard well out of the way
-						Graveyard.tr.localPosition = new Vector3(-6000f, -2000f, -5000f);
-
 						mInitialized = true;
 				}
 

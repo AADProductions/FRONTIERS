@@ -7,9 +7,6 @@ using System.Text.RegularExpressions;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.World.Locations;
-using Frontiers.World.Gameplay;
-using Frontiers.GUI;
 
 #pragma warning disable 0219
 
@@ -17,15 +14,16 @@ namespace Frontiers.World
 {
 		public partial class WorldItem
 		{
-
 				#region Script Management
 
 				public WIScript	GetOrAdd(string scriptName)
 				{
 						WIScript wiScript = null;
-						foreach (KeyValuePair <Type, WIScript> script in mScripts) {
-								if (scriptName == script.Key.Name) {
-										wiScript = script.Value;
+						var enumerator = mScripts.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+						//foreach (KeyValuePair <Type, WIScript> script in mScripts) {
+								if (scriptName == enumerator.Current.Key.Name) {
+										wiScript = enumerator.Current.Value;
 										break;
 								}
 						}
@@ -50,9 +48,11 @@ namespace Frontiers.World
 				{
 						wiScript = null;
 						bool result = false;
-						foreach (KeyValuePair <Type, WIScript> script in mScripts) {
-								if (scriptName == script.Key.Name) {
-										wiScript = script.Value;
+						var enumerator = mScripts.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+						//foreach (KeyValuePair <Type, WIScript> script in mScripts) {
+								if (scriptName == enumerator.Current.Key.Name) {
+										wiScript = enumerator.Current.Value;
 										result = true;
 										break;
 								}
@@ -110,7 +110,7 @@ namespace Frontiers.World
 						}
 				}
 
-				public void PopulateOptionsList(List <Frontiers.GUI.GUIListOption> options, List <string> message, bool includeInteract)
+				public void PopulateOptionsList(List <WIListOption> options, List <string> message, bool includeInteract)
 				{
 						if (HasStates) {
 								States.PopulateOptionsList(options, message);
@@ -118,7 +118,7 @@ namespace Frontiers.World
 
 						if (CanBeCarried && !CanEnterInventory && Is(WIMode.Placed | WIMode.Frozen | WIMode.World)) {
 								if (gCarryOption == null) {
-										gCarryOption = new GUIListOption("Carry", "Carry");
+										gCarryOption = new WIListOption("Carry", "Carry");
 								}
 								if (Player.Local.ItemPlacement.IsCarryingSomething) {
 										gCarryOption.Disabled = true;
@@ -130,16 +130,18 @@ namespace Frontiers.World
 								Debug.Log("Can't carry item");
 						}
 
-						foreach (WIScript script in mScripts.Values) {
-								script.PopulateOptionsList(options, message);
+						var enumerator = mScripts.Values.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+								//foreach (WIScript script in mScripts.Values) {
+								enumerator.Current.PopulateOptionsList(options, message);
 						}
 				}
 
-				protected static GUIListOption gCarryOption;
+				protected static WIListOption gCarryOption;
 
 				public void OnPlayerUseWorldItemSecondary(object dialogResult)
 				{
-						OptionsListDialogResult result = (OptionsListDialogResult)dialogResult;
+						WIListResult result = (WIListResult)dialogResult;
 
 						switch (result.SecondaryResult) {
 								case "Carry":
@@ -154,11 +156,18 @@ namespace Frontiers.World
 
 				public List <string> ScriptNames {
 						get {
-								List <string> scriptNames = new List <string>();
+								//we return a new list every time
+								//this generates garbage but it's necessary for some initialization steps
+								List <string> scriptNames = new List<string>();
+								#if UNITY_EDITOR
 								if (Application.isPlaying) {
-										foreach (System.Type type in mScripts.Keys) {
-												scriptNames.Add(type.Name);
+								#endif
+										var systemType = mScripts.Keys.GetEnumerator();
+										while (systemType.MoveNext ()) {
+												//foreach (System.Type type in mScripts.Keys) {
+												scriptNames.Add(systemType.Current.Name);
 										}
+								#if UNITY_EDITOR
 								} else {
 										Component[] scripts = gameObject.GetComponents <WIScript>();
 										foreach (WIScript script in scripts) {
@@ -166,6 +175,7 @@ namespace Frontiers.World
 												scriptNames.Add(script.ScriptName);
 										}
 								}
+								#endif
 								return scriptNames;
 						}
 				}
@@ -174,17 +184,20 @@ namespace Frontiers.World
 				{
 						if (mDestroyed)
 								return null;
-
+						#if UNITY_EDITOR
 						if (Application.isPlaying) {
+						#endif
 								try {
 										return mScripts[typeof(T)] as T;
 								} catch (Exception e) {
-										Debug.Log("trying to get " + typeof(T).ToString() + " in " + name + " resulted in NULL" + e.ToString());
+										//Debug.Log("trying to get " + typeof(T).ToString() + " in " + name + " resulted in NULL" + e.ToString());
 										return null;
 								}
+						#if UNITY_EDITOR
 						} else {
 								return gameObject.GetComponent <T>();
 						}
+						#endif
 				}
 
 				public bool Has<T>() where T : WIScript
@@ -266,8 +279,10 @@ namespace Frontiers.World
 								return false;
 
 						bool isScript = false;
-						foreach (Type scriptType in mScripts.Keys) {
-								if (scriptType.Name == scriptName) {
+						var enumerator = mScripts.Keys.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+								//foreach (Type scriptType in mScripts.Keys) {
+								if (enumerator.Current.Name == scriptName) {
 										isScript = true;
 										break;
 								}
@@ -279,9 +294,11 @@ namespace Frontiers.World
 				{
 						bool isScript = false;
 						script = null;
-						foreach (KeyValuePair <Type,WIScript> scriptPair in mScripts) {
-								if (scriptPair.Key.Name == scriptName) {
-										script = scriptPair.Value;
+						var enumerator = mScripts.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+								//foreach (KeyValuePair <Type,WIScript> scriptPair in mScripts) {
+								if (enumerator.Current.Key.Name == scriptName) {
+										script = enumerator.Current.Value;
 										isScript = true;
 										break;
 								}
@@ -339,12 +356,14 @@ namespace Frontiers.World
 				}
 				//updates all its scripts from the stack item state
 				//removes any scripts that are not in the stack item state
-				public void ReceiveState(StackItem newState)
+				//the state is cleared by this process
+				public void ReceiveState(ref StackItem newState)
 				{
 						//lock the world item to prevent saving as we change the script states
 						mLockSaveState = true;
 
-						if (!Is(WILoadState.Initialized)) {
+						if (Props == null) {
+								//we're not initialized yet but that's ok
 								Props = new WIProps();
 						}
 						//before we do any script stuff, set the props
@@ -363,7 +382,6 @@ namespace Frontiers.World
 						if (Application.isEditor && !Application.isPlaying) {
 								//we're doing it in the editor
 								foreach (KeyValuePair <string,string> scriptState in newState.SaveState.Scripts) {
-										//TEMP - this replaces any instance of 'Recepticle' with 'Recepticale' because i can't spell
 										//this will be removed eventually
 										WIScript wiScript = gameObject.GetComponent(scriptState.Key) as WIScript;
 										if (wiScript == null) {
@@ -393,7 +411,10 @@ namespace Frontiers.World
 								List <string> scriptNames = ScriptNames;
 								List <WIScript> newWiScripts = new List<WIScript>();
 								//check all the script states in the new state
-								foreach (KeyValuePair <string,string> scriptState in newState.SaveState.Scripts) {
+								var enumerator = newState.SaveState.Scripts.GetEnumerator();
+								//foreach (KeyValuePair <string,string> scriptState in newState.SaveState.Scripts) {
+								while (enumerator.MoveNext ()) {
+										KeyValuePair <string,string> scriptState = enumerator.Current;
 										WIScript wiScript = null;
 										if (!Has(scriptState.Key)) {
 												//if we don't have that script add it
@@ -451,6 +472,7 @@ namespace Frontiers.World
 						mLockSaveState = false;
 						//nuke the save state
 						newState.Clear();
+						newState = null;
 				}
 
 				protected Dictionary <Type, WIScript> mScripts = new Dictionary <Type, WIScript>();
@@ -465,14 +487,15 @@ namespace Frontiers.World
 								if (HasStates && !States.UnloadWhenStacked) {
 										result = false;
 								} else {
-										foreach (WIScript script in mScripts.Values) {
-												if (!script.UnloadWhenStacked) {
-														result = false;
-														break;
+										var enumerator = mScripts.Values.GetEnumerator();
+										while (enumerator.MoveNext ()) {
+												//foreach (WIScript script in mScripts.Values) {
+												if (!enumerator.Current.UnloadWhenStacked) {
+														return false;
 												}
 										}
 								}
-								return result;
+								return true;
 						}
 				}
 
@@ -489,14 +512,14 @@ namespace Frontiers.World
 										return false;
 								}
 
-								bool result = true;
-								foreach (WIScript script in mScripts.Values) {
-										if (!script.CanEnterInventory) {
-												result = false;
-												break;
+								var enumerator = mScripts.Values.GetEnumerator();
+								while (enumerator.MoveNext ()) {
+										//foreach (WIScript script in mScripts.Values) {
+										if (!enumerator.Current.CanEnterInventory) {
+												return false;
 										}
 								}
-								return result;
+								return true;
 						}
 				}
 
@@ -510,14 +533,14 @@ namespace Frontiers.World
 										return false;
 								}
 
-								bool result = true;
-								foreach (WIScript script in mScripts.Values) {
-										if (!script.CanBeCarried) {
-												result = false;
-												break;
+								var enumerator = mScripts.Values.GetEnumerator();
+								while (enumerator.MoveNext ()) {
+										//foreach (WIScript script in mScripts.Values) {
+										if (!enumerator.Current.CanBeCarried) {
+												return false;
 										}
 								}
-								return result;
+								return true;
 						}
 				}
 
@@ -531,14 +554,14 @@ namespace Frontiers.World
 										return false;
 								}
 
-								bool result = true;
-								foreach (WIScript script in mScripts.Values) {
-										if (!script.CanBeDropped) {
-												result = false;
-												break;
+								var enumerator = mScripts.Values.GetEnumerator();
+								while (enumerator.MoveNext ()) {
+										//foreach (WIScript script in mScripts.Values) {
+										if (!enumerator.Current.CanBeDropped) {
+												return false;
 										}
 								}
-								return result;
+								return true;
 						}
 				}
 
@@ -558,8 +581,10 @@ namespace Frontiers.World
 						if (!Props.Global.ExamineInfo.IsEmpty) {
 								examineInfo.Add(Props.Global.ExamineInfo);
 						}
-						foreach (WIScript script in mScripts.Values) {
-								script.PopulateExamineList(examineInfo);
+						var enumerator = mScripts.Values.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+								//foreach (WIScript script in mScripts.Values) {
+								enumerator.Current.PopulateExamineList(examineInfo);
 						}
 				}
 
@@ -567,14 +592,14 @@ namespace Frontiers.World
 				{
 						bool result = true;
 						errorMessage = string.Empty;
-
-						foreach (WIScript script in mScripts.Values) {
-								if (!script.CanBePlacedOn(targetObject, point, normal, ref errorMessage)) {
-										result = false;
-										break;
+						var enumerator = mScripts.Values.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+								//foreach (WIScript script in mScripts.Values) {
+								if (!enumerator.Current.CanBePlacedOn(targetObject, point, normal, ref errorMessage)) {
+										return false;
 								}
 						}
-						return result;
+						return true;
 				}
 
 				public virtual bool IsUsable {
@@ -730,8 +755,17 @@ namespace Frontiers.World
 
 				public void Initialize()
 				{
-						if (!Is(WILoadState.Uninitialized) || !Application.isPlaying)
+						#if UNITY_EDITOR
+						if (!Application.isPlaying) {
+								Debug.Log ("Application not playing, returning");
 								return;
+						}
+						#endif
+
+						if (!Is(WILoadState.Uninitialized)) {
+								//Debug.Log("Already initialized in " + name + ", not initializing again");
+								return;
+						}
 
 						LoadState = WILoadState.Initializing;
 
@@ -740,9 +774,11 @@ namespace Frontiers.World
 								//start by adding scripts that aren't on the default prefab
 								if (checkSaveState) {
 										List <string> currentScriptNames = ScriptNames;
-										foreach (string SaveStatecriptName in SaveState.Scripts.Keys) {
-												if (!currentScriptNames.Contains(SaveStatecriptName)) {
-														gameObject.AddComponent(SaveStatecriptName);
+										var nameEnumerator = SaveState.Scripts.Keys.GetEnumerator ();
+										while (nameEnumerator.MoveNext ()) {
+										//foreach (string SaveStatecriptName in SaveState.Scripts.Keys) {
+												if (!currentScriptNames.Contains(nameEnumerator.Current)) {//SaveStatecriptName)) {
+														gameObject.AddComponent(nameEnumerator.Current);//SaveStatecriptName);
 												}
 										}
 								}
@@ -754,9 +790,11 @@ namespace Frontiers.World
 								//dictionary will have all of them
 								//check for namers only if we've specified them
 								bool checkDisplayNamer = (!string.IsNullOrEmpty(Props.Local.DisplayNamerScript));
-								bool checkStackNamer = (!string.IsNullOrEmpty(Props.Local.StackNamerScript));
 								bool checkHUDTarget = (!string.IsNullOrEmpty(Props.Local.HudTargetScript));
-								foreach (WIScript script in mScripts.Values) {
+								var enumerator = mScripts.Values.GetEnumerator ();
+								while (enumerator.MoveNext ()) {
+								//foreach (WIScript script in mScripts.Values) {
+										WIScript script = enumerator.Current;
 										if (checkSaveState) {
 												string saveState = string.Empty;
 												if (SaveState.Scripts.TryGetValue(script.ScriptName, out saveState)) {
@@ -779,6 +817,17 @@ namespace Frontiers.World
 										script.OnStartup();
 										initializedScripts.Add(script);
 								}
+
+								//at this point we're done with the save state
+								//so clear it out for the gc
+								if (SaveState != null) {
+									if (SaveState.Scripts != null) {
+										SaveState.Scripts.Clear ();
+										SaveState.Scripts = null;
+									}
+									SaveState = null;
+								}
+
 								//now see if there are any scripts that we added during initialization
 								for (int i = 0; i < mScriptsAddedWhileInitializing.Count; i++) {
 										WIScript script = mScriptsAddedWhileInitializing[i];
@@ -928,7 +977,7 @@ namespace Frontiers.World
 				{
 						if (IsTemplate && mTemplateStackitem == null) {
 								mTemplateStackitem = new StackItem();
-								mTemplateStackitem.Props = new WIProps();
+								//mTemplateStackitem.Props = new WIProps();
 								mTemplateStackitem.Props.CopyLocal(Props);
 								mTemplateStackitem.Props.CopyName(Props);
 								mTemplateStackitem.SaveState = GetSaveState(true);
@@ -946,44 +995,41 @@ namespace Frontiers.World
 						if (IsTemplate) {
 								newStackItem = GetTemplate().GetDuplicate(true);
 								newStackItem.Name = Props.Name.PrefabName;
+								#if UNITY_EDITOR
 								if (Application.isPlaying) {
+								#endif
 										newStackItem.Group = Group;
+								#if UNITY_EDITOR
 								}
+								#endif
 						} else {
+								//get the latest updated names before we copy them
 								RefreshNames(true);
+								//get the latest position in local props before we copy them
+								RefreshTransform();
 
 								newStackItem = new StackItem();
-								newStackItem.Props = new SIProps();
+								//newStackItem.Props = new SIProps();
 								newStackItem.Props.CopyLocal(Props);
 								newStackItem.Props.CopyName(Props);
 								newStackItem.GlobalProps = Props.Global;
-								if (!mDestroyed) {
-										if (tr == null) {
-												tr = transform;
-										}
-										newStackItem.Props.Local.Transform.CopyFrom(tr);
-										if (mAddedToGroupOnce) {
-												//if we've never been added to a group then our chunk position will be meaningless
-												//if we have, then we'll need it to show up correctly on a map etc
-												WorldChunk chunk = Group.GetParentChunk();
-												if (chunk != null) {
-														newStackItem.Props.Local.ChunkPosition = WorldChunk.WorldPositionToChunkPosition(chunk.ChunkBounds, transform.position - chunk.ChunkOffset);
-												} else {
-														Debug.Log("Chunk was NULL in get stack item, probably trying to get group WORLD");
-												}
-										}
-								}
+
 								newStackItem.Name = Props.Name.FileName;
 								newStackItem.SaveState = GetSaveState(false);
 								newStackItem.StaticReference = StaticReference;
+
+								#if UNITY_EDITOR
 								if (Application.isPlaying) {
+								#endif
 										newStackItem.Group = Group;
+								#if UNITY_EDITOR
 								}
+								#endif
+
 								if (stackItemMode == WIMode.None) {
 										newStackItem.Props.Local.Mode = WIMode.World;
 								}
 								if (stackItemMode == WIMode.Unloaded) {
-										//Debug.Log ("Get stack item mode was unloaded, so setting world item mode to RemovedFromGame");
 										worldItemMode = WIMode.RemovedFromGame;
 								}
 
@@ -1005,13 +1051,17 @@ namespace Frontiers.World
 				}
 
 				public WISaveState GetSaveState(bool asTemplate)
-				{
+				{		//the 'guts' of a stack item
+						//contains the last known values of can be carried, dropped etc
+						//as well as a state for every WIScript
 						WISaveState states = new WISaveState();
 
 						if (Application.isPlaying && !asTemplate) {
-								foreach (WIScript script in mScripts.Values) {
+								var enumerator = mScripts.Values.GetEnumerator ();
+								while (enumerator.MoveNext ()) {
+								//foreach (WIScript script in mScripts.Values) {
 										try {
-												states.Scripts.Add(script.ScriptName, script.SaveState);
+												states.Scripts.Add(enumerator.Current.ScriptName, enumerator.Current.SaveState);
 										} catch (Exception e) {
 												Debug.LogError("Exception in worlditem " + name + ":" + e.ToString());
 										}
@@ -1034,7 +1084,11 @@ namespace Frontiers.World
 								if (HasStates && (string.IsNullOrEmpty(states.LastState) || states.LastState == "Default")) {
 										states.LastState = States.DefaultState;
 								}
+								//and we're done!
 						} else {
+								//get the template version of the save state
+								//this is used to store templates by the editor
+								//slightly different & slightly less efficient
 								states.CanBeCarried = CanBeCarried;
 								states.CanBeDropped = CanBeDropped;
 								states.CanEnterInventory = CanEnterInventory;
@@ -1051,7 +1105,6 @@ namespace Frontiers.World
 								Component[] wiScripts = gameObject.GetComponents <WIScript>();
 								foreach (WIScript script in wiScripts) {
 										if (!script.IsFinished) {
-												//Debug.Log ("Getting script props for " + script.ScriptName);
 												script.CheckScriptProps();
 												try {
 														states.Scripts.Add(script.ScriptName, script.SaveState);
@@ -1064,19 +1117,12 @@ namespace Frontiers.World
 												states.UnloadWhenStacked &= script.UnloadWhenStacked;
 										}
 								}
+								//set this worlditem's save state to the state we just created
 								SaveState = states;
 						}
 						return states;
 				}
 
-				public void Save()
-				{
-						if (mLockSaveState) {
-								return;
-						}
-
-						WorldItems.Get.Save(this);
-				}
 				#if UNITY_EDITOR
 				public void OnEditorRefresh()
 				{

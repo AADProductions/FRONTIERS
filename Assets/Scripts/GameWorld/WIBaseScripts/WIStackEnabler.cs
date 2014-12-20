@@ -81,7 +81,7 @@ namespace Frontiers
 				if (mUseRawContainer)
 					return true;
 
-				if (HasEnablerStack && mEnablerStack.HasTopItem) {	//get the script 'is container'
+				if (HasEnablerStack && mEnablerStack.HasTopItem) {
 					//it may not actually have a container yet
 					//but the script will tell us if it's supposed to
 					return mEnablerStack.TopItem.IsStackContainer;
@@ -118,7 +118,7 @@ namespace Frontiers
 				//this will be the most-checked variable
 				//if Enabled is true, it tells us that we have an enabler container
 				//if it's false, it tells us that there's something wrong along the way
-				if (HasEnablerContainer) {	//if the stack list is null
+				if (HasEnablerContainer) {//if the stack list is null
 					//or it just doesn't have any stacks (for some weird reason)
 					//then we're not enabled
 					return EnablerContainer.NumStacks > 0;

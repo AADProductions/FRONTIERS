@@ -25,17 +25,15 @@ namespace Frontiers.World
 								return false;
 						}
 
-						bool result = true;
-						string scriptName = string.Empty;
 						LoadState = WILoadState.PreparingToUnload;
-						foreach (WIScript script in mScripts.Values) {
-								bool scriptReady = script.PrepareToUnload();
-								if (!scriptReady) {
-										result = false;
-										scriptName = script.ScriptName;
+						var enumerator = mScripts.Values.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+								//foreach (KeyValuePair <Type, WIScript> script in mScripts) {
+								if (!enumerator.Current.PrepareToUnload()) {
+										return false;
 								}
 						}
-						return result;
+						return true;
 				}
 
 				public bool ReadyToUnload {
@@ -44,24 +42,15 @@ namespace Frontiers.World
 										return false;
 								}
 
-								bool result = true;
-								string scriptName = string.Empty;
-								foreach (WIScript script in mScripts.Values) {
+								var enumerator = mScripts.Values.GetEnumerator();
+								//foreach (WIScript script in mScripts.Values) {
+								while (enumerator.MoveNext ()) {
 										//we don't need to check them all
-										if (!script.ReadyToUnload) {
-												result = false;
-												scriptName = script.ScriptName;
-												break;
+										if (!enumerator.Current.ReadyToUnload) {
+												return false;
 										}
 								}
-//				if (Location.DebugNames.Contains (this.name)) {
-//					if (!result) {
-//						ColoredDebug.Log ("WORLDITEM:ReadyToUnload: We're not ready to unload in " + this.name + " due to " + scriptName + " returning FALSE", "Red");
-//					} else {
-//						ColoredDebug.Log ("WORLDITEM:ReadyToUnload: We're ready to unload in " + this.name, "Red");
-//					}
-//				}
-								return result;
+								return true;
 						}
 				}
 
@@ -73,9 +62,12 @@ namespace Frontiers.World
 								return;
 						}
 						LoadState = WILoadState.Unloading;
-						foreach (WIScript script in mScripts.Values) {
+						IEnumerator <WIScript> enumerator = mScripts.Values.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+						//foreach (WIScript script in mScripts.Values) {
 								//we don't need to check them all
-								script.BeginUnload();
+								//script.BeginUnload();
+								enumerator.Current.BeginUnload();
 						}
 				}
 
@@ -87,10 +79,11 @@ namespace Frontiers.World
 						}
 
 						LoadState = WILoadState.Initialized;//???this isn't guaranteed to be true! TODO
-
-						foreach (WIScript script in mScripts.Values) {
+						IEnumerator <WIScript> enumerator = mScripts.Values.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+								//foreach (WIScript script in mScripts.Values) {
 								//we don't need to check them all
-								script.CancelUnload();
+								enumerator.Current.CancelUnload();
 						}
 				}
 
@@ -100,13 +93,13 @@ namespace Frontiers.World
 								if (Is(WILoadState.Unloading)) {
 										//if we're still unloading, check if we're done
 										result = true;
-										string scriptName = string.Empty;
-										foreach (WIScript script in mScripts.Values) {
+										IEnumerator <WIScript> enumerator = mScripts.Values.GetEnumerator();
+										while (enumerator.MoveNext ()) {
+												//foreach (WIScript script in mScripts.Values) {
 												//we don't need to check them all
 												//just until we hit one that isn't done
-												if (!script.FinishedUnloading) {
+												if (!enumerator.Current.FinishedUnloading) {
 														result = false;
-														scriptName = script.ScriptName;
 														break;
 												}
 										}
@@ -126,8 +119,10 @@ namespace Frontiers.World
 
 				public bool SaveItemOnUnloaded {
 						get {
-								foreach (WIScript script in mScripts.Values) {
-										if (!script.SaveItemOnUnloaded) {
+								IEnumerator <WIScript> enumerator = mScripts.Values.GetEnumerator();
+								while (enumerator.MoveNext ()) {
+										//foreach (WIScript script in mScripts.Values) {
+										if (!enumerator.Current.SaveItemOnUnloaded) {
 												return false;
 										}
 								}
@@ -165,7 +160,7 @@ namespace Frontiers.World
 								return "Default";
 						}
 						set {
-								if (States != null) {
+								if (States != null && SaveState != null) {
 										if (Is(WILoadState.Initialized | WILoadState.Initializing)) {
 												States.State = value;
 										} else {

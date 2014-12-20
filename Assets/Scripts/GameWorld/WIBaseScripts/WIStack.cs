@@ -258,18 +258,15 @@ namespace Frontiers {
 					switch (Mode) {
 					case WIStackMode.Enabler:
 					case WIStackMode.Wearable:
-					case WIStackMode.Recepticle:
-	//				//Debug.Log ("is wearable / enabler - max items is 1");
+					case WIStackMode.Receptacle:
 						break;
 
 					case WIStackMode.Generic:
 						if (HasTopItem) {
 							maxItems = Stackable.MaxItemsFromSize (TopItem.Size);
-	//					//Debug.Log ("Has top item, max items is " + maxItems.ToString ( ));
 						} else {
 							//this will only be true until the top item is empty
 							maxItems = Stackable.MaxItemsFromSize (WISize.Tiny);
-	//					//Debug.Log ("Is empty, max items is " + maxItems.ToString ( ));
 						}
 						break;
 
@@ -295,7 +292,6 @@ namespace Frontiers {
 
 		public virtual void OnItemRemoved ()
 		{	//this will automatically result in a Refresh call
-			////Debug.Log ("WISTACK: Called OnItemRemoved... clearing dead weight");
 			Stacks.Clear.DestroyedOrMovedItems (this);
 		}
 
@@ -312,9 +308,8 @@ namespace Frontiers {
 
 		public virtual void Refresh ()
 		{
-			////Debug.Log ("WISTACK: Refreshing stack...");
 			mRefreshAction.SafeInvoke ();
-			if (BelongsToContainer) {	////Debug.Log ("WISTACK: calling refresh on container...");
+			if (BelongsToContainer) {
 				Container.Refresh ();
 			}
 		}

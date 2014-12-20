@@ -113,8 +113,19 @@ namespace Frontiers.World
 
 				public void Clear()
 				{
+						if (Props != null) {
+								Props.Clear();
+						}
+						Props = null;
+						SaveState = null;
+						StaticReference = null;
+
+						mGlobalProps = null;
 						mStackContainer = null;
-						//called before a stack item is disposed of
+						mGroup = null;
+
+						OnRemoveFromStack = null;
+						OnRemoveFromGroup = null;
 				}
 
 				public bool UseRemoveItemSkill(HashSet <string> removeItemSkillNames, ref IStackOwner useTarget)
@@ -323,9 +334,9 @@ namespace Frontiers.World
 
 				public void RemoveFromGame()
 				{
-						Props.Local.Mode = WIMode.RemovedFromGame;
 						OnRemoveFromGroup.SafeInvoke();
 						OnRemoveFromStack.SafeInvoke();
+						Clear();
 				}
 
 				#region stack container props
@@ -379,7 +390,7 @@ namespace Frontiers.World
 								}
 								//why are you trying to set the stack container value to null?
 								//that should never happen either
-								if (mStackContainer != null && value == null) {
+								if (mStackContainer != null && mStackContainer.Owner == this && value == null) {
 										throw new System.ArgumentNullException("Trying to set an mStackContainer to NULL " + this.FileName);
 								}
 								//permissions will have already been set elsewhere

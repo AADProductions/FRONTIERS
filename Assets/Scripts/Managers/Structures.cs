@@ -16,6 +16,7 @@ namespace Frontiers
 		public partial class Structures : Manager
 		{
 				public static Structures Get;
+
 				public static bool StructureShadows = true;
 				public static bool SceneryObjectShadows = true;
 				public static List <Structure> ExteriorsWaitingToLoad;
@@ -48,6 +49,9 @@ namespace Frontiers
 				public MeshCombiner ExteriorColliderCombiner;
 				public MeshCombiner InteriorColliderCombiner;
 				public MeshCombiner MinorColliderCombiner;
+				//used to load textures as they're used, sort of a crude pre-loader
+				public Camera PreloaderCamera;
+				public Renderer PreloaderRenderer;
 				#if UNITY_EDITOR
 				//data for loading/refreshing structure packs
 				public string LocalStructurePacksPath;
@@ -947,7 +951,13 @@ namespace Frontiers
 
 				public bool SharedMaterial(string materialName, out Material sharedMaterial)
 				{
-						return mSharedMaterialLookup.TryGetValue(materialName, out sharedMaterial);
+						//every time we get a shared material
+						//we set our preloader to look at it
+						if (mSharedMaterialLookup.TryGetValue(materialName, out sharedMaterial)) {
+								//PreloaderRenderer.sharedMaterial = sharedMaterial;
+								return true;
+						}
+						return false;
 				}
 
 				public GameObject PackStaticInstance(string structurePackname, string prefabName)
