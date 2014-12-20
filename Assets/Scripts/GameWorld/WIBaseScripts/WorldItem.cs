@@ -650,7 +650,7 @@ namespace Frontiers.World
 
 						ActiveState = WIActiveState.Invisible;
 						//this will create a save state to be saved to disk over time
-						WorldItems.Get.Save (this, false);
+						WorldItems.Get.Save (this, true);//TODO make this NOT true
 						//unloaded just means unloaded, not actually removed
 						//so don't tell our stack that we've been removed
 						//but do tell the group!

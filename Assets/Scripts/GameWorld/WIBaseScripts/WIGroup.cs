@@ -121,7 +121,7 @@ namespace Frontiers.World
 				{
 						mDestroyed = true;
 						if (!mSavedState) {
-								//Debug.Log ("WIGROUP " + name + " WAS DESTROYED WITHOUT SAVING STATE");
+								Debug.Log ("WIGROUP " + name + " WAS DESTROYED WITHOUT SAVING STATE");
 						}
 				}
 
@@ -304,259 +304,6 @@ namespace Frontiers.World
 						RefreshChildItems();
 						RefreshChildGroups();
 				}
-
-				#if UNITY_EDITOR
-				public bool EditorLoaded = false;
-
-				public void LoadEditor()
-				{
-						if (!Manager.IsAwake <Mods>()) {
-								Manager.WakeUp <Mods>("__MODS");
-						}
-						Mods.Get.Editor.InitializeEditor();
-
-						if (!Manager.IsAwake <WorldItems>()) {
-								Manager.WakeUp <WorldItems>("Frontiers_WorldItems");
-								WorldItems.Get.Initialize();
-						}
-
-						UnityEditor.EditorUtility.DisplayProgressBar("Loading group " + name, "Loading", 1f);
-						DoneLoading = false;
-						mEditorStackItemsToLoad.Clear();
-						mEditorChildGroupsToLoad.Clear();
-						ChildGroups.Clear();
-						ChildItems.Clear();
-
-						mEditorStackItemsToLoad.AddRange(Mods.Get.Editor.GroupChildItemNames(Props.UniqueID));
-						mEditorChildGroupsToLoad.AddRange(Mods.Get.Editor.GroupChildGroupNames(Props.UniqueID));
-						EditorNumChildrenToLoad = mEditorStackItemsToLoad.Count;
-						EditorNumGroupsToLoad = mEditorChildGroupsToLoad.Count;
-
-						//Debug.Log (Props.PathName + "Loading " + mEditorStackItemsToLoad.Count.ToString ( ) + " worlditems and " + mEditorChildGroupsToLoad.Count.ToString () + " child groups");
-
-						foreach (string nextChild in mEditorStackItemsToLoad) {
-								//Debug.Log ("Loading child item " + nextChild);
-								StackItem stackItem = null;
-								if (Mods.Get.Editor.LoadStackItemFromGroup(ref stackItem, Props.UniqueID, nextChild)) {
-										WorldItem newChildItem = null;
-										Transform childItemTransform = transform.FindChild(nextChild);
-										if (childItemTransform == null || !childItemTransform.gameObject.HasComponent <WorldItem>(out newChildItem)) {
-												//we have to instantiate it from scratch
-												WorldItem packPrefab = null;
-												if (WorldItems.Get.PackPrefab(stackItem.PackName, stackItem.PrefabName, out packPrefab)) {
-														GameObject basePrefab = UnityEditor.PrefabUtility.FindPrefabRoot(packPrefab.gameObject);
-														if (basePrefab != null) {
-																//Debug.Log ("Creating non-generic world item " + basePrefab.name);
-																GameObject instantiatedUnWi = UnityEditor.PrefabUtility.InstantiatePrefab(basePrefab) as GameObject;
-																//instantiate a new prefab - keep it as a prefab!
-																instantiatedUnWi.name = basePrefab.name;
-																instantiatedUnWi.transform.parent = transform;
-																//put it in the right place
-																stackItem.Props.Local.Transform.ApplyTo(instantiatedUnWi.transform, false);
-																//instantiatedUnWi.transform.localScale = Vector3.one * packPrefab.Props.Global.ScaleModifier;
-
-																newChildItem = instantiatedUnWi.GetComponent <WorldItem>();
-																newChildItem.Props.Global = packPrefab.Props.Global;
-														}
-												}
-										}
-										if (newChildItem != null) {
-												newChildItem.ReceiveState(ref stackItem);
-												ChildItems.SafeAdd(newChildItem);
-												newChildItem.OnEditorLoad();
-										}
-								}
-						}
-
-						foreach (string nextGroup in mEditorChildGroupsToLoad) {
-								Transform childGroupTransform = gameObject.FindOrCreateChild(nextGroup);
-								WIGroup childGroup = childGroupTransform.gameObject.GetOrAdd <WIGroup>();
-								childGroup.ParentGroup = this;
-								ChildGroups.SafeAdd(childGroup);
-								childGroup.Refresh();
-						}
-
-						UnityEditor.EditorUtility.ClearProgressBar();
-						EditorLoaded = true;
-				}
-
-				protected List <string> mEditorStackItemsToLoad = new List<string>();
-				protected List <string> mEditorChildGroupsToLoad = new List<string>();
-				public bool DoneLoading = false;
-				public int EditorNumChildrenToLoad = 0;
-				public int EditorNumGroupsToLoad = 0;
-
-				public void UnloadEditor()
-				{
-						foreach (WorldItem childItem in ChildItems) {
-								if (childItem != null) {
-										GameObject.DestroyImmediate(childItem.gameObject);
-								}
-						}
-						foreach (WIGroup childGroup in ChildGroups) {
-								if (childGroup != null) {
-										GameObject.DestroyImmediate(childGroup.gameObject);
-								}
-						}
-						ChildItems.Clear();
-						ChildGroups.Clear();
-						EditorLoaded = false;
-				}
-
-				public void RefreshEditor()
-				{
-						//refreshes the group in the editor while building a level
-						//it prepares the worlditems to be saved to disk by a chunk
-						//this should not be called during gameplay
-						if (Application.isPlaying) {
-								return;
-						}
-
-						Dictionary <string, WorldItem> addedItems = new Dictionary <string, WorldItem>();
-
-						Props.FileName = gameObject.name;
-						Chunk = gameObject.GetComponent <WorldChunk>();
-
-						if (Chunk != null) {
-								Props.PathName = GetPathName(this);
-								Props.UniqueID = GetUniqueID(this);
-						} else {
-								Props.PathName = GetPathName(this);
-								Props.UniqueID = GetUniqueID(this);
-						}
-
-						Props.UnloadedChildGroups.Clear();
-						Props.UnloadedChildItems.Clear();
-						ChildItems.Clear();
-						ChildGroups.Clear();
-
-						foreach (Transform child in transform) {
-								WorldItem worlditem = child.GetComponent <WorldItem>();
-								//Location location = child.GetComponent <Location> ();
-								if (worlditem != null) {
-										worlditem.Group = this;
-										worlditem.OnEditorRefresh();
-										int increment = 0;
-										string fileName = worlditem.GenerateFileName(increment);
-										while (Props.UnloadedChildItems.Contains(fileName)) {
-												increment += 1;
-												fileName = worlditem.GenerateFileName(increment);
-												if (increment > 999) {
-														Debug.Log("WHaaaaah " + fileName + " - " + child.name + " file name increment broke 999");
-														break;
-												}
-										}
-										Props.UnloadedChildItems.Add(fileName);
-										ChildItems.Add(worlditem);
-								}
-
-								WIGroup group = child.GetComponent <WIGroup>();
-								if (group != null) {
-										group.ParentGroup = this;
-										group.RefreshEditor();
-										Props.UnloadedChildGroups.Add(group.FileName);
-										ChildGroups.Add(group);
-								}
-						}
-				}
-
-				public void SaveEditor()
-				{
-						if (!mSavingEditorOverTime) {
-								mSavingEditorOverTime = true;
-								//saves all child items to disk in the editor
-								//does not save child groups to disk
-								//this should not be called during gameplay
-
-								//this function assumes RefreshEditor has been called
-								if (Application.isPlaying) {
-										return;
-								}
-
-								if (!EditorLoaded) {
-										Debug.Log("GROUP " + Props.PathName + " IS NOT SAFE TO SAVE, SKIPPING");
-										return;
-								}
-
-								foreach (Transform child in transform) {
-										WorldItem worlditem = child.GetComponent <WorldItem>();
-										if (worlditem != null) {
-												StackItem stackItem = worlditem.GetStackItem(WIMode.Frozen);
-												//ColoredDebug.Log ("Saving worlditem " + worlditem.name + " in group " + Props.Name + " Position: " + stackItem.Props.Local.Transform.Position.ToString ( ));
-												Mods.Get.Editor.SaveMod <StackItem>(stackItem, "Group", Props.UniqueID, worlditem.FileName);
-										}
-								}
-
-								Mods.Get.Editor.SaveGroupProps(Props);
-						}
-						mSavingEditorOverTime = false;
-				}
-
-				public void DrawEditor()
-				{
-						IStackOwner owner = null;
-						UnityEngine.GUI.color = Color.cyan;
-						if (HasOwner(out owner)) {
-								GUILayout.Button("Owner: " + owner.FileName);
-								HashSet <string> removeItemSkillNames = new HashSet<string>();
-								UnityEngine.GUI.color = Color.yellow;
-								IStackOwner useTarget = null;
-								if (owner.UseRemoveItemSkill(removeItemSkillNames, ref useTarget)) {
-										foreach (string removeItemSkillName in removeItemSkillNames) {
-												GUILayout.Button("Skill: " + removeItemSkillName);
-										}
-								}
-						} else {
-								GUILayout.Button("(Has no owner)");
-						}
-						switch (LoadState) {
-								case WIGroupLoadState.None:
-								case WIGroupLoadState.Uninitialized:
-								default:
-										UnityEngine.GUI.color = Color.red;
-										break;
-
-								case WIGroupLoadState.Initializing:
-								case WIGroupLoadState.Initialized:
-								case WIGroupLoadState.Loading:
-										UnityEngine.GUI.color = Color.yellow;
-										break;
-
-								case WIGroupLoadState.Loaded:
-										UnityEngine.GUI.color = Color.green;
-										break;
-
-						}
-						GUILayout.Button(LoadState.ToString());
-						WIGroupUnloader unloader = null;
-						if (WIGroups.UnloaderMappings.TryGetValue(this, out unloader)) {
-								UnityEngine.GUI.color = Color.red;
-								GUILayout.Button("HAS UNLOADER");
-						} else if (HasUnloadingParent) {
-								UnityEngine.GUI.color = Color.yellow;
-								GUILayout.Button("Parent is unloading");
-						}
-						UnityEngine.GUI.color = Color.yellow;
-						if (EditorLoaded) {
-								UnityEngine.GUI.color = Color.gray;
-						}
-						if (GUILayout.Button("\n\nLOAD GROUP\n\n") && !EditorLoaded) {
-								Debug.Log("Loading editor...");
-								LoadEditor();
-						}
-						UnityEngine.GUI.color = Color.red;
-						if (!EditorLoaded) {
-								UnityEngine.GUI.color = Color.gray;
-						}
-						if (GUILayout.Button("\n\nUNLOAD GROUP\n\n") && EditorLoaded) {
-								Debug.Log("Unloading editor...");
-								UnloadEditor();
-						}
-			
-				}
-
-				protected bool mSavingEditorOverTime = false;
-				#endif
 
 				#endregion
 
@@ -764,14 +511,6 @@ namespace Frontiers.World
 								OnChildItemRemoved.SafeInvoke();
 								return true;
 						}
-//			else {
-//				foreach (WorldItem childitem in ChildItems) {
-//					////ColoredDebug.Log (childItem.name);
-//				}
-//				if (Location.DebugNames.Contains (name)) {
-//					//ColoredDebug.Log ("WIGROUP:RemoveChildItemFromGroup (worlditem): " + Props.PathName + " couldn't find child item " + childItem.name + " in items list, doing nothing", "Orange");
-//				}
-//			}
 						return false;
 				}
 
@@ -1108,15 +847,9 @@ namespace Frontiers.World
 						} else {
 								if (GameManager.Is(FGameState.InGame)) {
 										//if we're in game, load them over time
-//					if (Location.DebugNames.Contains (name)) {
-//						ColoredDebug.Log ("WIGROUP:LoadChildItems in " + Props.PathName, "Orange");
-//					}
 										WorldItems.LoadStackItems(mStackItemsToLoad, this);
 								} else {
 										//otherwise load them all at once so we don't have to wait
-//					if (Location.DebugNames.Contains (name)) {
-//						ColoredDebug.Log ("WIGROUP:LoadChildItems (with no waiting period) in " + Props.PathName, "Orange");
-//					}
 										while (mStackItemsToLoad.Count > 0) {
 												WorldItem worlditem = null;
 												WorldItems.CloneFromStackItem(mStackItemsToLoad.Dequeue(), this, out worlditem);
@@ -1356,6 +1089,257 @@ namespace Frontiers.World
 								return WorldClock.RealTime - mTimeLastLoaded;
 						}
 				}
+
+				#if UNITY_EDITOR
+				public bool EditorLoaded = false;
+
+				public void LoadEditor()
+				{
+						if (!Manager.IsAwake <Mods>()) {
+								Manager.WakeUp <Mods>("__MODS");
+						}
+						Mods.Get.Editor.InitializeEditor();
+
+						if (!Manager.IsAwake <WorldItems>()) {
+								Manager.WakeUp <WorldItems>("Frontiers_WorldItems");
+								WorldItems.Get.Initialize();
+						}
+
+						UnityEditor.EditorUtility.DisplayProgressBar("Loading group " + name, "Loading", 1f);
+						DoneLoading = false;
+						mEditorStackItemsToLoad.Clear();
+						mEditorChildGroupsToLoad.Clear();
+						ChildGroups.Clear();
+						ChildItems.Clear();
+
+						mEditorStackItemsToLoad.AddRange(Mods.Get.Editor.GroupChildItemNames(Props.UniqueID));
+						mEditorChildGroupsToLoad.AddRange(Mods.Get.Editor.GroupChildGroupNames(Props.UniqueID));
+						EditorNumChildrenToLoad = mEditorStackItemsToLoad.Count;
+						EditorNumGroupsToLoad = mEditorChildGroupsToLoad.Count;
+
+						foreach (string nextChild in mEditorStackItemsToLoad) {
+								//Debug.Log ("Loading child item " + nextChild);
+								StackItem stackItem = null;
+								if (Mods.Get.Editor.LoadStackItemFromGroup(ref stackItem, Props.UniqueID, nextChild)) {
+										WorldItem newChildItem = null;
+										Transform childItemTransform = transform.FindChild(nextChild);
+										if (childItemTransform == null || !childItemTransform.gameObject.HasComponent <WorldItem>(out newChildItem)) {
+												//we have to instantiate it from scratch
+												WorldItem packPrefab = null;
+												if (WorldItems.Get.PackPrefab(stackItem.PackName, stackItem.PrefabName, out packPrefab)) {
+														GameObject basePrefab = UnityEditor.PrefabUtility.FindPrefabRoot(packPrefab.gameObject);
+														if (basePrefab != null) {
+																//Debug.Log ("Creating non-generic world item " + basePrefab.name);
+																GameObject instantiatedUnWi = UnityEditor.PrefabUtility.InstantiatePrefab(basePrefab) as GameObject;
+																//instantiate a new prefab - keep it as a prefab!
+																instantiatedUnWi.name = basePrefab.name;
+																instantiatedUnWi.transform.parent = transform;
+																//put it in the right place
+																stackItem.Props.Local.Transform.ApplyTo(instantiatedUnWi.transform, false);
+																//instantiatedUnWi.transform.localScale = Vector3.one * packPrefab.Props.Global.ScaleModifier;
+
+																newChildItem = instantiatedUnWi.GetComponent <WorldItem>();
+																newChildItem.Props.Global = packPrefab.Props.Global;
+														}
+												}
+										}
+										if (newChildItem != null) {
+												newChildItem.ReceiveState(ref stackItem);
+												ChildItems.SafeAdd(newChildItem);
+												newChildItem.OnEditorLoad();
+										}
+								}
+						}
+
+						foreach (string nextGroup in mEditorChildGroupsToLoad) {
+								Transform childGroupTransform = gameObject.FindOrCreateChild(nextGroup);
+								WIGroup childGroup = childGroupTransform.gameObject.GetOrAdd <WIGroup>();
+								childGroup.ParentGroup = this;
+								ChildGroups.SafeAdd(childGroup);
+								childGroup.Refresh();
+						}
+
+						UnityEditor.EditorUtility.ClearProgressBar();
+						EditorLoaded = true;
+				}
+
+				protected List <string> mEditorStackItemsToLoad = new List<string>();
+				protected List <string> mEditorChildGroupsToLoad = new List<string>();
+				public bool DoneLoading = false;
+				public int EditorNumChildrenToLoad = 0;
+				public int EditorNumGroupsToLoad = 0;
+
+				public void UnloadEditor()
+				{
+						foreach (WorldItem childItem in ChildItems) {
+								if (childItem != null) {
+										GameObject.DestroyImmediate(childItem.gameObject);
+								}
+						}
+						foreach (WIGroup childGroup in ChildGroups) {
+								if (childGroup != null) {
+										GameObject.DestroyImmediate(childGroup.gameObject);
+								}
+						}
+						ChildItems.Clear();
+						ChildGroups.Clear();
+						EditorLoaded = false;
+				}
+
+				public void RefreshEditor()
+				{
+						//refreshes the group in the editor while building a level
+						//it prepares the worlditems to be saved to disk by a chunk
+						//this should not be called during gameplay
+						if (Application.isPlaying) {
+								return;
+						}
+
+						Dictionary <string, WorldItem> addedItems = new Dictionary <string, WorldItem>();
+
+						Props.FileName = gameObject.name;
+						Chunk = gameObject.GetComponent <WorldChunk>();
+
+						if (Chunk != null) {
+								Props.PathName = GetPathName(this);
+								Props.UniqueID = GetUniqueID(this);
+						} else {
+								Props.PathName = GetPathName(this);
+								Props.UniqueID = GetUniqueID(this);
+						}
+
+						Props.UnloadedChildGroups.Clear();
+						Props.UnloadedChildItems.Clear();
+						ChildItems.Clear();
+						ChildGroups.Clear();
+
+						foreach (Transform child in transform) {
+								WorldItem worlditem = child.GetComponent <WorldItem>();
+								//Location location = child.GetComponent <Location> ();
+								if (worlditem != null) {
+										worlditem.Group = this;
+										worlditem.OnEditorRefresh();
+										int increment = 0;
+										string fileName = worlditem.GenerateFileName(increment);
+										while (Props.UnloadedChildItems.Contains(fileName)) {
+												increment += 1;
+												fileName = worlditem.GenerateFileName(increment);
+												if (increment > 999) {
+														Debug.Log("WHaaaaah " + fileName + " - " + child.name + " file name increment broke 999");
+														break;
+												}
+										}
+										Props.UnloadedChildItems.Add(fileName);
+										ChildItems.Add(worlditem);
+								}
+
+								WIGroup group = child.GetComponent <WIGroup>();
+								if (group != null) {
+										group.ParentGroup = this;
+										group.RefreshEditor();
+										Props.UnloadedChildGroups.Add(group.FileName);
+										ChildGroups.Add(group);
+								}
+						}
+				}
+
+				public void SaveEditor()
+				{
+						if (!mSavingEditorOverTime) {
+								mSavingEditorOverTime = true;
+								//saves all child items to disk in the editor
+								//does not save child groups to disk
+								//this should not be called during gameplay
+
+								//this function assumes RefreshEditor has been called
+								if (Application.isPlaying) {
+										return;
+								}
+
+								if (!EditorLoaded) {
+										Debug.Log("GROUP " + Props.PathName + " IS NOT SAFE TO SAVE, SKIPPING");
+										return;
+								}
+
+								foreach (Transform child in transform) {
+										WorldItem worlditem = child.GetComponent <WorldItem>();
+										if (worlditem != null) {
+												StackItem stackItem = worlditem.GetStackItem(WIMode.Frozen);
+												//ColoredDebug.Log ("Saving worlditem " + worlditem.name + " in group " + Props.Name + " Position: " + stackItem.Props.Local.Transform.Position.ToString ( ));
+												Mods.Get.Editor.SaveMod <StackItem>(stackItem, "Group", Props.UniqueID, worlditem.FileName);
+										}
+								}
+
+								Mods.Get.Editor.SaveGroupProps(Props);
+						}
+						mSavingEditorOverTime = false;
+				}
+
+				public void DrawEditor()
+				{
+						IStackOwner owner = null;
+						UnityEngine.GUI.color = Color.cyan;
+						if (HasOwner(out owner)) {
+								GUILayout.Button("Owner: " + owner.FileName);
+								HashSet <string> removeItemSkillNames = new HashSet<string>();
+								UnityEngine.GUI.color = Color.yellow;
+								IStackOwner useTarget = null;
+								if (owner.UseRemoveItemSkill(removeItemSkillNames, ref useTarget)) {
+										foreach (string removeItemSkillName in removeItemSkillNames) {
+												GUILayout.Button("Skill: " + removeItemSkillName);
+										}
+								}
+						} else {
+								GUILayout.Button("(Has no owner)");
+						}
+						switch (LoadState) {
+								case WIGroupLoadState.None:
+								case WIGroupLoadState.Uninitialized:
+								default:
+										UnityEngine.GUI.color = Color.red;
+										break;
+
+								case WIGroupLoadState.Initializing:
+								case WIGroupLoadState.Initialized:
+								case WIGroupLoadState.Loading:
+										UnityEngine.GUI.color = Color.yellow;
+										break;
+
+								case WIGroupLoadState.Loaded:
+										UnityEngine.GUI.color = Color.green;
+										break;
+
+						}
+						GUILayout.Button(LoadState.ToString());
+						WIGroupUnloader unloader = null;
+						if (WIGroups.UnloaderMappings.TryGetValue(this, out unloader)) {
+								UnityEngine.GUI.color = Color.red;
+								GUILayout.Button("HAS UNLOADER");
+						} else if (HasUnloadingParent) {
+								UnityEngine.GUI.color = Color.yellow;
+								GUILayout.Button("Parent is unloading");
+						}
+						UnityEngine.GUI.color = Color.yellow;
+						if (EditorLoaded) {
+								UnityEngine.GUI.color = Color.gray;
+						}
+						if (GUILayout.Button("\n\nLOAD GROUP\n\n") && !EditorLoaded) {
+								Debug.Log("Loading editor...");
+								LoadEditor();
+						}
+						UnityEngine.GUI.color = Color.red;
+						if (!EditorLoaded) {
+								UnityEngine.GUI.color = Color.gray;
+						}
+						if (GUILayout.Button("\n\nUNLOAD GROUP\n\n") && EditorLoaded) {
+								Debug.Log("Unloading editor...");
+								UnloadEditor();
+						}
+
+				}
+
+				protected bool mSavingEditorOverTime = false;
+				#endif
 
 				protected double mTimeLastUnloaded = 0.0f;
 				protected double mTimeLastLoaded = 0.0f;
