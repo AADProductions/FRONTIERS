@@ -14,10 +14,368 @@ namespace Frontiers.World
 		public class Characters : Manager
 		{
 				public static Characters Get;
+				public static bool CharacterShadows;
+				public MotileState DefaultMotileState = new MotileState();
+				public LookerState DefaultLookerState = new LookerState();
+				public DamageableState DefaultDamageableState = new DamageableState();
+				//[FrontiersAvailableModsAttribute("Category")]
+				public string DefaultInventoryFillCategory;
+				public CharacterBody DefaultBody;
+				//[FrontiersAvailableModsAttribute("Character/Face")]
+				public string DefaultFaceTexture;
+				//[FrontiersAvailableModsAttribute("Character/Body")]
+				public string DefaultBodyTexture;
+				public Material CharacterBodyMaterial;
+				public Material CharacterFaceMaterial;
+				public List <CharacterBody> MaleBodies = new List <CharacterBody>();
+				public List <CharacterBody> FemaleBodies = new List <CharacterBody>();
+				public List <CharacterBody> UnisexBodies = new List <CharacterBody>();
+				public List <CharacterBody> ChildBodies = new List <CharacterBody>();
+				public CharacterTemplate GenericCharacter = new CharacterTemplate();
+				public List <CharacterBody> CharacterBodies = new List <CharacterBody>();
+				public List <Character> SpawnedCharacters = new List <Character>();
+				public List <Character> SpawnedPilgrims = new List <Character>();
+				public List <DailyRoutineState> GenericRoutines = new List <DailyRoutineState>();
+				public GameObject CharacterBase;
+				public PlayerBody PlayerBodyPrefab;
+
+				public List <string> AvailableBodyNames {
+						get {
+								if (mAvailableCharacterBodies == null) {
+										mAvailableCharacterBodies = new List<string>();
+								} else {
+										mAvailableCharacterBodies.Clear();
+								}
+								foreach (CharacterBody b in MaleBodies) {
+										mAvailableCharacterBodies.Add(b.name);
+								}
+								foreach (CharacterBody b in FemaleBodies) {
+										mAvailableCharacterBodies.Add(b.name);
+								}
+								foreach (CharacterBody b in UnisexBodies) {
+										mAvailableCharacterBodies.Add(b.name);
+								}
+								foreach (CharacterBody b in ChildBodies) {
+										mAvailableCharacterBodies.Add(b.name);
+								}
+								return mAvailableCharacterBodies;
+						}
+				}
+
+				public List <CharacterBody> Bodies {
+						get {
+								List <CharacterBody> bodies = new List<CharacterBody>();
+								bodies.AddRange(ChildBodies);
+								bodies.AddRange(FemaleBodies);
+								bodies.AddRange(MaleBodies);
+								bodies.AddRange(UnisexBodies);
+								return bodies;
+						}
+				}
+
+				#region initialization
 
 				public override void WakeUp()
 				{
 						Get = this;
+				}
+
+				public override void Initialize()
+				{
+						if (mBodyLookup == null) {
+								mBodyLookup = new Dictionary <string, CharacterBody>();
+						} else {
+								mBodyLookup.Clear();
+						}
+
+						mBodyMaterialLookup.Clear();
+						mCharacterTemplates.Clear();
+
+						Dictionary <string,string> bodyRenames = new Dictionary<string, string>();
+
+						foreach (CharacterBody bodyTemplate in MaleBodies) {
+								mBodyLookup.Add(bodyTemplate.name.Trim(), bodyTemplate);
+						}
+						foreach (CharacterBody bodyTemplate in FemaleBodies) {
+								mBodyLookup.Add(bodyTemplate.name.Trim(), bodyTemplate);
+						}
+						foreach (CharacterBody bodyTemplate in UnisexBodies) {
+								mBodyLookup.Add(bodyTemplate.name.Trim(), bodyTemplate);
+						}
+						foreach (CharacterBody bodyTemplate in ChildBodies) {
+								mBodyLookup.Add(bodyTemplate.name.Trim(), bodyTemplate);
+						}
+
+						LoadCharacterTemplates();
+
+						mInitialized = true;
+				}
+
+				public void LoadCharacterTemplates()
+				{
+						CharacterTemplates.Clear();
+						GenericCharacterTemplates.Clear();
+						mCharacterTemplates.Clear();
+						CharacterTemplate characterTemplate = null;
+
+						List <string> characterTemplateNames = Mods.Get.ModDataNames("Character");
+						foreach (string characterTemplateName in characterTemplateNames) {
+								if (Mods.Get.Runtime.LoadMod(ref characterTemplate, "Character", characterTemplateName)) {
+										string templateName = characterTemplateName.Trim().ToLower();
+										switch (characterTemplate.TemplateType) {
+												case CharacterTemplate.CharacterTemplateType.Generic:
+												default:
+														GenericCharacterTemplates.Add(characterTemplate);
+														mCharacterTemplates.Add(templateName, characterTemplate);
+														break;
+
+												case CharacterTemplate.CharacterTemplateType.UniqueAlternate:
+												case CharacterTemplate.CharacterTemplateType.UniquePrimary:
+														CharacterTemplates.Add(characterTemplate);
+														mCharacterTemplates.Add(templateName, characterTemplate);
+														break;
+										}
+								}
+						}
+
+						//now link up face possiblities based on the body
+						for (int i = 0; i < GenericCharacterTemplates.Count; i++) {
+								//clear whatever we started with
+								characterTemplate = GenericCharacterTemplates[i];
+								if (characterTemplate.TextureKeywords.Count == 0) {
+										characterTemplate.TextureKeywords.Add("Settler");
+								}
+								//clear whatever we started with
+								characterTemplate.AvailableFaceTexturesMale.Clear();
+								characterTemplate.AvailableFaceTexturesFemale.Clear();
+								characterTemplate.AvailableBodyTexturesMale.Clear();
+								characterTemplate.AvailableBodyTexturesFemale.Clear();
+								CharacterBody maleBody = null;
+								CharacterBody femaleBody = null;
+								//add the default face and body textures
+								if (GetBody(true, characterTemplate.BodyNameMale, out maleBody)) {
+										CheckCharacterTextures(maleBody, characterTemplate, characterTemplate.AvailableBodyTexturesMale, characterTemplate.AvailableFaceTexturesMale, "M", characterTemplate.BodyNameMale);
+								}
+								if (GetBody(true, characterTemplate.BodyNameFemale, out femaleBody)) {
+										CheckCharacterTextures(femaleBody, characterTemplate, characterTemplate.AvailableBodyTexturesFemale, characterTemplate.AvailableFaceTexturesFemale, "F", characterTemplate.BodyNameFemale);
+								}
+						}
+				}
+
+				public void RefreshCharacterShadowSettings(bool objectShadows)
+				{
+						if (CharacterShadows != objectShadows) {
+								CharacterShadows = objectShadows;
+								for (int i = 0; i < SpawnedCharacters.Count; i++) {
+										if (SpawnedCharacters[i] != null && SpawnedCharacters[i].Body != null) {
+												SpawnedCharacters[i].Body.RefreshShadowCasters();
+										}
+								}
+						}
+				}
+
+				public override void OnGameStart()
+				{
+						StartCoroutine(UpdatePilgrims());
+				}
+
+				public void Reset()
+				{
+						ResetCharacter("all");
+				}
+
+				public void ResetCharacter(string dataName)
+				{
+						Character character = null;
+						if (dataName == "all") {
+								foreach (Character spawnedCharacter in Get.SpawnedCharacters) {
+										ResetCharacter(spawnedCharacter);
+								}
+						} else if (mSpawnedCharacters.TryGetValue(dataName.ToLower().Trim(), out character)) {
+								ResetCharacter(character);
+						}
+
+				}
+
+				protected void ResetCharacter(Character character)
+				{
+						CharacterTemplate template = null;
+						if (mCharacterTemplates.TryGetValue(character.name.Trim().ToLower(), out template)) {
+								character.State = ObjectClone.Clone <CharacterState>(template.StateTemplate);
+								Talkative talkative = character.GetComponent <Talkative>();
+								talkative.State = ObjectClone.Clone <TalkativeState>(template.TalkativeTemplate);
+						}
+				}
+
+				#endregion
+
+				#region getting components
+
+				public PlayerBody PlayerBody(PlayerBase player)
+				{
+						GameObject playerBodyGameObject = GameObject.Instantiate(PlayerBodyPrefab.gameObject) as GameObject;
+						PlayerBody playerBody = playerBodyGameObject.GetComponent <PlayerBody>();
+						playerBody.OnSpawn(player);
+						playerBody.PlayerObject = player;
+						playerBody.Initialize(player);
+						//TODO set player body props based on player flags
+						return playerBody;
+				}
+
+				public static DailyRoutineState RandomGenericDailyRoutine(CharacterFlags flags)
+				{
+						return ObjectClone.Clone <DailyRoutineState>(Get.GenericRoutines[UnityEngine.Random.Range(0, Get.GenericRoutines.Count)]);
+				}
+
+				public bool BodyTemplate(CharacterFlags combinedFlags, int tieBreaker, out CharacterBody characterBody)
+				{
+						characterBody = null;
+						List <CharacterBody> availableTemplates = new List <CharacterBody>();
+						//at this point it's assumed that the flag values are locked down
+						switch (combinedFlags.GeneralAge) {
+								case 1://TODO move these into globals (?)
+										//child age
+										availableTemplates.AddRange(ChildBodies);
+										break;
+
+								default:
+										//adult ages or unspecified
+										switch (combinedFlags.Gender) {
+												case 1:
+												default:
+														//male
+														availableTemplates.AddRange(MaleBodies);
+														break;
+
+												case 2:
+														//female or unspecified
+														availableTemplates.AddRange(FemaleBodies);
+														break;
+										}
+										//for both male and female, add unisex bodies
+										availableTemplates.AddRange(UnisexBodies);
+										break;
+						}
+						//shuffle the list randomly using tiebreaker as a seed
+						//the first matching template will be used
+						//shuffling ensures randomness, using the seed ensures the same result every time
+						availableTemplates.Shuffle(new System.Random(tieBreaker));
+						bool foundMatchingBody = false;
+						//Debug.Log ("Checking available bodies, " + availableTemplates.Count.ToString ());
+						for (int i = 0; i < availableTemplates.Count; i++) {
+								//first see if the body matches, that's most important
+								if (availableTemplates[i].Flags.CharacterBodyLayout == combinedFlags.CharacterBodyLayout) {
+										if (combinedFlags.Check(availableTemplates[i].Flags)) {
+												//hooray, the flags match we're done
+												foundMatchingBody = true;
+												characterBody = availableTemplates[i];
+												break;
+										}
+										//if the flags don't match we're still guaranteed to return a body
+										//maybe not the RIGHT body but whatever...
+								}
+						}
+						return characterBody != null;
+				}
+
+				public static bool GetTemplate(bool generic, string templateName, out CharacterTemplate template)
+				{
+						return Get.mCharacterTemplates.TryGetValue(templateName.Trim().ToLower(), out template);
+				}
+
+				public bool GetBody(bool generic, string bodyName, out CharacterBody body)
+				{
+						return !string.IsNullOrEmpty(bodyName) && mBodyLookup.TryGetValue(bodyName, out body);
+				}
+
+				public void CheckCharacterTextures(CharacterBody body, CharacterTemplate characterTemplate, List <string> bodyTextures, List <string> faceTextures, string gender, string defaultBodyName)
+				{
+						List <string> availableFaceTextures = Mods.Get.ModDataNames("Character/Face");
+						List <string> availableBodyTextures = Mods.Get.ModDataNames("Character/Body");
+						//if the body texture is already specified, just use that
+						string layout = "A";
+						string age = "Young";
+						//general age isn't limited by the body so check the character instead
+						//we wanted lots of age ranges, instead we have 2... sigh
+						switch (characterTemplate.StateTemplate.Flags.GeneralAge) {
+								case 1://child to teens
+								case 2://twenties to thirties
+								default:
+										break;
+								case 3://forties to fifties
+								case 4://sixties to seventies
+								case 5://ancient
+										age = "Old";
+										break;
+						}
+						switch (body.Flags.CharacterBodyLayout) {
+						//body layouts are all-or nothing
+								case 1://layout A
+								default:
+										break;
+
+								case 2://layout B
+										layout = "B";
+										break;
+
+								case 4://layout C
+										layout = "C";
+										break;
+
+								case 8://layout D
+										layout = "D";
+										break;
+
+								case 16://layout E
+										layout = "E";
+										break;
+
+								case 32://layout F
+										layout = "F";
+										break;
+						}
+
+						for (int b = 0; b < availableBodyTextures.Count; b++) {
+								string bodyTextureName = availableBodyTextures[b];
+								string[] splitBodyName = bodyTextureName.Split(new String [] { "_" }, StringSplitOptions.RemoveEmptyEntries);
+								//body texture is like so:
+								//Body_Med_E_SoldierLeather_U_1
+								//0:Body_[1:Size]_[2:Layout]_[3:Keyword]_[4:Gender]_[5:Variant]
+								//first see if the body layout matches
+								//unisex bodies can always be used for all genders
+								if (string.Equals(splitBodyName[2], layout) && (string.Equals(splitBodyName[4], gender) || string.Equals(splitBodyName[4], "U"))) {
+										//Debug.Log("Body name and gender match");
+										for (int k = 0; k < characterTemplate.TextureKeywords.Count; k++) {
+												if (splitBodyName[3].Contains(characterTemplate.TextureKeywords[k])) {
+														bodyTextures.SafeAdd(bodyTextureName);
+														break;
+												}
+										}
+								}
+						}
+						//even if the face is specified we're still going to check other available faces
+						for (int f = 0; f < availableFaceTextures.Count; f++) {
+								string faceTextureName = availableFaceTextures[f];
+								//if it contains CC that means custom character so it's out
+								if (faceTextureName.Contains("_CC_")) {
+										continue;
+								}
+								string[] splitFaceName = faceTextureName.Split(new String [] { "_" }, StringSplitOptions.RemoveEmptyEntries);
+								//face texture is like so:
+								//Face_A_M_Laborer_A_Old_1
+								//0:Face_[1:Layout]_[2:Gender]_[3:Keyword]_[4:SkinColor]_[5:Age]_[6:Variant]
+								//first check if the layout matches
+								if (string.Equals(splitFaceName[1], layout) && string.Equals(splitFaceName[5], age) && string.Equals(splitFaceName[2], gender)) {
+										//if we've got the layout and age right, next check gender
+										//unisex characters can use male or female faces
+										for (int k = 0; k < characterTemplate.TextureKeywords.Count; k++) {
+												if (splitFaceName[3].Contains(characterTemplate.TextureKeywords[k])) {
+														faceTextures.SafeAdd(faceTextureName);
+														break;
+												}
+										}
+								}
+						}
 				}
 
 				public static string GetBodyName(CharacterBody body, Dictionary <string,string> existingBodies)
@@ -73,258 +431,6 @@ namespace Frontiers.World
 						return finalBodyName;
 				}
 
-				public override void Initialize()
-				{
-						if (mBodyLookup == null) {
-								mBodyLookup = new Dictionary <string, CharacterBody>();
-						} else {
-								mBodyLookup.Clear();
-						}
-
-						mBodyMaterialLookup.Clear();
-						mCharacterTemplates.Clear();
-
-						Dictionary <string,string> bodyRenames = new Dictionary<string, string>();
-
-						foreach (CharacterBody bodyTemplate in MaleBodies) {
-								mBodyLookup.Add(bodyTemplate.name.Trim(), bodyTemplate);
-						}
-						foreach (CharacterBody bodyTemplate in FemaleBodies) {
-								mBodyLookup.Add(bodyTemplate.name.Trim(), bodyTemplate);
-						}
-						foreach (CharacterBody bodyTemplate in UnisexBodies) {
-								mBodyLookup.Add(bodyTemplate.name.Trim(), bodyTemplate);
-						}
-						foreach (CharacterBody bodyTemplate in ChildBodies) {
-								mBodyLookup.Add(bodyTemplate.name.Trim(), bodyTemplate);
-						}
-
-						LoadCharacterTemplates();
-
-						mInitialized = true;
-				}
-
-				public override void OnGameStart()
-				{
-						StartCoroutine(UpdatePilgrims());
-				}
-
-				public static bool CharacterShadows;
-
-				public void RefreshCharacterShadowSettings(bool objectShadows)
-				{
-						if (CharacterShadows != objectShadows) {
-								CharacterShadows = objectShadows;
-								for (int i = 0; i < SpawnedCharacters.Count; i++) {
-										if (SpawnedCharacters[i] != null && SpawnedCharacters[i].Body != null) {
-												SpawnedCharacters[i].Body.RefreshShadowCasters();
-										}
-								}
-						}
-				}
-
-				public List <CharacterBody> Bodies {
-						get {
-								List <CharacterBody> bodies = new List<CharacterBody>();
-								bodies.AddRange(ChildBodies);
-								bodies.AddRange(FemaleBodies);
-								bodies.AddRange(MaleBodies);
-								bodies.AddRange(UnisexBodies);
-								return bodies;
-						}
-				}
-
-				public PlayerBody PlayerBody(PlayerBase player)
-				{
-						GameObject playerBodyGameObject = GameObject.Instantiate(PlayerBodyPrefab.gameObject) as GameObject;
-						PlayerBody playerBody = playerBodyGameObject.GetComponent <PlayerBody>();
-						playerBody.OnSpawn(player);
-						playerBody.PlayerObject = player;
-						playerBody.Initialize(player);
-						//TODO set player body props based on player flags
-						return playerBody;
-				}
-
-				public CharacterBody DefaultBody;
-				//[FrontiersAvailableModsAttribute("Character/Face")]
-				public string DefaultFaceTexture;
-				//[FrontiersAvailableModsAttribute("Character/Body")]
-				public string DefaultBodyTexture;
-
-				public List <string> AvailableBodyNames {
-						get {
-								if (mAvailableCharacterBodies == null) {
-										mAvailableCharacterBodies = new List<string>();
-								} else {
-										mAvailableCharacterBodies.Clear();
-								}
-								foreach (CharacterBody b in MaleBodies) {
-										mAvailableCharacterBodies.Add(b.name);
-								}
-								foreach (CharacterBody b in FemaleBodies) {
-										mAvailableCharacterBodies.Add(b.name);
-								}
-								foreach (CharacterBody b in UnisexBodies) {
-										mAvailableCharacterBodies.Add(b.name);
-								}
-								foreach (CharacterBody b in ChildBodies) {
-										mAvailableCharacterBodies.Add(b.name);
-								}
-								return mAvailableCharacterBodies;
-						}
-				}
-
-				protected List <string> mAvailableCharacterBodies;
-				public MotileState DefaultMotileState = new MotileState();
-				public LookerState DefaultLookerState = new LookerState();
-				public DamageableState DefaultDamageableState = new DamageableState();
-				//[FrontiersAvailableModsAttribute("Category")]
-				public string DefaultInventoryFillCategory;
-
-				public static DailyRoutineState RandomGenericDailyRoutine(CharacterFlags flags)
-				{
-						return ObjectClone.Clone <DailyRoutineState>(Get.GenericRoutines[UnityEngine.Random.Range(0, Get.GenericRoutines.Count)]);
-				}
-
-				public void Reset()
-				{
-						ResetCharacter("all");
-				}
-
-				public void ResetCharacter(string dataName)
-				{
-						Character character = null;
-						if (dataName == "all") {
-								//Debug.Log ("Resetting ALL characters...");
-								foreach (Character spawnedCharacter in Get.SpawnedCharacters) {
-										ResetCharacter(spawnedCharacter);
-								}
-						} else if (mSpawnedCharacters.TryGetValue(dataName.ToLower().Trim(), out character)) {
-								//Debug.Log ("Rsetting character " + dataName);
-								ResetCharacter(character);
-						} else {
-								//Debug.Log ("Didn't find character in lookup");
-						}
-				}
-
-				protected void ResetCharacter(Character character)
-				{
-						CharacterTemplate template = null;
-						//Debug.Log ("Resetting character " + character.name);
-						if (mCharacterTemplates.TryGetValue(character.name.Trim().ToLower(), out template)) {
-								//Debug.Log ("Setting template stuff");
-								character.State = ObjectClone.Clone <CharacterState>(template.StateTemplate);
-								Talkative talkative = character.GetComponent <Talkative>();
-								talkative.State = ObjectClone.Clone <TalkativeState>(template.TalkativeTemplate);
-						}
-				}
-
-				public bool BodyTemplate(CharacterFlags combinedFlags, int tieBreaker, out CharacterBody characterBody)
-				{
-						characterBody = null;
-						List <CharacterBody> availableTemplates = new List <CharacterBody>();
-						//at this point it's assumed that the flag values are locked down
-						switch (combinedFlags.GeneralAge) {
-								case 1://TODO move these into globals (?)
-				//child age
-				//Debug.Log ("Getting child age");
-										availableTemplates.AddRange(ChildBodies);
-										break;
-
-								default:
-				//adult ages or unspecified
-				//Debug.Log ("Getting adult age");
-										switch (combinedFlags.Gender) {
-												case 1:
-												default:
-					//male
-					//Debug.Log ("Getting adult age males");
-														availableTemplates.AddRange(MaleBodies);
-														break;
-
-												case 2:
-					//female or unspecified
-					//Debug.Log ("Getting adult age females");
-														availableTemplates.AddRange(FemaleBodies);
-														break;
-										}
-				//for both male and female, add unisex bodies
-				//Debug.Log ("Getting adult age unisex");
-										availableTemplates.AddRange(UnisexBodies);
-										break;
-						}
-						//shuffle the list randomly using tiebreaker as a seed
-						//the first matching template will be used
-						//shuffling ensures randomness, using the seed ensures the same result every time
-						availableTemplates.Shuffle(new System.Random(tieBreaker));
-						bool foundMatchingBody = false;
-						//Debug.Log ("Checking available bodies, " + availableTemplates.Count.ToString ());
-						for (int i = 0; i < availableTemplates.Count; i++) {
-								//first see if the body matches, that's most important
-								//Debug.Log ("Checking body " + availableTemplates [i].name);
-								if (availableTemplates[i].Flags.CharacterBodyLayout == combinedFlags.CharacterBodyLayout) {
-										if (combinedFlags.Check(availableTemplates[i].Flags)) {
-												//hooray, the flags match we're done
-												foundMatchingBody = true;
-												characterBody = availableTemplates[i];
-												//Debug.Log ("FOUND BODY " + finalBody.name);
-												break;
-										}
-										//Debug.Log ("====");
-										//if the flags don't match we're still guaranteed to return a body
-										//maybe not the RIGHT body but whatever...
-								}
-						}
-						//Debug.Log ("=====");
-						return characterBody != null;
-				}
-				//used to spawn characters by structures
-				public static bool SpawnCharacter(ActionNode node, string characterName, WIFlags flags, WIGroup group, out Character newCharacter)
-				{
-						characterName = characterName.Trim().ToLower();
-						CharacterTemplate template = null;
-						newCharacter = null;
-						if (Get.mCharacterTemplates.TryGetValue(characterName, out template)) {
-								if (template.TemplateType == CharacterTemplate.CharacterTemplateType.Generic) {
-										//Debug.Log ("Is generic template");
-										return SpawnRandomCharacter(node, template, flags, group, out newCharacter);
-								} else {
-										//Debug.Log ("Is non-generic template");
-										return GetOrSpawnCharacter(node, characterName, group, out newCharacter);
-								}
-						}
-						//Debug.Log ("Couldn't load template " + characterName);
-						return false;
-				}
-				//used to mass-spawn characters by cities
-				public static void SpawnRandomCharacter(ActionNode node, List <string> templateNames, WIFlags locationFlags, WIGroup group)
-				{
-						string templateName = node.State.OccupantName;
-						if (string.IsNullOrEmpty(templateName)) {
-								if (templateNames.Count > 0) {
-										int templateIndex = Mathf.Abs(node.State.GetHashCode()) % templateNames.Count;
-										templateName = templateNames[templateIndex];
-								} else {
-										templateName = "Random";
-								}
-						}
-						Character character = null;
-						SpawnRandomCharacter(node, templateName, locationFlags, group, out character);
-				}
-
-				public static bool GetTemplate(bool generic, string templateName, out CharacterTemplate template)
-				{
-						return Get.mCharacterTemplates.TryGetValue(templateName.Trim().ToLower(), out template);
-				}
-
-				public bool GetBody(bool generic, string bodyName, out CharacterBody body)
-				{
-						return !string.IsNullOrEmpty(bodyName) && mBodyLookup.TryGetValue(bodyName, out body);
-				}
-
-				protected static List <string> FirstNames = null;
-				protected static List <string> LastNames = null;
-
 				public static void GetCharacterName(Character character, Region region)
 				{
 						//TODO also get names from other regions
@@ -348,6 +454,9 @@ namespace Frontiers.World
 						character.State.Name.FileName = characterHashCode.ToString() + "-" + character.State.Name.FirstName;
 				}
 
+				protected static List <string> FirstNames = null;
+				protected static List <string> LastNames = null;
+
 				public static void GetCharacterName(Character character, ActionNode node)
 				{
 						Region region = null;
@@ -357,13 +466,39 @@ namespace Frontiers.World
 						GetCharacterName(character, region);
 				}
 
-				public static bool KnowsPlayer(string characterName)
+				#endregion
+
+				#region spawning
+
+				//used to spawn characters by structures
+				public static bool SpawnCharacter(ActionNode node, string characterName, WIFlags flags, WIGroup group, out Character newCharacter)
 				{
+						characterName = characterName.Trim().ToLower();
 						CharacterTemplate template = null;
+						newCharacter = null;
 						if (Get.mCharacterTemplates.TryGetValue(characterName, out template)) {
-								return template.StateTemplate.KnowsPlayer;
+								if (template.TemplateType == CharacterTemplate.CharacterTemplateType.Generic) {
+										return SpawnRandomCharacter(node, template, flags, group, out newCharacter);
+								} else {
+										return GetOrSpawnCharacter(node, characterName, group, out newCharacter);
+								}
 						}
 						return false;
+				}
+				//used to mass-spawn characters by cities
+				public static void SpawnRandomCharacter(ActionNode node, List <string> templateNames, WIFlags locationFlags, WIGroup group)
+				{
+						string templateName = node.State.OccupantName;
+						if (string.IsNullOrEmpty(templateName)) {
+								if (templateNames.Count > 0) {
+										int templateIndex = Mathf.Abs(node.State.GetHashCode()) % templateNames.Count;
+										templateName = templateNames[templateIndex];
+								} else {
+										templateName = "Random";
+								}
+						}
+						Character character = null;
+						SpawnRandomCharacter(node, templateName, locationFlags, group, out character);
 				}
 
 				protected IEnumerator DespawnCharacterOverTime(Character character, bool fade)
@@ -710,7 +845,6 @@ namespace Frontiers.World
 						#region move to final position
 						newCharacterWorlditem.transform.position = node.transform.position;
 						newCharacterWorlditem.transform.rotation = node.transform.rotation;
-						//Debug.Log ("node local position is " + node.transform.localPosition);
 						//parent under group copy new position to the local props so it initializes in the right place - this is messy but it'll get cleaned up later
 						newCharacterWorlditem.transform.parent = group.transform;
 						newCharacterWorlditem.Props.Local.Transform.Position = newCharacterWorlditem.transform.localPosition;
@@ -723,7 +857,6 @@ namespace Frontiers.World
 						newCharacterWorlditem.Initialize();
 
 						//add to lookup arrays
-						//Debug.Log ("Adding character file name " + characterName.FileName + " to dictionary for " + templateName);
 						Get.mSpawnedCharacters.Add(characterName.FileName, newCharacter);
 						Get.SpawnedCharacters.Add(newCharacter);
 						Get.SelectedCharacter = Get.SpawnedCharacters.LastIndex();
@@ -746,7 +879,7 @@ namespace Frontiers.World
 						Texture2D face = null;
 						Texture2D faceMask = null;
 						string ethnicity = "A";
-//			string age = "Young";
+						//string age = "Young";
 						switch (combinedFlags.Ethnicity) {
 								case 1:
 								default:
@@ -762,16 +895,18 @@ namespace Frontiers.World
 										break;
 						}
 						//Debug.Log ("Picked ethnicity " + ethnicity);
-//			switch (combinedFlags.GeneralAge) {
-//				case 1:
-//				case 2:
-//				case 3:
-//					break;
-//
-//				default:
-//					age = "Old";
-//					break;
-//			}
+						/*
+						switch (combinedFlags.GeneralAge) {
+							case 1:
+							case 2:
+							case 3:
+								break;
+
+							default:
+								age = "Old";
+								break;
+						}
+						*/
 						//get a face texture from the available face textures
 						template.StateTemplate.FaceTextureName = Get.DefaultFaceTexture;
 						if (faceTextures.Count > 0) {
@@ -788,7 +923,6 @@ namespace Frontiers.World
 						template.StateTemplate.BodyTextureName = Get.DefaultBodyTexture;
 						if (bodyTextures.Count > 0) {
 								template.StateTemplate.BodyTextureName = bodyTextures.NextItem(spawnValue);// bodyTextures [spawnValue % bodyTextures.Count];
-								//Debug.Log ("Picked " + template.StateTemplate.BodyTextureName + " for body texture in " + template.Name);
 						}
 						Mods.Get.Runtime.FaceTexture(ref face, template.StateTemplate.FaceTextureName);
 						Mods.Get.Runtime.BodyTexture(ref body, template.StateTemplate.BodyTextureName);
@@ -818,22 +952,18 @@ namespace Frontiers.World
 
 				public static bool GetOrSpawnCharacter(ActionNode node, string characterName, WIGroup group, out Character newCharacter)
 				{
-						//Debug.Log ("Getting character " + characterName + " for action node " + node.name);
-
 						characterName = characterName.Trim().ToLower();
 						int spawnValue = characterName.GetHashCode();
 						CharacterTemplate template = null;
 						newCharacter = null;
 
 						if (!Get.mCharacterTemplates.TryGetValue(characterName, out template)) {
-								//DebugConsole.Get.Log.Add("#Couldn't find template " + characterName);
 								Debug.Log("Couldn't find template " + characterName);
 								return false;
 						}
 
 						CharacterBody bodyTemplate = null;
 						if (!mBodyLookup.TryGetValue(template.StateTemplate.BodyName, out bodyTemplate)) {
-								//DebugConsole.Get.Log.Add("#Couldn't find body " + template.StateTemplate.BodyName);
 								Debug.Log("Couldn't find body " + template.StateTemplate.BodyName);
 								return false;
 						}
@@ -901,13 +1031,10 @@ namespace Frontiers.World
 
 						//add to lookup arrays
 						if (!Get.mSpawnedCharacters.ContainsKey(characterName)) {
-								//Debug.Log ("you've already spawned character " + characterName);
 								Get.mSpawnedCharacters.Add(characterName, newCharacter);
 								Get.SpawnedCharacters.Add(newCharacter);
 								Get.SelectedCharacter = Get.SpawnedCharacters.LastIndex();
 						}
-
-						//Debug.Log ("Spawned " + newCharacter.name + ", now occupying node and mobilizing");
 
 						//set the node occupant to the new character
 						//TODO make this safer
@@ -946,6 +1073,19 @@ namespace Frontiers.World
 						return true;
 				}
 
+				#endregion
+
+				#region convenience functions
+
+				public static bool KnowsPlayer(string characterName)
+				{
+						CharacterTemplate template = null;
+						if (Get.mCharacterTemplates.TryGetValue(characterName, out template)) {
+								return template.StateTemplate.KnowsPlayer;
+						}
+						return false;
+				}
+
 				public bool CharacterHasReachedQuestNode(string characterName, string nodeName, out float time)
 				{
 						bool result = false;
@@ -979,262 +1119,14 @@ namespace Frontiers.World
 						return result;
 				}
 
-				protected Character GenerateCharacterFromStackItem(StackItem characterStackItem)
-				{
-						return null;
-				}
-
-				public void LinkCharacterTemplatesToTextures()
-				{
-
-				}
-
-				public void LoadCharacterTemplates()
-				{
-						CharacterTemplates.Clear();
-						GenericCharacterTemplates.Clear();
-						mCharacterTemplates.Clear();
-						CharacterTemplate characterTemplate = null;
-
-						List <string> characterTemplateNames = Mods.Get.ModDataNames("Character");
-						foreach (string characterTemplateName in characterTemplateNames) {
-								//Debug.Log ("Checking character template " + characterTemplateName);
-								if (Mods.Get.Runtime.LoadMod(ref characterTemplate, "Character", characterTemplateName)) {
-										string templateName = characterTemplateName.Trim().ToLower();
-										switch (characterTemplate.TemplateType) {
-												case CharacterTemplate.CharacterTemplateType.Generic:
-												default:
-														GenericCharacterTemplates.Add(characterTemplate);
-														mCharacterTemplates.Add(templateName, characterTemplate);
-														break;
-
-												case CharacterTemplate.CharacterTemplateType.UniqueAlternate:
-												case CharacterTemplate.CharacterTemplateType.UniquePrimary:
-														CharacterTemplates.Add(characterTemplate);
-														mCharacterTemplates.Add(templateName, characterTemplate);
-														break;
-										}
-								}
-						}
-
-						//now link up face possiblities based on the body
-						for (int i = 0; i < GenericCharacterTemplates.Count; i++) {
-								//clear whatever we started with
-								characterTemplate = GenericCharacterTemplates[i];
-								if (characterTemplate.TextureKeywords.Count == 0) {
-										characterTemplate.TextureKeywords.Add("Settler");
-								}
-								//Debug.Log("-------Checking template " + characterTemplate.Name + "---------");
-								//clear whatever we started with
-								characterTemplate.AvailableFaceTexturesMale.Clear();
-								characterTemplate.AvailableFaceTexturesFemale.Clear();
-								characterTemplate.AvailableBodyTexturesMale.Clear();
-								characterTemplate.AvailableBodyTexturesFemale.Clear();
-								CharacterBody maleBody = null;
-								CharacterBody femaleBody = null;
-								//add the default face and body textures
-								if (GetBody(true, characterTemplate.BodyNameMale, out maleBody)) {
-										CheckCharacterTextures(maleBody, characterTemplate, characterTemplate.AvailableBodyTexturesMale, characterTemplate.AvailableFaceTexturesMale, "M", characterTemplate.BodyNameMale);
-								}
-								if (GetBody(true, characterTemplate.BodyNameFemale, out femaleBody)) {
-										CheckCharacterTextures(femaleBody, characterTemplate, characterTemplate.AvailableBodyTexturesFemale, characterTemplate.AvailableFaceTexturesFemale, "F", characterTemplate.BodyNameFemale);
-								}
-						}
-				}
-
-				public void CheckCharacterTextures(CharacterBody body, CharacterTemplate characterTemplate, List <string> bodyTextures, List <string> faceTextures, string gender, string defaultBodyName)
-				{
-						List <string> availableFaceTextures = Mods.Get.ModDataNames("Character/Face");
-						List <string> availableBodyTextures = Mods.Get.ModDataNames("Character/Body");
-						//Debug.Log("-------Checking template " + characterTemplate.Name + "---------");
-						//if the body texture is already specified, just use that
-						string layout = "A";
-						string age = "Young";
-						//general age isn't limited by the body so check the character instead
-						//we wanted lots of age ranges, instead we have 2... sigh
-						switch (characterTemplate.StateTemplate.Flags.GeneralAge) {
-								case 1://child to teens
-								case 2://twenties to thirties
-								default:
-										break;
-								case 3://forties to fifties
-								case 4://sixties to seventies
-								case 5://ancient
-										age = "Old";
-										break;
-						}
-						switch (body.Flags.CharacterBodyLayout) {
-						//body layouts are all-or nothing
-								case 1://layout A
-								default:
-										break;
-
-								case 2://layout B
-										layout = "B";
-										break;
-
-								case 4://layout C
-										layout = "C";
-										break;
-
-								case 8://layout D
-										layout = "D";
-										break;
-
-								case 16://layout E
-										layout = "E";
-										break;
-
-								case 32://layout F
-										layout = "F";
-										break;
-						}
-
-						for (int b = 0; b < availableBodyTextures.Count; b++) {
-								string bodyTextureName = availableBodyTextures[b];
-								string[] splitBodyName = bodyTextureName.Split(new String [] { "_" }, StringSplitOptions.RemoveEmptyEntries);
-								//body texture is like so:
-								//Body_Med_E_SoldierLeather_U_1
-								//0:Body_[1:Size]_[2:Layout]_[3:Keyword]_[4:Gender]_[5:Variant]
-								//first see if the body layout matches
-								//unisex bodies can always be used for all genders
-								//Debug.Log("Checking " + bodyTextureName + " against template " + characterTemplate.Name + " layout " + layout + " gender " + gender);
-								if (string.Equals(splitBodyName[2], layout) && (string.Equals(splitBodyName[4], gender) || string.Equals(splitBodyName[4], "U"))) {
-										//Debug.Log("Body name and gender match");
-										for (int k = 0; k < characterTemplate.TextureKeywords.Count; k++) {
-												//Debug.Log("Does have keyword " + characterTemplate.TextureKeywords[k] + "?");
-												if (splitBodyName[3].Contains(characterTemplate.TextureKeywords[k])) {
-														//Debug.Log("YES!");
-														bodyTextures.SafeAdd(bodyTextureName);
-														break;
-												}
-										}
-								}
-						}
-						//even if the face is specified we're still going to check other available faces
-						for (int f = 0; f < availableFaceTextures.Count; f++) {
-								string faceTextureName = availableFaceTextures[f];
-								//if it contains CC that means custom character so it's out
-								if (faceTextureName.Contains("_CC_")) {
-										continue;
-								}
-								string[] splitFaceName = faceTextureName.Split(new String [] { "_" }, StringSplitOptions.RemoveEmptyEntries);
-								//face texture is like so:
-								//Face_A_M_Laborer_A_Old_1
-								//0:Face_[1:Layout]_[2:Gender]_[3:Keyword]_[4:SkinColor]_[5:Age]_[6:Variant]
-								//first check if the layout matches
-								if (string.Equals(splitFaceName[1], layout) && string.Equals(splitFaceName[5], age) && string.Equals(splitFaceName[2], gender)) {
-										//if we've got the layout and age right, next check gender
-										//unisex characters can use male or female faces
-										for (int k = 0; k < characterTemplate.TextureKeywords.Count; k++) {
-												if (splitFaceName[3].Contains(characterTemplate.TextureKeywords[k])) {
-														faceTextures.SafeAdd(faceTextureName);
-														break;
-												}
-										}
-								}
-						}
-				}
-
-				public IEnumerator UpdatePilgrims()
-				{
-						mUpdatingPilgrims = true;
-						while (mUpdatingPilgrims) {
-								while (!GameManager.Is(FGameState.InGame)) {
-										yield return null;
-								}
-								//check to see if any pilgrims are out of range
-								for (int i = SpawnedPilgrims.LastIndex(); i >= 0; i--) {
-										if (SpawnedPilgrims[i].worlditem.Is(WIActiveState.Invisible)) {
-												Debug.Log("Spawned pilgrim was invisible, despawing now");
-												DespawnCharacter(SpawnedPilgrims[i], false);
-												SpawnedPilgrims.RemoveAt(i);
-										}
-								}
-								//wait a moment
-								yield return null;
-
-								//check to see if we need to spawn any more
-								System.Random random = new System.Random(Profile.Get.CurrentGame.Seed);
-								while (SpawnedPilgrims.Count < Globals.MaxSpawnedPilgrims) {
-										if (GameManager.Is(FGameState.InGame)) {
-												//get a nearby path
-												Path onPath = null;
-												if (Paths.Get.PathNearPlayer(out onPath, random.Next())) {
-														Character newPilgrim = null;
-														WIFlags locationFlags = GameWorld.Get.CurrentRegion.ResidentFlags;
-														PathMarkerInstanceTemplate atMarker = Paths.Get.FirstMarkerWithinRange(Globals.PlayerEncounterRadius * 2, Globals.PlayerColliderRadius, onPath, Player.Local.Position);
-														CharacterTemplate template = GenericCharacterTemplates[random.Next(0, GenericCharacterTemplates.Count)];
-														try {
-														if (SpawnRandomPilgrim(template, onPath, atMarker, locationFlags, out newPilgrim)) {
-																SpawnedPilgrims.Add(newPilgrim);
-																Pilgrim pilgrim = newPilgrim.worlditem.GetOrAdd <Pilgrim>();
-																pilgrim.LastMarker = atMarker;
-																pilgrim.ActivePath = onPath;
-														}
-														} catch (Exception e) {
-															Debug.LogError("Exception while spawning pilgrim - continuing normally: " + e.ToString ());
-														}
-												}
-										}
-										yield return new WaitForSeconds(1.0f);
-								}
-								yield return new WaitForSeconds(1.0f);
-						}
-						mUpdatingPilgrims = false;
-						yield break;
-				}
-
-				protected bool mUpdatingPilgrims = true;
-
-				public void Update()
-				{
-						while (mRecentlySpawnedCharacters.Count > 0) {
-								KeyValuePair <Motile, ActionNode> charNodePair = mRecentlySpawnedCharacters.Dequeue();
-								charNodePair.Key.PushMotileAction(MotileAction.GoTo(charNodePair.Value.State), MotileActionPriority.ForceTop);
-						}
-
-						if (!GameManager.Is(FGameState.InGame))
-								return;
-
-						if (GameManager.Get.TestingEnvironment) {
-								if (SpawnedCharacters.Count > 0) {
-										if (SpawnedCharacters.Count > 1) {
-												float offset = 1.25f;
-												Vector3 playerPosition = GameManager.Get.GameCamera.transform.position - Vector3.up * 1.35f;
-												for (int i = 0; i < SpawnedCharacters.Count; i++) {
-														SpawnedCharacters[i].transform.position = playerPosition + new Vector3((i - mSelectedCharacter) * offset, 0f, 0f) + (Vector3.forward * 3);
-														SpawnedCharacters[i].Body.transform.position = SpawnedCharacters[i].transform.position;
-														if (i == mSelectedCharacter) {
-																SpawnedCharacters[i].worlditem.HasPlayerFocus = true;//.SendMessage ("OnGainPlayerFocus");
-														} else {
-																SpawnedCharacters[i].worlditem.HasPlayerFocus = false;//.SendMessage ("OnLosePlayerFocus");
-														}
-												}
-										} else {
-												Vector3 playerPosition = GameManager.Get.GameCamera.transform.position - Vector3.up * 1.25f;
-												SpawnedCharacters[0].transform.position = playerPosition + (Vector3.forward * 3);
-												SpawnedCharacters[0].Body.transform.position = SpawnedCharacters[0].transform.position;
-												SpawnedCharacters[0].SendMessage("OnGainPlayerFocus");
-
-										}
-								}
-						}
-				}
-
 				public void InitiateConversation()
 				{
 						if (SpawnedCharacters.Count > 0) {
 								Character character = SpawnedCharacters[mSelectedCharacter];
 								Talkative talkative = character.worlditem.Get<Talkative>();
-								if (string.IsNullOrEmpty(talkative.State.ConversationName)) {
-										//DebugConsole.Get.Log.Add("#No conversation specified in " + character.name + ", try 'help' for help");
-								} else {
-										//DebugConsole.Get.Log.Add("#Initiating conversation with " + character.name);
+								if (!string.IsNullOrEmpty(talkative.State.ConversationName)) {
+										talkative.StartCoroutine(talkative.InitiateConversation());
 								}
-								talkative.StartCoroutine(talkative.InitiateConversation());
-						} else {
-								//DebugConsole.Get.Log.Add("#We have no spawned characters!");
 						}
 				}
 
@@ -1244,18 +1136,8 @@ namespace Frontiers.World
 								Character character = SpawnedCharacters[mSelectedCharacter];
 								Talkative talkative = character.worlditem.Get<Talkative>();
 								talkative.State.ConversationName = conversationName;
-								//DebugConsole.Get.Log.Add("#Set character " + character.name + " talkative to " + conversationName);
 						}
 				}
-
-				public void SortTemplates()
-				{
-						GenericCharacterTemplates.Sort();
-				}
-
-				public List <DailyRoutineState> GenericRoutines = new List <DailyRoutineState>();
-				public GameObject CharacterBase;
-				public PlayerBody PlayerBodyPrefab;
 
 				public void SetSelectedCharacterConvo(bool forward)
 				{
@@ -1315,11 +1197,76 @@ namespace Frontiers.World
 
 								if (!string.IsNullOrEmpty(finalConvoName)) {
 										talkative.State.ConversationName = finalConvoName;
-								} else {
-										//DebugConsole.Get.Log.Add("#No conversation found with template name " + selectedCharacter.State.TemplateName);
 								}
 						}
 				}
+
+				#endregion
+
+				#region updates
+
+				public IEnumerator UpdatePilgrims()
+				{
+						mUpdatingPilgrims = true;
+						while (mUpdatingPilgrims) {
+								while (!GameManager.Is(FGameState.InGame)) {
+										yield return null;
+								}
+								//check to see if any pilgrims are out of range
+								for (int i = SpawnedPilgrims.LastIndex(); i >= 0; i--) {
+										if (SpawnedPilgrims[i].worlditem.Is(WIActiveState.Invisible)) {
+												Debug.Log("Spawned pilgrim was invisible, despawing now");
+												DespawnCharacter(SpawnedPilgrims[i], false);
+												SpawnedPilgrims.RemoveAt(i);
+										}
+								}
+								//wait a moment
+								yield return null;
+
+								//check to see if we need to spawn any more
+								System.Random random = new System.Random(Profile.Get.CurrentGame.Seed);
+								while (SpawnedPilgrims.Count < Globals.MaxSpawnedPilgrims) {
+										if (GameManager.Is(FGameState.InGame)) {
+												//get a nearby path
+												Path onPath = null;
+												if (Paths.Get.PathNearPlayer(out onPath, random.Next())) {
+														Character newPilgrim = null;
+														WIFlags locationFlags = GameWorld.Get.CurrentRegion.ResidentFlags;
+														PathMarkerInstanceTemplate atMarker = Paths.Get.FirstMarkerWithinRange(Globals.PlayerEncounterRadius * 2, Globals.PlayerColliderRadius, onPath, Player.Local.Position);
+														CharacterTemplate template = GenericCharacterTemplates[random.Next(0, GenericCharacterTemplates.Count)];
+														try {
+																if (SpawnRandomPilgrim(template, onPath, atMarker, locationFlags, out newPilgrim)) {
+																		SpawnedPilgrims.Add(newPilgrim);
+																		Pilgrim pilgrim = newPilgrim.worlditem.GetOrAdd <Pilgrim>();
+																		pilgrim.LastMarker = atMarker;
+																		pilgrim.ActivePath = onPath;
+																}
+														} catch (Exception e) {
+																Debug.LogError("Exception while spawning pilgrim - continuing normally: " + e.ToString());
+														}
+												}
+										}
+										yield return new WaitForSeconds(1.0f);
+								}
+								yield return new WaitForSeconds(1.0f);
+						}
+						mUpdatingPilgrims = false;
+						yield break;
+				}
+
+				protected bool mUpdatingPilgrims = true;
+
+				public void Update()
+				{
+						while (mRecentlySpawnedCharacters.Count > 0) {
+								KeyValuePair <Motile, ActionNode> charNodePair = mRecentlySpawnedCharacters.Dequeue();
+								charNodePair.Key.PushMotileAction(MotileAction.GoTo(charNodePair.Value.State), MotileActionPriority.ForceTop);
+						}
+				}
+
+				#endregion
+
+				#if UNITY_EDITOR
 
 				public int SelectedCharacter {
 						get {
@@ -1337,8 +1284,13 @@ namespace Frontiers.World
 								}
 						}
 				}
-				#if UNITY_EDITOR
+
 				protected bool checkTextures = false;
+
+				public void SortTemplates()
+				{
+						GenericCharacterTemplates.Sort();
+				}
 
 				public void DrawEditor()
 				{
@@ -1366,17 +1318,9 @@ namespace Frontiers.World
 						}
 				}
 				#endif
+
 				protected int mSelectedCharacter = 0;
-				public Material CharacterBodyMaterial;
-				public Material CharacterFaceMaterial;
-				public List <CharacterBody> MaleBodies = new List <CharacterBody>();
-				public List <CharacterBody> FemaleBodies = new List <CharacterBody>();
-				public List <CharacterBody> UnisexBodies = new List <CharacterBody>();
-				public List <CharacterBody> ChildBodies = new List <CharacterBody>();
-				public CharacterTemplate GenericCharacter = new CharacterTemplate();
-				public List <CharacterBody> CharacterBodies = new List <CharacterBody>();
-				public List <Character> SpawnedCharacters = new List <Character>();
-				public List <Character> SpawnedPilgrims = new List <Character>();
+				protected List <string> mAvailableCharacterBodies;
 				protected Dictionary <string, Character> mSpawnedCharacters = new Dictionary <string, Character>();
 				protected Queue <KeyValuePair <Motile, ActionNode>> mRecentlySpawnedCharacters = new Queue <KeyValuePair <Motile, ActionNode>>();
 				public List <CharacterTemplate> GenericCharacterTemplates = new List <CharacterTemplate>();
@@ -1384,399 +1328,5 @@ namespace Frontiers.World
 				protected Dictionary <string, CharacterTemplate> mCharacterTemplates = new Dictionary <string, CharacterTemplate>();
 				protected Dictionary <int, Material> mBodyMaterialLookup = new Dictionary <int, Material>();
 				protected static Dictionary <string, CharacterBody> mBodyLookup;
-		}
-
-		public class FlagTree <T,K> where T : IFlagTreeData <K>
-		{
-				public FlagTreeNode <T,K> Root = new FlagTreeNode <T,K>();
-
-				public void AddLayer(string flagName, int[] flagValues)
-				{
-						Root.AddLayer(flagName, flagValues);
-				}
-
-				public void AddData(T data)
-				{
-						Root.AddData(data);
-				}
-
-				public bool Search(K flags, List <T> data)
-				{
-						return Root.Search(flags, data);
-				}
-		}
-
-		public class FlagTreeNode <T,K> where T : IFlagTreeData <K>
-		{
-				List <T> Data;
-				public string FlagName;
-				public int FlagValue;
-				public int Depth = 0;
-				public List <FlagTreeNode <T,K>> Children;
-
-				public bool Search(K flags, List <T> data)
-				{
-						if (Data == null) {
-								return false;
-						}
-						bool thisResult = false;
-						for (int i = 0; i < Data.Count; i++) {
-								if (!data.Contains(Data[i])
-								&& Data[i].CheckFlags(flags)) {
-										data.Add(Data[i]);
-										thisResult = true;
-								}
-						}
-						bool childrenResult = false;
-						if (thisResult && Children != null) {
-								for (int i = 0; i < Children.Count; i++) {
-										childrenResult |= Children[i].Search(flags, data);
-								}
-						}
-						return thisResult | childrenResult;
-				}
-
-				public void AddData(T data)
-				{
-						if (Data == null) {
-								Data = new List<T>();
-						}
-
-						if (!Data.Contains(data)) {
-								if (data.CheckFlag(FlagName, FlagValue)) {
-										Data.Add(data);
-										//Debug.Log ("Texture added to depth " + Depth.ToString () + " with flag name " + FlagName + " / flag value " + FlagValue.ToString ());
-								} else {
-										//Debug.Log ("Texture NOT added because " + FlagName + " / " + FlagValue.ToString () + " returned false");
-								}
-						}
-
-						//even if the data fits here, we also want the children to have it
-						if (Children != null) {
-								//Debug.Log ("Adding texture to children... ");
-								for (int i = 0; i < Children.Count; i++) {
-										Children[i].AddData(data);
-								}
-						}
-				}
-
-				public void AddLayer(string flagName, int[] flagValues)
-				{
-						if (Children == null && flagValues.Length > 0) {
-								//this is the layer we're adding
-								Children = new List<FlagTreeNode<T, K>>();
-								for (int i = 0; i < flagValues.Length; i++) {
-										FlagTreeNode <T,K> newNode = new FlagTreeNode<T, K>();
-										newNode.FlagName = flagName;
-										newNode.FlagValue = (1 << flagValues[i]);
-										newNode.Depth = Depth + 1;
-										Children.Add(newNode);
-								}
-						} else {	//nope, still have to go deeper
-								for (int i = 0; i < Children.Count; i++) {
-										Children[i].AddLayer(flagName, flagValues);
-								}
-						}
-				}
-		}
-
-		public interface IFlagTreeData <K>
-		{
-				bool CheckFlags(K flags);
-
-				bool CheckFlag(string flagName, int flagValue);
-		}
-
-		[Serializable]
-		public class MotileProperties
-		{
-				public MotileGoToMethod DefaultGoToMethod = MotileGoToMethod.Pathfinding;
-				public float HoverHeight = 2f;
-				public bool Hovers = false;
-				public float HoverChangeSpeed = 1.0f;
-				public float SpeedRun = 4.5f;
-				public float SpeedWalk = 2.5f;
-				public float SpeedWounded = 0.5f;
-				public float SpeedIdleWalk = 0.5f;
-				public float SpeedAttack = 0.125f;
-				public float RotationChangeSpeed = 2.5f;
-				public float MovementChangeSpeed = 4.0f;
-				public float IdleWanderThreshold = 0.9f;
-				public float IdleWaitThreshold = 0.05f;
-				public float MaxElevationChange = 0.5f;
-				public float GroundedHeight = 0.25f;
-				public float RVORadius = 1.0f;
-		}
-
-		[Serializable]
-		public class CharacterName
-		{
-				public void Generate(CharacterFlags combinedFlags)
-				{
-						GenericIdentifier = "Settler";
-						return;
-				}
-
-				public string GenericIdentifier;
-				public string FileName;
-				public string Prefix;
-				public string FirstName;
-				public string LastName;
-				public string MiddleName;
-				public string NickName;
-				public string PostFix;
-				public int SpawnValue;
-		}
-
-		[Serializable]
-		public class CharacterFlags : WIFlags
-		{
-				public CharacterFlags()
-				{
-
-				}
-				//		public bool Check (CharacterFlags anyOfThese, ref int numMisMatches)
-				//		{
-				//			//bool bodyLayout = Flags.Check (CharacterBodyLayout, anyOfThese.CharacterBodyLayout, Flags.CheckType.MatchAny);
-				//			bool wealth = Flags.Check (Wealth, anyOfThese.Wealth, Flags.CheckType.MatchAny);
-				//			bool alignment = Flags.Check (Alignment, anyOfThese.Alignment, Flags.CheckType.MatchAny);
-				//			bool ethnicity = Flags.Check (Ethnicity, anyOfThese.Ethnicity, Flags.CheckType.MatchAny);
-				//			bool faction = Flags.Check (Faction, anyOfThese.Faction, Flags.CheckType.MatchAny);
-				//			bool gender = Flags.Check (Gender, anyOfThese.Gender, Flags.CheckType.MatchAny);
-				//			bool generalAge = Flags.Check (GeneralAge, anyOfThese.GeneralAge, Flags.CheckType.MatchAny);
-				//			bool occupation = Flags.Check (Occupation, anyOfThese.Occupation, Flags.CheckType.MatchAny);
-				//			bool region = Flags.Check (Region, anyOfThese.Region, Flags.CheckType.MatchAny);
-				//
-				//			numMisMatches = 0;
-				//
-				//			if (!wealth) {
-				//				numMisMatches++;
-				//			}
-				//			if (!alignment) {
-				//				numMisMatches++;
-				//			}
-				//			if (!ethnicity) {
-				//				numMisMatches++;
-				//			}
-				//			if (!faction) {
-				//				numMisMatches++;
-				//			}
-				//			if (!gender) {
-				//				numMisMatches++;
-				//			}
-				//			if (!generalAge) {
-				//				numMisMatches++;
-				//			}
-				//			if (!occupation) {
-				//				numMisMatches++;
-				//			}
-				//			if (!region) {
-				//				numMisMatches++;
-				//			}
-				//
-				//			//Debug.Log ("Alignment: " + alignment.ToString () + "\n ethnicity: " + ethnicity.ToString () + "\n faction: " + faction.ToString () + "\n gender: " + gender.ToString () + "\n generalAge: " + generalAge.ToString () + "\n occupation: " + occupation.ToString () + "\n region: " + region.ToString () + "\n");
-				//
-				//			return alignment && ethnicity && faction && gender && generalAge && occupation && region;
-				//
-				//			/*
-				//			return (Flags.Check (CharacterBodyLayout, anyOfThese.CharacterBodyLayout, Flags.CheckType.MatchAny)
-				//			&& Flags.Check (Alignment, anyOfThese.Alignment, Flags.CheckType.MatchAny)
-				//			&& Flags.Check (Ethnicity, anyOfThese.Ethnicity, Flags.CheckType.MatchAny)
-				//			&& Flags.Check (Faction, anyOfThese.Faction, Flags.CheckType.MatchAny)
-				//			&& Flags.Check (Gender, anyOfThese.Gender, Flags.CheckType.MatchAny)
-				//			&& Flags.Check (GeneralAge, anyOfThese.GeneralAge, Flags.CheckType.MatchAny)
-				//			&& Flags.Check (Occupation, anyOfThese.Occupation, Flags.CheckType.MatchAny)
-				//			&& Flags.Check (Region, anyOfThese.Region, Flags.CheckType.MatchAny));*/
-				//		}
-				public bool Check(CharacterFlags anyOfThese)
-				{
-						return (Flags.Check(CharacterBodyLayout, anyOfThese.CharacterBodyLayout, Flags.CheckType.MatchAny)
-						&& Flags.Check(Alignment, anyOfThese.Alignment, Flags.CheckType.MatchAny)
-						&& Flags.Check(Ethnicity, anyOfThese.Ethnicity, Flags.CheckType.MatchAny)
-						&& Flags.Check(Faction, anyOfThese.Faction, Flags.CheckType.MatchAny)
-						&& Flags.Check(Gender, anyOfThese.Gender, Flags.CheckType.MatchAny)
-						&& Flags.Check(GeneralAge, anyOfThese.GeneralAge, Flags.CheckType.MatchAny)
-						&& Flags.Check(Occupation, anyOfThese.Occupation, Flags.CheckType.MatchAny)
-						&& Flags.Check(Region, anyOfThese.Region, Flags.CheckType.MatchAny));
-				}
-
-				public void Intersection(CharacterFlags other)
-				{
-						Gender = Gender & other.Gender;
-						GeneralAge = GeneralAge & other.GeneralAge;
-						Ethnicity = Ethnicity & other.Ethnicity;
-						Occupation = Occupation & other.Occupation;
-						Credentials1 = Credentials1 & other.Credentials1;
-						Credentials2 = Credentials2 & other.Credentials2;
-						Credentials3 = Credentials3 & other.Credentials3;
-						Credentials4 = Credentials4 & other.Credentials4;
-						Credentials5 = Credentials5 & other.Credentials5;
-						Faction = Faction & other.Faction;
-						Region = Region & other.Region;
-						Alignment = Alignment & other.Alignment;
-						Wealth = Wealth & other.Wealth;
-				}
-
-				public void SafeIntersection(CharacterFlags other)
-				{
-						int gender = Gender & other.Gender;
-						int generalAge = GeneralAge & other.GeneralAge;
-						int ethnicity = Ethnicity & other.Ethnicity;
-						int occupation = Occupation & other.Occupation;
-						int credentials1 = Credentials1 & other.Credentials1;
-						int credentials2 = Credentials2 & other.Credentials2;
-						int credentials3 = Credentials3 & other.Credentials3;
-						int credentials4 = Credentials4 & other.Credentials4;
-						int credentials5 = Credentials5 & other.Credentials5;
-						int faction = Faction & other.Faction;
-						int region = Region & other.Region;
-						int alignment = Alignment & other.Alignment;
-						int wealth = Wealth & other.Wealth;
-
-						Gender = (gender > 0) ? gender : Gender;
-						GeneralAge = (generalAge > 0) ? generalAge : GeneralAge;
-						Ethnicity = (ethnicity > 0) ? ethnicity : Ethnicity;
-						Occupation = (occupation > 0) ? occupation : Occupation;
-						Credentials1 = (credentials1 > 0) ? credentials1 : Credentials1;
-						Credentials2 = (credentials2 > 0) ? credentials2 : Credentials2;
-						Credentials3 = (credentials3 > 0) ? credentials3 : Credentials3;
-						Credentials4 = (credentials4 > 0) ? credentials4 : Credentials4;
-						Credentials5 = (credentials5 > 0) ? credentials5 : Credentials5;
-						Faction = (faction > 0) ? faction : Faction;
-						Region = (region > 0) ? region : Region;
-						Alignment = (alignment > 0) ? alignment : Alignment;
-						Wealth = (wealth > 0) ? wealth : Wealth;
-				}
-
-				public void Union(CharacterFlags other)
-				{
-						Gender = Gender | other.Gender;
-						GeneralAge = GeneralAge | other.GeneralAge;
-						Ethnicity = Ethnicity | other.Ethnicity;
-						Occupation = Occupation | other.Occupation;
-						Credentials1 = Credentials1 | other.Credentials1;
-						Credentials2 = Credentials2 | other.Credentials2;
-						Credentials3 = Credentials3 | other.Credentials3;
-						Credentials4 = Credentials4 | other.Credentials4;
-						Credentials5 = Credentials5 | other.Credentials5;
-						Faction = Faction | other.Faction;
-						Region = Region | other.Region;
-						Alignment = Alignment | other.Alignment;
-						Wealth = Wealth | other.Wealth;
-				}
-
-				public override void Union(WIFlags other)
-				{
-						Alignment = other.Alignment | Alignment;
-						Occupation = other.Occupation | Occupation;
-						Region = other.Region | Region;
-						Faction = other.Faction | Faction;
-						Wealth = other.Wealth | Wealth;
-				}
-
-				public override void Intersection(WIFlags other)
-				{
-						Alignment = other.Alignment & Alignment;
-						Occupation = other.Occupation & Occupation;
-						Region = other.Region & Region;
-						Faction = other.Faction & Faction;
-						Wealth = other.Wealth & Wealth;
-				}
-
-				public void SafeIntersection(WIFlags other)
-				{
-						int alignment = other.Alignment & Alignment;
-						int occupation = other.Occupation & Occupation;
-						int region = other.Region & Region;
-						int faction = other.Faction & Faction;
-						int wealth = other.Wealth & Wealth;
-
-						Alignment = (alignment > 0) ? alignment : Alignment;
-						Occupation = (occupation > 0) ? occupation : Occupation;
-						Region = (region > 0) ? region : Region;
-						Faction = (faction > 0) ? faction : Faction;
-						Wealth = (wealth > 0) ? wealth : Wealth;
-				}
-
-				public void ChooseMajorValues(int tieBreaker)
-				{
-						//don't touch character body layout
-						//we'll let the texture do that
-						GeneralAge = FlagSet.GetFlagBitValue(GeneralAge, tieBreaker, 1);
-						Ethnicity = FlagSet.GetFlagBitValue(Ethnicity, tieBreaker, 1);
-				}
-
-				public void ChooseMinorValues(int tieBreaker)
-				{
-						Occupation = FlagSet.GetFlagBitValue(Occupation, tieBreaker, 1);
-						Credentials1 = FlagSet.GetFlagBitValue(Credentials1, tieBreaker, 1);
-						Credentials2 = FlagSet.GetFlagBitValue(Credentials2, tieBreaker, 1);
-						Credentials3 = FlagSet.GetFlagBitValue(Credentials3, tieBreaker, 1);
-						Credentials4 = FlagSet.GetFlagBitValue(Credentials4, tieBreaker, 1);
-						Credentials5 = FlagSet.GetFlagBitValue(Credentials5, tieBreaker, 1);
-						Faction = FlagSet.GetFlagBitValue(Faction, tieBreaker, 1);
-						Region = FlagSet.GetFlagBitValue(Region, tieBreaker, 1);
-						Alignment = FlagSet.GetFlagBitValue(Alignment, tieBreaker, 1);
-						Wealth = FlagSet.GetFlagBitValue(Wealth, tieBreaker, 1);
-				}
-
-				[FrontiersBitMask("CharacterBodyLayout")]
-				public int CharacterBodyLayout = 0;
-				[FrontiersBitMask("Gender")]
-				public int Gender = 0;
-				[FrontiersBitMask("GeneralAge")]
-				public int GeneralAge = 0;
-				[FrontiersBitMask("Ethnicity")]
-				public int Ethnicity = 0;
-				[FrontiersBitMaskAttribute("CredentialsAristocracy")]
-				public int Credentials1 = 0;
-				[FrontiersBitMaskAttribute("CredentialsBandit")]
-				public int Credentials2 = 0;
-				[FrontiersBitMaskAttribute("CredentialsGuild")]
-				public int Credentials3 = 0;
-				[FrontiersBitMaskAttribute("CredentialsSoldier")]
-				public int Credentials4 = 0;
-				[FrontiersBitMaskAttribute("CredentialsWarlock")]
-				public int Credentials5 = 0;
-		}
-
-		[Serializable]
-		public class CharacterTemplate : Mod, IComparable <CharacterTemplate>
-		{
-				public int CompareTo(CharacterTemplate other)
-				{
-						return Name.CompareTo(other.Name);
-				}
-
-				public CharacterTemplateType TemplateType = CharacterTemplateType.Generic;
-				public CharacterState StateTemplate = new CharacterState();
-				public TalkativeState TalkativeTemplate	= new TalkativeState();
-				public MotileState MotileTemplate = new MotileState();
-				public HostileState HostileTemplate = new HostileState();
-				public LookerState LookerTemplate = new LookerState();
-				public ListenerState ListenerTemplate = new ListenerState();
-				public DamageableState DamageableTemplate = new DamageableState();
-				public WIExamineInfo ExamineInfo = new WIExamineInfo();
-				public string BodyNameMale;
-				public string BodyNameFemale;
-				public List <string> CustomWIScripts = new List <string>();
-				public List <string> AvailableFaceTexturesMale = new List <string>();
-				public List <string> AvailableBodyTexturesMale = new List <string>();
-				public List <string> AvailableFaceTexturesFemale = new List <string>();
-				public List <string> AvailableBodyTexturesFemale = new List <string>();
-				public List <string> TextureKeywords = new List <string>();
-				//[FrontiersAvailableModsAttribute("Category")]
-				public string InventoryFillCategory = string.Empty;
-				public bool UseDefaultMotile = true;
-				public bool UseDefaultDamageable = true;
-				public bool UseDefaultLookerState = true;
-				public bool UseDefaultListenerState = true;
-
-				public enum CharacterTemplateType
-				{
-						Generic,
-						UniquePrimary,
-						UniqueAlternate,
-				}
 		}
 }
