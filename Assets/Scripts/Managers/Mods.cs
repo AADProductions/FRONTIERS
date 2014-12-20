@@ -326,7 +326,7 @@ namespace Frontiers
 								//first check to see if the item exists
 								WorldItem childItem = null;
 								if (WIGroups.FindChildItem(reference.GroupPath, reference.FileName, out childItem)) {
-										childItem.ReceiveState(stackItem);
+										childItem.ReceiveState(ref stackItem);
 								} else {
 										//if the item doesn't exist, see if the group exists
 										WIGroup group = null;

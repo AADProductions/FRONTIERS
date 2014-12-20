@@ -289,6 +289,15 @@ namespace Frontiers.World
 				public int FileNameIncrement = 0;
 				public string QuestName = string.Empty;
 				public bool AutoIncrementFileName = true;
+
+				public void Clear ( ) {
+						PackName = null;
+						PrefabName = null;
+						DisplayName = null;
+						StackName = null;
+						FileName = null;
+						QuestName = null;
+				}
 		}
 
 		[Serializable]
@@ -314,6 +323,13 @@ namespace Frontiers.World
 				public string StackNamerScript = string.Empty;
 				public string HudTargetScript = string.Empty;
 				public List <string> RemoveItemSkills = new List<string>();
+
+				public void Clear ( ) {
+						LightOffset = null;
+						Transform = null;
+						ChunkPosition = null;
+						RemoveItemSkills.Clear();
+				}
 		}
 
 		[Serializable]
@@ -514,6 +530,17 @@ namespace Frontiers.World
 				//those are looked up at runtime
 				public WIName Name = new WIName();
 				public WILocalProps Local = new WILocalProps();
+
+				public void Clear ( ) {
+						if (Name != null) {
+								Name.Clear();
+						}
+						if (Local != null) {
+								Local.Clear();
+						}
+						Name = null;
+						Local = null;
+				}
 
 				public void CopyGlobalNames(SIProps copyFrom)
 				{

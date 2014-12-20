@@ -756,9 +756,9 @@ namespace Frontiers
 												LoadedStructures.SafeAdd(structure);
 												structure.OnLoadFinish(finalState);
 												//now that it's built, if it's an exterior, cache the meshes
-												if (structure.Is(StructureLoadState.ExteriorLoaded)) {
+												/*if (structure.Is(StructureLoadState.ExteriorLoaded)) {
 														AddCachedInstance(mainTemplate.Name, structure);
-												}
+												}*/
 										} else {
 												Debug.Log("ERROR in structure builder when building " + mainTemplate.Name);
 										}

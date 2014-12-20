@@ -115,6 +115,8 @@ namespace Frontiers
 				public bool JustLookingMode = false;
 				public bool ConversationsInterpretScripts = true;
 				public bool ConversationsWrapBracketedDialog = true;
+				public bool NoSaveMode = false;
+				public bool NoTreesMode = false;
 				public TNObject NObject;
 
 				public bool Is64Bit()

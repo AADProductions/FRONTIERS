@@ -61,14 +61,31 @@ namespace Frontiers.World
 
 						FlushWorldItems();
 
+						#if UNITY_EDITOR
 						if (!Application.isPlaying)
 								return;
+						#endif
 
 						if (!Profile.Get.HasCurrentGame) {
 								return;
 						}
 
 						LastPlayerPosition = Player.Local.Position;
+
+						//always dequeue a worlditem to save
+						if (WorldItemsToSave.Count > 0) {
+								KeyValuePair <string,WorldItem> wiToSave = WorldItemsToSave.Dequeue();
+								if (wiToSave.Value != null) {
+										StackItem stackItem = wiToSave.Value.GetStackItem(WIMode.None);
+										Mods.Get.Runtime.SaveStackItemToGroup(stackItem, wiToSave.Key);
+										//now clear the stack item and destroy the worlditem
+										stackItem.Clear();
+										GameObject.Destroy(wiToSave.Value.gameObject);
+										//just do one per update, give it some time to breathe
+								} else {
+										Debug.Log("Worlditem to save was null by the time we got to it");
+								}
+						}
 
 						if (Player.Local.Status.IsStateActive("Traveling")) {
 								mActiveCounterMax = 10;

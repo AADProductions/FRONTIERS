@@ -7,14 +7,18 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
-using Frontiers;
-using Frontiers.GUI;
+//using Frontiers;
+//using Frontiers.GUI;
 
 namespace Frontiers.World
 {
 		public class WIScript : MonoBehaviour, IUnloadable
 		{
-				public WorldItem worlditem;
+				public WorldItem worlditem {
+						get {
+								return mWorldItem;
+						}
+				}
 
 				public string StackName {
 						get {
@@ -320,7 +324,7 @@ namespace Frontiers.World
 
 						if (Application.isPlaying) {
 
-								worlditem = gameObject.GetComponent <WorldItem>();
+								mWorldItem = gameObject.GetComponent <WorldItem>();
 								if (worlditem == null) {
 										Debug.Log("WORLDITEM WAS NULL IN " + name);
 										return;
@@ -348,7 +352,7 @@ namespace Frontiers.World
 
 				public virtual void InitializeTemplate()
 				{
-						worlditem = gameObject.GetComponent <WorldItem>();
+						mWorldItem = gameObject.GetComponent <WorldItem>();
 				}
 
 				public void Finish()
@@ -388,7 +392,7 @@ namespace Frontiers.World
 						mDestroyed = true;
 				}
 
-				public virtual void PopulateOptionsList(List <GUIListOption> options, List <string> message)
+				public virtual void PopulateOptionsList(List <WIListOption> options, List <string> message)
 				{
 						return;
 				}
@@ -413,6 +417,7 @@ namespace Frontiers.World
 
 				}
 				#endif
+				protected WorldItem mWorldItem;
 				protected string mScriptName = string.Empty;
 				protected Type mScriptType;
 				protected Type mTrueType;
@@ -475,6 +480,7 @@ namespace Frontiers.World
 
 						return deserializedObject;
 				}
+
 		}
 
 		public interface IUnloadable
