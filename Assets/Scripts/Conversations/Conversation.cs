@@ -133,7 +133,7 @@ namespace Frontiers.Story.Conversations
 						Refresh();
 						if (OpeningExchange.IsAvailable) {
 								if (SpeakingCharacter.State.Emotion == EmotionalState.Angry) {
-										GUIManager.PostInfo(SpeakingCharacter.State.Name.FirstName + " doesn't want to speak to you.");
+										GUI.GUIManager.PostInfo(SpeakingCharacter.State.Name.FirstName + " doesn't want to speak to you.");
 										return false;
 								}
 								//possibly move this somewhere else
@@ -213,7 +213,7 @@ namespace Frontiers.Story.Conversations
 				public void ForceEnd()
 				{	//no muss, no fuss
 						if (IsActive) {
-								GUIManager.PostWarning(SpeakingCharacter.FullName + " has ended the conversation.");
+								GUI.GUIManager.PostWarning(SpeakingCharacter.FullName + " has ended the conversation.");
 						}
 						End();
 				}
@@ -453,6 +453,7 @@ namespace Frontiers.Story.Conversations
 												runningOutgoingChoices.Add(runningOutgoingChoice);
 										}
 								}
+
 								foreach (Exchange alwaysInclude in mAlwaysInclude) {
 										runningOutgoingChoices.Add(alwaysInclude);
 								}
@@ -473,8 +474,9 @@ namespace Frontiers.Story.Conversations
 								}
 								//finally, add any outgoing choices
 								//these are considered 'on' manually so turning off siblings doesn't apply to them
+								//only 'off' can disable them
 								foreach (Exchange playerOutgoingChoice in LastChosenExchange.PlayerOutgoingChoices) {
-										if (playerOutgoingChoice.IsAvailable) {
+										if (playerOutgoingChoice.IsAvailable && !nextExchange.DisabledIncomingChoices.Contains(playerOutgoingChoice.Name)) {
 												finalOutgoingChoices.Add(playerOutgoingChoice);
 										}
 								}

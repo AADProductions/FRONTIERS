@@ -5,15 +5,28 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Frontiers.World
-{		//utility for editing paths in the Unity editor
+{
+		//utility for editing paths in the Unity editor
 		[ExecuteInEditMode]
 		public class PathEditor : MonoBehaviour
 		{
-				[HideInInspector]
-				[NonSerialized]
 				public Spline spline = null;
 				public Path State = null;
 				public WorldChunk Chunk = null;
+				public Transform ChunkTransform;
+				//can be used if the chunk isn't present / in world editor mode
+				public Vector3 ChunkOffset {
+						get {
+								if (Chunk != null) {
+										return Chunk.ChunkOffset;
+								} else if (ChunkTransform != null) {
+										return ChunkTransform.position;
+								} else {
+										return Vector3.zero;
+								}
+						}
+				}
+
 				public bool RevealPath = false;
 				public bool IsAnExtension = false;
 				public bool AddToEnd = true;
@@ -25,11 +38,22 @@ namespace Frontiers.World
 
 				public void Update()
 				{
-						if (spline == null) {
-								spline = gameObject.GetComponent <Spline>();
+			#if UNITY_EDITOR
+						if (spline != null) {
+								if (UnityEditor.Selection.activeGameObject == gameObject || UnityEditor.Selection.activeGameObject == spline.gameObject) {
+										if (!spline.gameObject.activeSelf) {
+												spline.enabled = true;
+												spline.gameObject.SetActive(true);
+										}
+								} else {
+										if (spline.gameObject.activeSelf) {
+												spline.enabled = false;
+												spline.gameObject.SetActive(false);
+										}
+								}
 						}
 
-						if (Chunk == null) {
+						if (Chunk == null && ChunkTransform == null) {
 								Chunk = GameObject.FindObjectOfType <WorldChunk>();
 						}
 
@@ -40,6 +64,7 @@ namespace Frontiers.World
 						}
 
 						PathColor = Colors.Saturate(Colors.ColorFromString(name, 100));
+			#endif
 				}
 
 				public void RebuildPathSpacing()
@@ -86,6 +111,13 @@ namespace Frontiers.World
 								Gizmos.color = pathColor;
 								Gizmos.DrawLine(currentPos, currentPos + (Vector3.up * lineHeight));
 
+								if (pm.Branches.Count > 1) {
+										UnityEditor.Handles.Label (pm.Position, pm.Branches.Count.ToString());
+										Gizmos.color = Colors.Brighten(pathColor);
+								} else {
+										Gizmos.color = Colors.Darken(pathColor);
+								}
+
 								switch (pm.Type) {
 										case PathMarkerType.CrossRoads:
 										case PathMarkerType.CrossStreet:
@@ -100,6 +132,8 @@ namespace Frontiers.World
 										default:
 												if (Flags.Check((uint)PathMarkerType.Campsite, (uint)pm.Type, Flags.CheckType.MatchAny)) {
 														Gizmos.DrawWireSphere(currentPos, 20.0f);
+												} else if (Flags.Check((uint)PathMarkerType.Location, (uint)pm.Type, Flags.CheckType.MatchAny)) {
+														Gizmos.DrawWireCube(currentPos, Vector3.one * 10f);
 												}
 												break;
 								}
@@ -130,13 +164,13 @@ namespace Frontiers.World
 
 				public void OnDrawGizmos()
 				{
-						if (Chunk == null || State == null) {
+						if (State == null) {
 								return;
 						}
 
 						bool selected = UnityEditor.Selection.activeGameObject == gameObject;
 
-						InGameLength = DrawPathGizmo(State, selected, Chunk.ChunkOffset, PathColor);
+						InGameLength = DrawPathGizmo(State, selected, ChunkOffset, PathColor);
 				}
 				#endif
 				public void EditorSave()
@@ -171,8 +205,14 @@ namespace Frontiers.World
 								return;
 						}
 
-						if (!gameObject.activeSelf || spline == null) {
+						if (!gameObject.activeSelf) {
 								return;
+						}
+
+						if (spline == null) {
+								if (!FindSpline ()) {
+										return;
+								}
 						}
 
 						UnityEditor.EditorUtility.SetDirty(gameObject);
@@ -182,7 +222,7 @@ namespace Frontiers.World
 						//then check against the spline nodes
 						bool isEmpty = State.Templates.Count == 0;
 						for (int i = 0; i < spline.splineNodesArray.Count; i++) {
-								Vector3 splinePosition = spline.splineNodesArray[i].transform.position + Chunk.ChunkOffset;
+								Vector3 splinePosition = spline.splineNodesArray[i].transform.position + ChunkOffset;
 								Vector3 splineRotation = spline.splineNodesArray[i].transform.rotation.eulerAngles;
 								PathMarkerTemplateEditor pmit = spline.splineNodesArray[i].gameObject.GetOrAdd <PathMarkerTemplateEditor>();
 								PathMarkerInstanceTemplate pm = pmit.Template;//HERE
@@ -199,7 +239,7 @@ namespace Frontiers.World
 
 						if (IsAnExtension) {
 								for (int i = 0; i < spline.splineNodesArray.Count; i++) {
-										Vector3 splinePosition = spline.splineNodesArray[i].transform.position + Chunk.ChunkOffset;
+										Vector3 splinePosition = spline.splineNodesArray[i].transform.position + ChunkOffset;
 										Vector3 splineRotation = spline.splineNodesArray[i].transform.rotation.eulerAngles;
 										PathMarkerTemplateEditor pmit = spline.splineNodesArray[i].gameObject.GetOrAdd <PathMarkerTemplateEditor>();
 										PathMarkerInstanceTemplate pm = pmit.Template;
@@ -220,7 +260,7 @@ namespace Frontiers.World
 								pm.HasInstance = false;
 								//see if the template has a spline node counterpart
 								for (int j = 0; j < spline.splineNodesArray.Count; j++) {
-										Vector3 statePosition = spline.splineNodesArray[j].transform.position + Chunk.ChunkOffset;
+										Vector3 statePosition = spline.splineNodesArray[j].transform.position + ChunkOffset;
 										Vector3 splineRotation = spline.splineNodesArray[j].transform.rotation.eulerAngles;
 										float distance = Vector3.Distance(statePosition, State.Templates[i].Position);
 										//if it's within 0.25, we're fine
@@ -302,6 +342,59 @@ namespace Frontiers.World
 
 				public void EditorFindGround()
 				{
+
+				}
+
+				public void UpdateSplineNodes()
+				{
+						if (spline == null) {
+								FindSpline();
+						}
+						for (int i = spline.splineNodesArray.LastIndex (); i >= 0; i--) {
+								SplineNode node = spline.splineNodesArray[i];
+								if (node == null) {
+										spline.splineNodesArray.RemoveAt(i);
+								} else {
+										PathMarkerTemplateEditor template = node.gameObject.GetOrAdd <PathMarkerTemplateEditor>();
+										if (template.Template != null && template.Template.ID > 0) {
+												template.transform.position = template.Template.Position;
+										}
+								}
+						}
+				}
+
+				public bool FindSpline() {
+						foreach (Transform child in transform) {
+								if (child.gameObject.HasComponent <Spline>(out spline)) {
+										return true;
+								}
+						}
+						return false;
+				}
+
+				public void BuildSpline()
+				{
+						if (spline != null) {
+								foreach (SplineNode existingNode in spline.splineNodesArray) {
+										GameObject.DestroyImmediate(existingNode.gameObject);
+								}
+								spline.splineNodesArray.Clear();
+								GameObject.DestroyImmediate(spline.gameObject);
+						}
+
+						spline = gameObject.FindOrCreateChild("Spline").gameObject.GetOrAdd <Spline>();
+						//put the spline at the center of our path bounds so it's easy to select
+						spline.transform.position = State.PathBounds.center;
+
+						if (spline.splineNodesArray.Count != State.Templates.Count) {
+								foreach (PathMarkerInstanceTemplate template in State.Templates) {
+										GameObject splineNode = spline.AddSplineNode();
+										splineNode.transform.parent = spline.transform;
+										splineNode.transform.position = template.Position;
+										PathMarkerTemplateEditor pmte = splineNode.gameObject.AddComponent <PathMarkerTemplateEditor>();
+										pmte.Template = template;
+								}
+						}
 
 				}
 

@@ -432,28 +432,30 @@ namespace Frontiers.World
 								}
 						}
 
-						List <TreePrototype> treePrototypes = new List <TreePrototype>();
-						if (ColliderTemplates != null) {
-								Array.Clear(ColliderTemplates, 0, ColliderTemplates.Length);
-								ColliderTemplates = null;
-						}
-						ColliderTemplates = new TreeColliderTemplate [TerrainData.TreeTemplates.Count];
-						for (int i = 0; i < TerrainData.TreeTemplates.Count; i++) {
-								TerrainPrototypeTemplate ttt = TerrainData.TreeTemplates[i];
-								TreePrototype treePrototype = new TreePrototype();
-								treePrototype.bendFactor = ttt.BendFactor;
-
-								GameObject prototype = null;
-								if (Plants.Get.GetTerrainPlantPrototype(ttt.AssetName, out prototype)) {
-										//make sure to load the collider template
-										ColliderTemplates[i] = prototype.GetComponent <TreeColliderTemplate>();
-										treePrototype.prefab = prototype;
+						if (!GameManager.Get.NoTreesMode) {
+								List <TreePrototype> treePrototypes = new List <TreePrototype>();
+								if (ColliderTemplates != null) {
+										Array.Clear(ColliderTemplates, 0, ColliderTemplates.Length);
+										ColliderTemplates = null;
 								}
-								treePrototypes.Add(treePrototype);
+								ColliderTemplates = new TreeColliderTemplate [TerrainData.TreeTemplates.Count];
+								for (int i = 0; i < TerrainData.TreeTemplates.Count; i++) {
+										TerrainPrototypeTemplate ttt = TerrainData.TreeTemplates[i];
+										TreePrototype treePrototype = new TreePrototype();
+										treePrototype.bendFactor = ttt.BendFactor;
+
+										GameObject prototype = null;
+										if (Plants.Get.GetTerrainPlantPrototype(ttt.AssetName, out prototype)) {
+												//make sure to load the collider template
+												ColliderTemplates[i] = prototype.GetComponent <TreeColliderTemplate>();
+												treePrototype.prefab = prototype;
+										}
+										treePrototypes.Add(treePrototype);
+								}
+								PrimaryTerrain.terrainData.treePrototypes = treePrototypes.ToArray();
 						}
 
 						PrimaryTerrain.terrainData.detailPrototypes = detailPrototypes;
-						PrimaryTerrain.terrainData.treePrototypes = treePrototypes.ToArray();
 						PrimaryTerrain.terrainData.RefreshPrototypes();
 						PrimaryTerrain.Flush();
 
@@ -566,12 +568,14 @@ namespace Frontiers.World
 						//this is probably where the prologue crash is hitting hardest
 						PrimaryTerrain.Flush();
 						mAddingTerrainDetails = false;
+						mHasLoadedTerrainDetails = true;
 						yield break;
 				}
 
 				public IEnumerator AddTerrainTrees()
 				{
-						if (!GameManager.Get.TerrainDetails) {
+						if (GameManager.Get.NoTreesMode) {
+								mHasAddedTerrainTrees = true;
 								yield break;
 						}
 
@@ -583,6 +587,7 @@ namespace Frontiers.World
 								//performance isn't all that much different
 								//AND we might get around that rediculous Unity frustrum culling bug
 								//GameObject.Instantiate (PrimaryTerrain.terrainData.treePrototypes [TreeInstances [i].PrototypeIndex].prefab, TreeInstances[i].Position, Quaternion.identity);
+								//yield return null;
 						}
 						//flush this right away since other stuff will take a while to add
 						mHasAddedTerrainTrees = true;
@@ -830,6 +835,8 @@ namespace Frontiers.World
 								Array.Clear(mDetailSlice, 0, mDetailSlice.GetLength(0) * mDetailSlice.GetLength(1));
 								mDetailSlice = null;
 						}
+						mHasAddedTerrainTrees = false;
+						mHasLoadedTerrainDetails = false;
 						//try to reclaim our detail layer memory
 						System.GC.Collect();
 						Resources.UnloadUnusedAssets();

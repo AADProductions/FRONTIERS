@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
+using Frontiers.GUI;
 
 namespace Frontiers.World.Gameplay
 {
@@ -27,13 +28,14 @@ namespace Frontiers.World.Gameplay
 
 		public void ActivateObjective (string objectiveName, MissionOriginType originType, string originName)
 		{
-			if (!Flags.Check <MissionStatus> (State.Status, MissionStatus.Active, Flags.CheckType.MatchAny)) {
+			if (!Flags.Check ((uint)State.Status, (uint)MissionStatus.Active, Flags.CheckType.MatchAny)) {
 				Activate (originType, originName);
 			}
 			MissionObjective objective = null;
 			if (mObjectiveLookup.TryGetValue (objectiveName, out objective)) {
 				objective.ActivateObjective (ObjectiveActivation.Manual, originType, originName);
 			}
+			State.GetPlayerAttention = true;
 			Save ();
 		}
 
@@ -73,7 +75,7 @@ namespace Frontiers.World.Gameplay
 		public void Activate (MissionOriginType originType, string originName)
 		{
 			//if we're not completed and we're not active...
-			if (!State.ObjectivesCompleted && !Flags.Check <MissionStatus> (State.Status, MissionStatus.Active, Flags.CheckType.MatchAny)) {
+			if (!State.ObjectivesCompleted && !Flags.Check ((uint)State.Status, (uint)MissionStatus.Active, Flags.CheckType.MatchAny)) {
 				State.OriginType = originType;
 				State.OriginName = originName;
 				State.TimeActivated = WorldClock.Time;
@@ -85,6 +87,7 @@ namespace Frontiers.World.Gameplay
 				Player.Get.AvatarActions.ReceiveAction (new PlayerAvatarAction (AvatarAction.MissionActivate), WorldClock.Time);
 				Player.Get.AvatarActions.ReceiveAction (new PlayerAvatarAction (AvatarAction.MissionUpdated), WorldClock.Time);
 				GUIManager.PostGainedItem (this);
+				State.GetPlayerAttention = true;
 				Save ();
 			}
 		}
@@ -99,7 +102,7 @@ namespace Frontiers.World.Gameplay
 				return;
 			}
 
-			if (!Flags.Check <MissionStatus> (State.Status, MissionStatus.Active, Flags.CheckType.MatchAny)) {
+			if (!Flags.Check ((uint)State.Status, (uint)MissionStatus.Active, Flags.CheckType.MatchAny)) {
 				return;
 			}
 
@@ -187,7 +190,7 @@ namespace Frontiers.World.Gameplay
 				//if any of the objectives are FAILED
 				//and were required then the status will contain
 				//the FAILED flag
-				if (Flags.Check <MissionStatus> (State.Status, MissionStatus.Failed, Flags.CheckType.MatchAny)) {
+				if (Flags.Check ((uint)State.Status, (uint)MissionStatus.Failed, Flags.CheckType.MatchAny)) {
 					Player.Get.AvatarActions.ReceiveAction (new PlayerAvatarAction (AvatarAction.MissionFail), WorldClock.Time);
 					Player.Get.AvatarActions.ReceiveAction (new PlayerAvatarAction (AvatarAction.MissionUpdated), WorldClock.Time);
 					GUIManager.PostDanger ("Failed Mission: " + State.Name);
@@ -210,7 +213,7 @@ namespace Frontiers.World.Gameplay
 			yield return WorldClock.WaitForRTSeconds (0.025f);//this way it will update when the game is paused
 
 			//if we're not already completed and we're active
-			if (!State.ObjectivesCompleted && Flags.Check <MissionStatus> (State.Status, MissionStatus.Active, Flags.CheckType.MatchAny)) {	//try to complete the mission
+			if (!State.ObjectivesCompleted && Flags.Check ((uint)State.Status, (uint)MissionStatus.Active, Flags.CheckType.MatchAny)) {	//try to complete the mission
 				if (!mTryingToCompleteMission) {
 					yield return StartCoroutine (TryToCompleteMission (false));
 				}
@@ -313,6 +316,7 @@ namespace Frontiers.World.Gameplay
 		public MissionStatus Status = MissionStatus.Dormant;
 		public double TimeActivated;
 		public double TimeCompleted;
+		public bool GetPlayerAttention;
 		public MissionCompletion CompletionType = MissionCompletion.Automatic;
 		public SDictionary <string, int> Variables = new SDictionary <string, int> ();
 		public List <ObjectiveState> Objectives = new List <ObjectiveState> ( );

@@ -23,6 +23,8 @@ namespace Frontiers.World
 		public BookType TypeOfBook = BookType.Book;
 		public int PrototypeIndex = 0;
 		public bool ManualPlacementOnly = false;
+		public bool MissionRelated = false;
+		public bool CanonLore = false;
 		public BookSealStatus SealStatus = BookSealStatus.None;
 		public static string gDefaultBookTitle = "(Untitled)";
 		public string DefaultTemplate = string.Empty;

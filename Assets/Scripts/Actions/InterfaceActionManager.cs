@@ -45,7 +45,8 @@ public class InterfaceActionManager : ActionManager <InterfaceActionType>
 
 		AddKeyDown 			(KeyCode.LeftBracket, 		InterfaceActionType.InventoryNextQuickslot);
 		AddKeyDown 			(KeyCode.RightBracket, 		InterfaceActionType.InventoryPrevQuickslot);
-		
+	
+		AddKeyDown			(KeyCode.E,					InterfaceActionType.ToggleInventorySecondary);	
 		AddKeyDown			(KeyCode.Tab,				InterfaceActionType.ToggleInventory);
 		AddKeyDown			(KeyCode.V,					InterfaceActionType.ToggleInventoryCrafting);
 		AddKeyDown			(KeyCode.G,					InterfaceActionType.ToggleInventoryClothing);
@@ -99,6 +100,7 @@ public enum InterfaceActionType : int
 	CursorClick					= 16777216,		//24
 
 	SelectionNumeric			= 33554432,		//25
+	ToggleInventorySecondary	= 67108864, 	//26
 
 	FlagsTogglePrimary			= ToggleInventory | ToggleStatus | ToggleMap | ToggleLog,
 	FlagsSelectionNextPrev		= SelectionNext | SelectionPrev,

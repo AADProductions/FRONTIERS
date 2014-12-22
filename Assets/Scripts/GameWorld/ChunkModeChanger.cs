@@ -347,7 +347,7 @@ public class ChunkModeChanger : MonoBehaviour
 		{
 				Chunk.CurrentMode = Chunk.TargetMode;
 				mFinished = true;
-				System.GC.Collect();//TODO does this actually help?
+				//System.GC.Collect();//TODO does this actually help?
 				GameObject.Destroy(this);
 				GameWorld.Get.RefreshTerrainDetailSettings();
 		}
