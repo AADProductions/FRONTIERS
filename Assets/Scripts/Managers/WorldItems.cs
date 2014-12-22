@@ -37,6 +37,9 @@ namespace Frontiers.World
 				public List <WorldItemPack> WorldItemPacks = new List <WorldItemPack>();
 				public List <WICategory> Categories = new List <WICategory>();
 				public List <KeyValuePair <WIGroup, Queue <StackItem>>> StackItemsToLoad = new List <KeyValuePair <WIGroup, Queue <StackItem>>>();
+				public Queue <KeyValuePair <string,WorldItem>> WorldItemsToSave = new Queue <KeyValuePair <string,WorldItem>>();
+
+				#region initialization
 
 				public override void WakeUp()
 				{
@@ -121,6 +124,10 @@ namespace Frontiers.World
 						LastPlayerSortPosition = Vector3.zero;
 				}
 
+				#endregion
+
+				#region worlditem & category searching / conversion
+
 				public bool PackPrefab(string worldItemPackName, string prefabName, out WorldItem prefab)
 				{
 						prefab = null;
@@ -138,9 +145,6 @@ namespace Frontiers.World
 						}
 						return result;
 				}
-
-				protected Dictionary <string, WorldItemPack> mWorldItemPackLookup = new Dictionary <string, WorldItemPack>();
-				protected Dictionary <string, WICategory> mWICategoryLookup = new Dictionary <string, WICategory>();
 
 				public List <WICategory> Category(List <string> wiCatNames)
 				{
@@ -193,17 +197,63 @@ namespace Frontiers.World
 						props.Global = GlobalPropsFromName(props.Name.PackName, props.Name.PrefabName);
 				}
 
-				public static string WIDisplayName(WorldItem worlditem)
+				public bool StackItemFromGenericWorldItem(GenericWorldItem genericWorldItem, out StackItem stackItem)
 				{
-						if (worlditem.DisplayNamer == null) {
-								if (!string.IsNullOrEmpty(worlditem.Props.Global.ExamineInfo.OverrideDescriptionName)) {
-										worlditem.Props.Name.DisplayName = worlditem.Props.Global.ExamineInfo.OverrideDescriptionName;
+						bool result = false;
+						stackItem = null;
+						WorldItemPack pack = null;
+						if (mWorldItemPackLookup.TryGetValue(genericWorldItem.PackName, out pack)) {
+								WorldItem worlditem = null;
+								if (pack.GetWorldItemPrefab(genericWorldItem.PrefabName, out worlditem)) {
+										stackItem = worlditem.GetStackItem(WIMode.Stacked);
+										if (!string.IsNullOrEmpty(genericWorldItem.State)) {
+												//Debug.Log ("Copying state from generic worlditem state " + genericWorldItem.State);
+												stackItem.SaveState.LastState = genericWorldItem.State;
+										}
+										if (!string.IsNullOrEmpty(genericWorldItem.Subcategory)) {
+												///Debug.Log ("Setting stack item subcategory to " + genericWorldItem.Subcategory);
+												stackItem.Props.Local.Subcategory = genericWorldItem.Subcategory;
+										}
+										if (!string.IsNullOrEmpty(genericWorldItem.StackName)) {
+												stackItem.Props.Name.StackName = genericWorldItem.StackName;
+										}
+										if (!string.IsNullOrEmpty(genericWorldItem.DisplayName)) {
+												stackItem.Props.Name.DisplayName = genericWorldItem.DisplayName;
+										}
+										result = true;
 								}
-						} else {
-								worlditem.Props.Name.DisplayName = worlditem.DisplayNamer(0);
 						}
-						return worlditem.Props.Name.DisplayName;
+						return result;
 				}
+
+				public StackItem StackItemFromName(string worldItemName)
+				{
+						StackItem newTemplate = null;
+						foreach (WorldItemPack pack in WorldItemPacks) {
+								WorldItem worlditem = null;
+								if (pack.GetWorldItemPrefab(worldItemName, out worlditem)) {
+										return worlditem.GetStackItem(WIMode.Stacked);
+								}
+						}
+						return null;
+				}
+
+				public bool StackItemFromPack(string packName, string prefabName, out StackItem stackItem)
+				{
+						stackItem = null;
+						WorldItemPack pack = null;
+						if (mWorldItemPackLookup.TryGetValue(packName, out pack)) {
+								WorldItem worlditem = null;
+								//TEMP
+								if (pack.GetWorldItemPrefab(prefabName, out worlditem)) {
+										stackItem = worlditem.GetTemplate();
+										return true;
+								}
+						}
+						return false;
+				}
+
+				#endregion
 
 				#region load / save / initialize stack items / worlditems
 
@@ -225,17 +275,43 @@ namespace Frontiers.World
 						GameObject.Destroy(worlditem.gameObject);
 				}
 
-				public void Save(WorldItem worlditem)
+				public void Save (WorldItem worlditem, bool immediately)
 				{
-						if (worlditem == null || !worlditem.SaveItemOnUnloaded) {
-								////Debug.Log ("Couldn't save world item, it was null");
+						if (worlditem == null || !worlditem.SaveItemOnUnloaded || worlditem.SaveStateLocked) {
+								//we don't actually want to save this worlditem
 								return;
 						}
+
 						if (worlditem.Group == null) {
-								////Debug.Log ("Couldn't save worlditem " + worlditem.name + ", group was null");
+								Debug.Log ("Couldn't save worlditem " + worlditem.name + ", group was null");
+								return;
 						}
-						//////////////Debug.Log ("Saving world item state for " + worlditem.FileName);
-						Mods.Get.Runtime.SaveStackItemToGroup(worlditem.GetStackItem(WIMode.None), worlditem.Group.Props.UniqueID);
+
+						if (immediately) {
+								StackItem stackItem = worlditem.GetStackItem(WIMode.None);
+								//save the stack item
+								Mods.Get.Runtime.SaveStackItemToGroup(stackItem, worlditem.Group.Props.UniqueID);
+								//then clear it so the data doesn't hang around
+								stackItem.Clear();
+								stackItem = null;
+								return;
+						}
+
+						//over time:
+						//ok this used to be done immediately by default when groups would unload
+						//but that was causing huge amounts of memory to be gobbled up
+						//so now we're saving the items in a queue
+						//don't actually get the stack item yet, that's what causes the memory spike
+
+						//get the worlditem's transform and chunk position before we unparent it
+						worlditem.RefreshTransform();
+						//deactivate it entirely
+						worlditem.gameObject.SetActive(false);
+						//move it to the graveyard
+						worlditem.tr.parent = WIGroups.Get.Graveyard.tr;
+						worlditem.tr.localPosition = Vector3.zero;
+						//put it in the queue to be saved later over time
+						WorldItemsToSave.Enqueue (new KeyValuePair<string,WorldItem>(worlditem.Group.Props.UniqueID, worlditem));
 				}
 
 				public void Save(WIGroup group)
@@ -245,80 +321,20 @@ namespace Frontiers.World
 
 				public static void Unload(WorldItem worlditem)
 				{
-						if (!worlditem.Is(WIMode.RemovedFromGame) && worlditem.SaveItemOnUnloaded) {
-								//we only want to save world items that aren't removed from the game
-								Get.Save(worlditem);
+						if (!GameManager.Get.NoSaveMode) {
+								if (!worlditem.Is(WIMode.RemovedFromGame) && worlditem.SaveItemOnUnloaded) {
+										//we only want to save world items that aren't removed from the game
+										Get.Save(worlditem, true);
+								}
 						}
 
 						GameObject.Destroy(worlditem.gameObject);
 				}
-
+				//adds them to a queue to be loaded over time
 				public static void LoadStackItems(Queue <StackItem> stackItems, WIGroup group)
 				{
-						////Debug.Log ("Calling load stack items in WORLDITEMS");
 						KeyValuePair <WIGroup, Queue<StackItem>> groupPair = new KeyValuePair <WIGroup, Queue<StackItem>>(group, stackItems);
 						Get.StackItemsToLoad.SafeAdd(groupPair);
-				}
-
-				public bool StackItemFromGenericWorldItem(GenericWorldItem genericWorldItem, out StackItem stackItem)
-				{
-						bool result = false;
-						stackItem = null;
-						WorldItemPack pack = null;
-						if (mWorldItemPackLookup.TryGetValue(genericWorldItem.PackName, out pack)) {
-								WorldItem worlditem = null;
-								if (pack.GetWorldItemPrefab(genericWorldItem.PrefabName, out worlditem)) {
-										stackItem = worlditem.GetStackItem(WIMode.Stacked);
-										if (!string.IsNullOrEmpty(genericWorldItem.State)) {
-												//Debug.Log ("Copying state from generic worlditem state " + genericWorldItem.State);
-												stackItem.SaveState.LastState = genericWorldItem.State;
-										}
-										if (!string.IsNullOrEmpty(genericWorldItem.Subcategory)) {
-												////////Debug.Log ("Setting stack item subcategory to " + genericWorldItem.Subcategory);
-												stackItem.Props.Local.Subcategory = genericWorldItem.Subcategory;
-										}
-										if (!string.IsNullOrEmpty(genericWorldItem.StackName)) {
-												stackItem.Props.Name.StackName = genericWorldItem.StackName;
-										}
-										if (!string.IsNullOrEmpty(genericWorldItem.DisplayName)) {
-												stackItem.Props.Name.DisplayName = genericWorldItem.DisplayName;
-										}
-										result = true;
-								}
-						}
-						return result;
-				}
-
-				public StackItem StackItemFromName(string worldItemName)
-				{
-						StackItem newTemplate = null;
-						foreach (WorldItemPack pack in WorldItemPacks) {
-								//////////////Debug.Log ("Trying pack " + pack.Name + "...");
-								WorldItem worlditem = null;
-								if (pack.GetWorldItemPrefab(worldItemName, out worlditem)) {
-										return worlditem.GetStackItem(WIMode.Stacked);
-								}
-						}
-						//////////////Debug.Log ("Couldn't find a template for " + worldItemName);
-						return null;
-				}
-
-				public bool StackItemFromPack(string packName, string prefabName, out StackItem stackItem)
-				{
-						stackItem = null;
-						WorldItemPack pack = null;
-						if (mWorldItemPackLookup.TryGetValue(packName, out pack)) {
-								//////////////Debug.Log ("Found pack name " + packName);
-								WorldItem worlditem = null;
-								//TEMP
-								if (pack.GetWorldItemPrefab(prefabName, out worlditem)) {
-										//////////////Debug.Log ("Found prefab name " + prefabName);
-										stackItem = worlditem.GetTemplate();
-										return true;
-								}
-						}
-						//////////////Debug.Log ("Couldn't find pack " + packName + " or prefab " + prefabName);
-						return false;
 				}
 
 				#endregion
@@ -354,72 +370,10 @@ namespace Frontiers.World
 				protected Renderer mShadowRenderer = null;
 
 				#region dopplegangers
-
-				public static void ReturnDoppleganger(GameObject doppleganger)
-				{
-						if (doppleganger != null) {
-								//TODO create an object pool
-								GameObject.Destroy(doppleganger);
-						}
-				}
-
-				public static void GetDopplegangerBounds(GameObject doppleganger, ref Bounds bounds)
-				{
-						bounds.center = doppleganger.transform.position;
-						Renderer dopRenderer = doppleganger.renderer;
-						if (dopRenderer != null) {
-								bounds = dopRenderer.bounds;
-								//don't bother with child renderers
-								return;
-						}
-						//if that renderer was null get all the renderers in the children
-						Renderer[] renderers = doppleganger.GetComponentsInChildren <Renderer>(false);
-						for (int i = 0; i < renderers.Length; i++) {
-								if (i == 0) {
-										bounds.center = renderers[i].bounds.center;
-								}
-								bounds.Encapsulate(renderers[i].bounds);
-						}
-				}
-
-				public static GameObject GetDoppleganger(IWIBase item, Transform dopplegangerParent, GameObject currentDoppleganger, WIMode mode)
-				{
-						return GetDoppleganger(item.PackName, item.PrefabName, dopplegangerParent, currentDoppleganger, mode, item.StackName, item.State, item.Subcategory, 1f, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent);
-				}
-
-				public static GameObject GetDoppleganger(IWIBase item, Transform dopplegangerParent, GameObject currentDoppleganger, WIMode mode, float scaleMultiplier)
-				{
-						return GetDoppleganger(item.PackName, item.PrefabName, dopplegangerParent, currentDoppleganger, mode, item.StackName, item.State, item.Subcategory, scaleMultiplier, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent);
-				}
-
-				public static GameObject GetDoppleganger(WorldItem worlditem, Transform dopplegangerParent, GameObject currentDoppleganger)
-				{
-						return GetDoppleganger(worlditem.PackName, worlditem.PrefabName, dopplegangerParent, currentDoppleganger, worlditem.Mode, worlditem.StackName, worlditem.State, worlditem.Subcategory, 1f, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent);
-				}
-
-				public static GameObject GetDoppleganger(GenericWorldItem props, Transform dopplegangerParent, GameObject currentDoppleganger, WIMode mode)
-				{
-						return GetDoppleganger(props.PackName, props.PrefabName, dopplegangerParent, currentDoppleganger, mode, props.StackName, props.State, props.Subcategory, 1f, props.TOD, props.TOY);
-				}
-
-				public static GameObject GetDoppleganger(GenericWorldItem props, Transform dopplegangerParent, GameObject currentDoppleganger, WIMode mode, float scaleMultiplier)
-				{
-						return GetDoppleganger(props.PackName, props.PrefabName, dopplegangerParent, currentDoppleganger, mode, props.StackName, props.State, props.Subcategory, scaleMultiplier, props.TOD, props.TOY);
-				}
-
-				public static GameObject GetDoppleganger(string packName, string prefabName, Transform dopplegangerParent, GameObject currentDoppleganger, WIMode mode)
-				{
-						return GetDoppleganger(packName, prefabName, dopplegangerParent, currentDoppleganger, mode, prefabName, "Default", string.Empty, 1f, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent);
-				}
-
-				public static GameObject GetDoppleganger(string packName, string prefabName, Transform dopplegangerParent, GameObject currentDoppleganger, string stackName, WIMode mode, string state)
-				{
-						return GetDoppleganger(packName, prefabName, dopplegangerParent, currentDoppleganger, mode, stackName, state, string.Empty, 1f, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent);
-				}
-
-				public static StringBuilder gDopplegangerNameBuilder = new StringBuilder();
-				public static string gDopplegangerName = string.Empty;
-
+				//dopplegangers are used in inventory squares, crafting squares, anywhere that we
+				//need to see an item but don't actually want it to exist
+				//they're expensive to create and destroy so i try to use them sparingly
+				//a doppleganger pool should really be created at some point
 				public static GameObject GetDoppleganger(
 						string packName, 
 						string prefabName, 
@@ -493,14 +447,11 @@ namespace Frontiers.World
 						}
 						//find the max scale of the item from the bounds
 						objectMaxScale = Mathf.Max(Mathf.Max(objectBounds.size.x, objectBounds.size.y), objectBounds.size.z);
-						//Debug.Log ("Max scale of the doppleganger object was " + objectMaxScale.ToString ());
 						//now figure out how big this is relative to the base scale
 						//this will tell us how much we need to adjust the scale multiplier
 						scaleAdjustment = objectMaxScale / objectBaseScale;
 						dopplegangerOffset = (baseObjectBounds.center - objectBounds.center).WithZ(0f);
-						//Debug.Log ("Doppleganger is " + scaleAdjustment.ToString () + " times the base scale " + objectBaseScale.ToString () + " original scale multiplier was " + scaleMultiplier.ToString ());
 						scaleMultiplier = scaleMultiplier / scaleAdjustment;
-						//Debug.Log ("So the scale multiplier is now " + scaleMultiplier.ToString () + " and there's an offset of " + dopplegangerOffset.ToString ());
 						doppleganger.transform.parent = dopplegangerParent;
 				}
 
@@ -519,7 +470,6 @@ namespace Frontiers.World
 								if (item.HasStates) {
 										if (string.IsNullOrEmpty(state) || state == "Default") {
 												state = item.States.DefaultState;
-												//Debug.Log ("Getting default state " + state);
 										}
 										//find the child object with the current state name
 										Renderer stateRenderer = null;
@@ -593,14 +543,16 @@ namespace Frontiers.World
 												dopMr.receiveShadows = false;
 												dopGameObject.layer = Globals.LayerNumWorldItemActive;
 												for (int j = 0; j < wiMr.sharedMaterials.Length; j++) {
-//						if (item.Props.Global.UseCutoutShader) {
-//							Material baseMat = wiMr.sharedMaterials [j];
-//							Material customMat = new Material (Mats.Get.InventoryRimCutoutMaterial);
-//							customMat.SetTexture ("_MainTex", baseMat.GetTexture ("_MainTex"));
-//							materials.Add (customMat);
-//						} else {
-//							materials.Add (Mats.Get.ItemPlacementOutlineMaterial);
-//						}
+														/*
+														if (item.Props.Global.UseCutoutShader) {
+															Material baseMat = wiMr.sharedMaterials [j];
+															Material customMat = new Material (Mats.Get.InventoryRimCutoutMaterial);
+															customMat.SetTexture ("_MainTex", baseMat.GetTexture ("_MainTex"));
+															materials.Add (customMat);
+														} else {
+															materials.Add (Mats.Get.ItemPlacementOutlineMaterial);
+														}
+														*/
 														materials.Add(Mats.Get.ItemPlacementMaterial);
 												}
 												break;
@@ -616,7 +568,7 @@ namespace Frontiers.World
 												dopMr.castShadows = false;
 												dopMr.receiveShadows = false;
 												dopGameObject.layer = Globals.LayerNumWorldItemInventory;
-					//materials.AddRange (wiMr.sharedMaterials);
+												//materials.AddRange (wiMr.sharedMaterials);
 												materials.Add(Mats.Get.CraftingDoppleGangerMaterial);
 												break;
 
@@ -702,7 +654,7 @@ namespace Frontiers.World
 														clonedLightSource.transform.localPosition = lightSource.transform.localPosition;
 												}
 										}
-				//since it's equipped, we'll need to copy over any mesh modifiers
+										//since it's equipped, we'll need to copy over any mesh modifiers
 										MegaMorph itemMegaMorph = null;
 										if (item.gameObject.HasComponent <MegaMorph>(out itemMegaMorph)) {
 												MegaMorph dopMegaMorph = CopyComponent <MegaMorph>(itemMegaMorph, doppleGanger);
@@ -783,53 +735,90 @@ namespace Frontiers.World
 						doppleganger.transform.localPosition = offset;
 				}
 
-				protected static void ApplyLayer(GameObject rootObject, int layer)
+				public static void GetDopplegangerBounds(GameObject doppleganger, ref Bounds bounds)
 				{
-						rootObject.SetLayerRecursively(layer);
+						bounds.center = doppleganger.transform.position;
+						Renderer dopRenderer = doppleganger.renderer;
+						if (dopRenderer != null) {
+								bounds = dopRenderer.bounds;
+								//don't bother with child renderers
+								return;
+						}
+						//if that renderer was null get all the renderers in the children
+						Renderer[] renderers = doppleganger.GetComponentsInChildren <Renderer>(false);
+						for (int i = 0; i < renderers.Length; i++) {
+								if (i == 0) {
+										bounds.center = renderers[i].bounds.center;
+								}
+								bounds.Encapsulate(renderers[i].bounds);
+						}
 				}
+
+				public static void ReturnDoppleganger(GameObject doppleganger)
+				{
+						if (doppleganger != null) {
+								//TODO create an object pool
+								GameObject.Destroy(doppleganger);
+						}
+				}
+
+				//overloads
+				//TODO a lot of these can be removed now
+				public static GameObject GetDoppleganger(IWIBase item, Transform dopplegangerParent, GameObject currentDoppleganger, WIMode mode)
+				{
+						return GetDoppleganger(item.PackName, item.PrefabName, dopplegangerParent, currentDoppleganger, mode, item.StackName, item.State, item.Subcategory, 1f, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent);
+				}
+
+				public static GameObject GetDoppleganger(IWIBase item, Transform dopplegangerParent, GameObject currentDoppleganger, WIMode mode, float scaleMultiplier)
+				{
+						return GetDoppleganger(item.PackName, item.PrefabName, dopplegangerParent, currentDoppleganger, mode, item.StackName, item.State, item.Subcategory, scaleMultiplier, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent);
+				}
+
+				public static GameObject GetDoppleganger(WorldItem worlditem, Transform dopplegangerParent, GameObject currentDoppleganger)
+				{
+						return GetDoppleganger(worlditem.PackName, worlditem.PrefabName, dopplegangerParent, currentDoppleganger, worlditem.Mode, worlditem.StackName, worlditem.State, worlditem.Subcategory, 1f, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent);
+				}
+
+				public static GameObject GetDoppleganger(GenericWorldItem props, Transform dopplegangerParent, GameObject currentDoppleganger, WIMode mode)
+				{
+						return GetDoppleganger(props.PackName, props.PrefabName, dopplegangerParent, currentDoppleganger, mode, props.StackName, props.State, props.Subcategory, 1f, props.TOD, props.TOY);
+				}
+
+				public static GameObject GetDoppleganger(GenericWorldItem props, Transform dopplegangerParent, GameObject currentDoppleganger, WIMode mode, float scaleMultiplier)
+				{
+						return GetDoppleganger(props.PackName, props.PrefabName, dopplegangerParent, currentDoppleganger, mode, props.StackName, props.State, props.Subcategory, scaleMultiplier, props.TOD, props.TOY);
+				}
+
+				public static GameObject GetDoppleganger(string packName, string prefabName, Transform dopplegangerParent, GameObject currentDoppleganger, WIMode mode)
+				{
+						return GetDoppleganger(packName, prefabName, dopplegangerParent, currentDoppleganger, mode, prefabName, "Default", string.Empty, 1f, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent);
+				}
+
+				public static GameObject GetDoppleganger(string packName, string prefabName, Transform dopplegangerParent, GameObject currentDoppleganger, string stackName, WIMode mode, string state)
+				{
+						return GetDoppleganger(packName, prefabName, dopplegangerParent, currentDoppleganger, mode, stackName, state, string.Empty, 1f, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent);
+				}
+
+				public static StringBuilder gDopplegangerNameBuilder = new StringBuilder();
+				public static string gDopplegangerName = string.Empty;
 
 				#endregion
 
 				#region clone world item / prefab
 
-				public static bool CloneWorldItem(WorldItem worlditem, out WorldItem newWorldItem)
-				{
-						return CloneFromStackItem(worlditem.GetStackItem(WIMode.None), worlditem.Group, out newWorldItem);
-				}
-
-				public static bool CloneWorldItem(WorldItem worlditem, WIGroup group, out WorldItem newWorldItem)
-				{
-						return CloneFromStackItem(worlditem.GetStackItem(WIMode.None), group, out newWorldItem);
-				}
-
-				public static bool CloneWorldItem(string packName, string prefabName, STransform position, bool applyOffset, WIGroup group, out WorldItem worlditem)
-				{
-						worlditem = null;
-						WorldItem prefab = null;
-						if (Get.PackPrefab(packName, prefabName, out prefab)) {
-								return CloneFromPrefab(prefab, position, applyOffset, group, out worlditem);
-						}
-						return false;
-				}
-
-				public static bool CloneWorldItem(GenericWorldItem genericItem, STransform position, bool applyOffset, WIGroup group, out WorldItem worlditem)
-				{
-						worlditem = null;
-						WorldItem prefab = null;
-						if (Get.PackPrefab(genericItem.PackName, genericItem.PrefabName, out prefab)) {
-								return CloneFromPrefab(prefab, position, applyOffset, genericItem.DisplayName, genericItem.Subcategory, genericItem.State, group, out worlditem);
-						}
-						return false;
-				}
-
 				public static bool CloneFromStackItem(StackItem stackItem, WIGroup group, out WorldItem worlditem)
 				{
 						worlditem = null;
 						WorldItem prefab = null;
-						bool result = false;
 
-						if (stackItem != null && Get.PackPrefab(stackItem.PackName, stackItem.PrefabName, out prefab)) {
-								GameObject newWorldItemGameObject = GameObject.Instantiate(prefab.tr.gameObject, Globals.WorldItemInstantiationOffset * (1f + UnityEngine.Random.value), Quaternion.identity) as GameObject;
+						if (stackItem == null) {
+								Debug.LogWarning("Stack item was Null in clone from stack item");
+								return false;
+						}
+
+						if (Get.PackPrefab(stackItem.PackName, stackItem.PrefabName, out prefab)) {
+								//instantiate with a random offset to prevent too many pairs from intersecting
+								GameObject newWorldItemGameObject = GameObject.Instantiate(prefab.tr.gameObject, Globals.WorldItemInstantiationOffset * (5f + UnityEngine.Random.value), Quaternion.identity) as GameObject;
 								newWorldItemGameObject.name = stackItem.Props.Name.FileName;
 								if (!newWorldItemGameObject.HasComponent <WorldItem>(out worlditem)) {
 										DynamicPrefab dp = null;
@@ -841,10 +830,10 @@ namespace Frontiers.World
 								worlditem.IsTemplate = false;
 								worlditem.Group = group;
 								worlditem.tr.parent = group.tr;
-								stackItem.Props.Local.Transform.ApplyTo(newWorldItemGameObject.transform);
 								//copy global properties into new worlditem
 								//copy local and stack item props to worlditem
-								worlditem.ReceiveState(stackItem);
+								worlditem.ReceiveState (ref stackItem);
+								worlditem.Props.Local.Transform.ApplyTo(newWorldItemGameObject.transform);
 								worlditem.Props.Global = prefab.Props.Global;
 								if (string.IsNullOrEmpty(worlditem.Props.Name.StackName)) {
 										worlditem.Props.Name.StackName = prefab.Props.Name.StackName;
@@ -852,40 +841,23 @@ namespace Frontiers.World
 								if (string.IsNullOrEmpty(worlditem.Props.Name.DisplayName)) {
 										worlditem.Props.Name.DisplayName = prefab.Props.Name.DisplayName;
 								}
-								//Debug.Log ("File name is now " + worlditem.Props.Name.FileName);
 								InitializeWorldItem(worlditem);
-								result = true;
+								return true;
+						} else {
+								Debug.LogWarning("Couldn't get pack prefab in clone from stack item");
 						}
-						return result;
-				}
-
-				public static bool CloneFromPrefab(WorldItem prefab, WIGroup group, out WorldItem worlditem)
-				{
-						//////////////Debug.Log (prefab.Props.Name.FileName + " being created");
-						return CloneFromPrefab(prefab, STransform.zero, true, string.Empty, string.Empty, string.Empty, group, out worlditem);
-				}
-
-				public static bool CloneFromPrefab(WorldItem prefab, bool applyOffset, WIGroup group, out WorldItem worlditem)
-				{
-						//////////////Debug.Log (prefab.Props.Name.FileName + " being created");
-						return CloneFromPrefab(prefab, STransform.zero, applyOffset, string.Empty, string.Empty, string.Empty, group, out worlditem);
-				}
-
-				public static bool CloneFromPrefab(WorldItem prefab, STransform position, bool applyOffset, WIGroup group, out WorldItem worlditem)
-				{
-						//////////////Debug.Log (prefab.Props.Name.FileName + " being created");
-						return CloneFromPrefab(prefab, position, applyOffset, string.Empty, string.Empty, string.Empty, group, out worlditem);
+						return false;
 				}
 
 				public static bool CloneFromPrefab(WorldItem prefab, STransform position, bool applyOffset, string displayName, string subcategory, string state, WIGroup group, out WorldItem worlditem)
 				{	
 						worlditem = null;
 						if (prefab == null) {
-								//Debug.Log ("Prefab was null in clone from prefab");
+								Debug.Log ("Prefab was null in clone from prefab");
 								return false;
 						}
 						if (group == null) {
-								//Debug.LogWarning ("Group was null when trying to clone prefab " + prefab.name);
+								Debug.LogWarning ("Group was null when trying to clone prefab " + prefab.name);
 								return false;
 						}
 
@@ -930,6 +902,52 @@ namespace Frontiers.World
 						InitializeWorldItem(worlditem);
 
 						return true;
+				}
+
+				public static bool CloneWorldItem(WorldItem worlditem, out WorldItem newWorldItem)
+				{
+						return CloneFromStackItem(worlditem.GetStackItem(WIMode.None), worlditem.Group, out newWorldItem);
+				}
+
+				//overloads
+				public static bool CloneWorldItem(WorldItem worlditem, WIGroup group, out WorldItem newWorldItem)
+				{
+						return CloneFromStackItem(worlditem.GetStackItem(WIMode.None), group, out newWorldItem);
+				}
+
+				public static bool CloneWorldItem(string packName, string prefabName, STransform position, bool applyOffset, WIGroup group, out WorldItem worlditem)
+				{
+						worlditem = null;
+						WorldItem prefab = null;
+						if (Get.PackPrefab(packName, prefabName, out prefab)) {
+								return CloneFromPrefab(prefab, position, applyOffset, group, out worlditem);
+						}
+						return false;
+				}
+
+				public static bool CloneWorldItem(GenericWorldItem genericItem, STransform position, bool applyOffset, WIGroup group, out WorldItem worlditem)
+				{
+						worlditem = null;
+						WorldItem prefab = null;
+						if (Get.PackPrefab(genericItem.PackName, genericItem.PrefabName, out prefab)) {
+								return CloneFromPrefab(prefab, position, applyOffset, genericItem.DisplayName, genericItem.Subcategory, genericItem.State, group, out worlditem);
+						}
+						return false;
+				}
+
+				public static bool CloneFromPrefab(WorldItem prefab, WIGroup group, out WorldItem worlditem)
+				{
+						return CloneFromPrefab(prefab, STransform.zero, true, string.Empty, string.Empty, string.Empty, group, out worlditem);
+				}
+
+				public static bool CloneFromPrefab(WorldItem prefab, bool applyOffset, WIGroup group, out WorldItem worlditem)
+				{
+						return CloneFromPrefab(prefab, STransform.zero, applyOffset, string.Empty, string.Empty, string.Empty, group, out worlditem);
+				}
+
+				public static bool CloneFromPrefab(WorldItem prefab, STransform position, bool applyOffset, WIGroup group, out WorldItem worlditem)
+				{
+						return CloneFromPrefab(prefab, position, applyOffset, string.Empty, string.Empty, string.Empty, group, out worlditem);
 				}
 
 				#endregion
@@ -987,7 +1005,6 @@ namespace Frontiers.World
 								CloneWorldItem(genitem.PackName, genitem.PrefabName, STransform.zero, false, group, out worlditem);//TEMP TODO
 								return true;
 						}
-						//////////////Debug.Log ("Category was empty");
 						return false;
 				}
 
@@ -1000,7 +1017,6 @@ namespace Frontiers.World
 								CloneWorldItem(genitem.PackName, genitem.PrefabName, position, true, group, out worlditem);
 								return true;
 						}
-						//////////////Debug.Log ("Category was empty");
 						return false;
 				}
 
@@ -1013,7 +1029,6 @@ namespace Frontiers.World
 						} else {
 								//Debug.Log ("Couldn't get item from category " + category.Name);
 						}
-						//////////Debug.Log ("Category was empty");
 						return false;
 				}
 
@@ -1062,6 +1077,11 @@ namespace Frontiers.World
 				public static float MediumSize = 1.0f;
 				public static float SmallSize = 0.5f;
 				public static float TinySize = 0.25f;
+
+				protected static void ApplyLayer(GameObject rootObject, int layer)
+				{		//TODO no longer necessary now w/ setlayer recursively, remove
+						rootObject.SetLayerRecursively(layer);
+				}
 
 				public static float WISizeToFloat(WISize size)
 				{
@@ -1156,7 +1176,7 @@ namespace Frontiers.World
 				{
 						return weightInKG;
 				}
-
+				//TODO get rid of this
 				public static bool IsEquippedAsTool(WorldItem worlditem)
 				{
 						if (!Manager.IsAwake <Player>()) {
@@ -1170,10 +1190,22 @@ namespace Frontiers.World
 						}
 						return false;
 				}
-
+				//TODO get rid of this
 				public static bool IsBeingCarried(WorldItem worldItem)
 				{
 						return Player.Local.ItemPlacement.IsCarryingSomething && Player.Local.ItemPlacement.CarryObject == worldItem;
+				}
+
+				public static string WIDisplayName(WorldItem worlditem)
+				{
+						if (worlditem.DisplayNamer == null) {
+								if (!string.IsNullOrEmpty(worlditem.Props.Global.ExamineInfo.OverrideDescriptionName)) {
+										worlditem.Props.Name.DisplayName = worlditem.Props.Global.ExamineInfo.OverrideDescriptionName;
+								}
+						} else {
+								worlditem.Props.Name.DisplayName = worlditem.DisplayNamer(0);
+						}
+						return worlditem.Props.Name.DisplayName;
 				}
 
 				public static string CleanWorldItemName(string itemName)
@@ -1188,6 +1220,17 @@ namespace Frontiers.World
 				protected static WorldItem mWorlditemCheck = null;
 				protected static BodyPart mBodyPartCheck = null;
 				protected static RaycastHit mLineOfSightHit;
+
+				public static T CopyComponent<T>(T original, GameObject destination) where T : Component
+				{
+						System.Type type = original.GetType();
+						Component copy = destination.AddComponent(type);
+						System.Reflection.FieldInfo[] fields = type.GetFields();
+						foreach (System.Reflection.FieldInfo field in fields) {
+								field.SetValue(copy, field.GetValue(original));
+						}
+						return copy as T;
+				}
 
 				public static bool HasLineOfSight(Vector3 startPosition, IItemOfInterest target, ref Vector3 targetPosition, ref Vector3 hitPosition, out IItemOfInterest hitIOI)
 				{
@@ -1255,9 +1298,9 @@ namespace Frontiers.World
 														ioi = mBodyPartCheck.Owner;
 												}
 												break;
-								//state child object
+										//state child object
 										case "StateChild":
-					//state child objects are immediately parented under worlditem
+												//state child objects are immediately parented under worlditem
 												ioi = go.transform.parent.GetComponent <WorldItem>();
 												break;
 
@@ -1268,23 +1311,28 @@ namespace Frontiers.World
 						return ioi != null;
 				}
 
-				public static void ReplaceWorldItem(WorldItem worlditem, StackItem replacement)
+				public static void ReplaceWorldItem (WorldItem worlditem, StackItem replacement)
 				{
-						if (worlditem.Is(WIMode.Equipped)) {
-								//ok, we can get away with equipping the stack item
-								//presumably it won't stack or we would have stacked it
-								WIStackError error = WIStackError.None;
-								Player.Local.Inventory.AddItems(replacement, ref error);
-						} else {
-								WorldItem replacementWorldItem = null;
-								if (CloneFromStackItem(replacement, worlditem.Group, out replacementWorldItem)) {
+						WorldItem replacementWorldItem = null;
+						if (CloneFromStackItem(replacement, worlditem.Group, out replacementWorldItem)) {
+								//initialize immediately
+								replacementWorldItem.Props.Local.Transform.CopyFrom(worlditem.transform);
+								replacementWorldItem.Initialize();
+								if (worlditem.Is(WIMode.Equipped)) {
+										//ok, we can get away with equipping the stack item
+										//presumably it won't stack or we would have stacked it
+										WIStackError error = WIStackError.None;
+										Player.Local.Inventory.AddItems(replacement, ref error);
+								} else {
 										//initialize immediately
 										replacementWorldItem.Props.Local.Transform.CopyFrom(worlditem.transform);
-										replacementWorldItem.Initialize();				
-								}
+										replacementWorldItem.Initialize();
+								}		
+								//in all cases, kill the original
+								worlditem.SetMode(WIMode.RemovedFromGame);
+						} else {
+								Debug.LogWarning("Couldn't clone stack item in ReplaceWorldItem");
 						}
-						//in all cases, kill the original
-						worlditem.SetMode(WIMode.RemovedFromGame);
 				}
 
 				public static void ReplaceWorldItem(WorldItem worlditem, GenericWorldItem replacementTemplate)
@@ -1294,15 +1342,8 @@ namespace Frontiers.World
 
 				#endregion
 
-				public static T CopyComponent<T>(T original, GameObject destination) where T : Component
-				{
-						System.Type type = original.GetType();
-						Component copy = destination.AddComponent(type);
-						System.Reflection.FieldInfo[] fields = type.GetFields();
-						foreach (System.Reflection.FieldInfo field in fields) {
-								field.SetValue(copy, field.GetValue(original));
-						}
-						return copy as T;
-				}
+				protected Dictionary <string, WorldItemPack> mWorldItemPackLookup = new Dictionary <string, WorldItemPack>();
+				protected Dictionary <string, WICategory> mWICategoryLookup = new Dictionary <string, WICategory>();
+
 		}
 }
