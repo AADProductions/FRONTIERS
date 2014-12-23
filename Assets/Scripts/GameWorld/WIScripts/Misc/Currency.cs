@@ -6,6 +6,182 @@ using System.Xml.Serialization;
 
 namespace Frontiers.World
 {
+		public class Currency : WIScript
+		{		//IDs the object as currency for when it enters inventory
+				//also provides a bunch of useful static functions to manipulate currency in one place
+				public WICurrencyType Type = WICurrencyType.A_Bronze;
+				public int NumCurrency = 1;
+				//TODO potentially move default values into globals (?)
+				public static string CurrencyPackName = "PreciousMetalsAndCurrency";
+				public static string BronzePrefabName = "Grain Coin";
+				public static string SilverPrefabName = "Quarter Coin";
+				public static string GoldPrefabName = "Dram Coin";
+				public static string LumenPrefabName = "Marble 1";
+				public static string WarlockPrefabName = "Warlock Coin";
+				public static string BronzeCurrencyName = "Grain";
+				public static string SilverCurrencyName = "Quarter";
+				public static string GoldCurrencyName = "Dram";
+				public static string LumenCurrencyName = "Mark";
+				public static string WarlockCurrencyName = "Kanitt";
+				public static string BronzeCurrencyNamePlural = "Grain";
+				public static string SilverCurrencyNamePlural = "Quarter";
+				public static string GoldCurrencyNamePlural = "Dram";
+				public static string LumenCurrencyNamePlural = "Mark";
+				public static string WarlockCurrencyNamePlural = "Kanitt";
+
+				public static GenericWorldItem BronzeGenericWorldItem {
+						get {
+								if (gBronzeGenericWorldItem == null) {
+										gBronzeGenericWorldItem = new GenericWorldItem();
+										gBronzeGenericWorldItem.PackName = CurrencyPackName;
+										gBronzeGenericWorldItem.PrefabName = BronzePrefabName;
+								}
+								return gBronzeGenericWorldItem;
+						}
+				}
+
+				public static GenericWorldItem SilverGenericWorldItem {
+						get {
+								if (gSilverGenericWorldItem == null) {
+										gSilverGenericWorldItem = new GenericWorldItem();
+										gSilverGenericWorldItem.PackName = CurrencyPackName;
+										gSilverGenericWorldItem.PrefabName = SilverPrefabName;
+								}
+								return gSilverGenericWorldItem;
+						}
+				}
+
+				public static GenericWorldItem GoldIGenericWorldItem {
+						get {
+								if (gGoldIGenericWorldItem == null) {
+										gGoldIGenericWorldItem = new GenericWorldItem();
+										gGoldIGenericWorldItem.PackName = CurrencyPackName;
+										gGoldIGenericWorldItem.PrefabName = GoldPrefabName;
+								}
+								return gGoldIGenericWorldItem;
+						}
+				}
+
+				public static GenericWorldItem LumenGenericWorldItem {
+						get {
+								if (gLumenGenericWorldItem == null) {
+										gLumenGenericWorldItem = new GenericWorldItem();
+										gLumenGenericWorldItem.PackName = CurrencyPackName;
+										gLumenGenericWorldItem.PrefabName = LumenPrefabName;
+								}
+								return gLumenGenericWorldItem;
+						}
+				}
+
+				public static GenericWorldItem WarlockGenericWorldItem {
+						get {
+								if (gWarlockGenericWorldItem == null) {
+										gWarlockGenericWorldItem = new GenericWorldItem();
+										gWarlockGenericWorldItem.PackName = CurrencyPackName;
+										gWarlockGenericWorldItem.PrefabName = WarlockPrefabName;
+								}
+								return gWarlockGenericWorldItem;
+						}
+				}
+
+				protected static GenericWorldItem gBronzeGenericWorldItem;
+				protected static GenericWorldItem gSilverGenericWorldItem;
+				protected static GenericWorldItem gGoldIGenericWorldItem;
+				protected static GenericWorldItem gLumenGenericWorldItem;
+				protected static GenericWorldItem gWarlockGenericWorldItem;
+
+				public static string TypeToString(WICurrencyType type)
+				{
+						switch (type) {
+								default:
+								case WICurrencyType.A_Bronze:
+										return gBronzeGenericWorldItem.DisplayName;
+
+								case WICurrencyType.B_Silver:
+										return gSilverGenericWorldItem.DisplayName;
+
+								case WICurrencyType.C_Gold:
+										return gGoldIGenericWorldItem.DisplayName;
+
+								case WICurrencyType.D_Luminite:
+										return gLumenGenericWorldItem.DisplayName;
+
+								case WICurrencyType.E_Warlock:
+										return gWarlockGenericWorldItem.DisplayName;
+						}
+				}
+
+				public static int ConvertToBaseCurrency(int numCurrency, WICurrencyType type)
+				{
+						int numBaseCurrency = 0;
+						switch (type) {
+								case WICurrencyType.A_Bronze:
+										numBaseCurrency = numCurrency;
+										break;
+
+								case WICurrencyType.B_Silver:
+										numBaseCurrency = numCurrency * Globals.BaseValueSilver;
+										break;
+
+								case WICurrencyType.C_Gold:
+										numBaseCurrency = numCurrency * Globals.BaseValueGold;
+										break;
+
+								case WICurrencyType.D_Luminite:
+										numBaseCurrency = numCurrency * Globals.BaseValueLumen;
+										break;
+
+								case WICurrencyType.E_Warlock:
+										numBaseCurrency = numCurrency * Globals.BaseValueWarlock;
+										break;
+
+								default:
+										break;
+						}
+						return numBaseCurrency;
+				}
+
+				public static int ConvertFromBaseCurrency(int numBaseCurrency, WICurrencyType type)
+				{
+						int numActualCurrency = 0;
+						switch (type) {
+								case WICurrencyType.A_Bronze:
+										numActualCurrency = numBaseCurrency;
+										break;
+
+								case WICurrencyType.B_Silver:
+										numActualCurrency = numBaseCurrency / Globals.BaseValueSilver;
+										break;
+
+								case WICurrencyType.C_Gold:
+										numActualCurrency = numBaseCurrency / Globals.BaseValueGold;
+										break;
+
+								case WICurrencyType.D_Luminite:
+										numActualCurrency = numBaseCurrency / Globals.BaseValueLumen;
+										break;
+
+								case WICurrencyType.E_Warlock:
+										numActualCurrency = numBaseCurrency / Globals.BaseValueWarlock;
+										break;
+
+								default:
+										break;
+						}
+						return numActualCurrency;
+				}
+		}
+
+		public enum WICurrencyType
+		{
+				None,
+				A_Bronze,
+				B_Silver,
+				C_Gold,
+				D_Luminite,
+				E_Warlock,
+		}
+
 		public interface IBank
 		{
 				Action RefreshAction { get; set; }
@@ -282,182 +458,5 @@ namespace Frontiers.World
 				protected int mGold = 0;
 				protected int mLumen = 0;
 				protected int mWarlock = 0;
-		}
-
-		public class Currency : WIScript
-		{		
-				public static string TypeToString(WICurrencyType type)
-				{
-						switch (type) {
-								default:
-								case WICurrencyType.A_Bronze:
-										return gBronzeGenericWorldItem.DisplayName;
-
-								case WICurrencyType.B_Silver:
-										return gSilverGenericWorldItem.DisplayName;
-
-								case WICurrencyType.C_Gold:
-										return gGoldIGenericWorldItem.DisplayName;
-
-								case WICurrencyType.D_Luminite:
-										return gLumenGenericWorldItem.DisplayName;
-
-								case WICurrencyType.E_Warlock:
-										return gWarlockGenericWorldItem.DisplayName;
-						}
-				}
-
-				public static int ConvertToBaseCurrency(int numCurrency, WICurrencyType type)
-				{
-						int numBaseCurrency = 0;
-						switch (type) {
-								case WICurrencyType.A_Bronze:
-										numBaseCurrency = numCurrency;
-										break;
-
-								case WICurrencyType.B_Silver:
-										numBaseCurrency = numCurrency * Globals.BaseValueSilver;
-										break;
-
-								case WICurrencyType.C_Gold:
-										numBaseCurrency = numCurrency * Globals.BaseValueGold;
-										break;
-
-								case WICurrencyType.D_Luminite:
-										numBaseCurrency = numCurrency * Globals.BaseValueLumen;
-										break;
-
-								case WICurrencyType.E_Warlock:
-										numBaseCurrency = numCurrency * Globals.BaseValueWarlock;
-										break;
-
-								default:
-										break;
-						}
-						return numBaseCurrency;
-				}
-
-				public static int ConvertFromBaseCurrency(int numBaseCurrency, WICurrencyType type)
-				{
-						int numActualCurrency = 0;
-						switch (type) {
-								case WICurrencyType.A_Bronze:
-										numActualCurrency = numBaseCurrency;
-										break;
-
-								case WICurrencyType.B_Silver:
-										numActualCurrency = numBaseCurrency / Globals.BaseValueSilver;
-										break;
-
-								case WICurrencyType.C_Gold:
-										numActualCurrency = numBaseCurrency / Globals.BaseValueGold;
-										break;
-
-								case WICurrencyType.D_Luminite:
-										numActualCurrency = numBaseCurrency / Globals.BaseValueLumen;
-										break;
-
-								case WICurrencyType.E_Warlock:
-										numActualCurrency = numBaseCurrency / Globals.BaseValueWarlock;
-										break;
-
-								default:
-										break;
-						}
-						return numActualCurrency;
-				}
-
-				//IDs the object as currency for when it enters inventory
-				//also provides a bunch of useful static functions to manipulate currency in one place
-				public WICurrencyType Type = WICurrencyType.A_Bronze;
-				public int NumCurrency = 1;
-				//TODO potentially move default values into globals (?)
-				public static string CurrencyPackName = "PreciousMetalsAndCurrency";
-				public static string BronzePrefabName = "Grain Coin";
-				public static string SilverPrefabName = "Quarter Coin";
-				public static string GoldPrefabName = "Dram Coin";
-				public static string LumenPrefabName = "Marble 1";
-				public static string WarlockPrefabName = "Warlock Coin";
-				public static string BronzeCurrencyName = "Grain";
-				public static string SilverCurrencyName = "Quarter";
-				public static string GoldCurrencyName = "Dram";
-				public static string LumenCurrencyName = "Mark";
-				public static string WarlockCurrencyName = "Kanitt";
-				public static string BronzeCurrencyNamePlural = "Grain";
-				public static string SilverCurrencyNamePlural = "Quarter";
-				public static string GoldCurrencyNamePlural = "Dram";
-				public static string LumenCurrencyNamePlural = "Mark";
-				public static string WarlockCurrencyNamePlural = "Kanitt";
-
-				public static GenericWorldItem BronzeGenericWorldItem {
-						get {
-								if (gBronzeGenericWorldItem == null) {
-										gBronzeGenericWorldItem = new GenericWorldItem();
-										gBronzeGenericWorldItem.PackName = CurrencyPackName;
-										gBronzeGenericWorldItem.PrefabName = BronzePrefabName;
-								}
-								return gBronzeGenericWorldItem;
-						}
-				}
-
-				public static GenericWorldItem SilverGenericWorldItem {
-						get {
-								if (gSilverGenericWorldItem == null) {
-										gSilverGenericWorldItem = new GenericWorldItem();
-										gSilverGenericWorldItem.PackName = CurrencyPackName;
-										gSilverGenericWorldItem.PrefabName = SilverPrefabName;
-								}
-								return gSilverGenericWorldItem;
-						}
-				}
-
-				public static GenericWorldItem GoldIGenericWorldItem {
-						get {
-								if (gGoldIGenericWorldItem == null) {
-										gGoldIGenericWorldItem = new GenericWorldItem();
-										gGoldIGenericWorldItem.PackName = CurrencyPackName;
-										gGoldIGenericWorldItem.PrefabName = GoldPrefabName;
-								}
-								return gGoldIGenericWorldItem;
-						}
-				}
-
-				public static GenericWorldItem LumenGenericWorldItem {
-						get {
-								if (gLumenGenericWorldItem == null) {
-										gLumenGenericWorldItem = new GenericWorldItem();
-										gLumenGenericWorldItem.PackName = CurrencyPackName;
-										gLumenGenericWorldItem.PrefabName = LumenPrefabName;
-								}
-								return gLumenGenericWorldItem;
-						}
-				}
-
-				public static GenericWorldItem WarlockGenericWorldItem {
-						get {
-								if (gWarlockGenericWorldItem == null) {
-										gWarlockGenericWorldItem = new GenericWorldItem();
-										gWarlockGenericWorldItem.PackName = CurrencyPackName;
-										gWarlockGenericWorldItem.PrefabName = WarlockPrefabName;
-								}
-								return gWarlockGenericWorldItem;
-						}
-				}
-
-				protected static GenericWorldItem gBronzeGenericWorldItem;
-				protected static GenericWorldItem gSilverGenericWorldItem;
-				protected static GenericWorldItem gGoldIGenericWorldItem;
-				protected static GenericWorldItem gLumenGenericWorldItem;
-				protected static GenericWorldItem gWarlockGenericWorldItem;
-		}
-
-		public enum WICurrencyType
-		{
-				None,
-				A_Bronze,
-				B_Silver,
-				C_Gold,
-				D_Luminite,
-				E_Warlock,
 		}
 }
