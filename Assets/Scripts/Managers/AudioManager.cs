@@ -345,6 +345,10 @@ namespace Frontiers
 						while (!loader.isDone) {
 								//Debug.Log("AUDIO MANAGER: Fading in audio clip " + fullPath + " is NOT ready to play yet");
 								yield return null;
+								if (loader == null) {
+										Debug.Log("Loader was NULL in audio manager");
+										yield break;
+								}
 						}
 						//Debug.Log("AUDIO MANAGER: Playing audio clip " + fullPath);
 						FadingInAudio.Play();

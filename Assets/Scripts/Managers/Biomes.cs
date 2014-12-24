@@ -308,146 +308,6 @@ namespace Frontiers
 
 				#endregion
 
-				#region temperature
-
-				//this is used by locations like thermals to make things temporarily different
-				public void AddTemperatureOverride(TemperatureRange temp, float rtSeconds)
-				{
-						mTemperatureOverride = temp;
-						mTemperatureOverrideEndTime = WorldClock.Time + WorldClock.RTSecondsToGameSeconds(rtSeconds);
-				}
-				//returns a temperature range adjusted for above ground / below ground, structure and civilization modifiers
-				public TemperatureRange StatusTemperature(Vector3 worldPosition, bool underground, bool insideStructure, bool inCivlization)
-				{
-						TemperatureRange temp = TemperatureRange.C_Warm;
-						if (insideStructure && inCivlization) {
-								//a civilized structure always has a nice warm temperature
-								return temp;
-						} else if (underground) {
-								//use an average temperature to make caves useful as shelter
-								temp = AverageStatusTemperature();
-						} else {
-								//get the normal temp for the area
-								temp = StatusTemperature(worldPosition);
-								if (inCivlization) {
-										//civilization means it's never deadly cold or deadly hot
-										if (temp == TemperatureRange.A_DeadlyCold) {
-												temp = TemperatureRange.B_Cold;
-										} else if (temp == TemperatureRange.E_DeadlyHot) {
-												temp = TemperatureRange.D_Hot;
-										}
-								}
-						}
-						return temp;
-				}
-
-				public TemperatureRange AverageStatusTemperature()
-				{
-						//TODO use gameworld to cache current season since it seldom changes
-						BiomeStatusTemps currentSeason = null;
-						if (WorldClock.IsTimeOfYear(TimeOfYear.SeasonWinter)) {
-								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsWinter;
-						} else if (WorldClock.IsTimeOfYear(TimeOfYear.SeasonSpring)) {
-								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsSpring;
-						} else if (WorldClock.IsTimeOfYear(TimeOfYear.SeasonSummer)) {
-								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsSummer;
-						} else {
-								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsAutumn;
-						}
-						return currentSeason.StatusTempsAverage;
-				}
-				//returns a raw temperature based on time of day, time of year and elevation
-				//this is not modified by civilization or anything 'man-made'
-				public TemperatureRange StatusTemperature(Vector3 worldPosition)
-				{		//TODO incorporate elevation using worldPosition
-						//TODO use gameworld to cache current season since it seldom changes
-						TemperatureRange statusTemp = TemperatureRange.C_Warm;
-						int hourOfDay = WorldClock.Get.HourOfDay;
-						if (UseTimeOfDayOverride) {
-								hourOfDay = Mathf.FloorToInt(HourOfDayOverride);
-						}
-						BiomeStatusTemps currentSeason = null;
-						if (WorldClock.IsTimeOfYear(TimeOfYear.SeasonWinter)) {
-								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsWinter;
-						} else if (WorldClock.IsTimeOfYear(TimeOfYear.SeasonSpring)) {
-								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsSpring;
-						} else if (WorldClock.IsTimeOfYear(TimeOfYear.SeasonSummer)) {
-								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsSummer;
-						} else {
-								currentSeason = GameWorld.Get.CurrentBiome.StatusTempsAutumn;
-						}
-
-						if (WorldClock.IsTimeOfDay(TimeOfDay.ca_QuarterMorning)) {
-								return currentSeason.StatusTempQuarterMorning;
-						} else if (WorldClock.IsTimeOfDay(TimeOfDay.cb_QuarterAfternoon)) {
-								return currentSeason.StatusTempQuarterAfternoon;
-						} else if (WorldClock.IsTimeOfDay(TimeOfDay.cc_QuarterEvening)) {
-								return currentSeason.StatusTempQuarterEvening;
-						} else {
-								return currentSeason.StatusTempQuarterNight;
-						}
-				}
-				//helper functions, usually i just cast to (int) but i'm keeping them around just in case
-				public static TemperatureComparison CompareTemperatures(TemperatureRange temp1, TemperatureRange temp2)
-				{
-						int temp1Int = (int)temp1;
-						int temp2Int = (int)temp2;
-						if (temp1Int == temp2Int) {
-								return TemperatureComparison.Same;
-						} else if (temp1Int > temp2Int) {
-								return TemperatureComparison.Warmer;
-						} else {
-								return TemperatureComparison.Colder;
-						}
-				}
-
-				public static bool IsColderThan(TemperatureRange temp1, TemperatureRange temp2)
-				{
-						return ((int)temp1 < ((int)temp2));
-				}
-
-				public static bool IsHotterThan(TemperatureRange temp1, TemperatureRange temp2)
-				{
-						return ((int)temp1 > ((int)temp2));
-
-				}
-
-				public static float TemperatureRangeToFloat(TemperatureRange temp)
-				{
-						switch (temp) {
-								case TemperatureRange.A_DeadlyCold:
-								default:
-										return 0.05f;
-
-								case TemperatureRange.B_Cold:
-										return 0.25f;
-
-								case TemperatureRange.C_Warm:
-										return 0.5f;
-
-								case TemperatureRange.D_Hot:
-										return 0.75f;
-
-								case TemperatureRange.E_DeadlyHot:
-										return 0.95f;
-						}
-				}
-
-				public static TemperatureRange MaxTemperature(TemperatureRange temp1, TemperatureRange temp2)
-				{
-						if ((int)temp1 > (int)temp2) {
-								return temp1;
-						}
-						return temp2;
-				}
-
-				public static TemperatureRange ClampTemperature(TemperatureRange temperature, TemperatureRange minTemperature, TemperatureRange maxTemperature)
-				{
-						return (TemperatureRange)Mathf.Clamp((int)temperature, (int)minTemperature, (int)maxTemperature);
-				}
-
-				#endregion
-
 				public static List <Vector3> GeneratePointsOnSphere(int numberOfPoints)
 				{
 						List<Vector3> upts = new List<Vector3>();
@@ -502,8 +362,6 @@ namespace Frontiers
 						return UnityEngine.Random.value;
 				}
 
-				protected TemperatureRange mTemperatureOverride = TemperatureRange.C_Warm;
-				protected double mTemperatureOverrideEndTime = 0f;
 				protected float mTargetPrecipitationIntensity = 0.0f;
 				protected float mBaseWindIntensity = 0.0f;
 				protected float mAmbientLightIntensity = 1.0f;
@@ -594,22 +452,22 @@ namespace Frontiers
 				public Color WavesColorDusk;
 				public Color WavesColorCloudy;
 
-				public Color			FogColor(float normalizedTimeOfDay)
+				public Color FogColor(float normalizedTimeOfDay)
 				{
 						return Colors.BlendFour(FogColorMidnight, FogColorDawn, FogColorNoon, FogColorDusk, normalizedTimeOfDay);
 				}
 
-				public Color			WavesColor(float normalizedTimeOfDay)
+				public Color WavesColor(float normalizedTimeOfDay)
 				{
 						return Colors.BlendFour(WavesColorMidnight, WavesColorDawn, WavesColorNoon, WavesColorDusk, normalizedTimeOfDay);
 				}
 
-				public Color			FoamColor(float normalizedTimeOfDay)
+				public Color FoamColor(float normalizedTimeOfDay)
 				{
 						return Colors.Desaturate(Colors.Brighten(Colors.BlendFour(WavesColorMidnight, WavesColorDawn, WavesColorNoon, WavesColorDusk, normalizedTimeOfDay)));
 				}
 
-				public Color			CrestColor(float normalizedTimeOfDay)
+				public Color CrestColor(float normalizedTimeOfDay)
 				{
 						return Color.Lerp(Colors.BlendFour(WavesColorMidnight, WavesColorDawn, WavesColorNoon, WavesColorDusk, normalizedTimeOfDay), Color.white, 0.5f);
 				}

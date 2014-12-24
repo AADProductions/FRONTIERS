@@ -294,6 +294,36 @@ public partial class GameWorld : Manager
 				Mods.Get.Runtime.LoadAvailableMods <AudioProfile>(AudioProfiles, "AudioProfile");
 				Mods.Get.Runtime.LoadAvailableMods <PlayerStartupPosition>(WorldStartupPositions, "PlayerStartupPosition");
 
+				//generate the average temperature for each biome
+				for (int i = 0; i < Biomes.Count; i++) {
+						Biome biome = Biomes[i];
+						int sumTemps = 0;
+
+						sumTemps += ((int)biome.StatusTempsSummer.StatusTempQuarterMorning
+						+ (int)biome.StatusTempsSummer.StatusTempQuarterAfternoon
+						+ (int)biome.StatusTempsSummer.StatusTempQuarterEvening
+						+ (int)biome.StatusTempsSummer.StatusTempQuarterNight);
+
+						sumTemps += ((int)biome.StatusTempsAutumn.StatusTempQuarterMorning
+						+ (int)biome.StatusTempsAutumn.StatusTempQuarterAfternoon
+						+ (int)biome.StatusTempsAutumn.StatusTempQuarterEvening
+						+ (int)biome.StatusTempsAutumn.StatusTempQuarterNight);
+
+						sumTemps += ((int)biome.StatusTempsWinter.StatusTempQuarterMorning
+						+ (int)biome.StatusTempsWinter.StatusTempQuarterAfternoon
+						+ (int)biome.StatusTempsWinter.StatusTempQuarterEvening
+						+ (int)biome.StatusTempsWinter.StatusTempQuarterNight);
+
+						sumTemps += ((int)biome.StatusTempsSpring.StatusTempQuarterMorning
+						+ (int)biome.StatusTempsSpring.StatusTempQuarterAfternoon
+						+ (int)biome.StatusTempsSpring.StatusTempQuarterEvening
+						+ (int)biome.StatusTempsSpring.StatusTempQuarterNight);
+
+						//that's 12 total temperatures
+						biome.StatusTempAverage = (TemperatureRange)(sumTemps / 12);
+						Debug.Log("Average temperature of biome " + biome.Name + ": " + biome.StatusTempAverage.ToString());
+				}
+
 				mFlagSetLookup.Clear();
 				for (int i = 0; i < WorldFlags.Count; i++) {
 						mFlagSetLookup.Add(WorldFlags[i].Name, WorldFlags[i]);
@@ -474,7 +504,12 @@ public partial class GameWorld : Manager
 		{
 				//now that we've safely placed the player in the opening chunk
 				//we can start loading other chunks
-				FindBiomeAndRegion(SpawnManager.Get.CurrentStartupPosition.WorldPosition.Position);
+				FindBiomeAndRegion(
+						SpawnManager.Get.CurrentStartupPosition.WorldPosition.Position,
+						ref CurrentRegionData,
+						ref CurrentRegion,
+						ref CurrentBiome,
+						ref CurrentAudioProfile);
 				StartCoroutine(UpdateChunkModes());
 		}
 
@@ -708,27 +743,24 @@ public partial class GameWorld : Manager
 				return mFlagSetLookup.TryGetValue(flagSetName, out flagSet);
 		}
 
-		public void FindBiomeAndRegion(Vector3 playerPosition)
+		public void FindBiomeAndRegion(Vector3 worldPosition, ref Color32 regionData, ref Region region, ref Biome biome, ref AudioProfile audioProfile)
 		{
-				CurrentRegionData = RegionDataAtPosition(playerPosition);
-				//calculate the current tide base height
-				//if the value is <= 0, use the last base height
-				if (CurrentRegionData.a > 0) {
-						TideBaseElevationAtPlayerPosition = ((float)CurrentRegionData.a) / 255;
-				}
+				regionData = RegionDataAtPosition(worldPosition);
 
 				for (int i = 0; i < Regions.Count; i++) {
-						if (Regions[i].RegionID == CurrentRegionData.b) {
-								CurrentRegion = Regions[i];
+						if (Regions[i].RegionID == regionData.b) {
+								region = Regions[i];
 								break;
 						}
 				}
+
 				for (int i = 0; i < Biomes.Count; i++) {
-						if (Biomes[i].BiomeID == CurrentRegionData.r) {
-								CurrentBiome = Biomes[i];
+						if (Biomes[i].BiomeID == regionData.r) {
+								biome = Biomes[i];
 								for (int j = 0; j < AudioProfiles.Count; j++) {
-										if (string.Equals(AudioProfiles[j].Name, CurrentBiome.SummerAudioProfile)) {
-												CurrentAudioProfile = AudioProfiles[j];
+										//TODO make this correctly seasonal
+										if (string.Equals(AudioProfiles[j].Name, biome.SummerAudioProfile)) {
+												audioProfile = AudioProfiles[j];
 												break;
 										}
 								}
@@ -897,7 +929,12 @@ public partial class GameWorld : Manager
 						}
 
 						mLatestPlayerPosition = Player.Local.Position;
-						FindBiomeAndRegion(mLatestPlayerPosition);
+						FindBiomeAndRegion(mLatestPlayerPosition, ref CurrentRegionData, ref CurrentRegion, ref CurrentBiome, ref CurrentAudioProfile);
+						//calculate the current tide base height
+						//if the value is <= 0, use the last base height
+						if (CurrentRegionData.a > 0) {
+								TideBaseElevationAtPlayerPosition = ((float)CurrentRegionData.a) / 255;
+						}
 						//check to see which chunk is directly below the player's feet
 						bool setNewPrimary = false;
 						for (int i = 0; i < WorldChunks.Count; i++) {	//check if chunk i is the primary chunk - set it to the primary chunk if true
@@ -1032,6 +1069,152 @@ public partial class GameWorld : Manager
 						TerrainObjects[i].Flush();
 				}
 		}
+
+		#endregion
+
+		#region temperature
+
+		//this is used by locations like thermals to make things temporarily different
+		public void AddTemperatureOverride(TemperatureRange temp, float rtSeconds)
+		{		//TODO now that we're not using global states in our status temp functions
+				//figure out how to implement this again...
+				mTemperatureOverride = temp;
+				mTemperatureOverrideEndTime = WorldClock.Time + WorldClock.RTSecondsToGameSeconds(rtSeconds);
+		}
+		//returns a temperature range adjusted for above ground / below ground, structure and civilization modifiers
+		public TemperatureRange StatusTemperature(Vector3 worldPosition, TimeOfDay timeOfDay, TimeOfYear timeOfYear, bool underground, bool insideStructure, bool inCivlization)
+		{
+				if (insideStructure || inCivlization) {
+						//a civilized structure always has a nice warm temperature
+						return TemperatureRange.C_Warm;
+				} else if (underground) {
+						//use an average temperature to make caves useful as shelter
+						return AverageStatusTemperature(worldPosition);
+				} else {
+						//get the normal temp for the area
+						return StatusTemperature(worldPosition, timeOfDay, timeOfYear);
+				}
+		}
+
+		public TemperatureRange AverageStatusTemperature(Vector3 worldPosition)
+		{
+				Biome biome = null;
+				BiomeStatusTemps currentSeason = null;
+				//get the region data for this position and look up the biome
+				Color32 regionData = RegionDataAtPosition(worldPosition);
+				//TODO maybe put this in a lookup? less than 10 biomes, whatever doesn't matter
+				for (int i = 0; i < Biomes.Count; i++) {
+						if (Biomes[i].BiomeID == regionData.r) {
+								biome = Biomes[i];
+								break;
+						}
+				}
+				if (biome == null) {
+						Debug.Log("Couldn't find biome " + regionData.r.ToString() + ", using default");
+						biome = CurrentBiome;
+				}
+				return biome.StatusTempAverage;
+		}
+		//returns a raw temperature based on time of day, time of year and elevation
+		//this is not modified by civilization or anything 'man-made'
+		public TemperatureRange StatusTemperature(Vector3 worldPosition, TimeOfDay timeOfDay, TimeOfYear timeOfYear)
+		{		
+				Biome biome = null;
+				BiomeStatusTemps currentSeason = null;
+				//get the region data for this position and look up the biome
+				Color32 regionData = RegionDataAtPosition(worldPosition);
+				//TODO maybe put this in a lookup? less than 10 biomes, probably doesn't matter
+				for (int i = 0; i < Biomes.Count; i++) {
+						if (Biomes[i].BiomeID == regionData.r) {
+								biome = Biomes[i];
+								break;
+						}
+				}
+				if (biome == null) {
+						Debug.Log("Couldn't find biome " + regionData.r.ToString() + ", using default");
+						biome = CurrentBiome;
+				}
+				//now look up the temperature range for this time of year / this time of day
+				if (Flags.Check((uint)timeOfYear, (uint)TimeOfYear.SeasonWinter, Flags.CheckType.MatchAny)) {
+						currentSeason = biome.StatusTempsWinter;
+				} else if (Flags.Check((uint)timeOfYear, (uint)TimeOfYear.SeasonSpring, Flags.CheckType.MatchAny)) {
+						currentSeason = biome.StatusTempsSpring;
+				} else if (Flags.Check((uint)timeOfYear, (uint)TimeOfYear.SeasonSummer, Flags.CheckType.MatchAny)) {
+						currentSeason = biome.StatusTempsSummer;
+				} else {
+						currentSeason = biome.StatusTempsAutumn;
+				}
+				if (Flags.Check((uint)timeOfDay, (uint)TimeOfDay.ca_QuarterMorning, Flags.CheckType.MatchAny)) {
+						return currentSeason.StatusTempQuarterMorning;
+				} else if (Flags.Check((uint)timeOfDay, (uint)TimeOfDay.cb_QuarterAfternoon, Flags.CheckType.MatchAny)) {
+						return currentSeason.StatusTempQuarterAfternoon;
+				} else if (Flags.Check((uint)timeOfDay, (uint)TimeOfDay.cc_QuarterEvening, Flags.CheckType.MatchAny)) {
+						return currentSeason.StatusTempQuarterEvening;
+				} else {
+						return currentSeason.StatusTempQuarterNight;
+				}
+		}
+		//helper functions, usually i just cast to (int) but i'm keeping them around just in case
+		public static TemperatureComparison CompareTemperatures(TemperatureRange temp1, TemperatureRange temp2)
+		{
+				int temp1Int = (int)temp1;
+				int temp2Int = (int)temp2;
+				if (temp1Int == temp2Int) {
+						return TemperatureComparison.Same;
+				} else if (temp1Int > temp2Int) {
+						return TemperatureComparison.Warmer;
+				} else {
+						return TemperatureComparison.Colder;
+				}
+		}
+
+		public static bool IsColderThan(TemperatureRange temp1, TemperatureRange temp2)
+		{
+				return ((int)temp1 < ((int)temp2));
+		}
+
+		public static bool IsHotterThan(TemperatureRange temp1, TemperatureRange temp2)
+		{
+				return ((int)temp1 > ((int)temp2));
+
+		}
+
+		public static float TemperatureRangeToFloat(TemperatureRange temp)
+		{
+				switch (temp) {
+						case TemperatureRange.A_DeadlyCold:
+						default:
+								return 0.05f;
+
+						case TemperatureRange.B_Cold:
+								return 0.25f;
+
+						case TemperatureRange.C_Warm:
+								return 0.5f;
+
+						case TemperatureRange.D_Hot:
+								return 0.75f;
+
+						case TemperatureRange.E_DeadlyHot:
+								return 0.95f;
+				}
+		}
+
+		public static TemperatureRange MaxTemperature(TemperatureRange temp1, TemperatureRange temp2)
+		{
+				if ((int)temp1 > (int)temp2) {
+						return temp1;
+				}
+				return temp2;
+		}
+
+		public static TemperatureRange ClampTemperature(TemperatureRange temperature, TemperatureRange minTemperature, TemperatureRange maxTemperature)
+		{
+				return (TemperatureRange)Mathf.Clamp((int)temperature, (int)minTemperature, (int)maxTemperature);
+		}
+
+		protected TemperatureRange mTemperatureOverride = TemperatureRange.C_Warm;
+		protected double mTemperatureOverrideEndTime = 0f;
 
 		#endregion
 

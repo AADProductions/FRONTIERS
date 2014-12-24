@@ -13,6 +13,7 @@ namespace Frontiers
 		public class Blueprints : Manager
 		{
 				public static Blueprints Get;
+				public List <WIBlueprint> LoadedBlueprints = new List<WIBlueprint> ();
 
 				public override void WakeUp()
 				{
@@ -42,15 +43,57 @@ namespace Frontiers
 						base.Initialize();
 						mAllCategory = new List <string>();
 						mLoadedBlueprints = new Dictionary <string, WIBlueprint>();
+						mPatternLookup = new Dictionary<int, List <WIBlueprint>>();
 						mBlueprintAssociations = new Dictionary <GenericWorldItem, WIBlueprint>();
 						mEditorBlueprints = new List <WIBlueprint>();
 						mAssociationWorldItem = new GenericWorldItem();
-						Debug.Log("Finished initializing in blueprints");
 				}
 
 				public override void OnGameLoadStart()
 				{
+						Mods.Get.Runtime.LoadAvailableMods <WIBlueprint>(LoadedBlueprints, "Blueprint");
+						for (int i = 0; i < LoadedBlueprints.Count; i++) {
+								//add them to the name lookup for easy retrieval
+								mLoadedBlueprints.Add(LoadedBlueprints[i].Name, LoadedBlueprints[i]);
+								//generate a lookup pattern to make matching easier
+								int pattern = GeneratePattern(LoadedBlueprints[i]);
+								//add that to a list
+								List <WIBlueprint> patternList = null;
+								if (!mPatternLookup.TryGetValue(pattern, out patternList)) {
+										patternList = new List<WIBlueprint>();
+										mPatternLookup.Add(pattern, patternList);
+								}
+								patternList.Add(LoadedBlueprints[i]);
+						}
 						RefreshCategories();
+				}
+
+				public bool BlueprintsByPattern (int pattern, List <WIBlueprint> blueprints) {
+						List <WIBlueprint> blueprintList = null;
+						if (mPatternLookup.TryGetValue (pattern, out blueprintList)) {
+								blueprints.AddRange (blueprintList);
+								return true;
+						}
+						return false;
+				}
+
+				public int GeneratePattern (WIBlueprint blueprint) {
+						//generates a bitmask that can be used to look up blueprints more quickly
+						int pattern = 0;
+						//i try to avoid actually naming the number of columns in a blueprint
+						//this is to leave the door open for more than 3 columns
+						blueprint.Rows = new List<GenericWorldItem>();
+						blueprint.Rows.AddRange(blueprint.Row1);
+						blueprint.Rows.AddRange(blueprint.Row2);
+						blueprint.Rows.AddRange(blueprint.Row3);
+						for (int i = 0; i < blueprint.Rows.Count; i++) {
+								if (!blueprint.Rows[i].IsEmpty) {
+										pattern |= 1 << i;
+								}
+						}
+						//set the pattern in case we want to use it later (?)
+						blueprint.Pattern = pattern;
+						return pattern;
 				}
 
 				public bool Blueprint(string blueprintName, out WIBlueprint blueprint, bool onlyIfRevealed)
@@ -64,7 +107,9 @@ namespace Frontiers
 								} else {
 										return true;
 								}
-						} else if (Mods.Get.Runtime.LoadMod(ref blueprint, "Blueprint", blueprintName)) {
+						}
+						//we're loading all blueprints on startup now so this is unnecessary
+						/* else if (Mods.Get.Runtime.LoadMod(ref blueprint, "Blueprint", blueprintName)) {
 								//get the description for the blueprint
 								WorldItem prefab = null;
 								if (WorldItems.Get.PackPrefab(blueprint.GenericResult.PackName, blueprint.GenericResult.PrefabName, out prefab)) {
@@ -79,7 +124,7 @@ namespace Frontiers
 								} else {
 										return true;
 								}
-						}
+						}*/
 						return false;
 				}
 
@@ -91,14 +136,15 @@ namespace Frontiers
 
 				public bool Blueprint(string blueprintName, out WIBlueprint blueprint)
 				{
-						////Debug.Log ("Looking for blueprint " + blueprintName);
 						blueprint = null;
 						if (mLoadedBlueprints.TryGetValue(blueprintName, out blueprint)) {
 								return true;
-						} else if (Mods.Get.Runtime.LoadMod(ref blueprint, "Blueprint", blueprintName)) {
+						}
+						//we're loading all blueprints on startup now so this is unnecessary
+						/*else if (Mods.Get.Runtime.LoadMod(ref blueprint, "Blueprint", blueprintName)) {
 								mLoadedBlueprints.Add(blueprintName, blueprint);
 								return true;
-						}
+						}*/
 						return false;
 				}
 
@@ -106,10 +152,9 @@ namespace Frontiers
 				{
 						//TEMP
 						//blueprintNames = mAllCategory;
-						if (!mCategories.TryGetValue(categoryName, out blueprintNames)) {	//just give it an empty list
+						if (!mCategories.TryGetValue(categoryName, out blueprintNames)) {//just give it an empty list
 								//cooking, crafting etc. will be asking for these a lot
 								blueprintNames = new List <string>();
-								////Debug.Log ("Didn't find category");
 								return false;
 						}
 						return true;
@@ -124,12 +169,9 @@ namespace Frontiers
 						List <WIBlueprint> blueprints = new List<WIBlueprint>();
 						List <string> blueprintNames = new List<string>();
 						if (Category(categoryName.ToLower().Trim(), out blueprintNames)) {
-								////Debug.Log ("Found category " + categoryName);
 								foreach (string blueprintName in blueprintNames) {
-										////Debug.Log ("Looking for " + blueprintName);
 										WIBlueprint blueprint = null;
 										if (Blueprint(blueprintName, out blueprint, true) && blueprint.Revealed) {
-												////Debug.Log ("Found " + blueprintName + " and is revealed");
 												blueprints.Add(blueprint);
 										}
 								}
@@ -146,28 +188,24 @@ namespace Frontiers
 						mEditorBlueprints.Clear();
 						mBlueprintAssociations.Clear();
 
-						List <string> blueprintNames = Mods.Get.Available("Blueprint", DataType.World);
-						foreach (string blueprintName in blueprintNames) {
-								WIBlueprint blueprint = null;
-								////Debug.Log ("Checking blueprint " + blueprintName);
-								if (Mods.Get.Runtime.LoadMod <WIBlueprint>(ref blueprint, "Blueprint", blueprintName)) {
-										if (blueprint.IsEmpty) {
-												Debug.Log("Empty blueprint, adding temporary result");
-												blueprint.UseGenericResult = true;
-												blueprint.GenericResult = new GenericWorldItem("Edibles", "Bacon");
-										}
-
-										if (!mBlueprintAssociations.ContainsKey(blueprint.GenericResult)) {
-												mBlueprintAssociations.Add(blueprint.GenericResult, blueprint);
-										}
-										mAllCategory.Add(blueprint.Name);
-										List <string> blueprintNameList = null;
-										if (!mCategories.TryGetValue(blueprint.RequiredSkill.ToLower(), out blueprintNameList)) {
-												blueprintNameList = new List <string>();
-												mCategories.Add(blueprint.RequiredSkill.ToLower(), blueprintNameList);
-										}
-										blueprintNameList.Add(blueprint.Name);
+						for (int i = 0; i < LoadedBlueprints.Count; i++) {
+								WIBlueprint blueprint = LoadedBlueprints[i];
+								if (blueprint.IsEmpty) {
+										Debug.Log("Empty blueprint, adding temporary result");
+										blueprint.UseGenericResult = true;
+										blueprint.GenericResult = new GenericWorldItem("Edibles", "Bacon");
 								}
+
+								if (!mBlueprintAssociations.ContainsKey(blueprint.GenericResult)) {
+										mBlueprintAssociations.Add(blueprint.GenericResult, blueprint);
+								}
+								mAllCategory.Add(blueprint.Name);
+								List <string> blueprintNameList = null;
+								if (!mCategories.TryGetValue(blueprint.RequiredSkill.ToLower(), out blueprintNameList)) {
+										blueprintNameList = new List <string>();
+										mCategories.Add(blueprint.RequiredSkill.ToLower(), blueprintNameList);
+								}
+								blueprintNameList.Add(blueprint.Name);
 						}
 				}
 
@@ -193,7 +231,7 @@ namespace Frontiers
 				{
 						blueprint = null;
 						mAssociationWorldItem.CopyFrom(worlditem);
-						////Debug.Log ("Checking if blueprint exists for " + mAssociationWorldItem.PrefabName);
+						//Debug.Log ("Checking if blueprint exists for " + mAssociationWorldItem.PrefabName);
 						foreach (KeyValuePair <GenericWorldItem,WIBlueprint> keyValue in mBlueprintAssociations) {
 								if (string.Equals(keyValue.Key.PackName, mAssociationWorldItem.PackName)
 								    && string.Equals(keyValue.Key.PrefabName, mAssociationWorldItem.PrefabName)) {
@@ -253,7 +291,7 @@ namespace Frontiers
 						mAllCategory.Clear();
 						mEditorBlueprints.Clear();
 						List <string> blueprintNames = Mods.Get.Available("Blueprint", DataType.World);
-						foreach (string blueprintName in blueprintNames) {	////Debug.Log ("refreshing blueprint " + blueprintName);
+						foreach (string blueprintName in blueprintNames) {	//Debug.Log ("refreshing blueprint " + blueprintName);
 								WIBlueprint blueprint = null;
 								if (Mods.Get.Editor.LoadMod <WIBlueprint>(ref blueprint, "Blueprint", blueprintName)) {
 										if (blueprint.Revealed) {
@@ -533,15 +571,11 @@ namespace Frontiers
 				#endif
 				protected Dictionary <string, List <string>> mCategories = null;
 				protected List <string> mAllCategory;
-				// = new List <string> ();
 				protected Dictionary <string, WIBlueprint> mLoadedBlueprints;
-				// = new Dictionary <string, WIBlueprint> ();
+				protected Dictionary<int, List <WIBlueprint>> mPatternLookup;
 				protected Dictionary <GenericWorldItem, WIBlueprint> mBlueprintAssociations;
-				// = new Dictionary <GenericWorldItem, WIBlueprint> ();
 				protected List <WIBlueprint> mEditorBlueprints;
-				// = new List <WIBlueprint> ();
 				protected GenericWorldItem mAssociationWorldItem;
-				// = new GenericWorldItem ( );
 		}
 
 		[Serializable]
@@ -578,6 +612,11 @@ namespace Frontiers
 				public string Title = string.Empty;
 				public int Instances = 0;
 				public bool Revealed = false;
+				//pattern is a bitmask used as a first-round match
+				//for now it's implemented as flags 1-9 corresponding to filled squares
+				//this is applied on startup so it could be anything really
+				[XmlIgnore]
+				public int Pattern;
 				public BlueprintRevealMethod RevealMethod = BlueprintRevealMethod.None;
 				public string RevealSource = string.Empty;
 				[BitMaskAttribute(typeof(BlueprintStrictness))]
@@ -648,6 +687,10 @@ namespace Frontiers
 				public List <GenericWorldItem> Row1;
 				public List <GenericWorldItem> Row2;
 				public List <GenericWorldItem> Row3;
+				//this is generated on startup by Blueprints along with pattern
+				//i don't want to be locked in to a certain way of storing the rows
+				[XmlIgnore]
+				public List <GenericWorldItem> Rows;
 				public GenericWorldItem GenericResult = null;
 				public string CustomResultScript = string.Empty;
 				public string CustomResultScriptState = string.Empty;

@@ -386,6 +386,7 @@ namespace Frontiers
 				public string StructureName;
 				public bool ClearInventory = false;
 				public bool DestroyClearedItems = true;
+				public bool ClearWearables = true;
 				public bool ClearLog = false;
 				public string CharacterName = string.Empty;
 				//what time it should be
@@ -398,6 +399,7 @@ namespace Frontiers
 				//player stater
 				public string ControllerState;
 				public string InventoryFillCategory;
+				public string WearableFillCategory;
 				public List <StatusKeeperValue> StatusValues = new List<StatusKeeperValue>();
 				public bool ClearRevealedLocations = false;
 				public List <CurrencyValue> CurrencyToAdd = new List<CurrencyValue>();
@@ -926,6 +928,9 @@ namespace Frontiers
 				{
 						return 0f;
 				}
+
+				[XmlIgnore]
+				public TemperatureRange StatusTempAverage = TemperatureRange.C_Warm;
 		}
 
 		[Serializable]

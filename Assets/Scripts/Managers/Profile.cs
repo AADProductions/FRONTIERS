@@ -97,7 +97,7 @@ namespace Frontiers
 
 				public override void OnLocalPlayerSpawn()
 				{
-						SaveCurrent(ProfileComponents.Profile);
+						//SaveCurrent(ProfileComponents.Profile);
 				}
 
 				public bool SetOrCreateProfile(string profileName, out string errorMessage)

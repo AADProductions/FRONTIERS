@@ -32,6 +32,17 @@ public class ExplosionEffectSphere : EffectSphere
 						packageCopy.Target = itemOfInterest;
 						Debug.Log("Force: " + packageCopy.Force.ToString());
 						DamageManager.Get.SendDamage(packageCopy);
+						//characters and creatures are automatically stunned
+						if (itemOfInterest.IOIType == ItemOfInterestType.WorldItem) {
+								if (itemOfInterest.worlditem.Is <Creature>(out mCreatureCheck)) {
+										mCreatureCheck.TryToStun(adjustedDamage);
+								} else if (itemOfInterest.worlditem.Is <Character>(out mCharacterCheck)) {
+										mCharacterCheck.TryToStun(adjustedDamage);
+								}
+						}
 				}
 		}
+
+		protected static Character mCharacterCheck;
+		protected static Creature mCreatureCheck;
 }

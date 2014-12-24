@@ -7,6 +7,7 @@ using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Locations;
 using System.Text;
+using Frontiers.GUI;
 
 namespace Frontiers
 {
@@ -684,8 +685,6 @@ namespace Frontiers
 
 				public void Update()
 				{
-						//we have to do this every frame to identify moving platforms etc
-						RaycastAllDown();
 						//check to see if we have field of view overrides
 						if (!GameManager.Is(FGameState.Cutscene)) {
 								if (IsVisitingLocation && CurrentLocation.State.RenderDistanceOverride > 0f) {
@@ -694,11 +693,17 @@ namespace Frontiers
 										GameManager.Get.GameCamera.farClipPlane = Globals.ClippingDistanceFar;
 								}
 						}
+
+						if (GameManager.Is(FGameState.InGame) && player.HasSpawned) {
+								//we have to do this every frame to identify moving platforms etc
+								RaycastAllDown();
+						}
 				}
 
 				#region hostiles and danger
 
 				protected int mCheckHostiles = 0;
+				protected IItemOfInterest mLastEncounteredScenery;
 				public List <IHostile> Hostiles = new List <IHostile>();
 				public int HostilesTargetingPlayer = 0;
 				public List <CreatureDen> CreatureDens = new List<CreatureDen>();
@@ -724,6 +729,18 @@ namespace Frontiers
 												HostilesTargetingPlayer++;
 										}
 								}
+						}
+
+						//check for encounters
+						try {
+						if (IsTerrainInPlayerFocus && TerrainFocus != mLastEncounteredScenery) {
+								mLastEncounteredScenery = TerrainFocus;
+								mLastEncounteredScenery.gameObject.collider.attachedRigidbody.SendMessage("OnPlayerEncounter", SendMessageOptions.DontRequireReceiver);
+						}
+						}
+						catch (Exception e) {
+								//no big deal
+							//Debug.LogError("Proceeding normally: Error when sending OnPlayerEncounter to scenery");
 						}
 				}
 
@@ -1015,14 +1032,16 @@ namespace Frontiers
 								if (WorldItems.GetIOIFromCollider(worldItemHit.collider, out focusItemOfInterest)) {
 										focusItemOfInterest = CheckForCarried(focusItemOfInterest);
 										focusItemOfInterest = CheckForEquipped(focusItemOfInterest);
-										CheckForClosest(ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, focusItemOfInterest, worldItemHit, true);
-										CheckForClosest(ref WorldItemFocus, ref WorldItemFocusHitInfo, focusItemOfInterest, worldItemHit, true);
+										if (focusItemOfInterest != null) {
+												CheckForClosest(ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, focusItemOfInterest, worldItemHit, true);
+												CheckForClosest(ref WorldItemFocus, ref WorldItemFocusHitInfo, focusItemOfInterest, worldItemHit, true);
+										}
 								}
 								//}
 						}
 						//this result will override any fluid hit results
 						//this is desired behavior because we want to be able to pick up objects through triggers
-						sphereCastHits = Physics.SphereCastAll(player.HeadPosition, 0.1f, player.FocusVector, Globals.RaycastAllFocusDistance, Globals.LayerWorldItemActive);
+						sphereCastHits = Physics.SphereCastAll(player.HeadPosition, 0.1f, player.FocusVector, Globals.RaycastAllFocusDistance, Globals.LayerWorldItemActive | Globals.LayerBodyPart);
 						if (sphereCastHits.Length > 0) {
 								for (int i = 0; i < sphereCastHits.Length; i++) {
 										worldItemHit = sphereCastHits[i];
@@ -1031,13 +1050,16 @@ namespace Frontiers
 												//(we no longer have to check for body parts, get ioi from collider does that for us)
 												focusItemOfInterest = CheckForCarried(focusItemOfInterest);
 												focusItemOfInterest = CheckForEquipped(focusItemOfInterest);
-												CheckForClosest(ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, focusItemOfInterest, worldItemHit, true);
-												CheckForClosest(ref WorldItemFocus, ref WorldItemFocusHitInfo, focusItemOfInterest, worldItemHit, true);
+												if (focusItemOfInterest != null) {
+														CheckForClosest(ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, focusItemOfInterest, worldItemHit, true);
+														CheckForClosest(ref WorldItemFocus, ref WorldItemFocusHitInfo, focusItemOfInterest, worldItemHit, true);
+												}
 										}
 								}
 								Array.Clear(sphereCastHits, 0, sphereCastHits.Length);
 						}
-						if (IsWorldItemInPlayerFocus) {
+
+						if (IsWorldItemInPlayerFocus && WorldItemFocus.IOIType == ItemOfInterestType.WorldItem) {
 								ReceptacleInPlayerFocus = WorldItemFocus.worlditem.Get <Receptacle>();
 						}
 				}

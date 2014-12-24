@@ -3,8 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Gameplay;
-using Frontiers.World.Locations;
+using Frontiers.GUI;
 
 namespace Frontiers
 {
@@ -67,26 +66,29 @@ namespace Frontiers
 								return;
 						}
 
-						FollowerTarget.transform.position = Player.Local.HeadPosition;
+						FollowerTarget.position = Player.Local.HeadPosition;
 
 						if (!Paths.HasActivePath) {
-								spline.enabled = false;
-								PathMesh.enabled = false;
-								PathMesh.renderer.enabled = false;
-								PathMesh.updateMode = SplineMesh.UpdateMode.DontUpdate;
-								Follower.enabled = false;
-								Follower.gameObject.SetActive(false);
-								mCurrentColor = Color.black;
+								if (spline.enabled) {
+									spline.enabled = false;
+									PathMesh.enabled = false;
+									PathMesh.renderer.enabled = false;
+									PathMesh.updateMode = SplineMesh.UpdateMode.DontUpdate;
+									Follower.enabled = false;
+									Follower.gameObject.SetActive(false);
+									mCurrentColor = Color.black;
+								}
 								return;
 						} else if (Paths.HasActivePath) {
-								spline.enabled = true;
-								PathMesh.enabled = true;
-								PathMesh.renderer.enabled = true;
-								PathMesh.updateMode = SplineMesh.UpdateMode.EveryFrame;
-								Follower.enabled = true;
-								Follower.gameObject.SetActive(true);
-								Follower.spline = Paths.ActivePath.spline;
-
+								if (!spline.enabled) {
+									spline.enabled = true;
+									PathMesh.enabled = true;
+									PathMesh.renderer.enabled = true;
+									PathMesh.updateMode = SplineMesh.UpdateMode.EveryFrame;
+									Follower.enabled = true;
+									Follower.gameObject.SetActive(true);
+									Follower.spline = Paths.ActivePath.spline;
+								}
 								if (Paths.IsEvaluating) {
 										mCurrentColor = Color.Lerp(Colors.Get.PathEvaluatingColor1, Colors.Get.PathEvaluatingColor2, Mathf.Abs(Mathf.Sin((float)(WorldClock.RealTime * 2))));
 								} else {
@@ -105,7 +107,7 @@ namespace Frontiers
 								WaveAmount = 0.05f;
 						}		
 
-						PlayerDistanceFromPath = Vector3.Distance(Follower.transform.position, FollowerTarget.transform.position) * Globals.InGameUnitsToMeters;
+						PlayerDistanceFromPath = Vector3.Distance(Follower.transform.position, FollowerTarget.position) * Globals.InGameUnitsToMeters;
 
 						if (TravelManager.Get.State == TravelManager.FastTravelState.None) {
 								//only check this when we're not fast-traveling
@@ -135,9 +137,7 @@ namespace Frontiers
 						mGroundPathSmoothTarget = Mathf.Lerp(mGroundPathSmoothTarget, Follower.param, PathFollowSpeed);
 						mGroundActivePathSmoothTarget = Mathf.Lerp(mGroundActivePathSmoothTarget, Follower.param, PathFollowSpeed);
 
-						PathAvatar activePath = Paths.ActivePath;
-
-						mTotalLength = activePath.LengthInMeters;
+						mTotalLength = Paths.ActivePath.LengthInMeters;
 						mNormalizedTargetLength = (Nodes.Count * DistanceBetweenNodes) / mTotalLength;
 						mNormalizedExtent = (mNormalizedTargetLength / 2.0f);
 						mNormalizedMidPoint = mGroundActivePathSmoothTarget;
@@ -146,13 +146,14 @@ namespace Frontiers
 						mNormalizedDistanceBetweenNodes = DistanceBetweenNodes / mTotalLength;
 						mNormalizedDistance = mNormalizedStartPoint;
 
-						spline.splineNodesArray.Clear();
+						//spline.splineNodesArray.Clear();
 
 						int activeNodes = 0;
 
 						for (int i = 0; i < Nodes.Count; i++) {
 								if ((mNormalizedStartPoint >= 0.0f && mNormalizedStartPoint < 1.0f) || (mNormalizedEndPoint >= 0.0f && mNormalizedEndPoint < 1.0f)) {
-										mNodeWorldMapPosition = activePath.spline.GetPositionOnSpline(mNormalizedDistance);
+										Nodes[i].gameObject.SetActive(true);
+										mNodeWorldMapPosition = Paths.ActivePath.spline.GetPositionOnSpline(mNormalizedDistance);
 										mNormalizedDistance += mNormalizedDistanceBetweenNodes;
 
 										mTerrainHit.feetPosition = mNodeWorldMapPosition;
@@ -161,12 +162,14 @@ namespace Frontiers
 										+ (Mathf.Sin(((float)(WorldClock.RealTime * TimeModifier)) + (mTotalLength * mNormalizedDistance)) * WaveAmount);
 										Nodes[i].transform.position = mTerrainHit.feetPosition;
 
-										spline.splineNodesArray.Add(Nodes[i]);
+										//spline.splineNodesArray.Add(Nodes[i]);
 					
 										if (i == Nodes.Count / 2) {
 												mInterceptorPosition = mTerrainHit.feetPosition;
 										}
 										activeNodes++;
+								} else {
+										Nodes[i].gameObject.SetActive(false);
 								}
 						}
 				}

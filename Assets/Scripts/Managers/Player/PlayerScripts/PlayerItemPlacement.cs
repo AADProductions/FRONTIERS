@@ -36,7 +36,7 @@ namespace Frontiers
 				public GameObject LastItemDropped;//TODO put this in globals
 				public GameObject LastItemCarried;
 				public GameObject LastItemPlaced;
-				public Vector3 GrabberIdealPosition	= new Vector3(-0.5f, -0.15f, 2.5f);
+				public Vector3 GrabberIdealPosition	= new Vector3(0.5f, -0.15f, 2.5f);
 				public WorldItem ItemToPlace = null;
 				public IItemOfInterest LastItemUsed;
 				public double UseCoolDown;
@@ -116,6 +116,7 @@ namespace Frontiers
 						Player.Get.UserActions.Subscribe(UserActionType.ItemPlace, new ActionListener(ItemPlace));
 						GUIInventoryInterface.Get.Subscribe(InterfaceActionType.SelectionNext, new ActionListener(SelectionNext));
 						GUIInventoryInterface.Get.Subscribe(InterfaceActionType.SelectionPrev, new ActionListener(SelectionPrev));
+						GUIInventoryInterface.Get.Subscribe(InterfaceActionType.ToggleInterface, new ActionListener(ToggleInterface));
 						Player.Get.AvatarActions.Subscribe(new PlayerAvatarAction(AvatarAction.ItemAQIChange), new ActionListener(ItemAQIChange));
 
 						enabled = true;
@@ -301,6 +302,13 @@ namespace Frontiers
 						return true;
 				}
 
+				public bool ToggleInterface (double timeStamp) {
+					Debug.Log("Setting item cooldown");
+					//this is to prevent accidentally spamming the ItemUse key
+					UseCoolDown = WorldClock.RealTime + CooldownInterval;
+					return true;
+				}
+
 				public bool ItemAQIChange(double timeStamp)
 				{
 						PlacementModeEnabled = false;
@@ -335,6 +343,12 @@ namespace Frontiers
 
 				public bool ItemUse(double timeStamp)
 				{
+						if (WorldClock.RealTime < UseCoolDown) {
+							Debug.Log("Item use called - cooldown in effect");
+							return true;
+						}
+
+						Debug.Log("Item use called in item placement");
 						if (Player.Local.Surroundings.IsWorldItemInRange && LastItemUsed != null) {
 								if (Player.Local.Surroundings.WorldItemFocus == LastItemUsed
 								&& WorldClock.RealTime < UseCoolDown) {
@@ -413,8 +427,6 @@ namespace Frontiers
 
 				protected void UseSkillsToPickUpItem(WorldItem worlditemInRange)
 				{
-						Debug.Log("Using skill to pick up item");
-
 						if (UsingSkillList)
 								return;
 
@@ -438,7 +450,7 @@ namespace Frontiers
 								//Debug.Log ("Attempting to use remove item skill " + removeItemSkill.name);
 								optionsList.AddOption(removeItemSkill.GetListOption(mSkillUseTarget.worlditem));
 						}
-						optionsList.AddOption(new GUIListOption("Cancel"));
+						optionsList.AddOption(new WIListOption("Cancel"));
 						optionsList.ShowDoppleganger = false;
 						GUIOptionListDialog dialog = null;
 						if (optionsList.TryToSpawn(true, out dialog)) {
@@ -452,7 +464,7 @@ namespace Frontiers
 
 						UsingSkillList = false;
 
-						OptionsListDialogResult dialogResult = result as OptionsListDialogResult;
+						WIListResult dialogResult = result as WIListResult;
 						RemoveItemSkill skillToUse = null;
 						foreach (Skill removeSkill in mRemoveSkillList) {
 								if (removeSkill.name == dialogResult.Result) {
@@ -676,6 +688,22 @@ namespace Frontiers
 						return true;
 				}
 
+				public void ItemDropAtFeet (IWIBase item) {
+						WorldItem worlditem = null;
+						if (item.IsWorldItem) {
+								worlditem = item.worlditem;
+						} else {
+								WorldItems.CloneFromStackItem(item.GetStackItem(WIMode.World), WIGroups.Get.Player, out worlditem);
+								worlditem.Initialize();
+						}
+						worlditem.ActiveState = WIActiveState.Active;
+						worlditem.Props.Local.FreezeOnStartup = false;
+						worlditem.SetMode(WIMode.World);
+						worlditem.tr.position = Player.Local.GrabberTargetObject.position;
+						worlditem.tr.rotation = Player.Local.GrabberTargetObject.rotation;
+						worlditem.LastActiveDistanceToPlayer = 0f;
+				}
+
 				public bool ItemThrow(double timeStamp)
 				{
 						if (Player.Local.Inventory.SelectedStack.HasTopItem) {
@@ -750,6 +778,7 @@ namespace Frontiers
 				{
 						if (IsCarryingSomething) {
 								if (!PlaceOrDropCarriedItem()) {
+										Debug.Log("Already carrying something and we can't put it down");
 										return false;
 								}
 						}

@@ -1083,6 +1083,21 @@ namespace Frontiers.World
 						rootObject.SetLayerRecursively(layer);
 				}
 
+				public static bool IsOwnedBySomeoneOtherThanPlayer(WorldItem worlditem, out Character owner)
+				{		//TODO come back to this later because this can be improved significantly
+						mCheckOwnershipList.Clear();
+						mCheckOwnership = null;
+						if (!worlditem.Is<QuestItem> ()
+								&& !worlditem.Is<OwnedByPlayer> ()
+								&& (worlditem.UseRemoveItemSkill (mCheckOwnershipList, ref mCheckOwnership)
+										&& mCheckOwnership != Player.Local
+										&& mCheckOwnership.IsWorldItem
+										&& mCheckOwnership.worlditem.Is <Character> (out owner))) {
+								return true;
+						}
+						return false;
+				}
+
 				public static float WISizeToFloat(WISize size)
 				{
 						switch (size) {
@@ -1216,6 +1231,8 @@ namespace Frontiers.World
 						return itemName;
 				}
 
+				protected static HashSet <string> mCheckOwnershipList = new HashSet<string> ();
+				protected static IStackOwner mCheckOwnership = null;
 				protected static Rigidbody mIoiRBCheck = null;
 				protected static WorldItem mWorlditemCheck = null;
 				protected static BodyPart mBodyPartCheck = null;

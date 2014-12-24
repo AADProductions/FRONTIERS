@@ -220,6 +220,7 @@ namespace Frontiers
 				//TODO put these in GameData where they belong
 				protected static string XmlSerializeToString(object objectInstance)
 				{
+						try {
 						var serializer = new XmlSerializer(objectInstance.GetType());
 						var sb = new StringBuilder();
 		
@@ -227,6 +228,11 @@ namespace Frontiers
 								serializer.Serialize(writer, objectInstance);
 						}		
 						return sb.ToString();
+						} catch (Exception e) {
+								Debug.LogError("Error when serializing in player script: " + e.ToString());
+						}
+
+						return string.Empty;
 				}
 
 				protected static T XmlDeserializeFromString <T>(string objectData) where T : new()
@@ -241,6 +247,7 @@ namespace Frontiers
 				protected static bool XmlDeserializeFromString(string objectData, Type type, out object deserializedObject)
 				{
 						deserializedObject	= null;
+						try {
 						var serializer = new XmlSerializer(type);
 		
 						using (TextReader reader = new StringReader(objectData)) {
@@ -250,15 +257,24 @@ namespace Frontiers
 						if (deserializedObject != null) {
 								return true;
 						}
+						} catch (Exception e) {
+								Debug.LogError("Error when deserializing in player script: " + e.ToString());
+						}
 			
 						return false;
 				}
 
 				public static object XmlDeserializeFromString(string objectData, string typeName)
 				{
+						try {
 						object deserializedObject = null;
 						XmlDeserializeFromString(objectData, Type.GetType(typeName), out deserializedObject);
 						return deserializedObject;
+						}
+						catch (Exception e) {
+								Debug.LogError("Error when serializing in player script: " + e.ToString());
+						}
+						return null;
 				}
 
 				#endregion

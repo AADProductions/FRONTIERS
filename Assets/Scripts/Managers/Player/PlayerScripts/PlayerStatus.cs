@@ -95,14 +95,24 @@ namespace Frontiers
 				public override void OnLocalPlayerDie()
 				{
 						RecentActions.Clear();
-						State.ActiveConditions.Clear();
+						ClearConditions();
+						ActiveStateList.Clear();
 						ResetStatusKeepers();
 				}
 
 				public override void OnLocalPlayerDespawn()
 				{
 						RecentActions.Clear();
-						State.ActiveConditions.Clear();
+						ClearConditions();
+						ActiveStateList.Clear();
+						ResetStatusKeepers();
+				}
+
+				public void ClearConditions ( ) {
+					for (int i = 0; i < State.ActiveConditions.Count; i++) {
+						State.ActiveConditions[i].Cancel();
+					}
+					State.ActiveConditions.Clear();
 				}
 
 				public override bool SaveState(out string playerState)
@@ -330,9 +340,10 @@ namespace Frontiers
 
 				public void RemoveCondition(string conditionName)
 				{
-						for (int i = 0; i < State.ActiveConditions.Count; i++) {
+						for (int i = State.ActiveConditions.LastIndex(); i >= 0; i--) {
 								if (State.ActiveConditions[i].Name.Equals(conditionName)) {
 										State.ActiveConditions[i].Cancel();//it will be removed on the next check
+										State.ActiveConditions.RemoveAt(i);
 								}
 						}
 				}
@@ -409,6 +420,7 @@ namespace Frontiers
 												    RecentActions,
 												    State.ActiveConditions,
 												    ActiveStateList)) {	//it's toast, remove it
+												Debug.Log("Condition " + State.ActiveConditions[i].Name + " is expired, removing");
 												State.ActiveConditions.RemoveAt(i);
 										}
 										yield return null;//TODO check if this is wise?
@@ -475,7 +487,7 @@ namespace Frontiers
 								bool checkForFire = false;
 								//check our termperature - the biome will return the correct temperature based on tiem of day / season
 								//this is the 'raw' temperature before we apply clothing and other modifiers to it
-								LatestTemperatureRaw = Biomes.Get.StatusTemperature(player.Position, isUnderground, insideStructure, inCivilization);
+								LatestTemperatureRaw = GameWorld.Get.StatusTemperature(player.Position, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent, isUnderground, insideStructure, inCivilization);
 								LatestTemperatureAdjusted = LatestTemperatureRaw;
 								if (player.Surroundings.HasNearbyFires) {
 										//fires make our temperature higher
@@ -491,7 +503,8 @@ namespace Frontiers
 												switch (LatestTemperatureRaw) {
 														case TemperatureRange.A_DeadlyCold:
 														case TemperatureRange.B_Cold:
-														case TemperatureRange.C_Warm:
+																//no penalty for being near a fire, ever
+														//case TemperatureRange.C_Warm:
 																LatestTemperatureAdjusted = (TemperatureRange)((int)LatestTemperatureRaw + 1);
 																break;
 
@@ -507,9 +520,11 @@ namespace Frontiers
 								if (checkForFire && LatestTemperatureExposure == TemperatureRange.E_DeadlyHot) {
 										AddCondition("BurnedByFire");
 								}
-
+								//we've given the player a million chances to get their temp up / down to 'Warm'
+								//so at this point if they haven't done it they're going to suffer a penalty
 								isExposedWarm = ((int)LatestTemperatureExposure) > (int)TemperatureRange.C_Warm;
-								isExposedCold = (!isWarmedByFire && !isExposedWarm) && (((int)LatestTemperatureExposure) < (int)TemperatureRange.C_Warm);
+								isExposedCold = ((int)LatestTemperatureExposure) < (int)TemperatureRange.C_Warm;
+
 								inDanger = player.Surroundings.IsInDanger;
 
 								List <string> newStateList = new List <string>();

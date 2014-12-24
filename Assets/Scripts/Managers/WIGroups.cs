@@ -138,15 +138,15 @@ namespace Frontiers
 								yield return null;
 						}
 
-						Root.DestroyChildren();
-						World.DestroyChildren();
-						Paths.DestroyChildren();
-						Player.DestroyChildren();
-						Graveyard.DestroyChildren();
-						Multiplayer.DestroyChildren();
-						Plants.DestroyChildren();
-						Special.DestroyChildren();
-						Rivers.DestroyChildren();
+						yield return StartCoroutine(DestroyGroup(Root));
+						yield return StartCoroutine(DestroyGroup(World));
+						yield return StartCoroutine(DestroyGroup(Paths));
+						yield return StartCoroutine(DestroyGroup(Player));
+						yield return StartCoroutine(DestroyGroup(Graveyard));
+						yield return StartCoroutine(DestroyGroup(Multiplayer));
+						yield return StartCoroutine(DestroyGroup(Plants));
+						yield return StartCoroutine(DestroyGroup(Special));
+						yield return StartCoroutine(DestroyGroup(Rivers));
 
 						mGameLoaded = false;
 				}
@@ -174,6 +174,8 @@ namespace Frontiers
 				protected static Dictionary <string, WIGroup> mGroupLookup;
 				protected List <WIGroup> mChildGroupsToDestroy;
 				public List <WIGroup> Groups;
+				public static int NumWorldItemsLoadedThisFrame = 0;
+				public static int MaxWorldItemsLoadedPerFrame = 10;
 
 				public override void OnGameSave()
 				{
@@ -440,7 +442,6 @@ namespace Frontiers
 										transformsToDestroy.Add(childTransform);
 								}
 								yield return null;
-
 								for (int i = 0; i < transformsToDestroy.Count; i++) {
 										if (transformsToDestroy[i].gameObject.layer == Globals.LayerNumStructureTerrain) {
 												transformsToDestroy[i].SendMessage("OnGroupUnloaded", SendMessageOptions.DontRequireReceiver);
@@ -487,6 +488,11 @@ namespace Frontiers
 						}
 				}
 
+				public void LateUpdate(){
+						//reset every frame for WIGroups
+						NumWorldItemsLoadedThisFrame = 0;
+				}
+
 				#endregion
 
 				#region search
@@ -512,6 +518,9 @@ namespace Frontiers
 				public static WIGroup GetCurrent()
 				{
 						//TEMP
+						if (Frontiers.Player.Local.HasSpawned && Frontiers.Player.Local.Surroundings.IsVisitingLocation) {
+								return Frontiers.Player.Local.Surroundings.CurrentLocation.LocationGroup;
+						}
 						//TODO use player last visited location instead
 						//then remove this altogether
 						return Get.World;

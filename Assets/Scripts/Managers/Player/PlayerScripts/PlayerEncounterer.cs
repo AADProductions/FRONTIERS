@@ -59,9 +59,9 @@ namespace Frontiers
 								case Globals.LayerNumSolidTerrain:
 										//for scenery scripts
 										//we don't use send message often but in this case it makes sense to
-										if (other.attachedRigidbody != null) {
-												other.attachedRigidbody.gameObject.SendMessage("OnPlayerEncounter", SendMessageOptions.DontRequireReceiver);
-										}
+//										if (other.attachedRigidbody != null) {
+//												other.attachedRigidbody.gameObject.SendMessage("OnPlayerEncounter", SendMessageOptions.DontRequireReceiver);
+//										}
 										break;
 				
 								default:

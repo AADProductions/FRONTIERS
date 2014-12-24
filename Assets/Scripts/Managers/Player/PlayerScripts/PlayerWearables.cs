@@ -18,8 +18,56 @@ namespace Frontiers
 						MotorJumpForceMultiplier += NormalizedRangeStrengthChange;
 				}
 
-				public TemperatureRange AdjustTemperatureExposure(TemperatureRange temp)
+				public void ClearWearables()
 				{
+						Stacks.Clear.Items(State.LowerBodyContainer, true);
+						Stacks.Clear.Items(State.UpperBodyContainer, true);
+						GUIInventoryInterface.Get.RefreshContainers();
+				}
+
+				public void FillWearables(string categoryName)
+				{	//turns out we have to do this over multiple frames...
+						StartCoroutine(FillWearablesOverTime(categoryName));
+				}
+
+				protected IEnumerator FillWearablesOverTime(string categoryName)
+				{
+						//wait a frame
+						yield return null;
+						Debug.Log("Filling wearables from category " + categoryName);
+						WICategory category = null;
+						STransform tr = new STransform();
+						if (WorldItems.Get.Category(categoryName, out category)) {
+								Debug.Log("Got category, filling now");
+								for (int i = 0; i < category.GenericWorldItems.Count; i++) {
+										//get an instance of the item and try to wear it
+										Debug.Log("Adding wearable " + category.GenericWorldItems[i].DisplayName);
+										for (int j = 0; j < category.GenericWorldItems[i].InstanceWeight; j++) {
+												WorldItem newWorldItem = null;
+												if (WorldItems.CloneWorldItem(category.GenericWorldItems[i], tr, false, WIGroups.Get.Player, out newWorldItem)) {
+														newWorldItem.Initialize();
+														Wearable wearable = newWorldItem.Get <Wearable>();
+														if (!Wear(wearable)) {
+																//if we can't wear it for some reason, drop it in front of the player
+																player.ItemPlacement.ItemDropAtFeet(newWorldItem);
+														} else {
+																Debug.Log("Player has been equipped with " + newWorldItem.DisplayName);
+														}
+												}
+										}
+								}
+						} else {
+								Debug.Log("Couldn't find category " + categoryName);
+						}
+						yield break;
+				}
+
+				public TemperatureRange AdjustTemperatureExposure(TemperatureRange temp)
+				{		//clothing has a heat and cold protection value
+						//neither one results in a penalty (possible hard mode setting)
+						//if it's cold, the cold protection is applied
+						//if it's warm, the warm protection is applied
+						//clothing will never make the player too hot or too cold
 						int coldProtectValue = Mathf.FloorToInt(NormalizedRangeColdProtection * 5);//temps range from 0 to 4
 						int heatProtectValue = Mathf.FloorToInt(NormalizedRangeHeatProtection * 5);
 						int adjustedTempValue = (int)temp;
@@ -32,7 +80,6 @@ namespace Frontiers
 
 								case TemperatureRange.C_Warm:
 								default:
-										//don't do anything when it's comfortably warm
 										break;
 
 								case TemperatureRange.D_Hot:
@@ -177,8 +224,8 @@ namespace Frontiers
 
 				public bool Wear(Wearable wearable)
 				{
-						foreach (InventorySquareWearable square in GUIInventoryInterface.Get.ClothingInterface.Squares) {
-								if (square.PushWearable(wearable)) {
+						for (int i = 0; i < GUIInventoryInterface.Get.ClothingInterface.Squares.Count; i++) {
+								if (GUIInventoryInterface.Get.ClothingInterface.Squares[i].PushWearable(wearable)) {
 										return true;
 								}
 						}
@@ -216,19 +263,21 @@ namespace Frontiers
 
 				public override void OnGameStartFirstTime()
 				{
+						Debug.Log("Initializing game in wearables for first time");
 						State.UpperBodyContainer = Stacks.Create.StackContainer(player, WIGroups.Get.Player);
 						State.LowerBodyContainer = Stacks.Create.StackContainer(player, WIGroups.Get.Player);
 				}
 
 				public override void OnGameStart()
 				{
+						Debug.Log("Initializing game in wearables");
 						GUIInventoryInterface.Get.ClothingInterface.Initialize();
 						GUIInventoryInterface.Get.ClothingInterface.RefreshClothing += RefreshClothing;
+						RefreshClothing();
 				}
 
 				public void RefreshClothing()
 				{
-
 						if (mArmorLevelLookup == null) {
 								//haven't initialized yet
 								mArmorLevelLookup = new Dictionary<WIMaterialType, int>();
@@ -260,7 +309,7 @@ namespace Frontiers
 												if (mCheckWearableWorldItem.Is <Wearable>(out mCheckWearable)) {
 														ColdProtection += mCheckWearable.ColdProtection;
 														HeatProtection += mCheckWearable.HeatProtection;
-														EnergyProtection += mCheckWearable.HeatProtection;
+														EnergyProtection += mCheckWearable.EnergyProtection;
 														VisibilityChange += mCheckWearable.VisibilityChange;
 														StrengthChange += mCheckWearable.StrengthChange;
 												}
@@ -280,7 +329,7 @@ namespace Frontiers
 												if (mCheckWearableWorldItem.Is <Wearable>(out mCheckWearable)) {
 														ColdProtection += mCheckWearable.ColdProtection;
 														HeatProtection += mCheckWearable.HeatProtection;
-														EnergyProtection += mCheckWearable.HeatProtection;
+														EnergyProtection += mCheckWearable.EnergyProtection;
 														VisibilityChange += mCheckWearable.VisibilityChange;
 														StrengthChange += mCheckWearable.StrengthChange;
 												}

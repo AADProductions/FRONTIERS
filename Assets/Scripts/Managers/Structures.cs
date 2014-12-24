@@ -954,7 +954,8 @@ namespace Frontiers
 						//every time we get a shared material
 						//we set our preloader to look at it
 						if (mSharedMaterialLookup.TryGetValue(materialName, out sharedMaterial)) {
-								//PreloaderRenderer.sharedMaterial = sharedMaterial;
+								PreloaderCamera.enabled = true;
+								PreloaderRenderer.sharedMaterial = sharedMaterial;
 								return true;
 						}
 						return false;

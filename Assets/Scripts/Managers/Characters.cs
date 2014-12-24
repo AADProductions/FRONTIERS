@@ -653,7 +653,7 @@ namespace Frontiers.World
 						//Debug.Log ("Adding character file name " + characterName.FileName + " to dictionary for " + templateName);
 						Get.mSpawnedCharacters.Add(characterName.FileName, newPilgrim);
 						Get.SpawnedCharacters.Add(newPilgrim);
-						Get.SelectedCharacter = Get.SpawnedCharacters.LastIndex();
+						//Get.SelectedCharacter = Get.SpawnedCharacters.LastIndex();
 
 						motile.IsImmobilized = false;
 
@@ -859,7 +859,7 @@ namespace Frontiers.World
 						//add to lookup arrays
 						Get.mSpawnedCharacters.Add(characterName.FileName, newCharacter);
 						Get.SpawnedCharacters.Add(newCharacter);
-						Get.SelectedCharacter = Get.SpawnedCharacters.LastIndex();
+						//Get.SelectedCharacter = Get.SpawnedCharacters.LastIndex();
 
 						//set the node occupant to the new character
 						//TODO make this safer
@@ -1033,7 +1033,7 @@ namespace Frontiers.World
 						if (!Get.mSpawnedCharacters.ContainsKey(characterName)) {
 								Get.mSpawnedCharacters.Add(characterName, newCharacter);
 								Get.SpawnedCharacters.Add(newCharacter);
-								Get.SelectedCharacter = Get.SpawnedCharacters.LastIndex();
+								//Get.SelectedCharacter = Get.SpawnedCharacters.LastIndex();
 						}
 
 						//set the node occupant to the new character
@@ -1117,88 +1117,6 @@ namespace Frontiers.World
 						}
 
 						return result;
-				}
-
-				public void InitiateConversation()
-				{
-						if (SpawnedCharacters.Count > 0) {
-								Character character = SpawnedCharacters[mSelectedCharacter];
-								Talkative talkative = character.worlditem.Get<Talkative>();
-								if (!string.IsNullOrEmpty(talkative.State.ConversationName)) {
-										talkative.StartCoroutine(talkative.InitiateConversation());
-								}
-						}
-				}
-
-				public void SetTalkativeOnSelectedCharacter(string conversationName)
-				{
-						if (SpawnedCharacters.Count > 0) {
-								Character character = SpawnedCharacters[mSelectedCharacter];
-								Talkative talkative = character.worlditem.Get<Talkative>();
-								talkative.State.ConversationName = conversationName;
-						}
-				}
-
-				public void SetSelectedCharacterConvo(bool forward)
-				{
-						Character selectedCharacter = null;
-						if (mSelectedCharacter < SpawnedCharacters.Count) {	//ugh bad function...
-								selectedCharacter = SpawnedCharacters[mSelectedCharacter];
-								Talkative talkative = selectedCharacter.GetComponent <Talkative>();
-								List <string> availableConvos = Mods.Get.Available("Conversation");
-								int currentIndex = -1;
-								string finalConvoName = string.Empty;
-								for (int i = 0; i < availableConvos.Count; i++) {
-										string availableConvo = availableConvos[i];
-										if (currentIndex < 0 && talkative.State.ConversationName == availableConvo) {
-												currentIndex = i;
-												//Debug.Log ("#Found current convo at index " + i.ToString ());
-												break;
-										}
-								}
-
-								if (forward) {
-										for (int i = currentIndex + 1; i < availableConvos.Count; i++) {
-												if (availableConvos[i].Contains(selectedCharacter.State.TemplateName) && !availableConvos[i].Contains("-State")) {
-														finalConvoName = availableConvos[i];
-														//DebugConsole.Get.Log.Add("#Forward: Set to conversation " + finalConvoName);
-														break;
-												}
-										}
-										if (string.IsNullOrEmpty(finalConvoName)) {
-												//loop around
-												for (int i = 0; i < currentIndex; i++) {
-														if (availableConvos[i].Contains(selectedCharacter.State.TemplateName) && !availableConvos[i].Contains("-State")) {
-																finalConvoName = availableConvos[i];
-																//DebugConsole.Get.Log.Add("#Forward: Set to conversation " + finalConvoName);
-																break;
-														}
-												}
-										}
-								} else {
-										for (int i = currentIndex - 1; i >= 0; i--) {
-												if (availableConvos[i].Contains(selectedCharacter.State.TemplateName) && !availableConvos[i].Contains("-State")) {
-														finalConvoName = availableConvos[i];
-														//DebugConsole.Get.Log.Add("#Back: Set to conversation " + finalConvoName);
-														break;
-												}
-										}
-										if (string.IsNullOrEmpty(finalConvoName)) {
-												//loop around
-												for (int i = availableConvos.LastIndex(); i >= currentIndex; i--) {
-														if (availableConvos[i].Contains(selectedCharacter.State.TemplateName) && !availableConvos[i].Contains("-State")) {
-																finalConvoName = availableConvos[i];
-																//DebugConsole.Get.Log.Add("#Back: Set to conversation " + finalConvoName);
-																break;
-														}
-												}
-										}
-								}
-
-								if (!string.IsNullOrEmpty(finalConvoName)) {
-										talkative.State.ConversationName = finalConvoName;
-								}
-						}
 				}
 
 				#endregion

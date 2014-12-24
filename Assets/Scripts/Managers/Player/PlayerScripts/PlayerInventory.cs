@@ -11,9 +11,9 @@ namespace Frontiers
 {
 		public class PlayerInventory : PlayerScript, IInventory
 		{
+				public PlayerInventoryState State = new PlayerInventoryState();
 				public List <IWIBase> LastAddedItems = new List <IWIBase>();
 				public double LastAddedTime = Mathf.NegativeInfinity;
-				public PlayerInventoryState State = new PlayerInventoryState();
 				public WIStack SelectedStack = null;
 				public WIStackEnabler QuickslotEnabler = null;
 				public List <WIStackEnabler> InventoryEnablers = new List <WIStackEnabler>();
@@ -123,6 +123,7 @@ namespace Frontiers
 
 				public void FillInventory(string inventoryFillCategory)
 				{
+						StartCoroutine(FillInventoryOverTime(inventoryFillCategory));
 						WICategory startupCategory = null;
 						WIStackError error = WIStackError.None;
 						if (WorldItems.Get.Category(inventoryFillCategory, out startupCategory)) {
@@ -133,6 +134,24 @@ namespace Frontiers
 														Debug.Log("PLAYERINVENTORY: Couldn't add item, error: " + error.ToString());
 												}
 										}
+								}
+						}
+				}
+
+				protected IEnumerator FillInventoryOverTime(string inventoryFillCategory)
+				{
+						yield return null;
+						WICategory startupCategory = null;
+						WIStackError error = WIStackError.None;
+						if (WorldItems.Get.Category(inventoryFillCategory, out startupCategory)) {
+								for (int i = 0; i < startupCategory.GenericWorldItems.Count; i++) {
+										WorldItem worlditem = null;
+										if (WorldItems.CloneWorldItem(startupCategory.GenericWorldItems[i], STransform.zero, false, WIGroups.Get.Player, out worlditem)) {
+												if (!AddItems(worlditem, ref error)) {
+														Debug.Log("PLAYERINVENTORY: Couldn't add item, error: " + error.ToString());
+												}
+										}
+										yield return null;
 								}
 						}
 				}
@@ -216,6 +235,7 @@ namespace Frontiers
 
 				public void ClearInventory(bool destroyItems)
 				{
+						Debug.Log("Clearing inventory in player inventory state");
 						for (int i = 0; i < InventoryEnablers.Count; i++) {
 								Stacks.Clear.Items(InventoryEnablers[i], destroyItems);
 						}
@@ -453,11 +473,16 @@ namespace Frontiers
 						bool addResult = false;
 
 						WIStack mostRelevantStack = null;
-						if (FindMostRelevantStack(out mostRelevantStack, item, true, ref error)) {
+						if (FindMostRelevantStack(out mostRelevantStack, item, true, true, ref error)) {
 								addResult = Stacks.Push.Item(mostRelevantStack, item, true, StackPushMode.Manual, ref error);
 						}
 
-						if (addResult) {
+						if (!addResult) {
+								//whoops! drop it at our feed
+								GUIManager.PostInfo(item.DisplayName + " wouldn't fit.");
+								player.ItemPlacement.ItemDropAtFeet(item);
+								return true;
+						} else {
 								mRefreshCurrency = true;
 								if (item.IsWorldItem) {
 										item.worlditem.OnAddedToPlayerInventory.SafeInvoke();
@@ -472,15 +497,13 @@ namespace Frontiers
 								}
 								Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.ItemAddToInventory), WorldClock.Time);
 								GUIManager.PostInfo("Added " + item.DisplayName + " to inventory.");
-						} else {
-								GUIManager.PostStackError(error);
 						}
 						mAddingItem = false;
 
 						return addResult;
 				}
 				//this is where we find the best stack to put something when it's added to the inventory
-				public bool FindMostRelevantStack(out WIStack mostRelevantStack, IWIBase item, bool enablerStacksOk, ref WIStackError error)
+				public bool FindMostRelevantStack(out WIStack mostRelevantStack, IWIBase item, bool enablerStacksOk, bool compatibleOK, ref WIStackError error)
 				{
 						bool checkedQuickslots = false;
 						bool foundFirstEmpty = false;
@@ -497,7 +520,7 @@ namespace Frontiers
 								}
 
 								if (QuickslotEnabler.IsEnabled
-								&& Stacks.Can.Fit(item.Size, QuickslotEnabler.EnablerContainer.Size)) {	//if quickslots have a stack and they're enabled
+								    && Stacks.Can.Fit(item.Size, QuickslotEnabler.EnablerContainer.Size)) {	//if quickslots have a stack and they're enabled
 										//and the item will fit in a container that size
 										//fill quickslots first
 										checkedQuickslots = true;
@@ -530,18 +553,18 @@ namespace Frontiers
 												foundFirstEmpty = true;
 												firstEmpty = stack;
 										}
-										if (!foundFirstCompatible && Stacks.Can.Stack(stack, item) && !stack.IsFull) {
+										if (!foundFirstCompatible && compatibleOK && Stacks.Can.Stack(stack, item) && !stack.IsFull) {
 												foundFirstCompatible = true;
 												firstCompatible = stack;
 										}
 
-										if (foundFirstCompatible) {	//that's all we need
+										if (foundFirstCompatible && compatibleOK) {//that's all we need
 												break;
 										}
 								}
 						}
 
-						if (!foundFirstCompatible) {
+						if (!foundFirstCompatible || (!compatibleOK && !foundFirstEmpty)) {
 								//we've already searched in quickslots so now search in the rest
 								//next search in each of the other containers
 								foreach (WIStackEnabler enabler in InventoryEnablers) {	//don't bother to check the enabler stack we already did that
@@ -550,16 +573,16 @@ namespace Frontiers
 												if (Stacks.Can.Fit(item.Size, enabler.EnablerContainer.Size)) {
 														foreach (WIStack stack in enabler.EnablerStacks) {
 																if (!foundFirstEmpty
-																&& stack.IsEmpty) {
+																    && stack.IsEmpty) {
 																		foundFirstEmpty = true;
 																		firstEmpty = stack;
 																}
-																if (!foundFirstCompatible && Stacks.Can.Stack(stack, item) && !stack.IsFull) {
+																if (!foundFirstCompatible && compatibleOK && Stacks.Can.Stack(stack, item) && !stack.IsFull) {
 																		foundFirstCompatible = true;
 																		firstCompatible = stack;
 																}
 
-																if (foundFirstCompatible) {
+																if (foundFirstCompatible && compatibleOK) {
 																		//that's all we need
 																		break;
 																}
@@ -567,7 +590,7 @@ namespace Frontiers
 												}
 										}
 
-										if (foundFirstCompatible) {	//that's all we need
+										if (foundFirstCompatible && compatibleOK) {//that's all we need
 												break;
 										}
 								}
@@ -580,7 +603,7 @@ namespace Frontiers
 								}
 						}
 
-						if (foundFirstCompatible) {
+						if (foundFirstCompatible && compatibleOK) {
 								mostRelevantStack = firstCompatible;
 								return true;
 						} else if (foundFirstEmpty) {
@@ -590,6 +613,14 @@ namespace Frontiers
 						//catch-all
 						mostRelevantStack = null;
 						return false;
+				}
+				//instead of popping and adding items one at a time
+				//this function adds the whole stack to the supplied stack
+				//this totally bypasses all checks so it's quick, like swapping stacks in an inventory square
+				public bool QuickAddItems(WIStack fromStack, WIStack toStack, ref WIStackError error)
+				{
+						Debug.Log("Swapping stacks");
+						return Stacks.Swap.Stacks(fromStack, toStack, ref error);
 				}
 
 				public bool AddItems(WIStack stack, ref WIStackError error)
@@ -611,32 +642,17 @@ namespace Frontiers
 						return true;
 				}
 
+				public bool CanItemFit(IWIBase item, out WIStack relevantStack)
+				{
+						WIStackError error = WIStackError.None;
+						//find the first empty stack we can put this stuff in
+						return item.HasAtLeastOne(NoSpaceNeededItems) || FindMostRelevantStack(out relevantStack, item, true, false, ref error);
+				}
+
 				public bool CanItemFit(IWIBase item)
 				{
-						WIStack stack = null;
-						WIStackError error = WIStackError.None;
-						return item.HasAtLeastOne(NoSpaceNeededItems) || FindMostRelevantStack(out stack, item, true, ref error);
-//			if (QuickslotEnabler.HasEnablerContainer) {
-//				if (Stacks.Can.Fit (item.Size, QuickslotEnabler.EnablerContainer.Size)) {
-//					for (int j = 0; j < QuickslotEnabler.EnablerContainer.StackList.Count; j++) {
-//						if (!QuickslotEnabler.EnablerContainer.StackList [j].IsFull) {
-//							return true;
-//						}
-//					}
-//				}
-//			}
-//			for (int i = 0; i < InventoryEnablers.Count; i++) {
-//				if (InventoryEnablers [i].HasEnablerContainer) {
-//					if (Stacks.Can.Fit (item.Size, InventoryEnablers [i].EnablerContainer.Size)) {
-//						for (int j = 0; j < InventoryEnablers [i].EnablerContainer.StackList.Count; j++) {
-//							if (!InventoryEnablers [i].EnablerContainer.StackList [j].IsFull) {
-//								return true;
-//							}
-//						}
-//					}
-//				}
-//			}
-						return false;
+						WIStack relevantStack = null;
+						return CanItemFit(item, out relevantStack);
 				}
 
 				public bool PushSelectedStack()
@@ -1186,8 +1202,8 @@ namespace Frontiers
 						for (int i = 0; i < Keys.Count; i++) {
 								//don't add the key if we already have a copy of it
 								if (Keys[i].KeyType == keyType &&
-								Keys[i].KeyTag == keyTag &&
-								Keys[i].KeyName == keyName) {
+								    Keys[i].KeyTag == keyTag &&
+								    Keys[i].KeyName == keyName) {
 										return false;
 								}
 						}
@@ -1208,8 +1224,8 @@ namespace Frontiers
 						for (int i = 0; i < Keys.Count; i++) {
 								//don't add the key if we already have a copy of it
 								if (Keys[i].KeyType == newKey.KeyType &&
-								Keys[i].KeyTag == newKey.KeyTag &&
-								Keys[i].KeyName == newKey.KeyName) {
+								    Keys[i].KeyTag == newKey.KeyTag &&
+								    Keys[i].KeyName == newKey.KeyName) {
 										return false;
 								}
 						}
