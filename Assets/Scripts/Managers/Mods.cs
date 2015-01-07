@@ -12,6 +12,7 @@ using Frontiers.World;
 using System.Text.RegularExpressions;
 using Frontiers.Story;
 using System.Globalization;
+using System.Reflection;
 
 namespace Frontiers
 {
@@ -222,6 +223,16 @@ namespace Frontiers
 								return false;
 						}
 
+						public bool CameraLUT(ref Texture2D lut, string lutName)
+						{
+								if (!GameData.IO.LoadLUT(ref lut, lutName, DataType.Profile)) {
+										if (!GameData.IO.LoadLUT(ref lut, lutName, DataType.World)) {
+												return GameData.IO.LoadLUT(ref lut, lutName, DataType.Base);
+										}
+								}
+								return true;
+						}
+
 						public bool BodyTexture(ref Texture2D bodyTexture, string textureName)
 						{
 								int resolution = Globals.SmallCharacterBodyTextureResolution;
@@ -230,17 +241,33 @@ namespace Frontiers
 								} else if (textureName.StartsWith("Lrg")) {
 										resolution = Globals.LargeCharacterBodyTextureResolution;
 								}
-								return GameData.IO.LoadCharacterTexture(ref bodyTexture, textureName, "Body", resolution);
+
+								if (!GameData.IO.LoadCharacterTexture(ref bodyTexture, textureName, "Body", resolution, DataType.Profile)) {
+										if (!GameData.IO.LoadCharacterTexture(ref bodyTexture, textureName, "Body", resolution, DataType.World)) {
+												return GameData.IO.LoadCharacterTexture(ref bodyTexture, textureName, "Body", resolution, DataType.Base);
+										}
+								}
+								return true;
 						}
 
 						public bool MaskTexture(ref Texture2D maskTexture, string textureName)
 						{
-								return GameData.IO.LoadCharacterTexture(ref maskTexture, textureName, "Mask", Globals.SmallCharacterBodyTextureResolution);
+								if (!GameData.IO.LoadCharacterTexture(ref maskTexture, textureName, "Mask", Globals.SmallCharacterBodyTextureResolution, DataType.Profile)) {
+										if (!GameData.IO.LoadCharacterTexture(ref maskTexture, textureName, "Mask", Globals.SmallCharacterBodyTextureResolution, DataType.World)) {
+												return GameData.IO.LoadCharacterTexture(ref maskTexture, textureName, "Mask", Globals.SmallCharacterBodyTextureResolution, DataType.Base);
+										}
+								}
+								return true;
 						}
 
 						public bool FaceTexture(ref Texture2D faceTexture, string textureName)
 						{
-								return GameData.IO.LoadCharacterTexture(ref faceTexture, textureName, "Face", Globals.CharacterFaceTextureResolution);
+								if (!GameData.IO.LoadCharacterTexture(ref faceTexture, textureName, "Face", Globals.CharacterFaceTextureResolution, DataType.Profile)) {
+										if (!GameData.IO.LoadCharacterTexture(ref faceTexture, textureName, "Face", Globals.CharacterFaceTextureResolution, DataType.World)) {
+												return GameData.IO.LoadCharacterTexture(ref faceTexture, textureName, "Face", Globals.CharacterFaceTextureResolution, DataType.Base);
+										}
+								}
+								return true;
 						}
 
 						public bool ChunkMap(ref Texture2D map, string chunkName, string mapName)
@@ -250,7 +277,13 @@ namespace Frontiers
 								TextureFormat format = TextureFormat.ARGB32;
 								bool linear = false;
 								GameData.GetTextureFormat(mapName, ref resolution, ref format, ref linear);
-								return GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName);
+
+								if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.Profile)) {
+										if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.World)) {
+												return GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.Base);
+										}
+								}
+								return true;
 						}
 
 						public void UnloadChunkMap(Texture2D map)
@@ -304,21 +337,25 @@ namespace Frontiers
 						{
 								string detailFileName = DetailAssetFileName(chunkName, detailIndex);
 								string chunkPathName = System.IO.Path.Combine("Chunk", chunkName);
-								bool result = GameData.IO.LoadDetailLayer(detailLayer, chunkPathName, detailFileName, DataType.Profile);
-								if (!result) {
-										result = GameData.IO.LoadDetailLayer(detailLayer, chunkPathName, detailFileName, DataType.World);
-										if (!result) {
-												result = GameData.IO.LoadDetailLayer(detailLayer, chunkPathName, detailFileName, DataType.Base);
+								if (!GameData.IO.LoadDetailLayer(detailLayer, chunkPathName, detailFileName, DataType.Profile)) {
+										if (!GameData.IO.LoadDetailLayer(detailLayer, chunkPathName, detailFileName, DataType.World)) {
+												return GameData.IO.LoadDetailLayer(detailLayer, chunkPathName, detailFileName, DataType.Base);
 										}
 								}
-								return result;
+								return true;
 						}
 
 						public bool TerrainHeights(float[,] heights, int resolution, string chunkName, int terrainIndex)
 						{
 								string terrainFileName = TerrainAssetFileName(chunkName, terrainIndex);
-								return GameData.IO.LoadTerrainHeights(heights, resolution, chunkName, terrainFileName);
+								if (!GameData.IO.LoadTerrainHeights(heights, resolution, chunkName, terrainFileName, DataType.Profile)) {
+										if (!GameData.IO.LoadTerrainHeights(heights, resolution, chunkName, terrainFileName, DataType.World)) {
+												return GameData.IO.LoadTerrainHeights(heights, resolution, chunkName, terrainFileName, DataType.Base);
+										}
+								}
+								return true;
 						}
+
 						//receives a stack item and a path from the server
 						//find the object and updates its state or creates the object if it doesn't exist
 						public void ReceiveStackItem(StackItem stackItem, MobileReference reference)
@@ -670,7 +707,8 @@ namespace Frontiers
 										Manager.WakeUp <GameWorld>("__WORLD");
 								}
 								GameData.GetTextureFormat(mapName, ref resolution, ref format, ref linear);
-								return GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName);
+
+								return GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.Base);
 						}
 
 						public bool LoadStackItemFromGroup(ref StackItem stackItem, string groupPath, string fileName)
@@ -688,17 +726,17 @@ namespace Frontiers
 								} else if (textureName.StartsWith("Lrg")) {
 										resolution = Globals.LargeCharacterBodyTextureResolution;
 								}
-								return GameData.IO.LoadCharacterTexture(ref bodyTexture, textureName, "Body", resolution);
+								return GameData.IO.LoadCharacterTexture(ref bodyTexture, textureName, "Body", resolution, DataType.Base);
 						}
 
 						public bool MaskTexture(ref Texture2D maskTexture, string textureName)
 						{
-								return GameData.IO.LoadCharacterTexture(ref maskTexture, textureName, "Mask", Globals.SmallCharacterBodyTextureResolution);
+								return GameData.IO.LoadCharacterTexture(ref maskTexture, textureName, "Mask", Globals.SmallCharacterBodyTextureResolution, DataType.Base);
 						}
 
 						public bool FaceTexture(ref Texture2D faceTexture, string textureName)
 						{
-								return GameData.IO.LoadCharacterTexture(ref faceTexture, textureName, "Face", Globals.CharacterFaceTextureResolution);
+								return GameData.IO.LoadCharacterTexture(ref faceTexture, textureName, "Face", Globals.CharacterFaceTextureResolution, DataType.Base);
 						}
 						#if UNITY_EDITOR
 						//editor utilities
@@ -761,6 +799,68 @@ namespace Frontiers
 						public static string GUILayoutAvailable(string currentItem, string modType, bool includeNone, int maxWidth)
 						{
 								return GUILayoutAvailable(currentItem, modType, includeNone, "None", maxWidth);
+						}
+
+						public static string GUILayoutGlobalValue(string currentValue, string globalVariableName)
+						{
+								FieldInfo field = null;
+								string finalValue = currentValue;
+								if (string.IsNullOrEmpty (finalValue)) {
+										finalValue = "0";
+								}
+
+								if (string.IsNullOrEmpty(globalVariableName)) {
+										Debug.Log("Global variable name was null");
+										finalValue = UnityEditor.EditorGUILayout.TextField(finalValue);
+								} else {
+
+										if (Globals.Fields == null) {
+												Globals.RefreshLookup();
+										}
+
+										if (Globals.Fields.TryGetValue(globalVariableName.ToLower(), out field)) {
+												switch (field.FieldType.Name) {
+														case "Int32":
+																finalValue = UnityEditor.EditorGUILayout.IntField((int)Int32.Parse(finalValue)).ToString();
+																break;
+
+														case "Boolean":
+																finalValue = UnityEditor.EditorGUILayout.Toggle((bool)Boolean.Parse(finalValue)).ToString();
+																break;
+
+														case "Single":
+																finalValue = UnityEditor.EditorGUILayout.FloatField((float)Single.Parse(finalValue)).ToString();
+																break;
+
+														case "Double":
+																finalValue = UnityEditor.EditorGUILayout.FloatField((float)Double.Parse(finalValue)).ToString();
+																break;
+
+														default:
+																Debug.Log("Couldn't determine field type for global " + globalVariableName);
+																finalValue = UnityEditor.EditorGUILayout.TextField(finalValue);
+																break;
+												}
+										}
+								}
+								return finalValue;
+						}
+
+						public static string GUILayoutGLobal(string currentGlobal) {
+								List <string> difficultySettingVariables = Globals.GetDifficultySettingNames ();
+								int currentItemIndex = difficultySettingVariables.IndexOf(currentGlobal);
+								currentItemIndex = UnityEditor.EditorGUILayout.Popup(currentItemIndex, difficultySettingVariables.ToArray());
+								if (currentItemIndex < 0 || currentItemIndex >= difficultySettingVariables.Count) {
+										currentItemIndex = 0;
+								}
+								string newItem = currentGlobal;
+								try {
+										newItem = difficultySettingVariables[currentItemIndex];
+										//take it out again just in case
+								} catch (Exception e) {
+										Debug.LogError("Exception with available " + e.ToString());
+								}
+								return newItem;
 						}
 
 						public static string GUILayoutAvailable(string currentItem, string modType, bool includeNone, string noneOption, int maxWidth)

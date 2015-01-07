@@ -37,9 +37,21 @@ namespace Frontiers.GUI
 						}
 				}
 
+				public static bool ManuallyPaused = false;
+
+				bool HasActiveButton {
+						get {
+								return ActiveButton != null;
+						}
+				}
+
 				public static bool ShowCursor {
 						get {
-								if (Get.HasActiveInterface) {
+								if (ManuallyPaused) {
+										return true;
+								} else if (Get.HasActiveButton) {
+										return Get.ActiveButton.ShowCursor;
+								} else if (Get.HasActiveInterface) {
 										return Get.TopInterface.ShowCursor;
 								} else if (Cutscene.IsActive) {
 										return Cutscene.CurrentCutscene.ShowCursor;
@@ -68,6 +80,7 @@ namespace Frontiers.GUI
 				//Main interface
 				//TODO move anchors into dictionary
 				public UILabel VersionNumber;
+				public UILabel PausedLabel;
 				public UICamera NGUIPrimaryCamera;
 				public UIRoot NGUIPrimaryRoot;
 				public UIAnchor NGUIPrimaryCenterAnchor;
@@ -120,6 +133,8 @@ namespace Frontiers.GUI
 				//Message Display
 				public GUIMessageDisplay NGUIMessageDisplay;
 				public GUIIntrospectionDisplay NGUIIntrospectionDisplay;
+				//cursor control
+				public GUIButtonHover ActiveButton;
 
 				public override void WakeUp()
 				{
@@ -215,37 +230,47 @@ namespace Frontiers.GUI
 								NGUIBaseRoot.manualHeight = Globals.ScreenAspectRatioMax;
 						}
 
-						if (GameManager.Is(FGameState.GamePaused)) {
-								if (HasActiveInterface) {
-										switch (TopInterface.Pause) {
-												case PauseBehavior.DoNotPause:
-														GameManager.Continue();
-														break;
-
-												case PauseBehavior.PassThrough:
-														//see if the next interface pauses
-														break;
-
-												default:
-														break;
-										}
-								} else {
-										//Debug.Log ("We're paused and we have no top interface");
-										GameManager.Continue();
+						if (ManuallyPaused) {
+								if (GameManager.Is(FGameState.InGame)) {
+										GameManager.Pause();
 								}
-						} else if (GameManager.Is(FGameState.InGame)) {
-								if (HasActiveInterface) {
-										switch (TopInterface.Pause) {
-												case PauseBehavior.Pause:
-														GameManager.Pause();
-														break;
+								//if we don't have any active interfaces going
+								//enable our 'paused' display
+								PausedLabel.enabled = true;
+						} else {
+								PausedLabel.enabled = false;
+								if (GameManager.Is(FGameState.GamePaused)) {
+										if (HasActiveInterface) {
+												switch (TopInterface.Pause) {
+														case PauseBehavior.DoNotPause:
+																GameManager.Continue();
+																break;
 
-												case PauseBehavior.PassThrough:
+														case PauseBehavior.PassThrough:
 														//see if the next interface pauses
-														break;
+																break;
 
-												default:
-														break;
+														default:
+																break;
+												}
+										} else {
+												//Debug.Log ("We're paused and we have no top interface");
+												GameManager.Continue();
+										}
+								} else if (GameManager.Is(FGameState.InGame)) {
+										if (HasActiveInterface) {
+												switch (TopInterface.Pause) {
+														case PauseBehavior.Pause:
+																GameManager.Pause();
+																break;
+
+														case PauseBehavior.PassThrough:
+														//see if the next interface pauses
+																break;
+
+														default:
+																break;
+												}
 										}
 								}
 						}
@@ -389,6 +414,14 @@ namespace Frontiers.GUI
 
 				public bool ReceiveInterfaceAction(InterfaceActionType action, double timeStamp)
 				{
+						//intercept manual pause requests
+						if (action == InterfaceActionType.GamePause) {
+								if (!HasActiveInterface) {
+										ManuallyPaused = !ManuallyPaused;
+										return true;
+								}
+						}
+
 						bool passThrough = true;
 						if (HasActiveSecondaryInterface) {
 								passThrough = LastActiveSecondaryInterface.ReceiveAction(action, timeStamp);
@@ -729,7 +762,7 @@ namespace Frontiers.GUI
 								GainedSomethingType.Skill);
 				}
 
-				public static void PostGainedItem(int currency, Frontiers.World.WICurrencyType type)
+				public static void PostGainedItem(int currency, WICurrencyType type)
 				{
 						Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage(
 								"Added " + currency.ToString() + Frontiers.World.Currency.TypeToString(type) + " to Currency (TAB)",

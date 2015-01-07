@@ -1,13 +1,14 @@
 using UnityEngine;
+using System;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Hydrogen.Threading.Jobs;
-using System;
-using ExtensionMethods;
-using System.Text;
 using Frontiers.Data;
+using Hydrogen.Threading.Jobs;
+using ExtensionMethods;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {
@@ -362,9 +363,11 @@ namespace Frontiers
 										//then dupe all the properites from the mesh filter and renderer
 										CreatePlantStateChild(plantPrototype, worldPlantGameObject, "Raw");
 										CreatePlantStateChild(plantPrototype, worldPlantGameObject, "Cooked");
+										//Debug.Log("Found season, creating state child");
 										return true;
 								}
 						}
+						//Debug.Log("Didn't find plant, or didn't find season " + season.ToString ());
 						return false;
 						//done!
 				}

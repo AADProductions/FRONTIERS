@@ -1,10 +1,10 @@
-﻿﻿using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.Data;
 using Frontiers.World;
-using Frontiers.World.Locations;
+
 using System;
 
 namespace Frontiers

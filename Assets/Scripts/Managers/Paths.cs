@@ -6,6 +6,7 @@ using Frontiers.Data;
 using Frontiers.World;
 using Frontiers.GUI;
 using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {
@@ -375,9 +376,9 @@ namespace Frontiers
 						return false;
 				}
 
-				public static bool CanAttachPathMarker(PathMarker pathMarker, PathMarker pathOriginMarker, out AlterAction alterAction)
+				public static bool CanAttachPathMarker(PathMarker pathMarker, PathMarker pathOriginMarker, out MarkerAlterAction alterAction)
 				{
-						alterAction = AlterAction.None;
+						alterAction = MarkerAlterAction.None;
 						/*
 			//					CHECK STUFF:
 			//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -451,47 +452,47 @@ namespace Frontiers
 								pmOriginHasPath == true &&
 								pmOriginIsTerminal == true &&
 								pmOriginIsOriginType == false) {
-								alterAction = AlterAction.AppendToPath;
+								alterAction = MarkerAlterAction.AppendToPath;
 						} else if (
 								pmHasPath == false &&
 								pmOriginHasPath == true &&
 								pmOriginIsTerminal == true &&
 								pmOriginIsOriginType == true &&
 								flwgPmOriginPath == true) {
-								alterAction = AlterAction.AppendToPath;
+								alterAction = MarkerAlterAction.AppendToPath;
 						} else if (
 								pmHasPath == false &&
 								pmOriginHasPath == false &&
 								pmOriginIsOriginType == true) {
-								alterAction = AlterAction.CreatePath;
+								alterAction = MarkerAlterAction.CreatePath;
 						} else if (
 								pmHasPath == false &&
 								pmOriginHasPath == true &&
 								pmOriginIsOriginType == true &&
 								flwgPmOriginPath == false) {
-								alterAction = AlterAction.CreatePath;
+								alterAction = MarkerAlterAction.CreatePath;
 						} else if (
 								pmHasPath == false &&
 								pmOriginHasPath == true &&
 								pmOriginIsTerminal == false &&
 								pmOriginIsOriginType == true &&
 								flwgPmOriginPath == false) {
-								alterAction = AlterAction.CreatePathAndBranch;
+								alterAction = MarkerAlterAction.CreatePathAndBranch;
 						} else if (
 								pmHasPath == true &&
 								pmOriginHasPath == false &&
 								pmIsTerminal == false &&
 								pmOriginIsOriginType == true) {
-								alterAction = AlterAction.CreatePathAndBranch;
+								alterAction = MarkerAlterAction.CreatePathAndBranch;
 						} else if (
 								pmHasPath == true &&
 								pmOriginHasPath == true &&
 								pathsAreSame == false) {
-								alterAction = AlterAction.CreateBranch;
+								alterAction = MarkerAlterAction.CreateBranch;
 						}
 
 						//Debug.Log ("path can be connected with action " + alterAction.ToString ());
-						return alterAction != AlterAction.None;
+						return alterAction != MarkerAlterAction.None;
 				}
 
 				public static void AttachPathMarker(PathMarker pathMarker, PathMarker pathOriginMarker, bool attachToEnd)
@@ -918,7 +919,7 @@ namespace Frontiers
 						}
 				}
 
-				public static void CreateTemporaryConnection(PathMarker pathMarker, PathMarker pathOrigin, Paths.AlterAction alterAction, PathSkill skillToUse)
+				public static void CreateTemporaryConnection(PathMarker pathMarker, PathMarker pathOrigin, MarkerAlterAction alterAction, PathSkill skillToUse)
 				{
 						bool foundExisting = false;
 						for (int i = Get.ActiveConnections.LastIndex(); i >= 0; i--) {
@@ -1083,14 +1084,6 @@ namespace Frontiers
 						}
 				}
 				#endif
-				public enum AlterAction
-				{
-						None,
-						AppendToPath,
-						CreatePath,
-						CreatePathAndBranch,
-						CreateBranch,
-				}
 
 				protected PathAvatar mActivePath;
 				protected List <Path> mRelevantPaths = new List <Path>();

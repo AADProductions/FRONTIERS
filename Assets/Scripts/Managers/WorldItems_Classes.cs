@@ -323,6 +323,7 @@ namespace Frontiers.World
 				public string StackNamerScript = string.Empty;
 				public string HudTargetScript = string.Empty;
 				public List <string> RemoveItemSkills = new List<string>();
+				public float BaseCurrencyValue = -1f;
 
 				public void Clear ( ) {
 						LightOffset = null;

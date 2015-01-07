@@ -1,9 +1,10 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using System;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers {
 	public class LightManager : Manager
@@ -383,13 +384,6 @@ namespace Frontiers {
 		#endif
 	}
 
-	public enum WorldLightType {
-		Exterior,
-		InteriorOrUnderground,
-		Equipped,
-		AlwaysOn,
-	}
-
 	[Serializable]
 	public class WorldLightTemplate : Mod
 	{
@@ -421,18 +415,5 @@ namespace Frontiers {
 		public float ColorFlickerSpeed = 0f;
 		public float TransitionSpeedUp = 1f;
 		public float TransitionSpeedDown = 1f;
-	}
-
-	[Flags]
-	[Serializable]
-	public enum SpotlightDirection : int
-	{
-		None = 0,
-		Top = 1,
-		Bottom = 2,
-		Front = 4,
-		Back = 8,
-		Left = 16,
-		Right = 32,
 	}
 }

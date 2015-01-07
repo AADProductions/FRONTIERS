@@ -2,9 +2,10 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.World;
-using System.Xml.Serialization;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {

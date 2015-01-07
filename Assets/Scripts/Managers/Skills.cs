@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World.Gameplay;
 using Frontiers.World;
-using Frontiers.World.Locations;
+
 using System;
 
 namespace Frontiers

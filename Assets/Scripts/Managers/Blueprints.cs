@@ -731,32 +731,4 @@ namespace Frontiers
 						}
 				}
 		}
-
-		[Flags]
-		public enum BlueprintStrictness
-		{
-				None = 0,
-				StackName = 1,
-				PrefabName = 2,
-				StateName = 4,
-				Subcategory = 8,
-				Default = StackName,
-		}
-
-		public enum BlueprintRevealMethod
-		{
-				None,
-				Book,
-				Character,
-				ReverseEngineer,
-				Skill,
-		}
-
-		public enum CraftingType
-		{
-				Craft,
-				Brew,
-				Refine,
-				Cook,
-		}
 }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.Story;
-using Frontiers.World.Locations;
+using Frontiers.World.BaseWIScripts;
 using ExtensionMethods;
 
 namespace Frontiers.World
@@ -123,14 +123,14 @@ namespace Frontiers.World
 								if (Mods.Get.Runtime.LoadMod(ref characterTemplate, "Character", characterTemplateName)) {
 										string templateName = characterTemplateName.Trim().ToLower();
 										switch (characterTemplate.TemplateType) {
-												case CharacterTemplate.CharacterTemplateType.Generic:
+												case CharacterTemplateType.Generic:
 												default:
 														GenericCharacterTemplates.Add(characterTemplate);
 														mCharacterTemplates.Add(templateName, characterTemplate);
 														break;
 
-												case CharacterTemplate.CharacterTemplateType.UniqueAlternate:
-												case CharacterTemplate.CharacterTemplateType.UniquePrimary:
+												case CharacterTemplateType.UniqueAlternate:
+												case CharacterTemplateType.UniquePrimary:
 														CharacterTemplates.Add(characterTemplate);
 														mCharacterTemplates.Add(templateName, characterTemplate);
 														break;
@@ -201,7 +201,7 @@ namespace Frontiers.World
 				{
 						CharacterTemplate template = null;
 						if (mCharacterTemplates.TryGetValue(character.name.Trim().ToLower(), out template)) {
-								character.State = ObjectClone.Clone <CharacterState>(template.StateTemplate);
+								character.State = ObjectClone.Clone <Frontiers.World.BaseWIScripts.CharacterState>(template.StateTemplate);
 								Talkative talkative = character.GetComponent <Talkative>();
 								talkative.State = ObjectClone.Clone <TalkativeState>(template.TalkativeTemplate);
 						}
@@ -477,7 +477,7 @@ namespace Frontiers.World
 						CharacterTemplate template = null;
 						newCharacter = null;
 						if (Get.mCharacterTemplates.TryGetValue(characterName, out template)) {
-								if (template.TemplateType == CharacterTemplate.CharacterTemplateType.Generic) {
+								if (template.TemplateType == CharacterTemplateType.Generic) {
 										return SpawnRandomCharacter(node, template, flags, group, out newCharacter);
 								} else {
 										return GetOrSpawnCharacter(node, characterName, group, out newCharacter);
@@ -589,7 +589,7 @@ namespace Frontiers.World
 						#region clone data / assign
 						//apply all the states by copying the template data
 						//make sure to copy the combined flags!
-						newPilgrim.State = ObjectClone.Clone <CharacterState>(template.StateTemplate);
+						newPilgrim.State = ObjectClone.Clone <Frontiers.World.BaseWIScripts.CharacterState>(template.StateTemplate);
 						newPilgrim.State.Name = characterName;
 						newPilgrim.State.Flags = combinedFlags;
 						//save the body and character texture names, they won't change again
@@ -788,7 +788,7 @@ namespace Frontiers.World
 						#region clone data / assign
 						//apply all the states by copying the template data
 						//make sure to copy the combined flags!
-						newCharacter.State = ObjectClone.Clone <CharacterState>(template.StateTemplate);
+						newCharacter.State = ObjectClone.Clone <Frontiers.World.BaseWIScripts.CharacterState>(template.StateTemplate);
 						newCharacter.State.Name = characterName;
 						newCharacter.State.Flags = combinedFlags;
 						//save the body and character texture names, they won't change again
@@ -940,6 +940,7 @@ namespace Frontiers.World
 						newCharacter.Body.FaceMaterial = faceMaterial;
 						#endregion
 
+						node.TryToOccupyNode(newCharacterWorlditem);
 						//whew! done
 						return true;
 				}
@@ -977,7 +978,7 @@ namespace Frontiers.World
 						newCharacter.Body = newBodyObject.GetComponent <CharacterBody>();
 
 						//apply all the states by copying the template data
-						newCharacter.State = ObjectClone.Clone <CharacterState>(template.StateTemplate);
+						newCharacter.State = ObjectClone.Clone <Frontiers.World.BaseWIScripts.CharacterState>(template.StateTemplate);
 						//save the body and character texture names, they won't change again
 						newCharacter.State.TemplateName = template.Name;
 						Talkative talkative = newCharacterBase.GetComponent <Talkative>();

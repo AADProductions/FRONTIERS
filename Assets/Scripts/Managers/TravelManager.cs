@@ -3,8 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Locations;
-using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 using Frontiers.GUI;
 
 namespace Frontiers
@@ -306,15 +305,6 @@ namespace Frontiers
 								//something's up, we can't maximize interface
 								State = FastTravelState.Finished;
 						}
-				}
-
-				public enum FastTravelState
-				{
-						None,
-						ArrivingAtDestination,
-						WaitingForNextChoice,
-						Traveling,
-						Finished
 				}
 		}
 }

@@ -611,22 +611,4 @@ namespace Frontiers
 				[FrontiersAvailableModsAttribute("Music")]
 				public string Combat;
 		}
-
-		public enum MusicVolume
-		{
-				Default,
-				Quiet,
-		}
-
-		public enum MusicType
-		{
-				None,
-				MainMenu,
-				Cutscene,
-				Regional,
-				Night,
-				Underground,
-				SafeLocation,
-				Combat
-		}
 }

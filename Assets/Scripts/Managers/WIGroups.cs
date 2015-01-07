@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.Data;
 using Frontiers.World;
-using Frontiers.World.Locations;
+
 using System;
 
 namespace Frontiers
@@ -530,7 +530,7 @@ namespace Frontiers
 				{	//get all the live groups immediately below us
 						Queue <string> groupPathsQueue = new Queue<string>();
 						groupPathsQueue.Enqueue(startGroup);
-						yield return Get.StartCoroutine(GetAllPaths(startGroup, SearchType.LiveOnly, groupPathsQueue));
+						yield return Get.StartCoroutine(GetAllPaths(startGroup, GroupSearchType.LiveOnly, groupPathsQueue));
 						//then search all the groups for items OR until we hit our max items
 						while (childrenOfType.Count < maxItems) {
 								//get the next group and check its child items
@@ -562,12 +562,12 @@ namespace Frontiers
 						yield break;
 				}
 
-				public static IEnumerator GetAllStackItemsByType(string startGroup, List <string> wiScriptTypes, SearchType searchType, Queue <StackItem> stackItemQueue)
+				public static IEnumerator GetAllStackItemsByType(string startGroup, List <string> wiScriptTypes, GroupSearchType searchType, Queue <StackItem> stackItemQueue)
 				{
 						return Get.GetAllStackItemsByTypeOverTime(startGroup, wiScriptTypes, searchType, stackItemQueue);
 				}
 
-				protected IEnumerator GetAllStackItemsByTypeOverTime(string groupPath, List <string> wiScriptTypes, SearchType searchType, Queue <StackItem> stackItemQueue)
+				protected IEnumerator GetAllStackItemsByTypeOverTime(string groupPath, List <string> wiScriptTypes, GroupSearchType searchType, Queue <StackItem> stackItemQueue)
 				{	//start by getting all the paths to search for
 						Queue <string> groupPathsQueue = new Queue <string>();
 						yield return StartCoroutine(GetAllPaths(groupPath, searchType, groupPathsQueue));
@@ -609,13 +609,13 @@ namespace Frontiers
 				protected string mGetStackItemsNextGroupPath;
 				protected List <string> mGetStackItemsChildNames;
 
-				public static IEnumerator GetAllPaths(string groupPath, SearchType searchType, Queue <string> groupPathsQueue) {
+				public static IEnumerator GetAllPaths(string groupPath, GroupSearchType searchType, Queue <string> groupPathsQueue) {
 						return Get.GetAllPathsOverTime(groupPath, searchType, groupPathsQueue);
 				}
 				//returns a full recursive search of the tree with groups
 				//search type specifies whether to use 'live' data (slow) or directory data (fast)
 				//since live is potentially expensive as hell we use an enumerator
-				protected IEnumerator GetAllPathsOverTime(string groupPath, SearchType searchType, Queue <string> groupPathQueue)
+				protected IEnumerator GetAllPathsOverTime(string groupPath, GroupSearchType searchType, Queue <string> groupPathQueue)
 				{
 						//get the first group
 						//		WIGroup startGroup = null;
@@ -635,11 +635,11 @@ namespace Frontiers
 						yield break;
 				}
 
-				public static List <string> GetChildGroupPaths(string groupPath, SearchType searchType)
+				public static List <string> GetChildGroupPaths(string groupPath, GroupSearchType searchType)
 				{
 						List <string> groupPaths = new List <string>();
 						switch (searchType) {
-								case SearchType.LiveOnly:
+								case GroupSearchType.LiveOnly:
 										WIGroup group = null;
 										if (WIGroups.FindGroup(groupPath, out group)) {
 												for (int i = 0; i < group.ChildGroups.Count; i++) {
@@ -648,7 +648,7 @@ namespace Frontiers
 										}
 										break;
 
-								case WIGroups.SearchType.SavedOnly:
+								case GroupSearchType.SavedOnly:
 								default:
 										groupPaths.AddRange(Mods.Get.Runtime.GroupChildGroupNames(groupPath, true));
 										break;
@@ -859,13 +859,6 @@ namespace Frontiers
 						return managerID++;
 				}
 
-				public enum SearchType
-				{
-						LiveOnly,
-						LiveThenSaved,
-						SavedOnly
-				}
-
 				#endregion
 
 		}
@@ -886,12 +879,5 @@ namespace Frontiers
 				public SDictionary <string, string>	LocationLookup;
 				public SDictionary <string, string>	QuestItemLookup;
 				public SDictionary <string, string>	CharacterLookup;
-		}
-
-		public enum GroupLookupType
-		{
-				Location,
-				QuestItem,
-				Character,
 		}
 }

@@ -6,10 +6,9 @@ using System.Xml;
 using System.Xml.Serialization;
 using System.Xml.Schema;
 using System.Runtime.Serialization;
-using Frontiers.World;
-using Frontiers.World.Gameplay;
-using ExtensionMethods;
 using Frontiers.Data;
+using Frontiers.World.BaseWIScripts;
+using ExtensionMethods;
 using System.Text;
 using System.Reflection;
 
@@ -1084,16 +1083,24 @@ namespace Frontiers.World
 				}
 
 				public static bool IsOwnedBySomeoneOtherThanPlayer(WorldItem worlditem, out Character owner)
-				{		//TODO come back to this later because this can be improved significantly
-						mCheckOwnershipList.Clear();
-						mCheckOwnership = null;
-						if (!worlditem.Is<QuestItem> ()
-								&& !worlditem.Is<OwnedByPlayer> ()
-								&& (worlditem.UseRemoveItemSkill (mCheckOwnershipList, ref mCheckOwnership)
-										&& mCheckOwnership != Player.Local
-										&& mCheckOwnership.IsWorldItem
-										&& mCheckOwnership.worlditem.Is <Character> (out owner))) {
-								return true;
+				{
+						owner = null;
+						//this is pretty volatile so wrap it
+						try {
+								//TODO come back to this later because this can be improved significantly
+								mCheckOwnershipList.Clear();
+								mCheckOwnership = null;
+								if (!worlditem.Is<QuestItem>()
+								  && !worlditem.Is<OwnedByPlayer>()
+								  && (worlditem.UseRemoveItemSkill(mCheckOwnershipList, ref mCheckOwnership)
+								  && mCheckOwnership != Player.Local
+								  && mCheckOwnership.IsWorldItem
+								  && mCheckOwnership.worlditem.Is <Character>(out owner))) {
+										return true;
+								}
+						
+						} catch (Exception e) {
+								Debug.LogWarning("Error when determining ownership: " + e.ToString());
 						}
 						return false;
 				}
@@ -1270,10 +1277,14 @@ namespace Frontiers.World
 						return false;
 				}
 
-				public static bool GetIOIFromCollider(Collider other, out IItemOfInterest ioi)
+				public static bool GetIOIFromCollider(Collider other, out IItemOfInterest ioi) {
+						return GetIOIFromCollider (other, true, out ioi);
+				}
+
+				public static bool GetIOIFromCollider(Collider other, bool ignoreTrigger, out IItemOfInterest ioi)
 				{
 						ioi = null;
-						if (other.isTrigger) {
+						if (other.isTrigger && ignoreTrigger) {
 								return false;
 						}
 
@@ -1355,6 +1366,38 @@ namespace Frontiers.World
 				public static void ReplaceWorldItem(WorldItem worlditem, GenericWorldItem replacementTemplate)
 				{
 						ReplaceWorldItem(worlditem, replacementTemplate.ToStackItem());
+				}
+
+				public static int MaxItemsFromSize(WISize size)
+				{
+						int maxItems = 1;
+
+						switch (size) {
+								case WISize.Tiny:
+										maxItems = Globals.MaxTinyItemsPerStack;
+										break;
+
+								case WISize.Small:
+										maxItems = Globals.MaxSmallItemsPerStack;
+										break;
+
+								case WISize.Medium:
+										maxItems = Globals.MaxMediumItemsPerStack;
+										break;
+
+								case WISize.Large:
+										maxItems = Globals.MaxLargeItemsPerStack;
+										break;
+
+								case WISize.Huge:
+										maxItems = Globals.MaxHugeItemsPerStack;
+										break;
+
+								default:
+										break;
+						}
+
+						return maxItems;
 				}
 
 				#endregion

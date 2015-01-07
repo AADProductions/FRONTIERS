@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Frontiers.Data;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
-using Frontiers.World.Locations;
+
 using Hydrogen.Serialization;
 using Frontiers.Story;
 using Frontiers.GUI;
@@ -20,7 +20,7 @@ namespace Frontiers
 				public GameObject StartupScenePrefab;
 				public static int BuildNumber;
 				//const this
-				public static string Version = "0.3.2";
+				public static string Version = "0.3.5";
 				public static readonly uint SteamAppID = 293480;
 
 				public static bool Is(FGameState state)
@@ -453,7 +453,7 @@ namespace Frontiers
 						//------------------
 						yield return null;
 						//save the game so we know that we've started once
-						Profile.Get.SaveCurrent(Profile.ProfileComponents.Profile);
+						Profile.Get.SaveCurrent(ProfileComponents.Profile);
 						//wait for the player to finish spawning then turn off the loading screen
 						while (!Player.Local.HasSpawned) {
 								//Debug.Log ("Waiting for player to spawn");
@@ -835,43 +835,5 @@ namespace Frontiers
 								Debug.Log("CUSTOM HANDLING: " + type.ToString() + ": " + condition + "\n" + stackTrace);
 						}
 				}
-		}
-
-		public enum FGameState
-		{
-				Startup = 1,
-				WaitingForGame = 2,
-				GameLoading = 4,
-				GameStarting = 8,
-				GamePaused = 16,
-				InGame = 32,
-				Cutscene = 64,
-				Saving = 128,
-				Quitting = 256,
-				Unloading = 512,
-		}
-
-		public enum NClientState
-		{
-				None = 0,
-				Disconnected = 1,
-				WaitingToConnect = 2,
-				Connected = 3,
-				Paused = 4,
-		}
-
-		public enum NHostState
-		{
-				None = 0,
-				Disconnected = 1,
-				WaitingToStart = 2,
-				Started = 3,
-				Paused = 4,
-		}
-
-		public enum SkyMode
-		{
-				Off,
-				Full,
 		}
 }

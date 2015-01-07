@@ -1106,9 +1106,10 @@ namespace Frontiers
 										return true;
 								}
 
-								public static bool LoadCharacterTexture(ref Texture2D texture, string textureName, string textureType, int resolution)
+								public static bool LoadCharacterTexture(ref Texture2D texture, string textureName, string textureType, int resolution, DataType type)
 								{
-										string directory = Path.Combine(Path.Combine(gBaseWorldModsPath, "Character"), textureType);
+										string dataPath = GetDataPath(type);
+										string directory = Path.Combine(Path.Combine(dataPath, "Character"), textureType);
 										//textureType is Face, Body, Mask etc., other types may be added later
 										string fullPath = System.IO.Path.Combine(directory, textureName + gImageExtension);
 
@@ -1138,9 +1139,10 @@ namespace Frontiers
 										return false;
 								}
 
-								public static bool LoadLUT(ref Texture2D lut, string mapName)
+								public static bool LoadLUT(ref Texture2D lut, string mapName, DataType type)
 								{
-										string directory = System.IO.Path.Combine(gBaseWorldModsPath, "CameraLut");
+										string dataPath = GetDataPath(type);
+										string directory = System.IO.Path.Combine(dataPath, "CameraLut");
 										string fullPath = System.IO.Path.Combine(directory, (mapName + gImageExtension));
 
 										if (gLoadedMaps.TryGetValue(fullPath, out lut)) {
@@ -1170,11 +1172,10 @@ namespace Frontiers
 										return false;
 								}
 
-								public static bool LoadTerrainMap(ref Texture2D map, int resolution, TextureFormat format, bool linear, string chunkName, string mapName)
+								public static bool LoadTerrainMap(ref Texture2D map, int resolution, TextureFormat format, bool linear, string chunkName, string mapName, DataType type)
 								{
-										//Debug.Log ("Loading terrain map " + mapName + " for " + chunkName);
-
-										string directory = System.IO.Path.Combine(gBaseWorldModsPath, "ChunkMap");
+										string dataPath = GetDataPath(type);
+										string directory = System.IO.Path.Combine(dataPath, "ChunkMap");
 										string fullPath = System.IO.Path.Combine(directory, (chunkName + "-" + mapName + gImageExtension));
 
 										//see if we've already loaded this
@@ -1188,24 +1189,22 @@ namespace Frontiers
 
 										if (!File.Exists(fullPath)) {
 												return false;
-										} else {
-												map = new Texture2D(resolution, resolution, format, false, linear);
-												map.filterMode = FilterMode.Bilinear;
-												map.wrapMode = TextureWrapMode.Clamp;
-												byte[] byteArray = File.ReadAllBytes(fullPath);
-												map.LoadImage(byteArray);
-												Array.Clear(byteArray, 0, byteArray.Length);
-												byteArray = null;
-												gLoadedMaps.Add(fullPath, map);
-												return true;
 										}
-										return false;
+
+										map = new Texture2D(resolution, resolution, format, false, linear);
+										map.filterMode = FilterMode.Bilinear;
+										map.wrapMode = TextureWrapMode.Clamp;
+										byte[] byteArray = File.ReadAllBytes(fullPath);
+										map.LoadImage(byteArray);
+										Array.Clear(byteArray, 0, byteArray.Length);
+										byteArray = null;
+										gLoadedMaps.Add(fullPath, map);
+										return true;
 								}
 
-								public static bool LoadTerrainHeights(float[,] heights, int resolution, string chunkName, string rawFileName)
-								{
-										//Debug.Log ("Loading terrain heights for " + chunkName);
-										string directory = System.IO.Path.Combine(gBaseWorldModsPath, System.IO.Path.Combine("Chunk", chunkName));
+								public static bool LoadTerrainHeights(float[,] heights, int resolution, string chunkName, string rawFileName, DataType type) {
+										string dataPath = GetDataPath(type);
+										string directory = System.IO.Path.Combine(dataPath, System.IO.Path.Combine("Chunk", chunkName));
 										string fullPath = System.IO.Path.Combine(directory, (rawFileName + gHeightMapExtension));
 										FileMode mode = FileMode.Open;
 										FileShare share = FileShare.ReadWrite;
@@ -1258,25 +1257,17 @@ namespace Frontiers
 
 								public static string GetDataPath(DataType type)
 								{
-										string dataPath	= string.Empty;
 										switch (type) {
 												case DataType.Profile:
-														dataPath = gCurrentProfileLiveGamePath;
-														break;
+														return gCurrentProfileLiveGamePath;
 
 												case DataType.World:
-														dataPath = gCurrentWorldModsPath;
-														break;
+														return gCurrentWorldModsPath;
 
 												case DataType.Base:
 												default:
-														dataPath = gBaseWorldModsPath;
-														break;
+														return gBaseWorldModsPath;
 										}
-										if (string.IsNullOrEmpty(dataPath)) {
-
-										}
-										return dataPath;
 								}
 								//these are set once on startup then never again
 								public static string gGlobalProfilesPath = string.Empty;
@@ -1971,26 +1962,5 @@ namespace Frontiers
 								}
 						}
 				}
-		}
-		public enum VariableCheckType
-		{
-				LessThanOrEqualTo,
-				LessThan,
-				GreaterThanOrEqualTo,
-				GreaterThan,
-				EqualTo,
-		}
-
-		public enum DataCompression
-		{
-				None,
-				GZip,
-		}
-
-		public enum DataType
-		{
-				Base,
-				World,
-				Profile
 		}
 }

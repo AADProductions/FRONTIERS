@@ -46,12 +46,3 @@ public class TimeActionReceiver : ActionFilter <TimeActionType>
 		base.Update ();
 	}
 }
-
-[Flags]
-public enum TimeActionType
-{
-	NoAction = 0,
-	DaytimeStart = 1,
-	NightTimeStart = 2,
-	HourStart = 4,
-}

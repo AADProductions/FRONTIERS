@@ -1,9 +1,10 @@
 using UnityEngine;
+using System;
+using System.Xml.Serialization;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World;
-using System;
-using System.Xml.Serialization;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {
@@ -117,54 +118,5 @@ namespace Frontiers
 		public float FlowerHueShift = 0f;
 		public float BodyHueShift = 0f;
 		public float FlowerDensity = 0.5f;
-	}
-
-	public enum PlantRootType
-	{
-		ThinFibrous = 0,
-		TypicalBranched = 1,
-		ThickTaproot = 2,
-	}
-
-	public enum PlantFlowerSize
-	{
-		Tiny = 1,
-		Small = 2,
-		Medium = 3,
-		Large = 4,
-		Giant = 5,
-	}
-
-	public enum PlantBodyHeight
-	{
-		ExtraShort = 1,
-		Short = 2,
-		Medium = 3,
-		Tall = 4,
-		ExtraTall = 5,
-	}
-
-	public enum PlantRootSize
-	{
-		Small = 1,
-		Medium = 2,
-		Large = 3,
-	}
-
-	public enum ElevationType
-	{
-		Low,
-		Medium,
-		High,
-	}
-
-	public enum ClimateType
-	{
-		Arctic,
-		Desert,
-		Rainforest,
-		Temperate,
-		TropicalCoast,
-		Wetland,
 	}
 }

@@ -7,7 +7,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Locations;
+
 using Hydrogen.Threading.Jobs;
 using System.IO;
 

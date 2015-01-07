@@ -489,6 +489,15 @@ namespace Frontiers
 						return false;
 				}
 
+				public override string FullDescription {
+						get {
+								if (string.IsNullOrEmpty(mFullDescription)) {
+										GenerateFullDescription();
+								}
+								return mFullDescription;
+						}
+				}
+
 				public DifficultyDeathStyle DeathStyle = DifficultyDeathStyle.Respawn;
 				public List <DifficultySettingGlobal> GlobalVariables;
 				// = new List <DifficultySettingGlobal> ();
@@ -510,30 +519,41 @@ namespace Frontiers
 
 				protected void GenerateFullDescription()
 				{
+						List <string> descriptionLines = new List <string>();
+						descriptionLines.Add(Description);
+						descriptionLines.Add("_");
+						switch (DeathStyle) {
+								case DifficultyDeathStyle.NoDeath:
+										descriptionLines.Add("Death: If your health reaches zero nothing will happen.");
+										break;
+
+								case DifficultyDeathStyle.BlackOut:
+								case DifficultyDeathStyle.Respawn:
+								default:
+										descriptionLines.Add("Death: If your health reaches zero you will black out for a short time. Upon waking half of your money will be gone.");
+										break;
+
+								case DifficultyDeathStyle.PermaDeath:
+										descriptionLines.Add("Death: If your health reaches zero your game is over permanently.");
+										break;
+						}
+						descriptionLines.Add("Globals defined in this setting:");
 						if (GlobalVariables != null && GlobalVariables.Count > 0) {
-								List <string> descriptionLines = new List <string>();
-								descriptionLines.Add(Description);
-								descriptionLines.Add("_");
-								descriptionLines.Add("Changes defined in this setting:");
 								for (int i = 0; i < GlobalVariables.Count; i++) {
 										descriptionLines.Add(GlobalVariables[i].Description);
 								}
-								mFullDescription = descriptionLines.JoinToString("\n");
 						} else {
-								mFullDescription = Description;
+								descriptionLines.Add("(None)");
 						}
-				}
-		}
+						descriptionLines.Add("Flags defined in this setting:");
+						if (DifficultyFlags.Count > 0) {
 
-		[Serializable]
-		public enum DifficultyDeathStyle
-		{
-				BlackOut,
-				//black out for a bit, then wake up
-				Respawn,
-				//respawn in the nearest respawn structure
-				PermaDeath,
-				//hardcore mode
+								descriptionLines.Add(GameData.CommaJoinWithLast(DifficultyFlags, "and"));
+						} else {
+								descriptionLines.Add("(None)");
+						}
+						mFullDescription = descriptionLines.JoinToString("\n");
+				}
 		}
 
 		[Serializable]
@@ -647,13 +667,6 @@ namespace Frontiers
 				public int Type;
 				public int Terrain;
 				public int Location;
-		}
-
-		public enum PrototypeTemplateType
-		{
-				DetailTexture,
-				DetailMesh,
-				TreeMesh,
 		}
 
 		[Serializable]
@@ -1275,6 +1288,7 @@ namespace Frontiers
 		public class WeatherQuarter
 		{
 				public float Wind;
+				public float Mist;
 				public float Precipitation;
 				public float LightningFrequency = 0.1f;
 				public TOD_Weather.WeatherType Weather;
@@ -1416,7 +1430,6 @@ namespace Frontiers
 				public SDictionary <string, string> SceneryScripts = new SDictionary <string, string>();
 				[XmlIgnore]
 				public WorldChunk ParentChunk;
-
 				[XmlIgnore]
 				public bool UseBoxColliders {
 						get { return BoxColliders.Count > 0; }

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System;
+using System.IO;
 using System.Runtime.Serialization;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,9 +8,10 @@ using System.Xml;
 using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Locations;
+using Frontiers.World.BaseWIScripts;
 using Hydrogen.Threading.Jobs;
-using System.IO;
+
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif

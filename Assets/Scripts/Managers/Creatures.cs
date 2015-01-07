@@ -3,11 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.World;
-using Frontiers.Story;
-using Frontiers.World.Locations;
-using Frontiers.World.Gameplay;
 using ExtensionMethods;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {

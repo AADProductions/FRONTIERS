@@ -1,11 +1,12 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using Frontiers.World;
-using System;
 using System.Xml.Serialization;
+using Frontiers.World;
 using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 using Frontiers.GUI;
 
 namespace Frontiers
@@ -270,8 +271,7 @@ namespace Frontiers
 								return false;
 						}
 
-						int numRemoved = 0;
-						if (!Player.Local.Inventory.InventoryBank.TryToRemove(order.OrderPrice, ref numRemoved, order.CurrencyType)) {
+						if (!Player.Local.Inventory.InventoryBank.TryToRemove(order.OrderPrice, order.CurrencyType)) {
 								error = "You can't afford to place this order.";
 								return false;
 						}
@@ -621,8 +621,10 @@ namespace Frontiers
 
 				public static void AquireBook(string bookName)
 				{
+						Debug.Log("Attempting to aquire book '" + bookName + "'");
 						Book book = null;
 						if (Mods.Get.Runtime.LoadMod <Book>(ref book, "Book", bookName)) {
+								Debug.Log("Aquiring book " + bookName);
 								Get.AquiredBooks.Add(bookName);
 								book.Status &= ~BookStatus.Dormant;
 								book.Status |= BookStatus.Received;

@@ -176,7 +176,7 @@ namespace Frontiers
 				public void MakePayment(Loan outstandingLoan, int paymentAmount)
 				{
 						int amountPaid = 0;
-						Player.Local.Inventory.InventoryBank.TryToRemove(paymentAmount, ref amountPaid, outstandingLoan.CurrencyType);
+						Player.Local.Inventory.InventoryBank.TryToRemove(paymentAmount, outstandingLoan.CurrencyType);
 						//set the current principal to the new amount
 						int amountOwed = outstandingLoan.AmountOwed;
 						outstandingLoan.CurrentPrincipal = amountOwed - amountPaid;

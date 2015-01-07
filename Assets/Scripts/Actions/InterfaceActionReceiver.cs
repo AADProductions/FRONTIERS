@@ -30,10 +30,4 @@ namespace Frontiers {
 			return Flags.Check ((uint)subscription, (uint)action, Flags.CheckType.MatchAny);
 		}
 	}
-
-	public enum PauseBehavior {
-		Pause,
-		DoNotPause,
-		PassThrough,
-	}
 }

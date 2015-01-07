@@ -57,6 +57,7 @@ namespace Frontiers
 				public float RainIntensity;
 				public float SnowIntensity;
 				public float WindIntensity;
+				public float MistIntensity;
 
 				public float ThunderIntensity {
 						get {
@@ -180,7 +181,7 @@ namespace Frontiers
 								//check if color correction is correct based on biome
 								if (CameraFX.Get.LUTName != GameWorld.Get.CurrentBiome.ColorSetting) {
 										Texture2D colorSetting = null;
-										if (GameData.IO.LoadLUT(ref colorSetting, GameWorld.Get.CurrentBiome.ColorSetting)) {
+										if (Mods.Get.Runtime.CameraLUT(ref colorSetting, GameWorld.Get.CurrentBiome.ColorSetting)) {
 												CameraFX.Get.SetLUT(colorSetting);
 										} else {
 												Debug.Log("Couldn't load LUT setting");
@@ -386,7 +387,12 @@ namespace Frontiers
 										GameWorld.Get.Sky.Components.Weather.Clouds = weather.CloudType;
 										mTargetPrecipitationIntensity = weather.Precipitation;
 										mBaseWindIntensity = weather.Wind;
-
+										MistIntensity = weather.Mist;
+										//get the mist intensity and wind intensity overrides from our current location
+										if (Player.Local.Surroundings.IsVisitingLocation) {
+												MistIntensity += Player.Local.Surroundings.CurrentLocation.State.MistIntensityOverride;
+												WindIntensity += Player.Local.Surroundings.CurrentLocation.State.WindIntensityOverride;
+										}
 										if (IsRaining && Player.Local.Surroundings.IsOutside) {
 												if (GameWorld.Get.CurrentBiome.Climate == ClimateType.Arctic || GameWorld.Get.CurrentRegionData.g > 0) {
 														AtmoParticles.ChangeAtmoSettingDensity("Snow", RainIntensity);
@@ -399,6 +405,7 @@ namespace Frontiers
 												AtmoParticles.ChangeAtmoSettingDensity("Rain", 0f);
 												AtmoParticles.ChangeAtmoSettingDensity("Snow", 0f);
 										}
+										AtmoParticles.ChangeAtmoSettingDensity("Mist", MistIntensity);
 										AtmoParticles.PlayerPosition = Player.Local.Position;
 								}
 
@@ -510,21 +517,5 @@ namespace Frontiers
 				public float RefrSpeed = 0.18f;
 				//set animation speed parameter
 				public float AnimSpeed = 1.0f;
-		}
-
-		public enum TemperatureComparison
-		{
-				Warmer,
-				Colder,
-				Same
-		}
-
-		public enum TemperatureRange : int
-		{
-				A_DeadlyCold = 0,
-				B_Cold = 1,
-				C_Warm = 2,
-				D_Hot = 3,
-				E_DeadlyHot = 4,
 		}
 }

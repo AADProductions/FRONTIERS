@@ -370,16 +370,5 @@ namespace Frontiers
 				public PlayerGame mCurrentGame = null;
 				public PlayerPreferences mCurrentPreferences = null;
 				protected ProfileComponents mSaveNextAvailable = ProfileComponents.None;
-
-				[Flags]
-				public enum ProfileComponents
-				{
-						None = 0,
-						Profile = 1,
-						Game = 2,
-						Character = 4,
-						Preferences = 8,
-						All = Profile | Game | Character | Preferences
-				}
 		}
 }

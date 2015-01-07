@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+//using System.Linq;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
 using System;
@@ -357,54 +357,5 @@ namespace Frontiers {
 
 		public Dictionary <string, Mission> mInstantiatedMissions;// = new Dictionary <string, Mission> ();
 		public Dictionary <string, WorldItem> mActiveQuestItems;// = new Dictionary <string, WorldItem> ();
-	}
-
-	public enum MissionCompletion
-	{
-		Automatic,
-		Manual,
-	}
-
-	[Flags]
-	public enum MissionStatus
-	{
-		Dormant = 1,
-		Active = 2,
-		Completed = 4,
-		Ignored = 8,
-		Failed = 16,
-	}
-
-	public enum ObjectiveType
-	{
-		Required,
-		RequiredOnceActive,
-		Optional,
-	}
-
-	public enum ObjectiveActivation
-	{
-		AutomaticOnMissionActivation,
-		AutomaticOnPreviousCompletion,
-		Manual,
-	}
-
-	public enum ObjectiveBehavior
-	{
-		Permanent,
-		//once you succeed or fail, you can't revert
-		Toggle,
-		//you can toggle from failure to success
-	}
-
-	public enum MissionOriginType
-	{
-		None,
-		Character,
-		Encounter,
-		Book,
-		Mission,
-		Introspection,
-		Location,
 	}
 }

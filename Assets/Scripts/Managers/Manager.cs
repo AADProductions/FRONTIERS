@@ -2,7 +2,6 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers.GUI;
 
 namespace Frontiers
 {
@@ -50,6 +49,7 @@ namespace Frontiers
 		//
 		//---Player quits
 		public static GameObject ManagersParent;
+		public static string DetailsInfo;
 
 		public virtual string GameObjectName {
 			get {
@@ -313,7 +313,7 @@ namespace Frontiers
 				}
 			}
 			bool objectAwake = false;
-			GUILoading.DetailsInfo = detailsInfo;
+			DetailsInfo = detailsInfo;
 			while (!objectAwake) {
 				try {
 					objectAwake = IsAwake <T> ();

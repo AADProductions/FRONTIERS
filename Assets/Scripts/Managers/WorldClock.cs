@@ -352,6 +352,22 @@ namespace Frontiers
 						}
 				}
 
+				public static TimeOfYear TimeOfYearToSeason(TimeOfYear timeOfYear)
+				{		//this assumes non-overlapping time of year
+						if (Flags.Check((uint)timeOfYear, (uint)TimeOfYear.SeasonSpring, Flags.CheckType.MatchAny)) {
+								return TimeOfYear.SeasonSpring;
+						}
+						else if (Flags.Check((uint)timeOfYear, (uint)TimeOfYear.SeasonSummer, Flags.CheckType.MatchAny)) {
+								return TimeOfYear.SeasonSummer;
+						}
+						else if (Flags.Check((uint)timeOfYear, (uint)TimeOfYear.SeasonAutumn, Flags.CheckType.MatchAny)) {
+								return TimeOfYear.SeasonAutumn;
+						}
+						else {
+								return TimeOfYear.SeasonWinter;
+						}
+				}
+
 				public static int MonthsSinceBeginningOfTime {
 						get {
 								return gMonthsSinceBeginningOfTime;
@@ -1008,14 +1024,5 @@ namespace Frontiers
 				protected static int mLastHour = 0;
 				protected static int mNextHour = 0;
 				protected static bool mIsDay = false;
-
-				public enum TimeUnit
-				{
-						Hour,
-						Day,
-						Week,
-						Month,
-						Year
-				}
 		}
 }

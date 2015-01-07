@@ -7,7 +7,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Locations;
+using Frontiers.World.BaseWIScripts;
 using Hydrogen.Threading.Jobs;
 using System.IO;
 
@@ -277,18 +277,18 @@ namespace Frontiers
 						foreach (StructurePack pack in StructurePacks) {
 								foreach (GameObject prefab in pack.StaticPrefabs) {
 										if (!mColliderMeshes.ContainsKey(prefab.name)) {
-												Mesh lodMesh = null;
+												/*Mesh lodMesh = null;
 												if (mLodMeshes.TryGetValue(prefab.name, out lodMesh)) {
 														//use the LOD mesh as a collider substitute
 														mColliderMeshes.Add(prefab.name, lodMesh);
-												} else {
+														} else {*/
 														//otherwise use our mesh filter's mesh
 														//this is inefficient but it's better than broken colliders
 														MeshFilter mf = prefab.GetComponent <MeshFilter>();
 														if (mf != null) {
 																mColliderMeshes.Add(mf.name, mf.sharedMesh);
 														}
-												}
+														//}
 										}
 								}
 						}
@@ -430,10 +430,15 @@ namespace Frontiers
 						rb.isKinematic = true;
 						mc.enabled = false;
 						foreach (Mesh collisionMesh in mColliderMeshes.Values) {
-								mc.sharedMesh = collisionMesh;
-								mc.enabled = true;
-								//this should trigger collision data creation
-								mc.enabled = false;
+								try {
+									mc.sharedMesh = collisionMesh;
+									mc.enabled = true;
+									//this should trigger collision data creation
+									mc.enabled = false;
+								}
+								catch (Exception e){
+										e = null;
+								}
 						}
 						GameObject.Destroy(meshCacheObject);
 						yield break;
@@ -954,8 +959,10 @@ namespace Frontiers
 						//every time we get a shared material
 						//we set our preloader to look at it
 						if (mSharedMaterialLookup.TryGetValue(materialName, out sharedMaterial)) {
-								PreloaderCamera.enabled = true;
-								PreloaderRenderer.sharedMaterial = sharedMaterial;
+								if (Application.isPlaying) {
+										PreloaderCamera.enabled = true;
+										PreloaderRenderer.sharedMaterial = sharedMaterial;
+								}
 								return true;
 						}
 						return false;
@@ -1036,6 +1043,12 @@ namespace Frontiers
 						ChunkPrefabObject cpo = chunkPrefab.LoadedObject;
 						cpo.Deactivate();
 						Get.SceneryObjectPool.Push(cpo);
+						var enumerator = chunkPrefab.LoadedObject.CfSceneryScripts.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+								//foreach (KeyValuePair <string,string> sceneryScript in chunkPrefab.SceneryScripts) {
+								GameObject.Destroy(enumerator.Current);
+						}
+						chunkPrefab.LoadedObject.CfSceneryScripts.Clear();
 						chunkPrefab.LoadedObject = null;
 				}
 
@@ -1089,18 +1102,6 @@ namespace Frontiers
 						if (chunkPrefab.UseBoxColliders) {
 								//TODO instantiate box colliders
 						}
-
-						//add scripts
-						var enumerator = chunkPrefab.SceneryScripts.GetEnumerator();
-						while (enumerator.MoveNext ()) {
-								//foreach (KeyValuePair <string,string> sceneryScript in chunkPrefab.SceneryScripts) {
-								KeyValuePair <string,string> sceneryScript = enumerator.Current;
-								SceneryScript script = (SceneryScript)chunkPrefab.LoadedObject.go.GetOrAdd(sceneryScript.Key);
-								script.cfo = gCfo;
-								script.UpdateSceneryState(sceneryScript.Value, chunk);
-								chunkPrefab.LoadedObject.CfSceneryScripts.Add(script);
-						}
-
 						//set the shared materials
 						if (gCfoSharedMaterialList == null) {
 								gCfoSharedMaterialList = new List<Material>();
@@ -1136,11 +1137,28 @@ namespace Frontiers
 						//gCfo.ShowAboveGround (!Player.Local.Surroundings.IsUnderground);
 
 						gCfo.Lod.RecalculateBounds();
-						//TODO add any scripts & script states in the chunk prefab
+
+
+						//add scripts
+						//do this after the gameobject is set to active
+						var enumerator = chunkPrefab.SceneryScripts.GetEnumerator();
+						while (enumerator.MoveNext ()) {
+							//foreach (KeyValuePair <string,string> sceneryScript in chunkPrefab.SceneryScripts) {
+							KeyValuePair <string,string> sceneryScript = enumerator.Current;
+							SceneryScript script = (SceneryScript)chunkPrefab.LoadedObject.go.GetOrAdd(sceneryScript.Key);
+							script.cfo = gCfo;
+							script.UpdateSceneryState(sceneryScript.Value, chunk);
+							chunkPrefab.LoadedObject.CfSceneryScripts.Add(script);
+						}
 				}
 
 				public static void CopyMeshData(Mesh mesh, MeshCombiner.BufferedMesh bufferedMesh)
 				{
+						if (mesh == null) {
+								Debug.LogError("Mesh was null when attempting to copy mesh");
+								return;
+						}
+
 						bufferedMesh.Name = mesh.name;
 						bufferedMesh.Vertices = mesh.vertices;
 						bufferedMesh.Normals = mesh.normals;
