@@ -20,7 +20,7 @@ namespace Frontiers
 				public GameObject StartupScenePrefab;
 				public static int BuildNumber;
 				//const this
-				public static string Version = "0.3.5";
+				public static string Version = "0.3.7";
 				public static readonly uint SteamAppID = 293480;
 
 				public static bool Is(FGameState state)

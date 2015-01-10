@@ -1127,8 +1127,8 @@ namespace Frontiers
 						gCfo.PrimaryMeshFilter.sharedMesh = gCfoSpp.MFilter.sharedMesh;
 						gCfo.LodMeshFilter.sharedMesh = gCfoSpp.LodMesh;
 						gCfo.PrimaryRenderer.enabled = true;
-						gCfo.PrimaryRenderer.castShadows = false;
-						gCfo.PrimaryRenderer.receiveShadows = false;
+						gCfo.PrimaryRenderer.castShadows = Structures.SceneryObjectShadows;
+						gCfo.PrimaryRenderer.receiveShadows = Structures.SceneryObjectShadows;
 						gCfo.LodRenderer.enabled = true;
 						gCfo.Lod.enabled = true;
 						//set the game object to active
@@ -1216,8 +1216,8 @@ namespace Frontiers
 						cfo.LodRenderer = lodObject.AddComponent <MeshRenderer>();
 
 						cfo.PrimaryRenderer.enabled = false;
-						cfo.PrimaryRenderer.castShadows = Structures.SceneryObjectShadows;
 						cfo.LodRenderer.enabled = false;
+						cfo.PrimaryRenderer.castShadows = Structures.SceneryObjectShadows;
 						cfo.LodRenderer.castShadows = Structures.SceneryObjectShadows;
 
 						cfo.Lod = cfo.go.AddComponent <LODGroup>();
@@ -1229,6 +1229,7 @@ namespace Frontiers
 
 						LOD primary = new LOD(Globals.SceneryLODRatioPrimary, primaryRenderers);
 						LOD lod = new LOD(Globals.SceneryLODRatioSecondary, lodRenderers);
+						//LOD off = new LOD(Globals.SceneryLODRatioOff, gEmptyLodRenderers);
 						LOD[] lods = new LOD [] { primary, lod };
 
 						cfo.Lod.SetLODS(lods);
@@ -1244,6 +1245,7 @@ namespace Frontiers
 				protected static StructurePackPrefab gCfoSpp = null;
 				protected static Mesh gCfoPrimaryMesh = null;
 				protected static Mesh gCfoLodMesh = null;
+				protected static Renderer[] gEmptyLodRenderers = new Renderer[] {};
 
 				#endregion
 

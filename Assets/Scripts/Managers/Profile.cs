@@ -122,11 +122,20 @@ namespace Frontiers
 								mCurrentProfile = profile;
 								Debug.Log("Current profile is now " + profileName);
 								HasSelectedProfile = true;
-						}
-						if (GameData.IO.LoadPreferences(ref prefs, profileName, out errorMessage)) {
-								mCurrentPreferences = prefs;
-						} else {
-								Debug.Log("Couldn't load preferences when setting profle");
+
+								if (GameData.IO.LoadPreferences(ref prefs, profileName, out errorMessage)) {
+										//make sure these prefs are legitimate
+										//otherwise they might have wonky values
+										if (prefs.Version != GameManager.Version || !prefs.InitializedAsDefault) {
+												prefs = PlayerPreferences.Default ( );
+												//save the new preferences immediately
+												GameData.IO.SavePreferences(profileName, prefs);
+										}
+										mCurrentPreferences = prefs;
+								} else {
+										Debug.Log("Couldn't load preferences when setting profle");
+								}
+
 						}
 						return HasSelectedProfile;
 				}

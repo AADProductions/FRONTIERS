@@ -31,58 +31,182 @@ namespace Frontiers
 						Get	= this;
 				}
 
-				protected override void PushDefaulSettings()
+				protected override void OnPushSettings ( ) {
+						if (Profile.Get.HasSelectedProfile) {
+								Profile.Get.CurrentPreferences.Controls.UserActionSettings.Clear();
+								Profile.Get.CurrentPreferences.Controls.UserActionSettings.AddRange(CurrentActionSettings);
+						}
+				}
+
+				public override List<ActionSetting> GenerateDefaultActionSettings()
 				{
-						//AddKeyDown(KeyCode.Escape, "Cancel", UserActionType.ActionCancel, false);
-						//AddKeyDown(KeyCode.Space, "Skip", UserActionType.ActionSkip, false);
-
-						//AddKeyDown(KeyCode.Space, "Jump", UserActionType.MoveJump, false);
-						//AddKeyDown(KeyCode.C, "Crouch", UserActionType.MoveCrouch, false);
-						//AddKeyDown(KeyCode.E, "Item Use", UserActionType.ItemUse, false);
-						//AddMouseButtonDown(1, "Item Interact", UserActionType.ItemInteract, false);
-						//AddKeyDown(KeyCode.F, "Item Place", UserActionType.ItemPlace, false);
-						//AddKeyDown(KeyCode.G, "Item Throw", UserActionType.ItemThrow, false);
-						//AddMouseButtonDown(0, "Tool Use", UserActionType.ToolUse, false);
-						//AddMouseButtonHold(0, "Tool Use", UserActionType.ToolUseHold, false);
-						//AddMouseButtonUp(0, "Tool Release", UserActionType.ToolUseRelease, true);
-						//AddKeyDown(KeyCode.Q, "Tool Holster", UserActionType.ToolHolster, false);
-						//AddKeyDown(KeyCode.R, "Tool Next Setting", UserActionType.ToolCyclePrev, false);
-						//AddKeyDoubleTap(KeyCode.W, "Sprint", UserActionType.MoveSprint, false);
-
-						//AddKeyDown(KeyCode.H, "Tool Swap", UserActionType.ToolSwap, false);
-						//AddKeyDown(KeyCode.R, "Tool Next Setting", UserActionType.ToolCyclePrev, false);
-						//AddKeyDown(KeyCode.T, "Tool Prev Setting", UserActionType.ToolCycleNext, false);
-						//AddKeyDown(KeyCode.Q, "Tool Holster", UserActionType.ToolHolster, false);
-
 						MouseXAxis = InputControlType.RightStickX;
 						MouseYAxis = InputControlType.RightStickY;
 						MovementXAxis = InputControlType.LeftStickX;
 						MovementYAxis = InputControlType.LeftStickY;
 
-						AddMapping(InputControlType.Action4, ActionSettingType.Down, UserActionType.ActionCancel);
-						AddMapping(InputControlType.Action4, ActionSettingType.Down, UserActionType.ActionSkip);
+						List <ActionSetting> actionSettings = new List<ActionSetting>();
+						ActionSetting aSetting = null;
 
-						AddMapping(InputControlType.RightStickButton, ActionSettingType.Down, UserActionType.MoveJump);
-						AddMapping(InputControlType.LeftStickButton, ActionSettingType.Down, UserActionType.MoveCrouch);
-						AddMapping(InputControlType.Action1, ActionSettingType.Down, UserActionType.ItemUse);
-						AddMapping(InputControlType.Action2, ActionSettingType.Down, UserActionType.ItemInteract);
-						AddMapping(InputControlType.Action3, ActionSettingType.Down, UserActionType.ItemPlace);
-						AddMapping(InputControlType.RightTrigger, ActionSettingType.Down, UserActionType.ItemThrow);
-						AddMapping(InputControlType.RightBumper, ActionSettingType.Down, UserActionType.ToolUse);
-						AddMapping(InputControlType.RightBumper, ActionSettingType.Hold, UserActionType.ToolUseHold);
-						AddMapping(InputControlType.RightBumper, ActionSettingType.Up, UserActionType.ToolUseRelease);
-						AddMapping(InputControlType.LeftTrigger, ActionSettingType.Down, UserActionType.ToolCycleNext);
-						AddMapping(InputControlType.LeftBumper, ActionSettingType.Down, UserActionType.MoveSprint);
+						aSetting = ActionSetting.Analog;
+						aSetting.ActionDescription = "Controller Mouse U / D";
+						aSetting.Controller = MouseYAxis;
+						aSetting.AvailableControllerButtons = DefaultAvailableAxis;
+						aSetting.Axis = ActionSetting.InputAxis.MouseY;
+						aSetting.Mouse = ActionSetting.MouseAction.AxisY;
+						actionSettings.Add(aSetting);
 
-						AddAxisChange(MovementXAxis, UserActionType.MovementAxisChange);
-						AddAxisChange(MovementYAxis, UserActionType.MovementAxisChange);
-						AddAxisChange(MouseXAxis, UserActionType.LookAxisChange);
-						AddAxisChange(MouseYAxis, UserActionType.LookAxisChange);
-				}
+						aSetting = ActionSetting.Analog;
+						aSetting.ActionDescription = "Controller Mouse L / R";
+						aSetting.Controller = MouseXAxis;
+						aSetting.AvailableControllerButtons = DefaultAvailableAxis;
+						aSetting.Axis = ActionSetting.InputAxis.MouseX;
+						aSetting.Mouse = ActionSetting.MouseAction.AxisX;
+						actionSettings.Add(aSetting);
 
-				protected override void CreateKeyboardAndMouseProfile()
-				{
-						KeyboardAndMouseProfile = new UserKeyboardAndMouseProfile(this);
+						aSetting = ActionSetting.Button;
+						aSetting.ActionDescription = "Movement B / F";
+						aSetting.Controller = MovementYAxis;
+						aSetting.KeyX = KeyCode.S;
+						aSetting.KeyY = KeyCode.W;
+						aSetting.AvailableControllerButtons = DefaultAvailableAxis;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.Axis = ActionSetting.InputAxis.MovementY;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.ActionDescription = "Movement L / R";
+						aSetting.Controller = MovementXAxis;
+						aSetting.KeyX = KeyCode.A;
+						aSetting.KeyY = KeyCode.D;
+						aSetting.AvailableControllerButtons = DefaultAvailableAxis;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.Axis = ActionSetting.InputAxis.MovementX;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.MoveSprint;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.MoveSprint.ToString());
+						aSetting.Controller = InputControlType.LeftTrigger;
+						aSetting.Key = KeyCode.LeftShift;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.MoveJump;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.MoveJump.ToString());
+						aSetting.Controller = InputControlType.RightStickButton;
+						aSetting.Key = KeyCode.Space;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.MoveCrouch;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.MoveCrouch.ToString());
+						aSetting.Controller = InputControlType.LeftStickButton;
+						aSetting.Key = KeyCode.C;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.ItemUse;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ItemUse.ToString());
+						aSetting.Controller = InputControlType.Action1;
+						aSetting.Key = KeyCode.E;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.ItemInteract;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ItemInteract.ToString());
+						aSetting.Controller = InputControlType.Action2;
+						aSetting.Mouse = ActionSetting.MouseAction.Right;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						//aSetting.Cursor = ActionSetting.CursorAction.RightClick;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.ItemPlace;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ItemPlace.ToString());
+						aSetting.Controller = InputControlType.Action3;
+						aSetting.Key = KeyCode.F;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.ActionCancel;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ActionCancel.ToString());
+						aSetting.Controller = InputControlType.Action4;
+						aSetting.Key = KeyCode.Escape;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.ItemThrow;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ItemThrow.ToString());
+						aSetting.Controller = InputControlType.RightTrigger;
+						aSetting.Key = KeyCode.G;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.ToolUse;
+						aSetting.ActionOnHold = (int)UserActionType.ToolUseHold;
+						aSetting.ActionOnRelease = (int)UserActionType.ToolUseRelease;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ToolUse.ToString());
+						aSetting.Controller = InputControlType.RightBumper;
+						aSetting.Mouse = ActionSetting.MouseAction.Left;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						//aSetting.Cursor = ActionSetting.CursorAction.Click;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.ToolCyclePrev;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ToolCyclePrev.ToString());
+						aSetting.Controller = InputControlType.LeftTrigger;
+						aSetting.Key = KeyCode.R;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.ToolCycleNext;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ToolCycleNext.ToString());
+						aSetting.Key = KeyCode.T;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)UserActionType.ToolHolster;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ToolHolster.ToString());
+						aSetting.Key = KeyCode.Q;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						actionSettings.Add(aSetting);
+
+						return actionSettings;
 				}
 
 				protected override void AddDaisyChains()
@@ -95,74 +219,11 @@ namespace Frontiers
 						AddDaisyChain(UserActionType.MoveJump, UserActionType.Move);
 						AddDaisyChain(UserActionType.MoveStand, UserActionType.Move);
 						AddDaisyChain(UserActionType.MoveCrouch, UserActionType.Move);
-				}
 
-				public class UserKeyboardAndMouseProfile : UnityInputDeviceProfile
-				{
-						public UserKeyboardAndMouseProfile(UserActionManager u) : base()
-						{
-								ButtonMappings = new[] {
-										new InputControlMapping {
-												Handle = UserActionType.ToolUse.ToString(),
-												Target = InputControlType.Action1,
-												Source = MouseButton0
-										},
-										new InputControlMapping {
-												Handle = UserActionType.ItemInteract.ToString(),
-												Target = InputControlType.Action2,
-												Source = MouseButton1
-										},
-								};
-
-								AnalogMappings = new[] {
-										new InputControlMapping {
-												Handle = UserActionType.MoveLeft.ToString (),//and right
-												Target = u.MovementXAxis,
-												Source = KeyCodeAxis(KeyCode.A, KeyCode.D)
-										},
-										new InputControlMapping {
-												Handle = UserActionType.MoveForward.ToString (),//and back
-												Target = u.MovementYAxis,
-												Source = KeyCodeAxis(KeyCode.S, KeyCode.W)
-										},
-
-										new InputControlMapping {
-												Handle = UserActionType.ActionCancel.ToString(),
-												Target = InputControlType.Action4,
-												Source = KeyCodeButton(KeyCode.Escape)
-										},
-										new InputControlMapping {
-												Handle = UserActionType.MoveJump.ToString(),
-												Target = InputControlType.Action4,
-												Source = KeyCodeButton(KeyCode.Escape)
-										},
-										new InputControlMapping {
-												Handle = UserActionType.MoveCrouch.ToString(),
-												Target = InputControlType.LeftStickButton,
-												Source = KeyCodeButton(KeyCode.C)
-										},
-										new InputControlMapping {
-												Handle = UserActionType.ToolCycleNext.ToString(),
-												Target = InputControlType.LeftStickButton,
-												Source = KeyCodeButton(KeyCode.C)
-										},
-										new InputControlMapping {
-												Handle = UserActionType.ToolCycleNext.ToString(),
-												Target = InputControlType.LeftBumper,
-												Source = KeyCodeButton(KeyCode.R)
-										},
-										new InputControlMapping {
-												Handle = UserActionType.MoveSprint.ToString(),
-												Target = InputControlType.LeftBumper,
-												Source = KeyCodeButton(KeyCode.LeftShift)
-										},
-										new InputControlMapping {
-												Handle = UserActionType.MoveSprint.ToString(),
-												Target = InputControlType.LeftTrigger,
-												Source = KeyCodeButton(KeyCode.RightShift)
-										},
-								};
-						}
+						AddAxisChange(MovementXAxis, UserActionType.MovementAxisChange);
+						AddAxisChange(MovementYAxis, UserActionType.MovementAxisChange);
+						AddAxisChange(MouseXAxis, UserActionType.LookAxisChange);
+						AddAxisChange(MouseYAxis, UserActionType.LookAxisChange);
 				}
 		}
 }

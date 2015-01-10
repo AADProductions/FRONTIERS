@@ -418,8 +418,37 @@ namespace Frontiers.GUI
 						if (action == InterfaceActionType.GamePause) {
 								if (!HasActiveInterface) {
 										ManuallyPaused = !ManuallyPaused;
-										return true;
+										return false;
 								}
+						}
+
+						//intercept interface cycle requests
+						if (action == InterfaceActionType.ToggleInterfaceNext) {
+								//this is specifically to overcome difficulties with controller support
+								//it lets you cycle through map / inventory / log at the moment
+								//more interfaces (eg status) will be added soon
+								if (HasActivePrimaryInterface) {
+										switch (LastActivePrimaryInterface.Name) {
+												case "Inventory":
+														PrimaryInterface.MaximizeInterface("Log");
+														break;
+
+												case "Log":
+														PrimaryInterface.MaximizeInterface("WorldMap");
+														break;
+
+												case "WorldMap":
+														PrimaryInterface.MinimizeAll();//?
+														//PrimaryInterface.MaximizeInterface("Inventory");
+														break;
+
+												default:
+														break;
+										}
+								} else {
+										PrimaryInterface.MaximizeInterface("Inventory");
+								}
+								return false;
 						}
 
 						bool passThrough = true;
