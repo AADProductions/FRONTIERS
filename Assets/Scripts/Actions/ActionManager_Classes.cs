@@ -1,4 +1,4 @@
-﻿﻿using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using InControl;
 using System.Collections.Generic;
@@ -111,7 +111,7 @@ namespace Frontiers
 												break;
 
 										case InputControlType.DPadY:
-												Debug.Log ("binding mouse scroll axis dpady");
+												//Debug.Log ("binding mouse scroll axis dpady");
 												buttonMappings.Add(
 														new InputControlMapping {
 																Handle = "Scroll Right",
@@ -354,7 +354,7 @@ namespace Frontiers
 								if (a.Controller != InputControlType.None) {
 										//bind it to mouse and keys
 										if (a.Key != KeyCode.None) {
-												Debug.Log("Binding " + a.ActionDescription + " to key " + a.Key.ToString() + " - mouse is " + a.Mouse.ToString());
+												//Debug.Log("Binding " + a.ActionDescription + " to key " + a.Key.ToString() + " - mouse is " + a.Mouse.ToString());
 												mappings.Add(
 														new InputControlMapping {
 																Handle = a.ActionDescription,

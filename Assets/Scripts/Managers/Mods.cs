@@ -56,12 +56,21 @@ namespace Frontiers
 						return description;
 				}
 
+				public override void OnTextureLoadStart()
+				{
+						//prevent hiccups
+						Shader.WarmupAllShaders();
+						//this seems to load some dangly bits that we don't need yet
+						//so force a collect before loading textures
+						Resources.UnloadUnusedAssets();
+						System.GC.Collect();
+						StartCoroutine(LoadGenericTexturesOverTime());
+				}
+
 				public override void OnModsLoadStart()
 				{
 						BuildCurrentWorld();
 						mModsLoaded = true;
-						//prevent hiccups
-						Shader.WarmupAllShaders();
 				}
 
 				public void BuildCurrentWorld()
@@ -162,9 +171,90 @@ namespace Frontiers
 						return false;
 				}
 
+				protected IEnumerator LoadGenericTexturesOverTime()
+				{
+						//give the other managers a second to put in their requests
+						yield return null;
+						while (TexturesToLoad.Count > 0) {
+								TextureLoadRequest tlr = TexturesToLoad.Dequeue();
+								//get a list of textures from that mod folder with that search string in the name
+								List <string> availableTextures = null;
+								if (!string.IsNullOrEmpty(tlr.TextureKeyword)) {
+										availableTextures = Available(tlr.TextureType, tlr.TextureKeyword);
+								} else {
+										availableTextures = Available(tlr.TextureType);
+								}
+
+								foreach (string availableTexture in availableTextures) {
+										Texture2D texture = null;
+										IEnumerator loader = null;
+										GUI.GUILoading.DetailsInfo = availableTexture;
+										if (!Runtime.GenericTexture(ref texture, ref loader, availableTexture, tlr.TextureType, tlr.AsNormalMap, tlr.DesiredWidth, tlr.DesiredHeight)) {
+												Debug.LogWarning("Couldn't load generic texture " + availableTexture);
+												yield return null;
+										} else {
+												//if we loaded the texture add it to the list
+												//if there is no list that's fine, it's cached in mods
+												if (tlr.Textures != null) {
+														tlr.Textures.Add(texture);
+												}
+												//if we need to resize/normal-map-ize it use the loader
+												if (loader != null) {
+														while (loader.MoveNext()) {
+																//load...
+																yield return null;
+														}
+														System.GC.Collect();
+														System.GC.WaitForPendingFinalizers();
+														Resources.UnloadUnusedAssets();
+												}
+										}
+								}
+						}
+						mTexturesLoaded = true;
+						yield break;
+				}
+
+				public Queue <TextureLoadRequest> TexturesToLoad = new Queue <TextureLoadRequest>();
+				//pre-loads and caches all the textures with this keyword in this folder
+				public void LoadAvailableGenericTextures(string textureKeyword, string textureType, bool asNormalMap, int desiredWidth, int desiredHeight, List <Texture2D> textures)
+				{
+						TexturesToLoad.Enqueue(new TextureLoadRequest(textureKeyword, textureType, asNormalMap, desiredWidth, desiredHeight, textures));
+				}
+
+				public void LoadAvailableGenericTextures(string textureType, bool asNormalMap, List <Texture2D> textures)
+				{
+						TexturesToLoad.Enqueue(new TextureLoadRequest(string.Empty, textureType, asNormalMap, -1, -1, textures));
+				}
+
+				public void LoadAvailableGenericTextures(string textureType, bool asNormalMap, int desiredWidth, int desiredHeight, List <Texture2D> textures)
+				{
+						TexturesToLoad.Enqueue(new TextureLoadRequest(string.Empty, textureType, asNormalMap, desiredWidth, desiredHeight, textures));
+				}
+
 				public class ModsRuntime
 				{
 						public Mods mods;
+
+						#region game and profile data
+
+						public bool LoadGame(ref PlayerGame game, string worldName, string gameName)
+						{
+								return GameData.IO.LoadGame(ref game, worldName, gameName);
+						}
+
+						public void DeleteGame(string gameName)
+						{
+								if (gameName != GameData.IO.gLiveGameFolderName) {
+										GameData.IO.DeleteGameData(gameName);
+								}
+						}
+
+						public void SaveGame(PlayerGame game)
+						{
+								game.Version = GameManager.VersionString;
+								GameData.IO.SaveGame(game);
+						}
 
 						public string FullPath(string fileName, string dataType, string extension)
 						{
@@ -202,12 +292,9 @@ namespace Frontiers
 								GameData.IO.DeleteData(dataType, dataName, DataType.Profile, DataCompression.None);
 						}
 
-						public bool PackMap(string packName, string mapName, out Texture2D packMap)
-						{
-								packMap = Resources.Load(packName + "/" + mapName) as Texture2D;
-								//TODO move this to external loader
-								return packMap != null;
-						}
+						#endregion
+
+						#region textures
 
 						public bool Texture(Texture2D texture, string dataType, string dataName)
 						{
@@ -293,35 +380,25 @@ namespace Frontiers
 								GameObject.Destroy(map);
 						}
 
-						public bool ChunkPlantPrototype(ref GameObject prototype, string prototypeName)
+						public bool GenericTexture(ref Texture2D texture, ref IEnumerator loader, string textureName, string textureType, bool asNormalMap)
 						{
-								prototype = Resources.Load("TerrainPlantPrototypes/" + prototypeName) as GameObject;
-								return prototype != null;
+								return GenericTexture(ref texture, ref loader, textureName, textureType, asNormalMap, -1, -1);
 						}
 
-						public bool ChunkGrassTexture(ref Texture2D diffuse, string diffuseName)
+						public bool GenericTexture(ref Texture2D texture, ref IEnumerator loader, string textureName, string textureType, bool asNormalMap, int desiredWidth, int desiredHeight)
 						{
-								diffuse = Resources.Load("TerrainGrassTextures/" + diffuseName) as Texture2D;
-								return diffuse != null;
-						}
-
-						public bool ChunkGroundTexture(ref Texture2D diffuse, ref Texture2D normal, string diffuseName, string normalName)
-						{
-								diffuse = Resources.Load("TerrainGroundTextures/" + diffuseName) as Texture2D;
-								normal = null;
-								//normal = Resources.Load ("TerrainGroundTextures/" + normalName) as Texture2D;
-								return diffuse != null;
-						}
-
-						public bool ChunkCombinedNormal(ref Texture2D combinedNormal, string combinedNormalName)
-						{
-								combinedNormal = null;
-								if (string.IsNullOrEmpty(combinedNormalName)) {
-										return false;
+								texture = null;
+								if (!GameData.IO.LoadGenericTexture(ref texture, ref loader, textureName, textureType, asNormalMap, desiredWidth, desiredHeight, DataType.Profile)) {
+										if (!GameData.IO.LoadGenericTexture(ref texture, ref loader, textureName, textureType, asNormalMap, desiredWidth, desiredHeight, DataType.World)) {
+												return GameData.IO.LoadGenericTexture(ref texture, ref loader, textureName, textureType, asNormalMap, desiredWidth, desiredHeight, DataType.Base);
+										}
 								}
-								combinedNormal = Resources.Load("TerrainCombinedNormals/" + combinedNormalName) as Texture2D;
 								return true;
 						}
+
+						#endregion
+
+						#region terrain
 
 						public bool LoadTerrainDetailSlice(int[,] slice, string chunkPathName, string sliceFileName)
 						{
@@ -355,9 +432,13 @@ namespace Frontiers
 								}
 								return true;
 						}
-
 						//receives a stack item and a path from the server
 						//find the object and updates its state or creates the object if it doesn't exist
+
+						#endregion
+
+						#region stackitmes & groups
+
 						public void ReceiveStackItem(StackItem stackItem, MobileReference reference)
 						{
 								//first check to see if the item exists
@@ -460,7 +541,7 @@ namespace Frontiers
 								string fullPath = System.IO.Path.Combine("Group", groupPath);
 				
 								//get a stack item and save it to the group folder in profile
-								stackItem.Version = GameManager.Version;
+								stackItem.Version = GameManager.VersionString;
 								GameData.IO.SaveProfileData <StackItem>(stackItem, fullPath, fileName, DataCompression.GZip);
 								return result;
 						}
@@ -480,23 +561,9 @@ namespace Frontiers
 								return result;
 						}
 
-						public bool LoadGame(ref PlayerGame game, string worldName, string gameName)
-						{
-								return GameData.IO.LoadGame(ref game, worldName, gameName);
-						}
+						#endregion
 
-						public void DeleteGame(string gameName)
-						{
-								if (gameName != GameData.IO.gLiveGameFolderName) {
-										GameData.IO.DeleteGameData(gameName);
-								}
-						}
-
-						public void SaveGame(PlayerGame game)
-						{
-								game.Version = GameManager.Version;
-								GameData.IO.SaveGame(game);
-						}
+						#region raw mods
 
 						public void SaveMod <T>(T data, string dataType, string dataPath, string dataName) where T : Mod, new()
 						{
@@ -507,7 +574,7 @@ namespace Frontiers
 						{
 								data.Name = dataName;//just in case
 								data.Type = typeof(T).ToString();
-								data.Version = GameManager.Version;
+								data.Version = GameManager.VersionString;
 								GameData.IO.SaveProfileData <T>(data, dataType, dataName, DataCompression.None);
 						}
 
@@ -526,14 +593,34 @@ namespace Frontiers
 						public bool LoadMod <T>(ref T data, string dataType, string dataName) where T : Mod, new()
 						{
 								//check to see if a local copy exists
-								if (GameData.IO.LoadProfileData <T>(ref data, dataType, dataName, DataCompression.None)
-								|| GameData.IO.LoadWorldData <T>(ref data, dataType, dataName, DataCompression.None)
-								|| GameData.IO.LoadBaseData <T>(ref data, dataType, dataName, DataCompression.None)) {
+								bool result = GameData.IO.LoadProfileData <T>(ref data, dataType, dataName, DataCompression.None);
+								//hooray it exists
+								if (result && data.IgnoreProfileDataIfOutdated) {
+										//but are we supposed to use it?
+										//see if the version is below the current game version
+										if (new Version(data.Version) < GameManager.Version) {
+												//if it is, get it from the base data
+												result = GameData.IO.LoadWorldData <T>(ref data, dataType, dataName, DataCompression.None);
+												if (!result) {
+														//if it doesn't exist in profile, try getting it from the world data, then from the base data
+														result = GameData.IO.LoadBaseData <T>(ref data, dataType, dataName, DataCompression.None);
+												}
+										}
+								} else {
+										result = GameData.IO.LoadWorldData <T>(ref data, dataType, dataName, DataCompression.None);
+										if (!result) {
+												//if it doesn't exist in profile, try getting it from the world data, then from the base data
+												result = GameData.IO.LoadBaseData <T>(ref data, dataType, dataName, DataCompression.None);
+										}
+								}
+
+								if (result) {
 										//always set this just in case
 										data.Name = dataName;
-										return true;
 								}
-								return false;
+
+								//whew! done
+								return result;
 						}
 
 						public void LoadAvailableMods <T>(List<T> mods, string dataType) where T : Mod, new()
@@ -543,9 +630,14 @@ namespace Frontiers
 								for (int i = 0; i < availableMods.Count; i++) {
 										if (LoadMod <T>(ref mod, dataType, availableMods[i]) && mod.ListInAvailable) {
 												mods.Add(mod);
+										} else {
+												Debug.Log("Couldn't load mod " + dataType + ", " + availableMods[i]);
 										}
 								}
 						}
+
+						#endregion
+
 				}
 
 				public class ModsEditor
@@ -614,7 +706,7 @@ namespace Frontiers
 								}
 								data.Name = dataName;
 								data.Type = typeof(T).ToString();
-								data.Version = GameManager.Version;
+								data.Version = GameManager.VersionString;
 								GameData.IO.SaveBaseData <T>(data, dataType, dataName, DataCompression.None);
 								gAvailable.Clear();
 						}
@@ -805,7 +897,7 @@ namespace Frontiers
 						{
 								FieldInfo field = null;
 								string finalValue = currentValue;
-								if (string.IsNullOrEmpty (finalValue)) {
+								if (string.IsNullOrEmpty(finalValue)) {
 										finalValue = "0";
 								}
 
@@ -846,8 +938,9 @@ namespace Frontiers
 								return finalValue;
 						}
 
-						public static string GUILayoutGLobal(string currentGlobal) {
-								List <string> difficultySettingVariables = Globals.GetDifficultySettingNames ();
+						public static string GUILayoutGLobal(string currentGlobal)
+						{
+								List <string> difficultySettingVariables = Globals.GetDifficultySettingNames();
 								int currentItemIndex = difficultySettingVariables.IndexOf(currentGlobal);
 								currentItemIndex = UnityEditor.EditorGUILayout.Popup(currentItemIndex, difficultySettingVariables.ToArray());
 								if (currentItemIndex < 0 || currentItemIndex >= difficultySettingVariables.Count) {
@@ -906,6 +999,45 @@ namespace Frontiers
 
 				#region static helper classes
 
+				public struct TextureLoadRequest : IEquatable <TextureLoadRequest>
+				{
+						public TextureLoadRequest(string textureKeyword, string textureType, bool asNormalMap, List <Texture2D> textures)
+						{
+								TextureType = textureType;
+								TextureKeyword = textureKeyword;
+								AsNormalMap = asNormalMap;
+								DesiredWidth = -1;
+								DesiredHeight = -1;
+								Textures = textures;
+						}
+
+						public TextureLoadRequest(string textureKeyword, string textureType, bool asNormalMap, int desiredWidth, int desiredHeight, List <Texture2D> textures)
+						{
+								TextureType = textureType;
+								TextureKeyword = textureKeyword;
+								AsNormalMap = asNormalMap;
+								DesiredWidth = desiredWidth;
+								DesiredHeight = desiredHeight;
+								Textures = textures;
+						}
+
+						public string TextureType;
+						public string TextureKeyword;
+						public bool AsNormalMap;
+						public int DesiredWidth;
+						public int DesiredHeight;
+						public List<Texture2D> Textures;
+
+						public bool Equals(TextureLoadRequest other)
+						{
+								return TextureType.Equals(TextureType)
+								&& TextureKeyword.Equals(TextureKeyword)
+								&& AsNormalMap == AsNormalMap
+								&& DesiredWidth == DesiredWidth
+								&& DesiredHeight == DesiredHeight;
+						}
+				}
+
 				public static string WorldRegionName(int xTilePosition, int zTilePosition)
 				{
 						return xTilePosition.ToString("D4") + "_" + zTilePosition.ToString("D4");
@@ -938,6 +1070,12 @@ namespace Frontiers
 										mFullDescription = Description;
 								}
 								return Description;
+						}
+				}
+
+				public virtual bool IgnoreProfileDataIfOutdated {
+						get {
+								return false;
 						}
 				}
 

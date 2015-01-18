@@ -15,13 +15,15 @@ namespace Frontiers
 		//WakeUp - called by Awake in each manger
 		//Initialize - called in arbitrary order by GameManager
 		//OnInitialized - called externally after ALL managers report Initialized
-		//ModsLoadStart->OnModsLoadStart - called after OnInitialized
-		//ModsLoadFinish->OnModsLoadFinish - called after ALL managers report ModsLoaded
-		//ModsLoaded->OnModsLoaded - called after ModsLoadFinish
 		//
 		//---Player sets profile and game
 		//---Player starts new game and/or loads game
 		//
+		//ModsLoadStart->OnModsLoadStart
+		//ModsLoadFinish->OnModsLoadFinish - called after ALL managers report ModsLoaded
+		//ModsLoaded->OnModsLoaded - called after ModsLoadFinish
+		//TextureLoadStart->OnTextureLoadStart - we put this in its own step because unity's memory is so fragile
+		//TextureLoadFinish->OnTextureLoadFinish - called after ALL managers report TexturesLoaded
 		//GameLoadStart->OnGameLoadStart - games are 'loaded' even when there is no save game
 		//GameLoadFinish->OnGameLoadFinish - called after ALL managers report GameLoaded
 		//CreateWorld->OnCreateWorld - called in arbitrary order after GameLoaded
@@ -63,6 +65,12 @@ namespace Frontiers
 			}
 		}
 
+		public bool TexturesLoaded {
+			get {
+				return mTexturesLoaded;
+			}
+		}
+
 		public bool ModsLoaded {
 			get {
 				return mModsLoaded;
@@ -95,6 +103,20 @@ namespace Frontiers
 		{
 			foreach (Manager awakeManager in mAwakeManagers.Values) {
 				awakeManager.OnInitialized ();
+			}
+		}
+
+		public static void							TexturesLoadStart ()
+		{
+			foreach (Manager awakeManager in mAwakeManagers.Values) {
+				awakeManager.OnTextureLoadStart ();
+			}
+		}
+
+		public static void							TexturesLoadFinish ()
+		{
+			foreach (Manager awakeManager in mAwakeManagers.Values) {
+				awakeManager.OnTextureLoadFinish ();
 			}
 		}
 
@@ -238,6 +260,19 @@ namespace Frontiers
 		}
 
 		#endregion
+
+
+		public static bool FinishedLoadingTextures {
+			get {
+				foreach (Manager awakeManager in mAwakeManagers.Values) {
+					if (!awakeManager.TexturesLoaded) {
+						return false;
+					}
+				}
+				//Debug.Log ("MANAGER: FINISHED LOADING MODS");
+				return true;
+			}
+		}
 
 		public static bool FinishedLoadingMods {
 			get {
@@ -422,9 +457,19 @@ namespace Frontiers
 
 		}
 
-		public virtual void OnModsLoadStart ()
+		public virtual void OnTextureLoadStart ()
 		{
 
+		}
+
+		public virtual void OnTextureLoadFinish ()
+		{
+			mTexturesLoaded = true;
+		}
+
+		public virtual void OnModsLoadStart ()
+		{
+			mModsLoaded = true;
 		}
 
 		public virtual void OnModsLoadFinish ()
@@ -534,6 +579,7 @@ namespace Frontiers
 
 		protected bool mIsAwake = false;
 		protected bool mInitialized = false;
+		protected bool mTexturesLoaded = false;
 		protected bool mModsLoaded = false;
 		protected bool mGameLoaded = false;
 		protected bool mGameSaved = false;

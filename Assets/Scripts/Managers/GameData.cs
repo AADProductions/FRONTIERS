@@ -1133,7 +1133,10 @@ namespace Frontiers
 												texture.LoadImage(byteArray);
 												Array.Clear(byteArray, 0, byteArray.Length);
 												byteArray = null;
+												texture.Compress(false);						
+												//texture.Apply(true, true);																		
 												gLoadedMaps.Add(fullPath, texture);
+												gLoadedMapsMemory += resolution * resolution * 4;
 												return true;
 										}
 										return false;
@@ -1167,6 +1170,7 @@ namespace Frontiers
 												Array.Clear(byteArray, 0, byteArray.Length);
 												byteArray = null;
 												gLoadedMaps.Add(fullPath, lut);
+												gLoadedMapsMemory += 1024 * 32 * 4;
 												return true;
 										}
 										return false;
@@ -1199,20 +1203,23 @@ namespace Frontiers
 										Array.Clear(byteArray, 0, byteArray.Length);
 										byteArray = null;
 										gLoadedMaps.Add(fullPath, map);
+										gLoadedMapsMemory += resolution * resolution * 4;
 										return true;
 								}
 
-								public static bool LoadTerrainHeights(float[,] heights, int resolution, string chunkName, string rawFileName, DataType type) {
+								public static bool LoadTerrainHeights(float[,] heights, int resolution, string chunkName, string rawFileName, DataType type)
+								{
 										string dataPath = GetDataPath(type);
 										string directory = System.IO.Path.Combine(dataPath, System.IO.Path.Combine("Chunk", chunkName));
 										string fullPath = System.IO.Path.Combine(directory, (rawFileName + gHeightMapExtension));
-										FileMode mode = FileMode.Open;
-										FileShare share = FileShare.ReadWrite;
-										FileAccess access = FileAccess.ReadWrite;
 
 										if (!File.Exists(fullPath)) {
 												return false;
 										}
+
+										FileMode mode = FileMode.Open;
+										FileShare share = FileShare.ReadWrite;
+										FileAccess access = FileAccess.ReadWrite;
 
 										using (FileStream byteStream = new FileStream(fullPath, mode, access, share)) {
 												for (int x = 0; x < resolution; x++) {
@@ -1224,11 +1231,125 @@ namespace Frontiers
 										}
 										return true;
 								}
+								//ground textures and combined normals are loaded using this function which is less strict than the others
+								//we will resize them on import based on globally defined resolutions
+								//if the desired width or height is -1 then the texture will be returned at original dimensions
+								public static bool LoadGenericTexture(ref Texture2D texture, ref IEnumerator loader, string textureName, string directoryName, bool asNormalMap, int desiredWidth, int desiredHeight, DataType type)
+								{
+										string dataPath = GetDataPath(type);
+										string directory = System.IO.Path.Combine(dataPath, directoryName);
+										string fullPath = System.IO.Path.Combine(directory, (textureName + gImageExtension));
 
+										if (gLoadedMaps.TryGetValue(fullPath, out texture)) {
+												//don't need to load anything
+												loader = null;
+												return true;
+										}
+
+										if (!File.Exists(fullPath)) {
+												//Debug.Log("Couldn't find generic texture at path " + fullPath);
+												return false;
+										}
+
+										//check the resolution of the texture to see if we're going to need to resize it
+										bool requiresResize = false;
+										int currentWidth = 0;
+										int currentHeight = 0;
+										//compressed with alpha channel
+										//TODO determine if alpha channel is present during resolution check
+										TextureFormat format = TextureFormat.ARGB32;
+										GetPngDimensions(fullPath, ref currentWidth, ref currentHeight);
+										if ((desiredWidth > 0 && desiredHeight > 0) && (currentWidth > desiredWidth || currentHeight > desiredHeight)) {
+												//Debug.Log("Texture " + textureName + " requires a resize");
+												requiresResize = true;
+												//use uncompressed file format if we're resizing
+												//so we don't end up scaling down a muddy texture
+												format = TextureFormat.ARGB32;
+										}
+										//load the map - if we require a resize, get the resized map before setting other props
+										texture = new Texture2D(currentWidth, currentHeight, format, true, false);
+										texture.name = textureName;
+										//add it to the lookup so other mod lookups will return this texture
+										gLoadedMaps.Add(fullPath, texture);
+										//return an ienumerator that will load the texture once it's put through a coroutine
+										loader = LoadGenericTextureOverTime(texture, fullPath, asNormalMap, requiresResize, desiredWidth, desiredHeight);
+										return true;
+								}
+
+								public static IEnumerator LoadGenericTextureOverTime(Texture2D texture, string fullPath, bool asNormalMap, bool requiresResize, int desiredWidth, int desiredHeight)
+								{
+										//get the absolute path
+										System.IO.DirectoryInfo directory = System.IO.Directory.GetParent(Application.dataPath);
+										string dataPath = directory.FullName;
+										dataPath = System.IO.Path.Combine(dataPath, fullPath);
+										WWW www = new WWW("file:///" + System.Uri.EscapeDataString(dataPath));
+										while (!www.isDone) {
+												yield return null;
+										}
+										www.LoadImageIntoTexture(texture);
+										//once we're done make sure to kill this thing dead
+										//because there's a ton of memory getting clogged up with it
+										www.Dispose();
+										www = null;
+										Resources.UnloadUnusedAssets();
+										System.GC.Collect();
+										//unity doesn't let you specify normal map format in scripts (WTF UNITY)
+										//so if we want this to be a normal map we have to take this step
+										//do this here BEFORE the threaded texture resize so we don't end up working on grey pixels
+										if (asNormalMap) {
+												Color oldColor = new Color();
+												Color newColor = new Color();
+												float r = 0f;
+												for (int x = 0; x < texture.width; x++) {
+														for (int y = 0; y < texture.height; y++) {
+																newColor = texture.GetPixel(x, y);
+																newColor.r = 0;
+																newColor.g = oldColor.g;
+																newColor.b = 0;
+																newColor.a = oldColor.r;
+																texture.SetPixel(x, y, newColor);
+														}
+												}
+												texture.Apply();
+												yield return null;
+										}
+										texture.filterMode = FilterMode.Bilinear;
+										texture.wrapMode = TextureWrapMode.Repeat;
+										if (requiresResize) {
+												//resize it now
+												//this is threaded so just let it do its thing in the background
+												TextureScale.Bilinear(texture, desiredWidth, desiredHeight);
+												yield return null;
+										}
+										gLoadedMapsMemory += desiredWidth * desiredHeight * 4;
+										//compress it to save TONS of space
+										texture.Compress(false);
+										//make it read-only to cut memory by 1/2
+										texture.Apply(false, true);
+										yield break;	
+								}
+
+								public static int gLoadedMapsMemory;
 								public static Dictionary <string, Texture2D> gLoadedMaps;
-								// = new Dictionary<string, Texture2D> ();
 								public static Dictionary <string, AudioClip> gLoadedAudioClips;
-								// = new Dictionary<string, AudioClip> ();
+
+								#endregion
+
+								#region image data & manipulation
+
+								public static void GetPngDimensions(string fullPath, ref int width, ref int height)
+								{		//courtesy of Abbas on stackexchange
+										byte[] bytes = new byte [10];
+										using (FileStream stream = File.OpenRead(fullPath)) {
+												stream.Seek(16, SeekOrigin.Begin); // jump to the 16th byte where width and height information is stored
+												stream.Read(bytes, 0, 8); // width (4 bytes), height (4 bytes)
+										}
+
+										for (int i = 0; i <= 3; i++) {
+												width = bytes[i] | width << 8;
+												height = bytes[i + 4] | height << 8;            
+										}
+								}
 
 								#endregion
 
@@ -1503,7 +1624,7 @@ namespace Frontiers
 												result = currentValue == checkValue;
 												break;
 								}
-
+								//Debug.Log("Variable result: check value: " + checkValue.ToString() + ", current value: " + currentValue.ToString() + " checkType: " + checkType.ToString() + " result: " + result.ToString());
 								return result;
 						}
 
@@ -1533,7 +1654,7 @@ namespace Frontiers
 												result = currentValue == checkValue;
 												break;
 								}
-
+								//Debug.Log("Variable result: check value: " + checkValue.ToString() + ", current value: " + currentValue.ToString() + " checkType: " + checkType.ToString() + " result: " + result.ToString());
 								return result;
 						}
 
@@ -1628,7 +1749,7 @@ namespace Frontiers
 						}
 
 						public static void GetTextureFormat(string mapName, ref int resolution, ref TextureFormat format, ref bool linear)
-						{	//TODO move actual resolutions into Globals
+						{
 								resolution = 128;
 								format = TextureFormat.RGB24;
 								linear = false;

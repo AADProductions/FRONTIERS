@@ -13,10 +13,33 @@ namespace Frontiers
 				public SetupAdvancedFoliageShader AFS;
 				public Cubemap FoliageShaderDiffuseMap;
 				public Cubemap FoliageShaderSpecMap;
+				//set on startup
+				public UIFont DefaultLabelFont;
+				public List <Texture2D> TerrainGrassTextures = new List<Texture2D>();
+				public List <Texture2D> TerrainGroundTextures = new List<Texture2D>();
+				public List <Texture2D> GenericTerrainNormals = new List<Texture2D>();
+				public List <Texture2D> AtlasTextures = new List<Texture2D>();
+
+				public override void OnTextureLoadStart()
+				{
+						//put in requests for ALL ground textures
+						//add all ground textures and normals to the same array - combined normals are not actually stored as normals
+						Mods.Get.LoadAvailableGenericTextures("GroundTexture", false, Globals.GroundTextureResolution, Globals.GroundTextureResolution, TerrainGroundTextures);
+						Mods.Get.LoadAvailableGenericTextures("GroundNormal", false, Globals.GroundCombinedNormalResolution, Globals.GroundCombinedNormalResolution, TerrainGroundTextures);
+						//and ALL grass textures
+						Mods.Get.LoadAvailableGenericTextures("GrassTexture", false, Globals.GrassTextureResolution, Globals.GrassTextureResolution, TerrainGrassTextures);
+						//load the shared terrain normal texture
+						//this one IS stored as a normal map
+						Mods.Get.LoadAvailableGenericTextures("GenericTerrainNormal", "SharedNormal", true, Globals.GroundCombinedNormalResolution, Globals.GroundCombinedNormalResolution, GenericTerrainNormals);
+
+						//now get our atlas textures
+						//Mods.Get.LoadAvailableGenericTextures("Atlas", false, AtlasTextures);
+				}
 
 				public override void WakeUp()
 				{
 						Get = this;
+						DefaultLabelFont = PrintingPress40Font;
 				}
 
 				public override void Initialize()
@@ -74,6 +97,87 @@ namespace Frontiers
 						AFS.afsSetupCameraLayerCulling();
 
 						mInitialized = true;
+				}
+
+				public void PushDefaultFont(string defaultFont)
+				{
+						DefaultLabelFont = FontByName(defaultFont);
+
+						UILabel[] labels = GameObject.FindObjectsOfType <UILabel>();
+						for (int i = 0; i < labels.Length; i++) {
+								if (labels[i].useDefaultLabelFont) {
+										labels[i].font = DefaultLabelFont;
+								}
+						}
+				}
+
+				public UIFont FontByName(string fontName)
+				{
+						//TODO put these in an array
+						switch (fontName) {
+								case "PrintingPress40":
+								default:
+										return PrintingPress40Font;
+
+								case "Arimo18":
+										return Arimo18Font;
+
+								case "Arimo20":
+										return Arimo20Font;
+
+								case "TrajanPro18":
+										return TrajanPro18Font;
+
+								case "SloppyHandwriting48":
+										return SloppyHandwriting48Font;
+						}
+				}
+
+				public UIFont NextFont(UIFont currentFont)
+				{
+						//TODO put these in an array
+						//ugh this is terrible
+						switch (currentFont.name) {
+								case "PrintingPress40":
+								default:
+										return FontByName("Arimo18");
+
+								case "Arimo18":
+										return FontByName("Arimo20");
+
+								case "Arimo20":
+										return FontByName("TrajanPro18");
+
+								case "TrajanPro18":
+										return FontByName("SloppyHandwriting48");
+
+								case "SloppyHandwriting48":
+										return FontByName("PrintingPress40");
+						}
+				}
+
+				public bool GetTerrainGroundTexture(string terrainGroundTextureName, out Texture2D terrainGroundTexture)
+				{
+						terrainGroundTexture = null;
+						foreach (Texture2D tgt in TerrainGroundTextures) {
+								if (string.Equals(tgt.name, terrainGroundTextureName)) {
+										terrainGroundTexture = tgt;
+										break;
+								}
+						}
+						return terrainGroundTexture != null;
+				}
+
+				public bool GetTerrainGrassTexture(string terrainGrassTextureName, out Texture2D terrainGrassTexture)
+				{
+						terrainGrassTexture = null;
+						foreach (Texture2D tgt in TerrainGrassTextures) {
+								if (string.Equals(tgt.name, terrainGrassTextureName)) {
+										terrainGrassTexture = tgt;
+										break;
+								}
+						}
+						return terrainGrassTexture != null;
 				}
 
 				public void Update()

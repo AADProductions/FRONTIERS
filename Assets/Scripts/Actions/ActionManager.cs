@@ -38,8 +38,10 @@ namespace Frontiers
 				public InputControlType CursorClickAction;
 				public InputControlType CursorRightClickAction;
 				public bool CursorClickDown;
+				public bool CursorClickHold;
 				public bool CursorClickUp;
 				public bool CursorRightClickDown;
+				public bool CursorRightClickHold;
 				public bool CursorRightClickUp;
 				//key bindings
 				public UnityInputDeviceProfile KeyboardAndMouseProfile;
@@ -72,10 +74,10 @@ namespace Frontiers
 				public virtual void PushSettings(List <ActionSetting> newSettings)
 				{
 						if (newSettings == null || newSettings.Count == 0) {
-								Debug.Log("Not pushing settings in " + name + " , was null or empty");
+								//Debug.Log("Not pushing settings in " + name + " , was null or empty");
 								return;
 						}
-						Debug.Log("Pushing " + newSettings.Count.ToString() + " settings in " + name);
+						//Debug.Log("Pushing " + newSettings.Count.ToString() + " settings in " + name);
 						//start over
 						ClearSettings();
 						
@@ -92,27 +94,27 @@ namespace Frontiers
 												break;
 
 										case ActionSetting.InputAxis.MouseX:
-												Debug.Log("Found mouse X binding");
+												//Debug.Log("Found mouse X binding");
 												MouseXAxis = a.Controller;
 												break;
 
 										case ActionSetting.InputAxis.MouseY:
-												Debug.Log("Found mouse Y binding");
+												//Debug.Log("Found mouse Y binding");
 												MouseYAxis = a.Controller;
 												break;
 
 										case ActionSetting.InputAxis.MovementX:
-												Debug.Log("Found movement X binding");
+												//Debug.Log("Found movement X binding");
 												MovementXAxis = a.Controller;
 												break;
 
 										case ActionSetting.InputAxis.MovementY:
-												Debug.Log("Found movement Y binding");
+												//Debug.Log("Found movement Y binding");
 												MovementYAxis = a.Controller;
 												break;
 
 										case ActionSetting.InputAxis.ScrollWheel:
-												Debug.Log("Found scroll wheel mapping");
+												//Debug.Log("Found scroll wheel mapping");
 												ScrollWheelAxis = a.Controller;
 												break;
 								}
@@ -123,12 +125,12 @@ namespace Frontiers
 												break;
 
 										case ActionSetting.CursorAction.Click:
-												Debug.Log("Found cursor click action");
+												//Debug.Log("Found cursor click action");
 												CursorClickAction = a.Controller;
 												break;
 
 										case ActionSetting.CursorAction.RightClick:
-												Debug.Log("Found cursor right click action");
+												//Debug.Log("Found cursor right click action");
 												CursorRightClickAction = a.Controller;
 												break;
 								}
@@ -189,7 +191,7 @@ namespace Frontiers
 						foreach (ActionSetting a in CurrentActionSettings) {
 								//ignore axis settings
 								if (a.IsBindable) {
-										Debug.Log("Binding " + a.ActionDescription + " in " + name);
+										//Debug.Log("Binding " + a.ActionDescription + " in " + name);
 										if (a.AxisSetting) {
 												//special case
 												T actionXAsEnum = ConvertToEnum(a.ActionOnX);
@@ -371,17 +373,21 @@ namespace Frontiers
 
 						AvailableKeyDown = false;
 						//failsafe
-						CursorClickDown = Input.GetMouseButton(0);
+						CursorClickDown = Input.GetMouseButtonDown(0);
+						CursorClickHold = Input.GetMouseButton(0);
 						CursorClickUp = Input.GetMouseButtonUp(0);
-						CursorRightClickDown = Input.GetMouseButton(1);
+						CursorRightClickDown = Input.GetMouseButtonDown(1);
+						CursorRightClickHold = Input.GetMouseButton(1);
 						CursorRightClickUp = Input.GetMouseButtonUp(1);
 						//custom cursor clicks
 						if (CursorClickAction != InputControlType.None) {
-								CursorClickDown |= InputManager.ActiveDevice.GetControl(CursorClickAction).IsPressed;
+								CursorClickDown |= InputManager.ActiveDevice.GetControl(CursorClickAction).WasPressed;
+								CursorClickHold |= InputManager.ActiveDevice.GetControl(CursorClickAction).IsPressed;
 								CursorClickUp |= InputManager.ActiveDevice.GetControl(CursorClickAction).WasReleased;
 						}
 						if (CursorRightClickAction != InputControlType.None) {
-								CursorRightClickDown |= InputManager.ActiveDevice.GetControl(CursorRightClickAction).IsPressed;
+								CursorRightClickDown |= InputManager.ActiveDevice.GetControl(CursorRightClickAction).WasPressed;
+								CursorRightClickHold |= InputManager.ActiveDevice.GetControl(CursorRightClickAction).IsPressed;
 								CursorRightClickUp |= InputManager.ActiveDevice.GetControl(CursorClickAction).WasReleased;
 						}
 						//left clicks take priority
@@ -452,11 +458,7 @@ namespace Frontiers
 
 				protected void Send(T action, double timeStamp)
 				{
-						if (action.ToString().Contains("Selection")) {
-								Debug.Log(action.ToString());
-						}
 						if (HasInterfaceReceiver && InterfaceReceiver(action, TimeStamp)) {//send to interface first
-								//Debug.Log("Sending action to player receiver " + action.ToString() + " at " + timeStamp.ToString( ));
 								if (HasPlayerReceiver) {
 										PlayerReceiver(action, TimeStamp);//if that doesn't score a hit, send to player
 										//see if any actions are supposed to be daisy-chained
@@ -674,6 +676,8 @@ namespace Frontiers
 						DefaultAvailableActions.Add(InputControlType.RightTrigger);
 						DefaultAvailableActions.Add(InputControlType.RightBumper);
 						DefaultAvailableActions.Add(InputControlType.RightStickButton);
+						DefaultAvailableActions.Add(InputControlType.Menu);
+						DefaultAvailableActions.Add(InputControlType.Start);
 
 						DefaultAvailableMouseButtons.Add(ActionSetting.MouseAction.None);
 						DefaultAvailableMouseButtons.Add(ActionSetting.MouseAction.Left);

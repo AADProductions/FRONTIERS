@@ -18,9 +18,11 @@ namespace Frontiers
 				public static GameManager Get;
 				public Camera GameCamera;
 				public GameObject StartupScenePrefab;
-				public static int BuildNumber;
-				//const this
-				public static string Version = "0.3.7";
+				public static int BuildNumber;//TODO get this from steam somehow
+				public static readonly System.Version Version = new Version (0, 3, 8);
+				//since we're using this everywhere we don't want to call ToString on Version
+				//believe it or not this actually has an effect on allocations / garbage
+				public static readonly string VersionString = Version.ToString ();
 				public static readonly uint SteamAppID = 293480;
 
 				public static bool Is(FGameState state)
@@ -303,6 +305,8 @@ namespace Frontiers
 						yield return null;
 						//create the startup scene
 						mStartupScenePrefab = GameObject.Instantiate(StartupScenePrefab) as GameObject;
+						Biomes.Get.UseTimeOfDayOverride = true;
+						Biomes.Get.HourOfDayOverride = UnityEngine.Random.Range(0f, 24f);
 						mInitializing = false;
 						mInitialized = true;
 						//pause after initializing
@@ -365,20 +369,31 @@ namespace Frontiers
 				//starts it up
 				protected IEnumerator LoadOverTime()
 				{
+						Biomes.Get.UseTimeOfDayOverride = false;
 						if (mStartupScenePrefab != null) {
 								GameObject.Destroy(mStartupScenePrefab, 0.5f);
 						}
 						//Load all the things!
 						yield return StartCoroutine(GUILoading.LoadStart(GUILoading.Mode.FullScreenBlack));
 						GUILoading.Lock(this);
-						//the game has loaded
 						string detailsInfo = string.Empty;
+						//load all textures first
+						//------------------
+						Manager.TexturesLoadStart();
+						//------------------
+						yield return null;
+						GUILoading.ActivityInfo = "Loading Textures";
+						GUILoading.DetailsInfo = "Compiling mods";
+						while (!Manager.FinishedLoadingTextures) {
+								yield return null;
+						}
 						//------------------
 						Manager.ModsLoadStart();
 						//------------------
 						yield return null;
 						GUILoading.ActivityInfo = "Generating World";
 						GUILoading.DetailsInfo = "Compiling mods";
+						//wait for the actual mods manager to finish loading mods
 						while (!Mods.Get.ModsLoaded) {
 								yield return null;
 						}
@@ -386,6 +401,7 @@ namespace Frontiers
 						Manager.ModsLoadFinish();
 						//------------------
 						yield return null;
+						//then jump straight ahead to the world loading
 						GUILoading.ActivityInfo = "Loading World";
 						GUILoading.DetailsInfo = "Loading mods from generated world";
 						//during this section we report on what the world manager is doing
