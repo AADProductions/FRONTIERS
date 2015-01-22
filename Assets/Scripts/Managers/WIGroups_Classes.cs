@@ -184,7 +184,7 @@ namespace Frontiers
 														FinishedUnloading.Add(Unloading[i]);
 														Unloading.RemoveAt(i);
 														//this generates a huge amount of garbage
-														yield return WorldClock.WaitForRTSeconds (0.01f);
+														yield return gWaitForUnloading;
 												}
 										}
 
@@ -213,6 +213,8 @@ namespace Frontiers
 
 						yield break;
 				}
+
+				protected static WaitForSeconds gWaitForUnloading = new WaitForSeconds (0.01f);
 
 				public WIGroup RootGroup;
 

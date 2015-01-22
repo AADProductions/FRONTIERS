@@ -1,15 +1,18 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+
 //using System.Linq;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
 using System;
 
-namespace Frontiers {
+namespace Frontiers
+{
 	public class Missions : Manager
 	{
 		public static Missions Get;
+
 		public static bool TryingToComplete {
 			get {
 				if (Get == null) {
@@ -17,13 +20,14 @@ namespace Frontiers {
 				}
 
 				for (int i = 0; i < Get.ActiveMissions.Count; i++) {
-					if (Get.ActiveMissions [i].TryingToComplete) {
+					if (Get.ActiveMissions[i].TryingToComplete) {
 						return true;
 					}
 				}
 				return false;
 			}
 		}
+
 		public Transform MissionParent;
 
 		public List <Mission> ActiveMissions {
@@ -31,201 +35,216 @@ namespace Frontiers {
 				if (!mInitialized) {
 					return null;
 				}
-				List <Mission> activeMissions = new List<Mission> (mInstantiatedMissions.Values);
+				List <Mission> activeMissions = new List<Mission>(mInstantiatedMissions.Values);
 				return activeMissions;
 			}
 		}
 
-		public override void WakeUp ()
+		public List <MissionState> MissionStates = new List<MissionState>();
+
+		public override void WakeUp()
 		{
 			Get = this;
-			mInstantiatedMissions = new Dictionary <string, Mission> ();
-			mActiveQuestItems = new Dictionary <string, WorldItem> ();
+			mInstantiatedMissions = new Dictionary <string, Mission>();
+			mActiveQuestItems = new Dictionary <string, WorldItem>();
 		}
 
-		public static void ClearLog ()
+		public static void ClearLog()
 		{
-			Mods.Get.Runtime.ResetProfileData ("Mission");
+			Mods.Get.Runtime.ResetProfileData("Mission");
 			foreach (KeyValuePair <string, Mission> mission in Get.mInstantiatedMissions) {
 				if (mission.Value != null) {
-					mission.Value.Archive (false);
+					mission.Value.Archive(false);
 				}
 			}
-			Get.mInstantiatedMissions.Clear ();
-			Player.Get.AvatarActions.ReceiveAction (AvatarAction.MissionActivate, WorldClock.Time);
+			Get.mInstantiatedMissions.Clear();
+			Get.MissionStates.Clear();
+			Mods.Get.Runtime.LoadAvailableMods(Get.MissionStates, "Mission");
+			Player.Get.AvatarActions.ReceiveAction(AvatarAction.MissionUpdated, WorldClock.AdjustedRealTime);
 		}
 
-		public override void OnGameUnload ()
+		public override void OnGameUnload()
 		{
 			foreach (Mission mission in mInstantiatedMissions.Values) {
-				GameObject.Destroy (mission.gameObject);
+				GameObject.Destroy(mission.gameObject);
 			}
-			mInstantiatedMissions.Clear ();
+			mInstantiatedMissions.Clear();
 		}
 
-		public override void OnGameLoadStart ()
+		public override void OnGameLoadStart()
 		{
-			List <string> missionNames = Mods.Get.Available ("Mission");
-			foreach (string missionName in missionNames) {
-				MissionState missionState = null;
-				if (Mods.Get.Runtime.LoadMod <MissionState> (ref missionState, "Mission", missionName)) {
-					if (Flags.Check ((uint)missionState.Status, (uint)MissionStatus.Active, Flags.CheckType.MatchAny)) {	//store all active missions in the lookup
-						CreateMissionFromState (missionState);
-					}
+			MissionStates.Clear();
+			Mods.Get.Runtime.LoadAvailableMods(MissionStates, "Mission");
+			for (int i = 0; i < MissionStates.Count; i++) {
+				if (Flags.Check((uint)MissionStates[i].Status, (uint)MissionStatus.Active, Flags.CheckType.MatchAny)) {
+					//if a mission is active create a gameobject for it
+					CreateMissionFromState(MissionStates[i]);
 				}
-			}
-			foreach (MissionState missionState in MissionStatesByStatus (MissionStatus.Active)) {
-				//create the mission so it's actively looking for updates, etc
-				CreateMissionFromState (missionState);
 			}
 		}
 
 		#region get and set
-		public int GetVariableValue (string missionName, string variableName)
+
+		public int GetVariableValue(string missionName, string variableName)
 		{
-			MissionState State = MissionStateByName (missionName);
+			MissionState missionState = null;
 			int variableValue = 0;
-			State.Variables.TryGetValue (variableName, out variableValue);
+			if (MissionStateByName(missionName, out missionState)) {
+				missionState.Variables.TryGetValue(variableName, out variableValue);
+			}
 			return variableValue;
 		}
 
-		public bool ChangeVariableValue (string missionName, string variableName, int variableValue, ChangeVariableType changeType)
+		public bool ChangeVariableValue(string missionName, string variableName, int variableValue, ChangeVariableType changeType)
 		{
 			switch (changeType) {
-			case ChangeVariableType.Increment:
-			default:
-				return IncrementVariable (missionName, variableName, variableValue);
+				case ChangeVariableType.Increment:
+				default:
+					return IncrementVariable(missionName, variableName, variableValue);
 
-			case ChangeVariableType.Decrement:
-				return DecrementValue (missionName, variableName, variableValue);
+				case ChangeVariableType.Decrement:
+					return DecrementValue(missionName, variableName, variableValue);
 
-			case ChangeVariableType.SetValue:
-				return SetVariableValue (missionName, variableName, variableValue);
+				case ChangeVariableType.SetValue:
+					return SetVariableValue(missionName, variableName, variableValue);
 			}
 			return false;
 		}
 
-		public bool SetVariableValue (string missionName, string variableName, int variableValue)
+		public bool SetVariableValue(string missionName, string variableName, int variableValue)
 		{
-			MissionState State = MissionStateByName (missionName);
-			if (State.Variables.ContainsKey (variableName)) {
-				//DebugConsole.Get.Log.Add ("#Setting " + missionName + " variable " + variableName + " to " + variableValue);
-				State.Variables [variableName] = variableValue;
-				Player.Get.AvatarActions.ReceiveAction (AvatarAction.MissionVariableChange, WorldClock.Time);
-				return true;
-			} else {
-				//DebugConsole.Get.Log.Add ("#Variable " + variableName + " not found in mission");
+			MissionState missionState = null;
+			if (MissionStateByName(missionName, out missionState)) {
+				if (missionState.Variables.ContainsKey(variableName)) {
+					missionState.Variables[variableName] = variableValue;
+					Player.Get.AvatarActions.ReceiveAction(AvatarAction.MissionVariableChange, WorldClock.AdjustedRealTime);
+					return true;
+				} else {
+					Debug.LogError("Variable " + variableName + " not found in mission " + missionName);
+				}
 			}
 			return false;
 		}
 
-		public bool IncrementVariable (string missionName, string variableName, int setValue)
+		public bool IncrementVariable(string missionName, string variableName, int setValue)
 		{
-			MissionState State = MissionStateByName (missionName);
-			int variableValue = 0;
-			if (State.Variables.TryGetValue (variableName, out variableValue)) {
-				variableValue += setValue;
-				State.Variables [variableName] = variableValue;
-				Player.Get.AvatarActions.ReceiveAction (AvatarAction.MissionVariableChange, WorldClock.Time);
-				return true;
+			MissionState missionState = null;
+			if (MissionStateByName(missionName, out missionState)) {
+				int variableValue = 0;
+				if (missionState.Variables.TryGetValue(variableName, out variableValue)) {
+					variableValue += setValue;
+					missionState.Variables[variableName] = variableValue;
+					Player.Get.AvatarActions.ReceiveAction(AvatarAction.MissionVariableChange, WorldClock.AdjustedRealTime);
+					return true;
+				} else {
+					Debug.LogError("Variable " + variableName + " not found in mission " + missionName);
+				}
 			}
 			return false;
 		}
 
-		public bool DecrementValue (string missionName, string variableName, int setValue)
+		public bool DecrementValue(string missionName, string variableName, int setValue)
 		{
-			MissionState State = MissionStateByName (missionName);
-			int variableValue = 0;
-			if (State.Variables.TryGetValue (variableName, out variableValue)) {
-				variableValue -= setValue;
-				State.Variables [variableName] = variableValue;
-				Player.Get.AvatarActions.ReceiveAction (AvatarAction.MissionVariableChange, WorldClock.Time);
-				return true;
+			MissionState missionState = null;
+			if (MissionStateByName(missionName, out missionState)) {
+				int variableValue = 0;
+				if (missionState.Variables.TryGetValue(variableName, out variableValue)) {
+					variableValue -= setValue;
+					missionState.Variables[variableName] = variableValue;
+					Player.Get.AvatarActions.ReceiveAction(AvatarAction.MissionVariableChange, WorldClock.AdjustedRealTime);
+					return true;
+				} else {
+					Debug.LogError("Variable " + variableName + " not found in mission " + missionName);
+				}
 			}
 			return false;
 		}
+
 		#endregion
 
 		#region activation and failure
-		public void ActivateMission (string missionName, MissionOriginType originType, string originName)
+
+		public void ActivateMission(string missionName, MissionOriginType originType, string originName)
 		{
-			Mission mission = MissionByName (missionName);
-			if (mission != null) {
-				mission.Activate (originType, originName);
+			Mission mission = null;
+			if (MissionByName(missionName, out mission)) {
+				mission.Activate(originType, originName);
 			}
 		}
 
-		public void ActivateObjective (string missionName, string objectiveName, MissionOriginType originType, string originName)
+		public void ActivateObjective(string missionName, string objectiveName, MissionOriginType originType, string originName)
 		{
-			Mission mission = MissionByName (missionName);
-			if (mission != null) {
-				mission.ActivateObjective (objectiveName, originType, originName);
+			Mission mission = null;
+			if (MissionByName(missionName, out mission)) {
+				mission.ActivateObjective(objectiveName, originType, originName);
 			}
 		}
 
-		public void ForceFailObjective (string missionName, string objectiveName)
+		public void ForceFailObjective(string missionName, string objectiveName)
 		{
-			Mission mission = MissionByName (missionName);
-			if (mission != null) {
-				mission.ForceFailObjective (objectiveName);
+			Mission mission = null;
+			if (MissionByName(missionName, out mission)) {
+				mission.ForceFailObjective(objectiveName);
 			}
 		}
 
-		public void ForceFailMission (string missionName)
+		public void ForceFailMission(string missionName)
 		{
-			Mission mission = MissionByName (missionName);
-			if (mission != null) {
-				mission.ForceFail ( );
+			Mission mission = null;
+			if (MissionByName(missionName, out mission)) {
+				mission.ForceFail();
 			}
 		}
 
-		public void IgnoreMission (string missionName)
+		public void IgnoreMission(string missionName)
 		{
 			//Temp
 			//TODO fix this
-			ForceFailMission (missionName);
+			ForceFailMission(missionName);
 		}
 
-		public void IgnoreObjective (string missionName, string objectiveName)
+		public void IgnoreObjective(string missionName, string objectiveName)
 		{
-			Mission mission = MissionByName (missionName);
-			if (mission != null) {
-				mission.IgnoreObjective (objectiveName);
+			Mission mission = null;
+			if (MissionByName(missionName, out mission)) {
+				mission.IgnoreObjective(objectiveName);
 			}		
 		}
 
-		public void ForceCompleteMission (string missionName)
+		public void ForceCompleteMission(string missionName)
 		{
-			Mission mission = MissionByName (missionName);
-			if (mission != null) {
-				mission.ForceComplete ();
+			Mission mission = null;
+			if (MissionByName(missionName, out mission)) {
+				mission.ForceComplete();
 			}	
 		}
 
-		public void ForceCompleteObjective (string missionName, string objectiveName)
+		public void ForceCompleteObjective(string missionName, string objectiveName)
 		{
-			Mission mission = MissionByName (missionName);
-			if (mission != null) {
-				mission.ForceCompleteObjective (objectiveName);
+			Mission mission = null;
+			if (MissionByName(missionName, out mission)) {
+				mission.ForceCompleteObjective(objectiveName);
 			}	
 		}
+
 		#endregion
 
-		public bool ActiveQuestItem (string itemName, out WorldItem questItem)
+		public bool ActiveQuestItem(string itemName, out WorldItem questItem)
 		{
-			return mActiveQuestItems.TryGetValue (itemName, out questItem);
+			return mActiveQuestItems.TryGetValue(itemName, out questItem);
 		}
 
-		public void AddQuestItem (WorldItem questItem)
+		public void AddQuestItem(WorldItem questItem)
 		{
-			if (!mActiveQuestItems.ContainsKey (questItem.FileName)) {
-				mActiveQuestItems.Add (questItem.FileName, questItem);
+			if (!mActiveQuestItems.ContainsKey(questItem.FileName)) {
+				mActiveQuestItems.Add(questItem.FileName, questItem);
 			}
 		}
 
-		public bool MissionCompletedByName (string missionName, ref bool completed)
+		public bool MissionCompletedByName(string missionName, ref bool completed)
 		{
-			MissionState missionState = MissionStateByName (missionName);
+			MissionState missionState = null;
+			MissionStateByName(missionName, out missionState);
 			if (missionState != null) {
 				completed = missionState.ObjectivesCompleted;
 				return true;
@@ -233,11 +252,11 @@ namespace Frontiers {
 			return false;
 		}
 
-		public bool ObjectiveCompletedByName (string missionName, string objectiveName, ref bool completed)
+		public bool ObjectiveCompletedByName(string missionName, string objectiveName, ref bool completed)
 		{
-			MissionState missionState = MissionStateByName (missionName);
-			if (missionState != null && missionState.Status != MissionStatus.Dormant) {//<-May need to change this
-				ObjectiveState objectiveState = missionState.GetObjective (objectiveName);
+			MissionState missionState = null;
+			if (MissionStateByName(missionName, out missionState) && missionState.Status != MissionStatus.Dormant) {//<-May need to change this
+				ObjectiveState objectiveState = missionState.GetObjective(objectiveName);
 				if (objectiveState != null) {
 					completed = objectiveState.Completed;
 					return true;
@@ -246,15 +265,17 @@ namespace Frontiers {
 			return false;		
 		}
 
-		public bool MissionVariable (string missionName, string variableName, ref int currentValue)
+		public bool MissionVariable(string missionName, string variableName, ref int currentValue)
 		{
-			MissionState missionState = MissionStateByName (missionName);
-			return missionState.Variables.TryGetValue (variableName, out currentValue);
+			MissionState missionState = null;
+			MissionStateByName(missionName, out missionState);
+			return missionState.Variables.TryGetValue(variableName, out currentValue);
 		}
 
-		public bool MissionStatusByName (string missionName, ref MissionStatus status)
+		public bool MissionStatusByName(string missionName, ref MissionStatus status)
 		{
-			MissionState missionState = MissionStateByName (missionName);
+			MissionState missionState = null;
+			MissionStateByName(missionName, out missionState);
 			if (missionState != null) {
 				status = missionState.Status;
 				//Debug.Log ("Found mission status for " + missionName + ", returning " + status.ToString ());
@@ -263,12 +284,12 @@ namespace Frontiers {
 			return false;
 		}
 
-		public bool ObjectiveStatusByName (string missionName, string objectiveName, ref MissionStatus status)
+		public bool ObjectiveStatusByName(string missionName, string objectiveName, ref MissionStatus status)
 		{
-			MissionState missionState = MissionStateByName (missionName);
-			MissionStatus objectiveStatus = MissionStatus.Dormant;
-			if (missionState != null && missionState.Status != MissionStatus.Dormant) {//<-May need to change this
-				ObjectiveState objectiveState = missionState.GetObjective (objectiveName);
+			MissionState missionState = null;
+			if (MissionStateByName(missionName, out missionState) && missionState.Status != MissionStatus.Dormant) {
+				MissionStatus objectiveStatus = MissionStatus.Dormant;
+				ObjectiveState objectiveState = missionState.GetObjective(objectiveName);
 				if (objectiveState != null) {
 					status = objectiveState.Status;
 					return true;
@@ -277,85 +298,62 @@ namespace Frontiers {
 			return false;
 		}
 
-		public List <MissionState> MissionStatesByStatus (MissionStatus status)
+		public List <MissionState> MissionStatesByStatus(MissionStatus status)
 		{
-			List <MissionState> missionStates = new List <MissionState> ();
-			List <string> missionNames = Mods.Get.Available ("Mission");
-			for (int i = 0; i < missionNames.Count; i++) {
-				MissionState missionState = Missions.Get.MissionStateByName (missionNames [i]);
-				if (Flags.Check ((uint)missionState.Status, (uint)status, Flags.CheckType.MatchAny)) {
-					////Debug.Log ("Mission status has " + status.ToString ( ));
-					missionStates.Add (missionState);
+			List <MissionState> missionStates = new List <MissionState>();
+			for (int i = 0; i < MissionStates.Count; i++) {
+				if (Flags.Check((uint)MissionStates[i].Status, (uint)status, Flags.CheckType.MatchAny)) {
+					missionStates.Add(MissionStates[i]);
 				}
 			}
 			return missionStates;
 		}
-
 		//TODO make this follow the bool / out pattern
-		public MissionState MissionStateByName (string missionName)
+		public bool MissionStateByName(string missionName, out MissionState missionState)
 		{
-			if (string.IsNullOrEmpty (missionName)) {
-				return null;
-			}
-			//first check in active missions
-			MissionState missionState = null;
-			Mission mission = null;
-			if (mInstantiatedMissions.TryGetValue (missionName, out mission)) {
-				if (mission == null || mission.Archived) {
-					mInstantiatedMissions.Remove (missionName);
-				} else {
-					missionState = mission.State;
+			missionState = null;
+			if (!string.IsNullOrEmpty(missionName)) {
+				for (int i = 0; i < MissionStates.Count; i++) {
+					if (MissionStates[i].Name == missionName) {
+						missionState = MissionStates[i];
+						break;
+					}
 				}
 			}
-
-			if (missionState == null) {//if that's a no-go, try just loading it outright
-				Mods.Get.Runtime.LoadMod <MissionState> (ref missionState, "Mission", missionName);
-			}
-			return missionState;
+			return missionState != null;
 		}
 
-		//TODO make this follow the bool / out pattern
-		public Mission MissionByName (string missionName)
-		{
-			//first check in active missions
-			Mission mission = null;
-			if (mInstantiatedMissions.TryGetValue (missionName, out mission)) {
-				if (mission == null || mission.Archived) {
-					mInstantiatedMissions.Remove (missionName);
-					mission = null;
-				}
-			}
-			if (mission == null) {
-				//if that's a no-go, try just loading it outright
-				//if it's null, oh well. we'll add error checking later
+		public bool MissionByName(string missionName, out Mission mission)
+		{				
+			if (!mInstantiatedMissions.TryGetValue(missionName, out mission)) {
+				//we need to create it
+				//get the state
 				MissionState missionState = null;
-				if (Mods.Get.Runtime.LoadMod <MissionState> (ref missionState, "Mission", missionName)) {
-					mission = CreateMissionFromState (missionState);
-				} else {
-					//Debug.Log ("Couldn't find mission " + missionName + " on disk");
+				if (MissionStateByName(missionName, out missionState)) {
+					mission = CreateMissionFromState(missionState);
 				}
 			}
-			return mission;
+			return mission != null;
 		}
 
-		protected Mission CreateMissionFromState (MissionState state)
+		protected Mission CreateMissionFromState(MissionState missionState)
 		{
 			//Debug.Log ("Creating mission " + state.Name);
-			GameObject newMissionGameObject = new GameObject (state.Name);
+			GameObject newMissionGameObject = new GameObject(missionState.Name);
 			newMissionGameObject.transform.parent = MissionParent;
-			Mission newMission = newMissionGameObject.AddComponent <Mission> ();
-			newMission.State = state;
-			newMission.OnLoaded ();
-			if (!mInstantiatedMissions.ContainsKey (state.Name)) {
-				mInstantiatedMissions.Add (state.Name, newMission);
+			Mission newMission = newMissionGameObject.AddComponent <Mission>();
+			newMission.State = missionState;
+			newMission.OnLoaded();
+			if (!mInstantiatedMissions.ContainsKey(missionState.Name)) {
+				mInstantiatedMissions.Add(missionState.Name, newMission);
 			} else {
-				//Debug.LogError ("WTF - mission " + state.Name + " is being added twice");
+				Debug.LogError("Mission Strangeness - mission " + missionState.Name + " is being added twice");
 			}
 
 			return newMission;
 		}
 
-		public Dictionary <string, Mission> mInstantiatedMissions;// = new Dictionary <string, Mission> ();
-		public Dictionary <string, WorldItem> mActiveQuestItems;// = new Dictionary <string, WorldItem> ();
+		public Dictionary <string, Mission> mInstantiatedMissions;
+		public Dictionary <string, WorldItem> mActiveQuestItems;
 	}
 }

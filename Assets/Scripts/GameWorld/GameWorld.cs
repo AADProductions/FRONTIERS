@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.Data;
 using Frontiers.World;
-using Frontiers.World.Locations;
 using Frontiers.World.Gameplay;
 using Pathfinding;
 using ExtensionMethods;
@@ -56,19 +55,6 @@ public partial class GameWorld : Manager
 								return WorldChunks[mPrimaryChunkIndex];
 						}
 						return null;
-				}
-		}
-
-		public static bool IsLoadingChunk {
-				get {
-						return mNumChunksLoading > 0;
-				}
-				set {
-						if (value) {
-								mNumChunksLoading++;
-						} else {
-								mNumChunksLoading--;
-						}
 				}
 		}
 		//terrains
@@ -288,6 +274,19 @@ public partial class GameWorld : Manager
 				AudioProfiles.Clear();
 
 				GameData.IO.LoadWorld(ref Settings, "FRONTIERS", out errorMessage);
+
+				mInitialized = true;
+		}
+
+		public override void OnTextureLoadStart()
+		{
+				//request all color overlay maps since these can be compressed
+				//TODO this didn't work so well due to the mipmap issue
+				//Mods.Get.LoadAvailableGenericTextures("ColorOverlay", "ChunkMap", false, Globals.WorldChunkColorOverlayResolution, Globals.WorldChunkColorOverlayResolution, null);
+		}
+
+		public override void OnModsLoadStart()
+		{
 				Mods.Get.Runtime.LoadAvailableMods <FlagSet>(WorldFlags, "FlagSet");
 				Mods.Get.Runtime.LoadAvailableMods <Biome>(Biomes, "Biome");
 				Mods.Get.Runtime.LoadAvailableMods <Region>(Regions, "Region");
@@ -321,7 +320,7 @@ public partial class GameWorld : Manager
 
 						//that's 12 total temperatures
 						biome.StatusTempAverage = (TemperatureRange)(sumTemps / 12);
-						Debug.Log("Average temperature of biome " + biome.Name + ": " + biome.StatusTempAverage.ToString());
+						//Debug.Log("Average temperature of biome " + biome.Name + ": " + biome.StatusTempAverage.ToString());
 				}
 
 				mFlagSetLookup.Clear();
@@ -383,7 +382,7 @@ public partial class GameWorld : Manager
 						UnusuedTerrains.Enqueue(newTerrain);
 				}
 
-				mInitialized = true;
+				mModsLoaded = true;
 		}
 
 		public IEnumerator LoadChunks()
@@ -500,16 +499,29 @@ public partial class GameWorld : Manager
 				StartCoroutine(LoadChunks());
 		}
 
+		public override void OnLocalPlayerSpawn()
+		{
+				if (SpawnManager.Get.UseStartupPosition) {
+						FindBiomeAndRegion(
+								SpawnManager.Get.CurrentStartupPosition.WorldPosition.Position,
+								ref CurrentRegionData,
+								ref CurrentRegion,
+								ref CurrentBiome,
+								ref CurrentAudioProfile);
+				} else {
+						FindBiomeAndRegion(
+								Player.Local.Position,
+								ref CurrentRegionData,
+								ref CurrentRegion,
+								ref CurrentBiome,
+								ref CurrentAudioProfile);
+				}
+		}
+
 		public override void OnGameStart()
 		{
 				//now that we've safely placed the player in the opening chunk
 				//we can start loading other chunks
-				FindBiomeAndRegion(
-						SpawnManager.Get.CurrentStartupPosition.WorldPosition.Position,
-						ref CurrentRegionData,
-						ref CurrentRegion,
-						ref CurrentBiome,
-						ref CurrentAudioProfile);
 				StartCoroutine(UpdateChunkModes());
 		}
 
@@ -566,8 +578,10 @@ public partial class GameWorld : Manager
 				//terrainHit.feetPosition
 				//------ground
 
-				float raycastDistance = Mathf.Min(terrainHit.groundedHeight * 2f, 0.01f);
-				mRaycastStartPosition.Set(terrainHit.feetPosition.x, terrainHit.feetPosition.y + raycastDistance, terrainHit.feetPosition.z);
+				float raycastDistance = Mathf.Max(terrainHit.groundedHeight * 2f, 1f);
+				mRaycastStartPosition.x = terrainHit.feetPosition.x;
+				mRaycastStartPosition.y = terrainHit.feetPosition.y + raycastDistance;
+				mRaycastStartPosition.z = terrainHit.feetPosition.z;
 				//first get the ground
 				if (Physics.Raycast(mRaycastStartPosition, Vector3.down, out mHitGround, raycastDistance + terrainHit.groundedHeight, Globals.LayersTerrain)) {
 						terrainHit.normal = mHitGround.normal;
@@ -603,9 +617,6 @@ public partial class GameWorld : Manager
 		//used by pretty much everything - even a minor improvement in this fuction has significant benefits
 		public float TerrainHeightAtInGamePosition(ref TerrainHeightSearch terrainHit)
 		{
-				if (GameManager.Get.TestingEnvironment)
-						return 0f;
-
 				terrainHit.normal = Vector3.up;
 				terrainHit.overhangNormal = Vector3.down;
 				terrainHit.hitWater = false;
@@ -622,10 +633,12 @@ public partial class GameWorld : Manager
 				//terrainHit.feetPosition
 				//------ground
 
-				float raycastDistance = terrainHit.groundedHeight * 2f;
-				mRaycastStartPosition.Set(terrainHit.feetPosition.x, terrainHit.feetPosition.y + raycastDistance, terrainHit.feetPosition.z);
+				float raycastDistance = Mathf.Max(terrainHit.groundedHeight * 2f, 1f);
+				mRaycastStartPosition.x = terrainHit.feetPosition.x;
+				mRaycastStartPosition.y = terrainHit.feetPosition.y + raycastDistance;
+				mRaycastStartPosition.z = terrainHit.feetPosition.z;
 				//first get the ground
-				if (Physics.Raycast(mRaycastStartPosition, Vector3.down, out mHitGround, raycastDistance + terrainHit.groundedHeight, Globals.LayersTerrain)) {
+				if (Physics.Raycast(mRaycastStartPosition, Vector3.down, out mHitGround, raycastDistance + terrainHit.groundedHeight, Globals.LayersTerrain | Globals.LayerWorldItemActive)) {
 						terrainHit.normal = mHitGround.normal;
 						terrainHit.isGrounded = true;
 						terrainHit.terrainHeight = mHitGround.point.y;
@@ -644,6 +657,9 @@ public partial class GameWorld : Manager
 								case Globals.LayerNumFluidTerrain:
 										terrainHit.hitWater = true;
 										break;
+
+								case Globals.LayerNumWorldItemActive:
+										break;
 						}
 				}
 
@@ -660,8 +676,6 @@ public partial class GameWorld : Manager
 		public Color32 RegionDataAtPosition(Vector3 position)
 		{
 				WorldChunk chunk = null;
-				Color32 data = Color.black;
-				chunk = null;
 				bool foundChunk = false;
 				for (int i = 0; i < WorldChunks.Count; i++) {
 						chunk = WorldChunks[i];
@@ -674,11 +688,11 @@ public partial class GameWorld : Manager
 						Texture2D regionData = null;
 						if (chunk.ChunkDataMaps.TryGetValue("RegionData", out regionData)) {
 								//if (Mods.Get.Runtime.ChunkMap (ref regionData, chunk.Name, "RegionData")) {
-								Vector2 uv = SplatmapUVFromInGamePosition(position, chunk);
-								data = regionData.GetPixel(Mathf.FloorToInt(uv.x * regionData.width), Mathf.FloorToInt(uv.y * regionData.height));
+								mUv = SplatmapUVFromInGamePosition(position, chunk);
+								mRegionData = regionData.GetPixel(Mathf.FloorToInt(mUv.x * regionData.width), Mathf.FloorToInt(mUv.y * regionData.height));
 						}
 				}
-				return data;
+				return mRegionData;
 		}
 
 		public bool RegionByName(string regionName, out Region region)
@@ -696,8 +710,6 @@ public partial class GameWorld : Manager
 		public Color32 DistributionDataAtPosition(Vector3 position)
 		{
 				WorldChunk chunk = null;
-				Color32 data = Color.black;
-				chunk = null;
 				bool foundChunk = false;
 				for (int i = 0; i < WorldChunks.Count; i++) {
 						chunk = WorldChunks[i];
@@ -709,25 +721,28 @@ public partial class GameWorld : Manager
 				if (foundChunk) {
 						Texture2D regionData = null;
 						if (Mods.Get.Runtime.ChunkMap(ref regionData, chunk.Name, "DistributionData")) {
-								Vector2 uv = SplatmapUVFromInGamePosition(position, chunk);
-								data = regionData.GetPixel(Mathf.FloorToInt(uv.x * regionData.width), Mathf.FloorToInt(uv.y * regionData.height));
+								mUv = SplatmapUVFromInGamePosition(position, chunk);
+								mRegionData = regionData.GetPixel(Mathf.FloorToInt(mUv.x * regionData.width), Mathf.FloorToInt(mUv.y * regionData.height));
 						}
 				}
-				return data;
+				return mRegionData;
 		}
 
 		public bool RegionAtPosition(Vector3 position, out Region region)
 		{
-				Color32 regionData = RegionDataAtPosition(position);
+				mRegionData = RegionDataAtPosition(position);
 				region = null;
 				for (int i = 0; i < Regions.Count; i++) {
-						if (Regions[i].RegionID == regionData.b) {
+						if (Regions[i].RegionID == mRegionData.b) {
 								region = Regions[i];
 								break;
 						}
 				}
 				return region != null;
 		}
+
+		protected Vector2 mUv;
+		protected Color32 mRegionData;
 
 		public int FlagByName(string flagSetName, string flag)
 		{
@@ -881,6 +896,7 @@ public partial class GameWorld : Manager
 				return UnityEngine.Random.value;
 		}
 
+		[Serializable]
 		public struct TerrainHeightSearch
 		{
 				//input
@@ -908,6 +924,10 @@ public partial class GameWorld : Manager
 		//Adjascent		- chunks beyond the Immediate chunks
 		//Distant		- anything beyond that
 		//Disabled		- shut off completely
+		protected WaitForSeconds mWaitForSpawn = new WaitForSeconds(0.05f);
+		protected WaitForSeconds mWaitForChunkLoop = new WaitForSeconds(1f);
+		protected WaitForSeconds mWaitForTreeLoop = new WaitForSeconds(0.5f);
+
 		protected IEnumerator UpdateChunkModes()
 		{
 				while (!WorldLoaded) {	//wait for world to finish loading
@@ -921,7 +941,7 @@ public partial class GameWorld : Manager
 
 						while (!Player.Local.HasSpawned) {	//if we're loading a chunk manually we don't want to screw it up
 								//so wait for the chunk to load
-								yield return new WaitForSeconds(0.05f);
+								yield return mWaitForSpawn;
 						}
 
 						while (SuspendChunkLoading) {
@@ -962,7 +982,7 @@ public partial class GameWorld : Manager
 								}
 								yield return null;
 						}
-						yield return new WaitForSeconds(1.0f);
+						yield return mWaitForChunkLoop;
 				}
 		}
 
@@ -972,7 +992,7 @@ public partial class GameWorld : Manager
 						while (!GameManager.Is(FGameState.InGame)) {
 								yield return null;
 						}
-						yield return new WaitForSeconds(0.5f);
+						yield return mWaitForTreeLoop;
 						//get all the now-irrelevant colliders
 						var enumerator = ColliderAssigner.FindIrrelevantColliders(Player.Local, this).GetEnumerator();
 						while (enumerator.MoveNext()) {
@@ -1079,7 +1099,7 @@ public partial class GameWorld : Manager
 		{		//TODO now that we're not using global states in our status temp functions
 				//figure out how to implement this again...
 				mTemperatureOverride = temp;
-				mTemperatureOverrideEndTime = WorldClock.Time + WorldClock.RTSecondsToGameSeconds(rtSeconds);
+				mTemperatureOverrideEndTime = WorldClock.AdjustedRealTime + rtSeconds;
 		}
 		//returns a temperature range adjusted for above ground / below ground, structure and civilization modifiers
 		public TemperatureRange StatusTemperature(Vector3 worldPosition, TimeOfDay timeOfDay, TimeOfYear timeOfYear, bool underground, bool insideStructure, bool inCivlization)

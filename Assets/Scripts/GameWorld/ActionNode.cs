@@ -7,7 +7,8 @@ using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.Data;
 using Frontiers.World.Gameplay;
-using Frontiers.World.Locations;
+
+using Frontiers.World.BaseWIScripts;
 using Frontiers.Story;
 
 namespace Frontiers.World
@@ -32,7 +33,7 @@ namespace Frontiers.World
 								if (HasOccupant) {
 										return false;
 								}
-								if (WorldClock.Time > mReservationExpire) {
+								if (WorldClock.AdjustedRealTime > mReservationExpire) {
 										mReservant = null;
 								}
 								return mReservant != null;
@@ -91,7 +92,7 @@ namespace Frontiers.World
 
 						if (CanOccupy(newReservant)) {
 								mReservant = newReservant;
-								mReservationExpire = WorldClock.Time + WorldClock.RTSecondsToGameHours(10.0f);
+								mReservationExpire = WorldClock.AdjustedRealTime + WorldClock.RTSecondsToGameSeconds (10.0f);
 								return true;
 						}
 
@@ -573,9 +574,13 @@ namespace Frontiers.World
 						}
 				}
 
-				public bool IsOccupied {
+				public bool HasOccupant {
 						get {
-								return !string.IsNullOrEmpty(CurretOccupantName);
+								if (actionNode != null) {
+										return actionNode.HasOccupant;
+								} else {
+										return !string.IsNullOrEmpty(CurretOccupantName);
+								}
 						}
 				}
 				//public int InteriorVariant = 0;
@@ -640,51 +645,5 @@ namespace Frontiers.World
 				public string Param = string.Empty;
 				public ChangeVariableType ChangeType = ChangeVariableType.Increment;
 				public int SetValue	= 1;
-		}
-
-		public enum ActionNodeEventType
-		{
-				SendSpeechToOccupant,
-				SendMessageToOccupant,
-				ChangeMissionVariable,
-				ChangeConversationVariable,
-				SpawnFX,
-		}
-
-		public enum ActionNodeSpeech
-		{
-				None,
-				CustomCharOnly,
-				CustomAnyone,
-				SequenceCharOnly,
-				RandomCharOnly,
-				RandomAnyone,
-		}
-
-		public enum ActionNodeUsers
-		{
-				AnyOccupant,
-				SpecifiedOccupantOnly,
-				PlayerOnly,
-		}
-
-		public enum ActionNodeType
-		{
-				Generic,
-				DailyRoutine,
-				QuestNode,
-				PlayerSpawn,
-				StructureOwnerSpawn,
-		}
-
-		[Flags]
-		public enum ActionNodeBehavior
-		{
-				None = 0,
-				OnTriggerEnter = 1,
-				OnTriggerExit = 2,
-				OnOccupy = 4,
-				OnVacate = 8,
-				OnFinishSpeech = 16,
 		}
 }

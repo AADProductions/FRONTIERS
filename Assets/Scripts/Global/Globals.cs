@@ -33,6 +33,8 @@ public static class Globals
 		[DifficultySetting]
 		public static float StatusKeeperPositiveFlowMultiplier = 1f;
 		[DifficultySetting]
+		public static double StatusKeeperNeutralChangeMultiplier = 1f;
+		[DifficultySetting]
 		public static float FastTravelStrengthReducedPerMeterTraveled = 0.001f;
 		[DifficultySetting]
 		public static int ReputationChangeTiny = 1;
@@ -44,6 +46,8 @@ public static class Globals
 		public static int ReputationChangeLarge = 10;
 		[DifficultySetting]
 		public static int ReputationChangeHuge = 20;
+		[DifficultySetting]
+		public static int ReputationChangeMurderer = 80;
 		[DifficultySetting]
 		public static float MinReputation = 1;
 		[DifficultySetting]
@@ -106,6 +110,14 @@ public static class Globals
 		public static int WealthLevelWealthyBaseCurrency = 10000;
 		[DifficultySetting]
 		public static int WealthLevelAristocracyBaseCurrency = 100000;
+		[DifficultySetting]
+		public static float AveragePurseBronzeCurrency = 1000;
+		[DifficultySetting]
+		public static float AveragePurseSilverCurrency = 100;
+		[DifficultySetting]
+		public static float AveragePurseGoldCurrency = 10;
+		[DifficultySetting]
+		public static float AveragePurseLumenCurrency = 2;
 		[DifficultySetting]
 		public static float TrappingMinimumRTCheckInterval = 30f;
 		[DifficultySetting]
@@ -196,6 +208,14 @@ public static class Globals
 		public static float PathImpassibleMetersPerHour = PlayerAverageMetersPerHour * 0.35f;
 		[DifficultySetting]
 		public static float GuildLibraryBasePrice = 10000;
+		[DifficultySetting]
+		public static double FireBurnFuelRate = 5f;
+		[DifficultySetting]
+		public static float HouseOfHealingRevivalCost = 0.5f;
+		[DifficultySetting]
+		public static float HouseOfHealingHealCost = 0.05f;
+		[DifficultySetting]
+		public static int HouseOfHealingCostPerNegativeSymptom = 150;
 
 		#endregion
 
@@ -233,6 +253,18 @@ public static class Globals
 
 		#region world
 
+		[WorldSetting]
+		public static string DefaultFontName = "PrintingPress40";
+		[WorldSetting]
+		public static int MinCharacterAge = 17;
+		[WorldSetting]
+		public static int MaxCharacterAge = 27;
+		[WorldSetting]
+		public static float DefaultInGameMinutesPerRealTimeSecond = 60.0f;
+		[WorldSetting]
+		public static float MinInGameMinutesPerRealtimeSecond = 1f;
+		[WorldSetting]
+		public static float MaxInGameMinutesPerRealtimeSecond = 120f;
 		[WorldSetting]
 		public static string DefaultDifficultyName = "Normal";
 		[WorldSetting]
@@ -278,7 +310,9 @@ public static class Globals
 		[WorldSetting]
 		public static float DefaultCharacterGroundedHeight = 0.5f;
 		[WorldSetting]
-		public static float DefaultCharacterFallAcceleration = 0.25f;
+		public static float DefaultCharacterFallAcceleration = 0.05f;
+		[WorldSetting]
+		public static float MaxCharacterFallAcceleration = 5f;
 		[WorldSetting]
 		public static float PathOriginTriggerRadius = 10f;
 		[WorldSetting]
@@ -325,6 +359,8 @@ public static class Globals
 		public static int MaxSplineNodesPerPath = 250;
 		[WorldSetting]
 		public static float FastTravelInertia = 5.0f;
+		[WorldSetting]
+		public static int MaxSpawnedPilgrims = 3;
 		[WorldSetting]
 		public static int BaseValueBronze = 1;
 		[WorldSetting]
@@ -384,18 +420,32 @@ public static class Globals
 		[WorldSetting]
 		public static int CharacterFaceTextureResolution = 256;
 		[WorldSetting]
+		public static int GroundCombinedNormalResolution = 1024;
+		[WorldSetting]
+		public static int GroundTextureResolution = 1024;
+		[WorldSetting]
+		public static int GrassTextureResolution = 128;
+		[WorldSetting]
 		public static float TimeScaleTravelMax = 1.5f;
 		[WorldSetting]
 		public static float TimeScaleTravelMin = 0.005f;
+		[WorldSetting]
+		public static string HouseOfHealingInteriorConversation = "Healer-Enc-Anytime-00";
+		[WorldSetting]
+		public static string HouseOfHealingExteriorConversation = "Healer-Enc-Anytime-01";
 
 		#endregion
 
 		#region visual
 
 		[VisualSetting]
-		public static float SceneryLODRatioPrimary = 0.75f;
+		public static float TerrainWindIntensity = 0.5f;
 		[VisualSetting]
-		public static float SceneryLODRatioSecondary = 0.5f;
+		public static float MaxAmbientLightBoost = 0.25f;
+		[VisualSetting]
+		public static float SceneryLODRatioPrimary = 0.5f;
+		[VisualSetting]
+		public static float SceneryLODRatioSecondary = 0.25f;
 		[VisualSetting]
 		public static float SceneryLODRatioOff = 0.25f;
 		[VisualSetting]
@@ -435,6 +485,7 @@ public static class Globals
 
 		#endregion
 
+		public static int MaxGroupsLoadedPerUpdate = 5;
 		public static float ChunkTerrainDetailMin = 60f;
 		public static float ChunkTerrainDetailMax = 2f;
 		public static float ChunkTerrainGrassDistanceMin = 500f;
@@ -493,6 +544,7 @@ public static class Globals
 		public static string DefaultProfileName = "Default";
 		public static int MinProfileNameCharacters = 3;
 		public static int MaxProfileNameCharacters = 20;
+		public static int MaxGameNameCharacters = 30;
 		public static int MaxWorldChunksX = 32;
 		public static int MaxWorldChunksZ = 32;
 		public static int WorldChunkSize = 1500;
@@ -540,7 +592,7 @@ public static class Globals
 		public const int LayerNumDefault = 0;
 		public const int LayerNumPlayer = 8;
 		public const int LayerNumTrigger = 9;
-		public const int LayerNumMapBounds = 10;
+		public const int LayerNumBodyPart = 10;
 		public const int LayerNumGUIRaycastFallThrough = 11;
 		public const int LayerNumSolidTerrain = 12;
 		public const int LayerNumFluidTerrain = 13;
@@ -551,7 +603,7 @@ public static class Globals
 		public const int LayerNumGUIMap = 18;
 		public const int LayerNumStructureTerrain = 19;
 		public const int LayerNumWorldItemActive = 20;
-		public const int LayerNumWorldItemInactive = 21;
+		public const int LayerNumLocationBroadcaster = 21;
 		public const int LayerNumWorldItemInventory = 22;
 		public const int LayerNumPlayerTool = 23;
 		public const int LayerNumGUIRaycastIgnore = 24;
@@ -572,9 +624,32 @@ public static class Globals
 		public const string TagGroundWater = "GroundWater";
 		public const string TagGroundWood = "GroundWood";
 		public const string TagGroundTerrain = "GroundTerrain";
+		public static string TagHideCursorOnHover = "HideCursorOnHover";
+		public static string TagBrowserObject = "GuiBrowserObject";
+		public static string TagActiveObject = "GuiActiveObject";
+		public static string TagGuiInputObject = "GuiInputObject";
+
+		public static string TagColliderFluid = "ColliderFluid";
+		public static string TagBodyLeg = "BodyLeg";
+		public static string TagBodyArm = "BodyArm";
+		public static string TagBodyHead = "BodyHead";
+		public static string TagBodyTorso = "BodyTorso";
+		public static string TagBodyGeneral = "BodyGeneral";
+		public static string TagStateChild = "StateChild";
+
+		public static float ControllerDeadZoneSizeLStickLower = 0.0f;
+		public static float ControllerDeadZoneSizeLStickUpper = 1.0f;
+		public static float ControllerSensitivityLStick = 1.0f;
+		public static float ControllerDeadZoneSizeRStickLower = 0.0f;
+		public static float ControllerDeadZoneSizeRStickUpper = 1.0f;
+		public static float ControllerSensitivityRStick = 1.0f;
+		public static float ControllerDeadZoneSizeDPadLower = 0.0f;
+		public static float ControllerDeadZoneSizeDPadUpper = 1.0f;
+		public static float ControllerSensitivityDPad = 1.0f;
+
 		public const int LayerPlayer = 1 << 8;
 		public const int LayerTrigger = 1 << 9;
-		public const int LayerMapBounds = 1 << 10;
+		public const int LayerBodyPart = 1 << 10;
 		public const int LayerGUIRaycastFallThrough = 1 << 11;
 		public const int LayerSolidTerrain = 1 << 12;
 		public const int LayerFluidTerrain = 1 << 13;
@@ -585,7 +660,7 @@ public static class Globals
 		public const int LayerGUIMap = 1 << 18;
 		public const int LayerStructureTerrain = 1 << 19;
 		public const int LayerWorldItemActive = 1 << 20;
-		public const int LayerWorldItemInactive = 1 << 21;
+		public const int LayerLocationBroadcaster = 1 << 21;
 		public const int LayerWorldItemInventory = 1 << 22;
 		public const int LayerPlayerTool = 1 << 23;
 		public const int LayerGUIRaycastIgnore = 1 << 24;
@@ -595,21 +670,41 @@ public static class Globals
 		public const int LayerScenery = 1 << 30;
 		public const int LayerHidden = 1 << 31;
 		public const int LayersLightWorld = 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7
-		                                   | LayerPlayer | LayerTrigger | LayerMapBounds | LayerGUIRaycastFallThrough
+		                                   | LayerPlayer | LayerTrigger | LayerBodyPart | LayerGUIRaycastFallThrough
 		                                   | LayerSolidTerrain | LayerObstacleTerrain
 		                                   | LayerGUIMap | LayerWorldItemActive
-		                                   | LayerWorldItemInactive | /*LayerWorldItemInventory |*/ LayerPlayerTool
+		                                   | /*LayerWorldItemInventory |*/ LayerPlayerTool
 																			/*| LayerGUIRaycastIgnore | LayerGUIRaycastCustom | LayerGUIRaycast*/
 		                                   | LayerGUIHUD | LayerScenery | LayerHidden;
-		public const int LayersActive = LayerWorldItemActive | LayerSolidTerrain | LayerFluidTerrain | LayerStructureTerrain | LayerObstacleTerrain;
-		public const int LayersItemOfInterest = LayersActive | LayersPlayerAndTools;
-		public const int LayersInactiveAndHidden = LayerHidden | LayerWorldItemInactive;
+		public const int LayersActive = LayerWorldItemActive | LayerSolidTerrain | LayerFluidTerrain | LayerStructureTerrain | LayerObstacleTerrain | LayerBodyPart;
+		public const int LayersItemOfInterest = LayersActive | LayersPlayerAndTools | LayerBodyPart;
+		public const int LayersInactiveAndHidden = LayerHidden;
 		public const int LayersInterface = LayerGUIRaycast | LayerGUIRaycastCustom | LayerGUIRaycastIgnore | LayerWorldItemInventory;
 		public const int LayersPlayerAndTools = LayerPlayer | LayerPlayerTool;
 		public const int LayersTerrain = LayerSolidTerrain | LayerFluidTerrain | LayerStructureTerrain | LayerObstacleTerrain;
-		public static Dictionary <string, FieldInfo> Fields;
+		public static Dictionary <string, FieldInfo> Fields {
+				get {
+						return mFields;
+				}
+		}
+		static Dictionary <string, FieldInfo> mFields;
 		static FieldInfo mFieldInfoCheck;
 		static System.Object mConvertedValue;
+
+		public static List <string> GetDifficultySettingNames()
+		{
+				if (mDifficultySettingFieldNames.Count == 0) {
+						System.Type type = typeof(Globals);
+						FieldInfo[] fields = type.GetFields();
+						foreach (FieldInfo f in fields) {
+								if (f.IsDefined(typeof(DifficultySettingAttribute), true)) {
+										mDifficultySettingFieldNames.Add(f.Name);
+								}
+						}
+				}
+				return mDifficultySettingFieldNames;
+		}
+		static List <string> mDifficultySettingFieldNames = new List<string>();
 
 		public static void LoadDifficultySettingData(List<KeyValuePair<string, string>> globalPairs)
 		{
@@ -649,13 +744,19 @@ public static class Globals
 
 		public static List <KeyValuePair <string,string>> GetData()
 		{
+				RefreshLookup();
+
 				List <KeyValuePair <string,string>> globalPairs = new List<KeyValuePair<string, string>>();
-				System.Type type = typeof(Globals);
-				FieldInfo[] fields = type.GetFields();
-				foreach (FieldInfo field in fields) {
-						if (!field.IsLiteral) {
+				foreach (KeyValuePair<string,FieldInfo> field in Fields) {
+						if (!field.Value.IsLiteral) {
 								//don't save const values
-								globalPairs.Add(new KeyValuePair <string, string>(field.Name, field.GetValue(null).ToString()));
+								try {
+									globalPairs.Add(new KeyValuePair <string, string>(field.Value.Name, field.Value.GetValue(null).ToString()));
+								}
+								catch (Exception e) {
+										Debug.LogError("Error when attempting to get field for " + field.Value.Name);
+										e = null;
+								}
 						}
 				}
 				return globalPairs;
@@ -688,15 +789,16 @@ public static class Globals
 
 		public static void RefreshLookup()
 		{
-				if (Fields == null) {
-						Fields = new Dictionary<string, FieldInfo>();
+				if (mFields == null) {
+						mFields = new Dictionary<string, FieldInfo>();
+				} else {
+						mFields.Clear();
 				}
-				Fields.Clear();
 				System.Type type = typeof(Globals);
 				FieldInfo[] fields = type.GetFields();
 				foreach (FieldInfo f in fields) {
 						Type fieldType = f.GetType();
-						Fields.Add(f.Name.ToLower(), f);
+						mFields.Add(f.Name.ToLower(), f);
 				}
 		}
 

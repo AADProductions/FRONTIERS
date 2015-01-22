@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 using Frontiers.GUI;
 
 namespace Frontiers
@@ -75,7 +76,7 @@ namespace Frontiers
 						switch (temp) {
 								case TemperatureRange.A_DeadlyCold:
 								case TemperatureRange.B_Cold:
-										adjustedTempValue += coldProtectValue;
+										adjustedTempValue = Mathf.Clamp(adjustedTempValue + coldProtectValue, (int)TemperatureRange.A_DeadlyCold, (int)TemperatureRange.C_Warm);//we can't get warmer than warm
 										break;
 
 								case TemperatureRange.C_Warm:
@@ -84,7 +85,7 @@ namespace Frontiers
 
 								case TemperatureRange.D_Hot:
 								case TemperatureRange.E_DeadlyHot:
-										adjustedTempValue -= heatProtectValue;
+										adjustedTempValue = Mathf.Clamp(adjustedTempValue - heatProtectValue, (int)TemperatureRange.C_Warm, (int)TemperatureRange.E_DeadlyHot);//we can't get colder than warm
 										break;
 						}
 						return (TemperatureRange)adjustedTempValue;
@@ -101,7 +102,10 @@ namespace Frontiers
 
 				public int ArmorLevel(WIMaterialType type)
 				{		//use the lookup we generated earlier
-						return mArmorLevelLookup[type];
+						if (mArmorLevelLookup.ContainsKey(type)) {
+								return mArmorLevelLookup[type];
+						}
+						return 0;
 				}
 
 				#region convenience properties
@@ -261,19 +265,20 @@ namespace Frontiers
 						return false;
 				}
 
-				public override void OnGameStartFirstTime()
-				{
-						Debug.Log("Initializing game in wearables for first time");
-						State.UpperBodyContainer = Stacks.Create.StackContainer(player, WIGroups.Get.Player);
-						State.LowerBodyContainer = Stacks.Create.StackContainer(player, WIGroups.Get.Player);
-				}
-
 				public override void OnGameStart()
 				{
-						Debug.Log("Initializing game in wearables");
+						if (State.UpperBodyContainer == null || State.UpperBodyContainer.StackList.Count < Globals.MaxStacksPerContainer) {
+								State.UpperBodyContainer = Stacks.Create.StackContainer(player, WIGroups.Get.Player);
+								State.LowerBodyContainer = Stacks.Create.StackContainer(player, WIGroups.Get.Player);
+						} else {
+								for (int i = 0; i < State.UpperBodyContainer.StackList.Count; i++) {
+										State.UpperBodyContainer.StackList[i].Group = WIGroups.Get.Player;
+										State.LowerBodyContainer.StackList[i].Group = WIGroups.Get.Player;
+								}
+						}
 						GUIInventoryInterface.Get.ClothingInterface.Initialize();
 						GUIInventoryInterface.Get.ClothingInterface.RefreshClothing += RefreshClothing;
-						RefreshClothing();
+						GUIInventoryInterface.Get.ClothingInterface.Refresh();
 				}
 
 				public void RefreshClothing()
@@ -305,6 +310,7 @@ namespace Frontiers
 								mCheckStack = State.UpperBodyContainer.StackList[i];
 								if (mCheckStack.HasTopItem) {
 										mCheckItem = mCheckStack.TopItem;
+										//Debug.Log("Container has top item " + mCheckItem.FileName);
 										if (WorldItems.Get.PackPrefab(mCheckItem.PackName, mCheckItem.PrefabName, out mCheckWearableWorldItem)) {
 												if (mCheckWearableWorldItem.Is <Wearable>(out mCheckWearable)) {
 														ColdProtection += mCheckWearable.ColdProtection;
@@ -325,6 +331,7 @@ namespace Frontiers
 								mCheckStack = State.LowerBodyContainer.StackList[i];
 								if (mCheckStack.HasTopItem) {
 										mCheckItem = mCheckStack.TopItem;
+										//Debug.Log("Container has top item " + mCheckItem.FileName);
 										if (WorldItems.Get.PackPrefab(mCheckItem.PackName, mCheckItem.PrefabName, out mCheckWearableWorldItem)) {
 												if (mCheckWearableWorldItem.Is <Wearable>(out mCheckWearable)) {
 														ColdProtection += mCheckWearable.ColdProtection;

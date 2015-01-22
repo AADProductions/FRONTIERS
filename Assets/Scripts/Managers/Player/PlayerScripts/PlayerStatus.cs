@@ -1,16 +1,16 @@
 using UnityEngine;
 using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers;
-using Frontiers.World;
-using System.Linq;
 using System.Xml;
 using System.Xml.Serialization;
-using Frontiers.World.Gameplay;
+using Frontiers;
+using Frontiers.World;
 using Frontiers.Data;
-using Frontiers.World.Locations;
 using Frontiers.GUI;
+using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {
@@ -50,6 +50,12 @@ namespace Frontiers
 										statusKeeper.Initialize();
 										mStatusKeeperLookup.Add(statusKeeper.Name, statusKeeper);
 										StatusKeepers.Add(statusKeeper);
+										if (statusKeeper.Name.Contains("Reputation") || statusKeeper.Name.Contains ("Temperature")) {
+												statusKeeper.DefaultState.UseNeutralUrgency = true;
+												foreach (StatusKeeperState state in statusKeeper.AlternateStates) {
+														state.UseNeutralUrgency = true;
+												}
+										}
 								}
 						}
 						StatusKeepers.Sort();
@@ -134,7 +140,7 @@ namespace Frontiers
 
 				public override void OnLocalPlayerSpawn()
 				{
-						if (SpawnManager.Get.CurrentStartupPosition != null) {
+						if (SpawnManager.Get.UseStartupPosition) {
 								for (int i = 0; i < SpawnManager.Get.CurrentStartupPosition.StatusValues.Count; i++) {
 										StatusKeeper statusKeeper = null;
 										if (GetStatusKeeper(SpawnManager.Get.CurrentStartupPosition.StatusValues[i].StatusKeeperName, out statusKeeper)) {
@@ -144,6 +150,7 @@ namespace Frontiers
 						}
 
 						RecentActions.Clear();
+						mWaitForConditions = new WaitForSeconds((float)CheckConditionsInterval);
 
 						if (!mCheckingStatusKeepers) {
 								mCheckingStatusKeepers = true;
@@ -189,18 +196,18 @@ namespace Frontiers
 
 						if (mChildEditor != null) {
 								GUIEditor <MessageCancelDialogResult> editor = mChildEditor.GetComponent <GUIEditor <MessageCancelDialogResult>>();
-								editor.ActionCancel(WorldClock.Time);
+								editor.ActionCancel(WorldClock.AdjustedRealTime);
 								return false;
 						}
 
 						Player.Local.Position = mLastBed.BedsidePosition;
 						Player.Local.State.Transform.Position = Player.Local.Position;
 						Player.Local.RestoreControl(false);
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.SurvivalWakeUp), WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalWakeUp, WorldClock.AdjustedRealTime);
 						WorldClock.Get.SetTargetSpeed(1.0f);
 						State.IsSleeping = false;
 						State.LastSleepInterruption = cause;
-						double timeSlept = WorldClock.GameSecondsToGameHours(WorldClock.Time - State.StartSleepTime);
+						double timeSlept = WorldClock.SecondsToHours (WorldClock.AdjustedRealTime - State.StartSleepTime);
 						if (timeSlept > Globals.WellRestedHours) {
 								AddCondition("WellRested");
 						}
@@ -225,7 +232,7 @@ namespace Frontiers
 						mLastBed = bed;
 
 						//get the time we want to sleep until
-						State.SleepTarget = WorldClock.FutureTime(WorldClock.Get.HoursUntilTimeOfDay(timeOfDay), WorldClock.TimeUnit.Day);
+						State.SleepTarget = WorldClock.FutureTime(WorldClock.Get.HoursUntilTimeOfDay(timeOfDay), TimeUnit.Day);
 						//set the player's hijack points
 						player.HijackControl();
 						player.State.HijackMode = PlayerHijackMode.LookAtTarget;
@@ -240,8 +247,8 @@ namespace Frontiers
 
 						//start sleeping and send avatar action
 						State.IsSleeping = true;
-						State.StartSleepTime = WorldClock.Time;
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.SurvivalSleep), WorldClock.Time);
+						State.StartSleepTime = WorldClock.AdjustedRealTime;
+						Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurvivalSleep), WorldClock.AdjustedRealTime);
 						WorldClock.Get.SetTargetSpeed(WorldClock.gTimeScaleSleep);
 						StartCoroutine(Sleep());
 						return true;
@@ -275,7 +282,7 @@ namespace Frontiers
 
 				public IEnumerator Sleep()
 				{
-						while (State.IsSleeping && WorldClock.Time < State.SleepTarget) {
+						while (State.IsSleeping && WorldClock.AdjustedRealTime < State.SleepTarget) {
 								if (player.Surroundings.IsInDanger) {
 										TryToWakeUp("In Danger");
 										yield break;
@@ -392,7 +399,9 @@ namespace Frontiers
 
 				public bool HasCondition(string conditionName)
 				{	//TODO move this into a lookup
-						foreach (Condition condition in State.ActiveConditions) {
+						for (int i = 0; i < State.ActiveConditions.Count; i++) {
+								Condition condition = State.ActiveConditions[i];
+								//foreach (Condition condition in State.ActiveConditions) {
 								if (condition.Name == conditionName && !condition.HasExpired) {
 										return true;
 								}
@@ -426,11 +435,13 @@ namespace Frontiers
 										yield return null;//TODO check if this is wise?
 								}
 								mLastConditionCheckTime = WorldClock.AdjustedRealTime;
-								yield return new WaitForSeconds((float)CheckConditionsInterval);
+								yield return mWaitForConditions;
 						}
 						mCheckingActiveConditions = false;
 						yield break;
 				}
+
+				protected WaitForSeconds mWaitForConditions;
 				//we keep an active state list of strings in addition to our local settings
 				//this is make it easy for modders who want to add new states that affect the player
 				//status keepers use this list to determine their active state
@@ -517,71 +528,84 @@ namespace Frontiers
 								//finally, use our clothing to determine our temperature exposure
 								LatestTemperatureExposure = player.Wearables.AdjustTemperatureExposure(LatestTemperatureAdjusted);
 								//now that we've adjusted for clothing, if we were supposed to check for fire, do it now
-								if (checkForFire && LatestTemperatureExposure == TemperatureRange.E_DeadlyHot) {
+								//TEMP disabled
+								/*if (checkForFire && LatestTemperatureExposure == TemperatureRange.E_DeadlyHot) {
 										AddCondition("BurnedByFire");
-								}
+								}*/
 								//we've given the player a million chances to get their temp up / down to 'Warm'
 								//so at this point if they haven't done it they're going to suffer a penalty
-								isExposedWarm = ((int)LatestTemperatureExposure) > (int)TemperatureRange.C_Warm;
-								isExposedCold = ((int)LatestTemperatureExposure) < (int)TemperatureRange.C_Warm;
+								switch (LatestTemperatureExposure) {
+									case TemperatureRange.A_DeadlyCold:
+									case TemperatureRange.B_Cold:
+										isExposedCold = true;
+										break;
+
+									default:
+										break;
+
+									case TemperatureRange.D_Hot:
+									case TemperatureRange.E_DeadlyHot:
+										isExposedWarm = true;
+										break;
+								}
 
 								inDanger = player.Surroundings.IsInDanger;
 
-								List <string> newStateList = new List <string>();
+								mNewStateList.Clear();
 
 								if (sleeping) {
-										newStateList.Add("Sleeping");
+										mNewStateList.Add("Sleeping");
 								}
 								if (sleepingSafely) {
-										newStateList.Add("SleepingSafely");
+										mNewStateList.Add("SleepingSafely");
 								}
 								if (inSafeLocation) {
-										newStateList.Add("InSafeLocation");
+										mNewStateList.Add("InSafeLocation");
 								}
 								if (inCivilization) {
-										newStateList.Add("InCivilization");
+										mNewStateList.Add("InCivilization");
 								}
 								if (traveling) {
-										newStateList.Add("Traveling");
+										mNewStateList.Add("Traveling");
 								}
-								newStateList.Add("Default");//always add default state (in the wild)
+								mNewStateList.Add("Default");//always add default state (in the wild)
 								if (inDanger) {
-										newStateList.Add("InDanger");
+										mNewStateList.Add("InDanger");
 								}
 								if (insideStructure) {
-										newStateList.Add("InsideStructure");
+										mNewStateList.Add("InsideStructure");
 								} else {
 										if (isUnderground) {
-												newStateList.Add("Underground");
+												mNewStateList.Add("Underground");
 										} else {
-												newStateList.Add("Outside");
+												mNewStateList.Add("Outside");
 										}
 								}
 								if (isExposedCold) {
-										newStateList.Add("ExposedCold");
+										mNewStateList.Add("ExposedCold");
 								}
 								if (isExposedWarm) {
-										newStateList.Add("ExposedWarm");
+										mNewStateList.Add("ExposedWarm");
 								}
 								if (isWarmedByFire) {
-										newStateList.Add("WarmedByFire");
+										mNewStateList.Add("WarmedByFire");
 								}
 
 								//check whether we were in civilization last frame
 								if (mInCivilizationLastFrame && !inCivilization) {
 										//if we were in civ last frame and aren't now
-										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalCivilizationLeave, WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalCivilizationLeave, WorldClock.AdjustedRealTime);
 								} else if (!mInCivilizationLastFrame && inCivilization) {
 										//if we weren't in civ last frame and are now
-										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalCivilizationEnter, WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalCivilizationEnter, WorldClock.AdjustedRealTime);
 								}
 								mInCivilizationLastFrame = inCivilization;
 
 								//automatically apply if we have more states than before
-								bool applyState = (newStateList.Count != ActiveStateList.Count);
+								bool applyState = (mNewStateList.Count != ActiveStateList.Count);
 								if (!applyState) {	//if we have the same number, verify that they're actually the same
-										for (int i = 0; i < newStateList.Count; i++) {	//if there's a different state in there
-												if (newStateList[i] != ActiveStateList[i]) {	//apply the stae
+										for (int i = 0; i < mNewStateList.Count; i++) {	//if there's a different state in there
+												if (mNewStateList[i] != ActiveStateList[i]) {	//apply the stae
 														applyState = true;
 														break;
 												}
@@ -589,20 +613,24 @@ namespace Frontiers
 								}
 								//wait a tick
 								yield return null;
-								if (applyState) {	////Debug.Log ("Applying state");
+								if (applyState) {
 										ActiveStateList.Clear();
-										ActiveStateList.AddRange(newStateList);
+										ActiveStateList.AddRange(mNewStateList);
 										ActiveStateList.AddRange(CustomStateList);
-										foreach (StatusKeeper statusKeeper in StatusKeepers) {	//they'll apply the states in the order provided
-												statusKeeper.SetState(ActiveStateList);
+										for (int i = 0; i < StatusKeepers.Count; i++) {//they'll apply the states in the order provided
+												StatusKeepers [i].SetState(ActiveStateList);
 										}
 										CheckForFlows();
 								}
-								yield return new WaitForSeconds(0.05f);
+								yield return mWaitForActiveStateList;
 						}
 						mCheckingActiveStateList = false;
 						yield break;
 				}
+
+				protected WaitForSeconds mWaitForActiveStateList = new WaitForSeconds(0.05f);
+
+				protected List <string> mNewStateList = new List<string>();
 
 				protected IEnumerator CheckEnvironment()
 				{
@@ -624,16 +652,18 @@ namespace Frontiers
 										AddCondition("Wet");
 								}
 
-								yield return new WaitForSeconds(1.0f);
+								yield return mWaitForCheckEnvironment;
 						}
 						yield break;
 						mCheckingEnvironment = false;
 				}
 
+				protected WaitForSeconds mWaitForCheckEnvironment = new WaitForSeconds (1f);
+
 				protected IEnumerator CheckStatusKeepers()
 				{
 						while (mCheckingStatusKeepers) {
-								while (!GameManager.Is(FGameState.InGame) || GameManager.Get.JustLookingMode) {
+								while (GameManager.Get.JustLookingMode) {
 										yield return null;
 								}
 
@@ -647,11 +677,13 @@ namespace Frontiers
 										StatusKeeper statusKeeper = StatusKeepers[i];
 										statusKeeper.UpdateState(deltaTime);
 										statusKeeper.ApplyConditions(deltaTime, RecentActions, State.ActiveConditions, ActiveStateList);
-										statusKeeper.ApplyStatusFlows(deltaTime);
+										if (Globals.StatusKeeperNegativeFlowMultiplier > 0 || Globals.StatusKeeperPositiveFlowMultiplier > 0) {
+												statusKeeper.ApplyStatusFlows(deltaTime);
+										}
 										//are we dead?
-										if (statusKeeper.Name == "Health") {
+										if (statusKeeper.Name.Equals ("Health")) {
 												if (statusKeeper.NormalizedValue <= 0f) {
-														//we're dead!
+														//we're dead! try to die here
 														player.Die(string.Empty);
 												}
 										}
@@ -666,36 +698,39 @@ namespace Frontiers
 
 				public void CheckForFlows()
 				{
-						Dictionary <string, List <StatusFlow>> gatheredFlows = new Dictionary<string, List<StatusFlow>>();
-						foreach (StatusKeeper statusKeeper in StatusKeepers) {
+						mGatheredFlows.Clear();
+						for (int i = 0; i < StatusKeepers.Count; i++) {
+								StatusKeeper statusKeeper = StatusKeepers [i];
 								StatusFlow underflow = null;
 								StatusFlow overflow = null;
 								if (statusKeeper.HasOverflowToSend(out overflow)) {
 										List <StatusFlow> flows = null;
-										if (!gatheredFlows.TryGetValue(overflow.TargetName, out flows)) {
+										if (!mGatheredFlows.TryGetValue(overflow.TargetName, out flows)) {
 												flows = new List <StatusFlow>();
-												gatheredFlows.Add(overflow.TargetName, flows);
+												mGatheredFlows.Add(overflow.TargetName, flows);
 										}
 										flows.Add(overflow);
 								}
 								if (statusKeeper.HasUnderflowToSend(out underflow)) {
 										List <StatusFlow> flows = null;
-										if (!gatheredFlows.TryGetValue(underflow.TargetName, out flows)) {
+										if (!mGatheredFlows.TryGetValue(underflow.TargetName, out flows)) {
 												flows = new List <StatusFlow>();
-												gatheredFlows.Add(underflow.TargetName, flows);
+												mGatheredFlows.Add(underflow.TargetName, flows);
 										}
 										flows.Add(underflow);
 								}
 						}
 						//now that we've gathered all the flows
 						//send them to the status keepers
-						foreach (StatusKeeper statusKeeper in StatusKeepers) {
+						for (int i = 0; i < StatusKeepers.Count; i++) {
+								StatusKeeper statusKeeper = StatusKeepers [i];
 								List <StatusFlow> flows = null;
-								if (gatheredFlows.TryGetValue(statusKeeper.Name, out flows)) {
+								if (mGatheredFlows.TryGetValue(statusKeeper.Name, out flows)) {
 										statusKeeper.ReceiveFlows(flows);
 								}
 						}
 				}
+				protected Dictionary <string, List <StatusFlow>> mGatheredFlows = new Dictionary<string, List<StatusFlow>>();
 
 				public void OnExposureDecrease()
 				{

@@ -1,9 +1,10 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
-using System.Collections.Generic;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {
@@ -71,7 +72,7 @@ namespace Frontiers
 						}
 
 						if (AttentionObjects.Contains(newAttentionObject)) {	//if we're already paying attention to this object
-								LosingAttentionObjects.Add(newAttentionObject, WorldClock.Time);
+								LosingAttentionObjects.Add(newAttentionObject, WorldClock.AdjustedRealTime);
 						} else {
 								//otherwise tell it we're paying attention again
 								//if we're doubling up on attention that's ok, scripts know to deal with it
@@ -131,10 +132,10 @@ namespace Frontiers
 																Transform follower = motile.GoalObject.transform;
 																if (!mTargetHolder.HasFollower(follower)) {	//and it's not following us
 																		//then it's losing our attention
-																		LosingAttentionObjects.Add(attentionObject, WorldClock.Time);
+																		LosingAttentionObjects.Add(attentionObject, WorldClock.AdjustedRealTime);
 																}
 														} else {	//if it's not motile then just say it's in danger
-																LosingAttentionObjects.Add(attentionObject, WorldClock.Time);
+																LosingAttentionObjects.Add(attentionObject, WorldClock.AdjustedRealTime);
 														}
 												}
 										}
@@ -163,7 +164,7 @@ namespace Frontiers
 												if (isFollowing) {	//wuhoo, we keep attention and no longer need to be checked
 														keepAttentionObjects.Add(losingAttentionObject.Key);
 												} else {
-														hasTime = (losingAttentionObject.Value + WorldClock.RTSecondsToGameSeconds(LoseAttentionRT) > WorldClock.Time);
+														hasTime = (losingAttentionObject.Value + LoseAttentionRT > WorldClock.AdjustedRealTime);
 														if (!hasTime) {	//if we don't have any time left, we lose focus
 																//time is a last resort so if we DO have time we don't keep focus
 																loseAttentionObjects.Add(losingAttentionObject.Key);

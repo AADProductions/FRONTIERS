@@ -4,13 +4,15 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.Data;
 using Frontiers.World;
-using Frontiers.World.Locations;
+using Frontiers.World.BaseWIScripts;
 using Frontiers.GUI;
 
 namespace Frontiers.World
 {
 		public class HouseOfHealing : WIScript
 		{
+				public string ConversationName;
+				public Character Healer;
 				public HouseOfHealingState State = new HouseOfHealingState();
 
 				public override void OnInitialized()
@@ -19,6 +21,10 @@ namespace Frontiers.World
 						structure.State.IsRespawnStructure = true;
 						structure.State.GenericEntrancesLockedTimes = TimeOfDay.a_None;
 						structure.State.OwnerKnockAvailability = TimeOfDay.a_None;
+						//make sure the structure can spawn a healer
+						structure.State.OwnerSpawn.TemplateName = "Healer";
+						structure.State.OwnerSpawn.CustomConversation = Globals.HouseOfHealingInteriorConversation;
+						structure.State.OwnerSpawn.Interior = true;
 				}
 
 				public Vector3 WaitingToSpawnPosition {
@@ -27,9 +33,9 @@ namespace Frontiers.World
 						}
 				}
 
-				public override void PopulateOptionsList(List<GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(List<WIListOption> options, List <string> message)
 				{
-						GUIListOption listOption = new GUIListOption("HouseOfHealing", "Request Rescue Services", "Rescue");
+						WIListOption listOption = new WIListOption("HouseOfHealing", "Request Rescue Services", "Rescue");
 						if (State.ChosenByPlayer) {
 								listOption.OptionText = "Cancel Rescue Services";
 								listOption.NegateIcon = true;
@@ -39,7 +45,7 @@ namespace Frontiers.World
 
 				public void OnPlayerUseWorldItemSecondary(object result)
 				{
-						OptionsListDialogResult dialogResult = result as OptionsListDialogResult;
+						WIListResult dialogResult = result as WIListResult;
 						switch (dialogResult.SecondaryResult) {
 								case "Rescue":
 										if (State.ChosenByPlayer) {
@@ -68,7 +74,7 @@ namespace Frontiers.World
 						//find the first bed
 						List <WorldItem> bedWorldItems = structure.StructureGroup.GetChildrenOfType(new List<string>() { "Bed" });
 						while (bedWorldItems.Count == 0) {
-								yield return new WaitForSeconds(0.1f);
+								yield return WorldClock.WaitForSeconds(0.1);
 								bedWorldItems = structure.StructureGroup.GetChildrenOfType(new List<string>() { "Bed" });
 						}
 						WorldItem bedWorldItem = bedWorldItems[UnityEngine.Random.Range(0, bedWorldItems.Count)];
@@ -77,6 +83,47 @@ namespace Frontiers.World
 						bed.TryToSleep(WorldClock.Get.TimeOfDayAfter(WorldClock.TimeOfDayCurrent));
 						yield break;
 				}
+
+				public static int CalculateHealDonation()
+				{
+						int cost = (int)(Player.Local.Inventory.InventoryBank.BaseCurrencyValue * Globals.HouseOfHealingHealCost);
+						foreach (Condition condition in Player.Local.Status.State.ActiveConditions) {
+								foreach (Symptom symptom in condition.Symptoms) {
+										if (symptom.SeekType == StatusSeekType.Negative) {
+												cost += Globals.HouseOfHealingCostPerNegativeSymptom;
+										}
+								}
+						}
+						return cost;
+				}
+
+				public static int CalculateRevivalDonation() {
+						return (int)(Player.Local.Inventory.InventoryBank.BaseCurrencyValue * Globals.HouseOfHealingRevivalCost);
+				}
+
+				public static void HealAll(bool canAfford)
+				{
+						if (canAfford) {
+								Player.Local.Inventory.InventoryBank.TryToRemove(CalculateHealDonation());
+						} else {
+								//reputation will automatically be clamped to min/max rep loss
+								Profile.Get.CurrentGame.Character.Rep.LoseGlobalReputation(CalculateHealDonation());
+						}
+
+						foreach (Condition condition in Player.Local.Status.State.ActiveConditions) {
+								foreach (Symptom symptom in condition.Symptoms) {
+										if (symptom.SeekType == StatusSeekType.Negative) {
+												//anything with a negative symptom is treatd as bad
+												condition.Cancel();
+												break;
+										}
+								}
+						}
+
+						Player.Local.Status.RestoreStatus(PlayerStatusRestore.F_Full, "Health");
+						Player.Local.Status.RestoreStatus(PlayerStatusRestore.F_Full, "Strength");
+				}
+
 				#if UNITY_EDITOR
 				public override void OnEditorLoad()
 				{

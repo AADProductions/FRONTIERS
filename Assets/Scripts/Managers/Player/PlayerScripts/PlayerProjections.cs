@@ -2,9 +2,9 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.World;
-using Frontiers.World.Locations;
 using Frontiers.Data;
+using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {

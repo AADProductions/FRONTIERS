@@ -391,7 +391,10 @@ namespace Frontiers
 														Unloaders.RemoveAt(i);
 												} else if (unloader.LoadState == WIGroupLoadState.Unloaded) {
 														UnloaderMappings.Remove(unloader.RootGroup);
-														yield return StartCoroutine(DestroyGroup(unloader.RootGroup));
+														var destroyGroup = DestroyGroup(unloader.RootGroup);
+														while (destroyGroup.MoveNext()) {
+																yield return destroyGroup.Current;
+														}
 														unloader.Clear();
 														Unloaders.RemoveAt(i);
 														break;
@@ -411,7 +414,10 @@ namespace Frontiers
 												while (!GameManager.Is(FGameState.InGame | FGameState.GameLoading | FGameState.GameStarting)) {
 														yield return null;
 												}
-												yield return StartCoroutine(DestroyGroup(mChildGroupsToDestroy[i]));
+												var destroyGroup = DestroyGroup(mChildGroupsToDestroy[i]);
+												while (destroyGroup.MoveNext()) {
+														yield return destroyGroup.Current;
+												}
 										}
 										mChildGroupsToDestroy.Clear();
 								}
@@ -422,7 +428,10 @@ namespace Frontiers
 										while (!GameManager.Is(FGameState.InGame | FGameState.GameLoading | FGameState.GameStarting)) {
 												yield return null;
 										}
-										yield return StartCoroutine(Unloaders[i].CheckGroupLoadStates());
+										var checkGroupLoadStates = Unloaders[i].CheckGroupLoadStates();
+										while (checkGroupLoadStates.MoveNext()) {
+												yield return checkGroupLoadStates.Current;
+										}
 								}
 								//don't bother to check for unloaded groups yet
 								//we'll get them on the next cycle
@@ -764,7 +773,7 @@ namespace Frontiers
 										yield break;
 								}
 						}
-
+						Debug.Log("Group path " + groupPath + ", " + childItemFileName);
 						//if we don't find the group, create the superloader
 						GameObject newSuperLoader = Get.gameObject.CreateChild("WorldItemSuperLoader: " + childItemFileName).gameObject;
 						WorldItemSuperLoader superLoader = newSuperLoader.AddComponent <WorldItemSuperLoader>();

@@ -10,15 +10,4 @@ namespace Frontiers.World
 				[BitMaskAttribute(typeof(StructureDestroyedBehavior))]
 				public StructureDestroyedBehavior Behavior = StructureDestroyedBehavior.Destroy;
 		}
-
-		[Flags]
-		public enum StructureDestroyedBehavior
-		{
-				None = 0,
-				Ignite = 1,
-				Destroy = 2,
-				Unfreeze = 4,
-				Freeze = 8,
-				IgniteAndUnfreeze = 16,
-		}
 }

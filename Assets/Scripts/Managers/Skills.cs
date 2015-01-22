@@ -3,13 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World.Gameplay;
 using Frontiers.World;
-
 using System;
 
 namespace Frontiers
 {
 		public class Skills : Manager
-		{		//the skills manager makes it easier to look up skills by name etc.
+		{
+				//the skills manager makes it easier to look up skills by name etc.
 				//it also does the work of associating worlditems with skills
 				//and provides some convenience functions like LearnSkill
 				public static Skills Get;
@@ -122,6 +122,14 @@ namespace Frontiers
 						mSkillsLookup.Clear();
 						mSkillsLookupByWIScript.Clear();
 						mSkillsLookupByWorldItem.Clear();
+				}
+
+				public override void OnGameSave()
+				{
+						for (int i = 0; i < SkillList.Count; i++) {
+								SkillList[i].Save();
+						}
+						mGameSaved = true;
 				}
 
 				public override void OnGameStart()
@@ -500,7 +508,7 @@ namespace Frontiers
 				public IEnumerator UpdateSkillsInUse()
 				{
 						while (GameManager.State != FGameState.Quitting) {
-								yield return new WaitForSeconds(0.2f);
+								yield return mWaitForUpdateSkillsInUse;
 								for (int i = SkillsInUse.Count - 1; i >= 0; i--) {
 										if (SkillsInUse[i] == null || (!SkillsInUse[i].IsInUse && !SkillsInUse[i].Usage.PassiveUsage)) {
 												SkillsInUse.RemoveAt(i);
@@ -515,6 +523,8 @@ namespace Frontiers
 								}
 						}
 				}
+
+				protected WaitForSeconds mWaitForUpdateSkillsInUse = new WaitForSeconds(0.2f);
 
 				public IEnumerator CheckCredentials()
 				{

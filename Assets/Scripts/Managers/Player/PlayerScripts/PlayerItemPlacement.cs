@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
-using Frontiers.World.Locations;
+
 using Frontiers.GUI;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {
@@ -117,7 +118,7 @@ namespace Frontiers
 						GUIInventoryInterface.Get.Subscribe(InterfaceActionType.SelectionNext, new ActionListener(SelectionNext));
 						GUIInventoryInterface.Get.Subscribe(InterfaceActionType.SelectionPrev, new ActionListener(SelectionPrev));
 						GUIInventoryInterface.Get.Subscribe(InterfaceActionType.ToggleInterface, new ActionListener(ToggleInterface));
-						Player.Get.AvatarActions.Subscribe(new PlayerAvatarAction(AvatarAction.ItemAQIChange), new ActionListener(ItemAQIChange));
+						Player.Get.AvatarActions.Subscribe((AvatarAction.ItemAQIChange), new ActionListener(ItemAQIChange));
 
 						enabled = true;
 				}
@@ -193,7 +194,9 @@ namespace Frontiers
 																Physics.IgnoreCollision(PlacementDopplegangerContainer, Player.Local.Tool.ToolColliders[i]);
 														}
 												}
-										} else if (IsCarryingSomething) {
+										}
+
+										if (IsCarryingSomething) {
 												for (int i = 0; i < CarryObject.Colliders.Count; i++) {
 														if (CarryObject.Colliders[i].enabled) {
 																Physics.IgnoreCollision(PlacementDopplegangerContainer, CarryObject.Colliders[i]);
@@ -798,6 +801,7 @@ namespace Frontiers
 						ItemToPlace = item;
 						GUIManager.PostInfo("Carrying " + item.DisplayName);
 						CarryCoolDown = WorldClock.RealTime + CooldownInterval;
+						PlacementModeEnabled = true;
 						return true;
 				}
 

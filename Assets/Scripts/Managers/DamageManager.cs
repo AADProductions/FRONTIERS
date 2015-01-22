@@ -82,8 +82,8 @@ namespace Frontiers
 												damage.DamageSent *= Globals.DamageMaterialPenaltyMultiplier;
 										}
 								}
-								damage.HitTarget = damageHandler.TakeDamage(damage.SenderMaterial, damage.Point, damage.DamageSent, damage.Force, damage.SenderName, out damage.DamageDealt, out damage.TargetIsDead);
 								damageHandler.LastDamageSource = damage.Source;//this has a good chance of being null
+								damage.HitTarget = damageHandler.TakeDamage(damage.SenderMaterial, damage.Point, damage.DamageSent, damage.Force, damage.SenderName, out damage.DamageDealt, out damage.TargetIsDead);
 
 								if (damage.HitTarget) {
 										SpawnDamageFX(damage.Point, receiverMaterial, damage.DamageDealt);

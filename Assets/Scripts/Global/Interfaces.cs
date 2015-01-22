@@ -5,201 +5,492 @@ using System.Collections.Generic;
 
 namespace Frontiers
 {
-	namespace World
-	{
-		public interface IDamageable : IKillable
+		namespace World
 		{
-			float NormalizedDamage	{ get; }
+				public interface IMeleeWeapon
+				{
+						float ImpactTime { get; }
 
-			bool TakeDamage (WIMaterialType materialType, Vector3 damagePoint, float attemptedDamage, Vector3 attemptedForce, string sourceName, out float actualDamage, out bool isDead);
+						float UseSpeed { get; }
 
-			WIMaterialType BaseMaterialType	{ get; }
+						float SwingDelay { get; }
 
-			WIMaterialType ArmorMaterialTypes	{ get; }
+						float WindupDelay { get; }
 
-			IItemOfInterest LastDamageSource	{ get; set; }
+						float SwingRate { get; }
 
-			int ArmorLevel (WIMaterialType materialType);
+						float SwingDuration { get; }
+
+						float SwingImpactForce { get; }
+
+						float StrengthDrain { get; }
+
+						float RecoilIntensity { get; }
+
+						bool RandomSwingDirection { get; }
+
+						string AttackState { get; }
+				}
+
+				public interface IEquippableAction
+				{
+						bool IsCycling { get; }
+
+						bool CanCycle { get; }
+
+						bool IsActive { get; }
+				}
+
+				public interface IStackOwner //TODO have IStackOwner implement IItemOfInterest
+				{
+						WorldItem worlditem { get; }
+
+						bool IsWorldItem { get; }
+
+						string DisplayName { get; }
+
+						string StackName { get; }
+
+						string FileName { get; }
+
+						string QuestName { get; }
+
+						bool UseRemoveItemSkill(HashSet <string> removeItemSkillNames, ref IStackOwner useTarget);
+
+						List <string> RemoveItemSkills { get; }
+
+						WISize Size { get; }
+
+						void Refresh();
+				}
+
+				public interface ITrap
+				{
+						double TimeLastChecked { get; set; }
+
+						double TimeSet { get; }
+
+						float SkillOnSet { get; }
+
+						WorldItem Owner { get; }
+
+						bool IsFinished { get; }
+
+						string TrappingSkillName { get; }
+
+						TrapMode Mode { get; set; }
+
+						bool SkillUpdating { get; set; }
+
+						List <string> CanCatch { get; }
+
+						List <string> Exceptions { get; }
+
+						List <ICreatureDen> IntersectingDens { get; }
+				}
+
+				public interface ICreatureDen : ITerritoryBase
+				{
+						IItemOfInterest IOI { get; }
+
+						bool IsFinished { get; }
+
+						string NameOfCreature { get; }
+
+						void AddCreature(IWIBase creature);
+
+						void SpawnCreatureCorpse(Vector3 position, string causeOfDeath, float timeSinceDeath);
+
+						bool BelongsToPack(WorldItem worlditem);
+
+						void CallForHelp(WorldItem creatureInNeed, IItemOfInterest sourceOfTrouble);
+
+						GameObject gameObject { get; }
+				}
+
+				public interface ITerritoryBase
+				{
+						float Radius { get; }
+
+						float InnerRadius { get; }
+
+						Vector3 Position { get; }
+
+						Transform transform { get; }
+				}
+
+				public interface IBank
+				{
+						Action RefreshAction { get; set; }
+
+						void AddBaseCurrencyOfType(float numBaseCurrency, WICurrencyType type);
+
+						void AddBaseCurrencyOfType(int numBaseCurrency, WICurrencyType type);
+
+						void Add(int numCurrency, WICurrencyType type);
+
+						bool TryToRemove(int numToRemove, WICurrencyType type, bool makeChange);
+
+						bool TryToRemove(int numBaseCurrency);
+
+						void Absorb(IBank otherBank);
+
+						void Clear();
+
+						int BaseCurrencyValue { get; }
+
+						int Bronze { get; set; }
+
+						int Silver { get; set; }
+
+						int Gold { get; set; }
+
+						int Lumen { get; set; }
+
+						int Warlock { get; set; }
+				}
+
+				public interface IHostile
+				{
+						IItemOfInterest hostile { get; }
+
+						string DisplayName { get; }
+
+						IItemOfInterest PrimaryTarget { get; }
+
+						bool HasPrimaryTarget { get; }
+
+						bool CanSeePrimaryTarget { get; }
+
+						HostileMode Mode { get; }
+
+						void CoolOff ( );
+				}
+
+				public interface IVisible : IItemOfInterest
+				{
+						bool IsVisible { get; }
+
+						float AwarenessDistanceMultiplier { get; }
+
+						float FieldOfViewMultiplier { get; }
+
+						void LookerFailToSee();
+				}
+
+				public interface IListener
+				{
+						void HearSound(IAudible source, MasterAudio.SoundType type, string sound);
+				}
+
+				public interface IAwarenessBubbleUser
+				{
+						Transform transform { get; }
+				}
+
+				public interface IItemOfInterest
+				{
+						ItemOfInterestType IOIType { get; }
+
+						Vector3 Position { get; }
+
+						bool Has(string scriptName);
+
+						bool HasAtLeastOne(List <string> scriptNames);
+
+						WorldItem worlditem { get; }
+
+						PlayerBase player { get; }
+
+						ActionNode node { get; }
+
+						WorldLight worldlight { get; }
+
+						Fire fire { get; }
+
+						GameObject gameObject { get; }
+
+						bool Destroyed { get; }
+
+						bool HasPlayerFocus { get; set; }
+				}
+
+				public interface IAudible : IItemOfInterest, IAwarenessBubbleUser
+				{
+						bool IsAudible { get; }
+
+						float AudibleRange { get; }
+
+						float AudibleVolume { get; }
+
+						MasterAudio.SoundType LastSoundType { get; set; }
+
+						string LastSoundName { get; set; }
+
+						void ListenerFailToHear();
+				}
+
+				public interface IDamageable : IKillable
+				{
+						float NormalizedDamage	{ get; }
+
+						bool TakeDamage(WIMaterialType materialType, Vector3 damagePoint, float attemptedDamage, Vector3 attemptedForce, string sourceName, out float actualDamage, out bool isDead);
+
+						WIMaterialType BaseMaterialType	{ get; }
+
+						WIMaterialType ArmorMaterialTypes	{ get; }
+
+						IItemOfInterest LastDamageSource	{ get; set; }
+
+						int ArmorLevel(WIMaterialType materialType);
+				}
+
+
+				public interface IBodyOwner
+				{
+						Vector3 Position { get; set; }
+
+						Quaternion Rotation { get; }
+
+						WorldBody Body { get; set; }
+
+						bool Initialized { get; }
+
+						bool IsImmobilized { get; }
+
+						bool IsGrounded { get; }
+
+						bool IsRagdoll { get; }
+
+						bool IsDestroyed { get; }
+
+						double CurrentMovementSpeed { get; set; }
+
+						double CurrentRotationSpeed { get; set; }
+
+						int CurrentIdleAnimation { get; set; }
+				}
+
+				public interface IPhotosensitive
+				{
+						float Radius { get; }
+
+						Vector3 Position { get; }
+
+						float LightExposure { get; set; }
+
+						float HeatExposure { get; set; }
+
+						Action OnExposureIncrease { get; set; }
+
+						Action OnExposureDecrease { get; set; }
+
+						Action OnHeatIncrease { get; set; }
+
+						Action OnHeatDecrease { get; set; }
+
+						List <WorldLight> LightSources { get; set; }
+
+						List <Fire> FireSources { get; set; }
+				}
+
+				public interface IUnloadable
+				{
+						bool PrepareToUnload();
+
+						bool ReadyToUnload { get; }
+
+						void BeginUnload();
+
+						void CancelUnload();
+
+						bool FinishedUnloading { get; }
+				}
+
+				public interface IUnloadableParent
+				{
+						void GetChildItems(List <IUnloadableChild> unloadableChildItems);
+				}
+
+				public interface ILoadable
+				{
+						bool PrepareToLoad();
+
+						bool ReadyToLoad { get; }
+
+						void BeginLoad();
+
+						void CancelLoad();
+
+						bool FinishedLoading { get; }
+				}
+
+				public interface IUnloadableChild
+				{
+						int Depth { get; }
+
+						bool Terminal { get; }
+
+						bool HasUnloadingParent { get; }
+
+						IUnloadableChild ShallowestUnloadingParent { get; }
+				}
+
+				public interface IWIBase : IStackOwner
+				{
+						string PackName { get; }
+
+						string PrefabName { get; }
+
+						string Subcategory { get; }
+
+						bool HasStates { get; }
+
+						string State { get; set; }
+
+						bool IsQuestItem { get; }
+
+						float BaseCurrencyValue { get; }
+
+						WICurrencyType CurrencyType { get; }
+
+						bool CanEnterInventory { get; }
+
+						bool CanBeCarried { get; }
+
+						bool UnloadWhenStacked { get; }
+
+						bool IsStackContainer { get; }
+
+						WIStackContainer StackContainer { get; }
+
+						WIStackMode StackMode { get; }
+
+						int NumItems { get; }
+
+						WIMode Mode { get; }
+
+						Action OnRemoveFromStack { get; set; }
+
+						Action OnRemoveFromGroup { get; set; }
+
+						SVector3 ChunkPosition { get; set; }
+
+						bool Is(string scriptName);
+
+						bool Is(WIMode mode);
+
+						bool Is<T>() where T : WIScript;
+
+						bool Has<T>() where T : WIScript;
+
+						bool HasAtLeastOne(List <string> scriptNames);
+
+						void Add(string scriptName);
+
+						bool GetStateOf<T>(out object stateObject) where T : WIScript;
+
+						bool SetStateOf<T>(object stateData) where T : WIScript;
+
+						void RemoveFromGame();
+
+						void Clear();
+
+						WIGroup Group { get; set; }
+
+						StackItem GetStackItem(WIMode stackItemMode);
+				}
+		}
+		public interface IProgressDialogObject
+		{
+				float ProgressValue { get; }
+
+				string ProgressMessage { get; }
+
+				string ProgressObjectName { get; }
+
+				string ProgressIconName { get; }
+
+				bool ProgressFinished { get; }
+
+				bool ProgressCanceled { get; set; }
 		}
 
-		public interface IPhotosensitive
+		public interface ILayerMask
 		{
-			float Radius { get; }
+				float GetValue(Vector3 samplePoint, Vector3 sampleNormal);
 
-			Vector3 Position { get; }
-
-			float LightExposure { get; set; }
-
-			float HeatExposure { get; set; }
-
-			Action OnExposureIncrease { get; set; }
-
-			Action OnExposureDecrease { get; set; }
-
-			Action OnHeatIncrease { get; set; }
-
-			Action OnHeatDecrease { get; set; }
-
-			List <WorldLight> LightSources { get; set; }
-
-			List <Fire> FireSources { get; set; }
+				ILayerMask AddChildLayer(ILayerMask newChildLayer);
 		}
 
-		public interface IWIBase : IStackOwner
+		public interface IGUIChildEditor
 		{
-			string PackName { get; }
+				GameObject NGUIObject { get; set; }
 
-			string PrefabName { get; }
+				GameObject NGUIParentObject	{ get; set; }
 
-			string Subcategory { get; }
+				Camera NGUICamera { get; }
 
-			bool HasStates { get; }
-
-			string State { get; set; }
-
-			bool IsQuestItem { get; }
-
-			float BaseCurrencyValue { get; }
-
-			WICurrencyType CurrencyType { get; }
-
-			bool CanEnterInventory { get; }
-
-			bool CanBeCarried { get; }
-
-			bool UnloadWhenStacked { get; }
-
-			bool IsStackContainer { get; }
-
-			WIStackContainer StackContainer { get; }
-			 
-			WIStackMode StackMode { get; }
-
-			int NumItems { get; }
-
-			WIMode Mode { get; }
-
-			Action OnRemoveFromStack { get; set; }
-
-			Action OnRemoveFromGroup { get; set; }
-
-			SVector3 ChunkPosition { get; set; }
-
-			bool Is (string scriptName);
-
-			bool Is (WIMode mode);
-
-			bool Is<T> () where T : WIScript;
-
-			bool Has<T> () where T : WIScript;
-
-			bool HasAtLeastOne (List <string> scriptNames);
-
-			void Add (string scriptName);
-
-			bool GetStateOf<T> (out object stateObject) where T : WIScript;
-
-			bool SetStateOf<T> (object stateData) where T : WIScript;
-
-			void RemoveFromGame ();
-
-			void Clear ();
-
-			WIGroup Group { get; set; }
-
-			StackItem GetStackItem (WIMode stackItemMode);
+				GameObject gameObject { get; }
 		}
-	}
-	public interface IProgressDialogObject
-	{
-		float ProgressValue { get; }
 
-		string ProgressMessage { get; }
+		public interface IGUIChildEditor<R> : IGUIChildEditor
+		{
+				void ReceiveFromParentEditor(R editObject, ChildEditorCallback<R> callBack);
 
-		string ProgressObjectName { get; }
+				void Finish();
+		}
 
-		string ProgressIconName { get; }
+		public interface IGUIParentEditor
+		{
+				GameObject NGUIObject { get; set; }
 
-		bool ProgressFinished { get; }
+				GameObject gameObject { get; }
+		}
 
-		bool ProgressCanceled { get; set; }
-	}
+		public interface IGUIParentEditor<R> : IGUIParentEditor
+		{
+				void ReceiveFromChildEditor(R editObject, IGUIChildEditor<R> childEditor);
+		}
 
-	public interface ILayerMask
-	{
-		float GetValue (Vector3 samplePoint, Vector3 sampleNormal);
+		public interface IKillable
+		{
+				bool IsDead { get; }
+		}
 
-		ILayerMask AddChildLayer (ILayerMask newChildLayer);
-	}
+		public interface IThermal
+		{
+				float Insulation { get; }
 
-	public interface IGUIChildEditor
-	{
-		GameObject NGUIObject { get; set; }
+				float Temperature { get; set; }
 
-		GameObject NGUIParentObject	{ get; set; }
+				GooThermalState ThermalState { get; set; }
 
-		Camera NGUICamera { get; }
+				bool TryToIgnite(Vector3 ignitionPoint, float newTemperature, out IBurnable fuelSource);
 
-		GameObject gameObject { get; }
-	}
+				bool TryToChangeTemperature(Vector3 temperaturePoint, float newTemperature, out float actualTemperature);
+		}
 
-	public interface IGUIChildEditor<R> : IGUIChildEditor
-	{
-		void ReceiveFromParentEditor (R editObject, ChildEditorCallback<R> callBack);
+		public interface IBurnable : IKillable, IThermal
+		{
+				Vector3 Position { get; }
 
-		void Finish ();
-	}
+				Vector3 LocalPosition { get; }
 
-	public interface IGUIParentEditor
-	{
-		GameObject NGUIObject { get; set; }
+				float Radius { get; }
 
-		GameObject gameObject { get; }
-	}
+				float FuelBurned { get; }
 
-	public interface IGUIParentEditor<R> : IGUIParentEditor
-	{
-		void ReceiveFromChildEditor	(R editObject, IGUIChildEditor<R> childEditor);
-	}
+				float NormalizedBurnDamage { get; }
 
-	public interface IKillable
-	{
-		bool IsDead { get; }
-	}
+				float TotalFuel { get; }
 
-	public interface IThermal
-	{
-		float Insulation { get; }
+				float FuelAvailable { get; }
 
-		float Temperature { get; set; }
+				bool IsDepleted { get; }
 
-		GooThermalState ThermalState { get; set; }
+				bool BurnFuel(float attemptedFuel, out float actualFuel);
 
-		bool TryToIgnite (Vector3 ignitionPoint, float newTemperature, out IBurnable fuelSource);
-
-		bool TryToChangeTemperature (Vector3 temperaturePoint, float newTemperature, out float actualTemperature);
-	}
-
-	public interface IBurnable : IKillable, IThermal
-	{
-		Vector3 Position { get; }
-
-		Vector3 LocalPosition { get; }
-		 
-		float Radius { get; }
-
-		float FuelBurned { get; }
-
-		float NormalizedBurnDamage { get; }
-		 
-		float TotalFuel { get; }
-
-		float FuelAvailable { get; }
-
-		bool IsDepleted { get; }
-
-		bool BurnFuel (float attemptedFuel, out float actualFuel);
-
-		bool TryToSpread (float spreadRange, float newTemperature, out IBurnable newFuelSource);
-	}
+				bool TryToSpread(float spreadRange, float newTemperature, out IBurnable newFuelSource);
+		}
 }

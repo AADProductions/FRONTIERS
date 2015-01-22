@@ -8,7 +8,8 @@ using Frontiers.GUI;
 namespace Frontiers
 {
 		public class PlayerGroundPath : MonoBehaviour
-		{		//this script is responsible for the glowy path that follows the player around
+		{
+				//this script is responsible for the glowy path that follows the player around
 				public SplineAnimatorClosestPoint Follower;
 				public Transform FollowerTarget;
 				public Spline spline;
@@ -16,7 +17,7 @@ namespace Frontiers
 				public MeshRenderer PathRenderer;
 				public List <SplineNode> Nodes = new List <SplineNode>();
 				float PathFollowSpeed = 0.125f;
-				float DistanceBetweenNodes = 2.0f;
+				float DistanceBetweenNodes = 3.0f;
 				float WaveAmount = 0.25f;
 				float TimeModifier = 1.0f;
 				public float PlayerDistanceFromPath;
@@ -38,12 +39,16 @@ namespace Frontiers
 				{
 						spline = gameObject.AddComponent <Spline>();
 						spline.updateMode = Spline.UpdateMode.EveryFrame;
+						spline.enabled = false;
 
 						PathMesh = gameObject.AddComponent <SplineMesh>();
 						PathMesh.spline = spline;
 						PathMesh.startBaseMesh = Meshes.Get.GroundPathPlane;
 						PathMesh.baseMesh = Meshes.Get.GroundPathPlane;
 						PathMesh.endBaseMesh = Meshes.Get.GroundPathPlane;
+						PathMesh.highAccuracy = false;
+						PathMesh.segmentCount = 25;
+
 						PathRenderer = gameObject.AddComponent <MeshRenderer>();
 						PathRenderer.sharedMaterials = new Material [] { Mats.Get.WorldPathGroundMaterial };
 						PathRenderer.enabled = false;
@@ -53,11 +58,19 @@ namespace Frontiers
 						}
 
 						Follower = gameObject.CreateChild("Follower").gameObject.AddComponent <SplineAnimatorClosestPoint>();
-						Follower.iterations = 5;
+						Follower.iterations = 1;
 						Follower.offset = 0f;
 						Follower.target = FollowerTarget;
 
 						mTerrainHit.groundedHeight = 1.0f;
+				}
+
+				public void FixedUpdate()
+				{
+						if (!Follower.enabled) {
+								FollowerTarget.position = Player.Local.HeadPosition;
+						}
+						Follower.enabled = !Follower.enabled;
 				}
 
 				public void Update()
@@ -66,28 +79,26 @@ namespace Frontiers
 								return;
 						}
 
-						FollowerTarget.position = Player.Local.HeadPosition;
-
 						if (!Paths.HasActivePath) {
 								if (spline.enabled) {
-									spline.enabled = false;
-									PathMesh.enabled = false;
-									PathMesh.renderer.enabled = false;
-									PathMesh.updateMode = SplineMesh.UpdateMode.DontUpdate;
-									Follower.enabled = false;
-									Follower.gameObject.SetActive(false);
-									mCurrentColor = Color.black;
+										spline.enabled = false;
+										PathMesh.enabled = false;
+										PathMesh.renderer.enabled = false;
+										PathMesh.updateMode = SplineMesh.UpdateMode.DontUpdate;
+										Follower.enabled = false;
+										Follower.gameObject.SetActive(false);
+										mCurrentColor = Color.black;
 								}
 								return;
 						} else if (Paths.HasActivePath) {
 								if (!spline.enabled) {
-									spline.enabled = true;
-									PathMesh.enabled = true;
-									PathMesh.renderer.enabled = true;
-									PathMesh.updateMode = SplineMesh.UpdateMode.EveryFrame;
-									Follower.enabled = true;
-									Follower.gameObject.SetActive(true);
-									Follower.spline = Paths.ActivePath.spline;
+										spline.enabled = true;
+										PathMesh.enabled = true;
+										PathMesh.renderer.enabled = true;
+										PathMesh.updateMode = SplineMesh.UpdateMode.WhenSplineChanged;
+										Follower.enabled = true;
+										Follower.gameObject.SetActive(true);
+										Follower.spline = Paths.ActivePath.spline;
 								}
 								if (Paths.IsEvaluating) {
 										mCurrentColor = Color.Lerp(Colors.Get.PathEvaluatingColor1, Colors.Get.PathEvaluatingColor2, Mathf.Abs(Mathf.Sin((float)(WorldClock.RealTime * 2))));
@@ -109,18 +120,18 @@ namespace Frontiers
 
 						PlayerDistanceFromPath = Vector3.Distance(Follower.transform.position, FollowerTarget.position) * Globals.InGameUnitsToMeters;
 
-						if (TravelManager.Get.State == TravelManager.FastTravelState.None) {
+						if (TravelManager.Get.State == FastTravelState.None) {
 								//only check this when we're not fast-traveling
 								if (PlayerDistanceFromPath > Globals.PathStrayDistanceInMeters) {
-										if (mTimeAwayFromPath > WorldClock.RTSecondsToGameSeconds(Globals.PathStrayMinTimeInSeconds)) {
-												if (mTimeAwayFromPath > WorldClock.RTSecondsToGameSeconds(Globals.PathStrayMaxTimeInSeconds)) {
+										if (mTimeAwayFromPath > Globals.PathStrayMinTimeInSeconds) {
+												if (mTimeAwayFromPath > Globals.PathStrayMaxTimeInSeconds) {
 														GUIManager.PostWarning("Stopped following path");
 														Paths.ClearActivePath();
 														mTimeAwayFromPath = 0.0f;
 														return;
 												}
 										}
-										mTimeAwayFromPath += WorldClock.DeltaTime;
+										mTimeAwayFromPath += WorldClock.ARTDeltaTime;
 								} else {
 										mTimeAwayFromPath = 0.0f;
 								}

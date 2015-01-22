@@ -117,64 +117,66 @@ namespace Frontiers
 						FresnelBias = fresnelSettings.z;
 
 						/*			
-			_CustomColorMap ("Color Map (RGB)", 2D) = "white" {}
-			_TerrainNormalMap ("Terrain Normalmap", 2D) = "bump" {}
-			_Control ("SplatAlpha 0", 2D) = "red" {}
-			_Control2nd ("SplatAlpha 1", 2D) = "black" {}
+						_CustomColorMap ("Color Map (RGB)", 2D) = "white" {}
+						_TerrainNormalMap ("Terrain Normalmap", 2D) = "bump" {}
+						_Control ("SplatAlpha 0", 2D) = "red" {}
+						_Control2nd ("SplatAlpha 1", 2D) = "black" {}
 
-			_terrainCombinedFloats ("MultiUV, Desaturation, Splatting Distance, Specular Power", Vector) = (0.5,600.0,0.5,1.0)
-			_SpecColor ("Terrain Specular Color", Color) = (0.5, 0.5, 0.5, 1)
+						_terrainCombinedFloats ("MultiUV, Desaturation, Splatting Distance, Specular Power", Vector) = (0.5,600.0,0.5,1.0)
+						_SpecColor ("Terrain Specular Color", Color) = (0.5, 0.5, 0.5, 1)
 
-			_Splat0 ("Layer 0 (R)", 2D) = "white" {}
-			_Splat0Tiling ("Tiling Detail Texture 1", Float) = 100
-			_Splat1 ("Layer 1 (G)", 2D) = "white" {}
-			_Splat1Tiling ("Tiling Detail Texture 2", Float) = 100
-			_Splat2 ("Layer 2 (B)", 2D) = "white" {}
-			_Splat2Tiling ("Tiling Detail Texture 3", Float) = 100
-			_Splat3 ("Layer 3 (A)", 2D) = "white" {}
-			_Splat3Tiling ("Tiling Detail Texture 4", Float) = 100
-			_Splat4 ("Layer 4 (R)", 2D) = "white" {}
-			_Splat4Tiling ("Tiling Detail Texture 5", Float) = 100
-			_Splat5 ("Layer 5 (G)", 2D) = "white" {}
-			_Splat5Tiling ("Tiling Detail Texture 6", Float) = 100
+						_Splat0 ("Layer 0 (R)", 2D) = "white" {}
+						_Splat0Tiling ("Tiling Detail Texture 1", Float) = 100
+						_Splat1 ("Layer 1 (G)", 2D) = "white" {}
+						_Splat1Tiling ("Tiling Detail Texture 2", Float) = 100
+						_Splat2 ("Layer 2 (B)", 2D) = "white" {}
+						_Splat2Tiling ("Tiling Detail Texture 3", Float) = 100
+						_Splat3 ("Layer 3 (A)", 2D) = "white" {}
+						_Splat3Tiling ("Tiling Detail Texture 4", Float) = 100
+						_Splat4 ("Layer 4 (R)", 2D) = "white" {}
+						_Splat4Tiling ("Tiling Detail Texture 5", Float) = 100
+						_Splat5 ("Layer 5 (G)", 2D) = "white" {}
+						_Splat5Tiling ("Tiling Detail Texture 6", Float) = 100
 
-			// color correction and spec values
-			_ColTex1 ("Avrg. Color Tex 1", Color) = (.5,.5,.5,1)
-			_Spec1 ("Shininess Tex 1", Range (0.03, 1)) = 0.078125
-			_ColTex2 ("Avrg. Color Tex 2", Color) = (.5,.5,.5,1)
-			_Spec2 ("Shininess Tex 2", Range (0.03, 1)) = 0.078125
-			_ColTex3 ("Avrg. Color Tex 3", Color) = (.5,.5,.5,1)
-			_Spec3 ("Shininess Tex 3", Range (0.03, 1)) = 0.078125
-			_ColTex4 ("Avrg. Color Tex 4", Color) = (.5,.5,.5,1)
-			_Spec4 ("Shininess Tex 4", Range (0.03, 1)) = 0.078125
-			_ColTex5 ("Avrg. Color Tex 5", Color) = (.5,.5,.5,1)
-			_Spec5 ("Shininess Tex 5", Range (0.03, 1)) = 0.078125
-			_ColTex6 ("Avrg. Color Tex 6", Color) = (.5,.5,.5,1)
-			_Spec6 ("Shininess Tex 6", Range (0.03, 1)) = 0.078125
+						// color correction and spec values
+						_ColTex1 ("Avrg. Color Tex 1", Color) = (.5,.5,.5,1)
+						_Spec1 ("Shininess Tex 1", Range (0.03, 1)) = 0.078125
+						_ColTex2 ("Avrg. Color Tex 2", Color) = (.5,.5,.5,1)
+						_Spec2 ("Shininess Tex 2", Range (0.03, 1)) = 0.078125
+						_ColTex3 ("Avrg. Color Tex 3", Color) = (.5,.5,.5,1)
+						_Spec3 ("Shininess Tex 3", Range (0.03, 1)) = 0.078125
+						_ColTex4 ("Avrg. Color Tex 4", Color) = (.5,.5,.5,1)
+						_Spec4 ("Shininess Tex 4", Range (0.03, 1)) = 0.078125
+						_ColTex5 ("Avrg. Color Tex 5", Color) = (.5,.5,.5,1)
+						_Spec5 ("Shininess Tex 5", Range (0.03, 1)) = 0.078125
+						_ColTex6 ("Avrg. Color Tex 6", Color) = (.5,.5,.5,1)
+						_Spec6 ("Shininess Tex 6", Range (0.03, 1)) = 0.078125
 
-			_Decal1_ColorCorrectionStrenght ("Decal 1 Color Correction Strength", Range (0, 1)) = 0.5
-			_Decal1_Sharpness ("Decal 1 Sharpness", Range (0, 32)) = 16
-			_Decal2_ColorCorrectionStrenght ("Decal 2 Color Correction Strength", Range (0, 1)) = 0.5
-			_Decal2_Sharpness ("Decal 2 Sharpness", Range (0, 32)) = 16
+						_Decal1_ColorCorrectionStrenght ("Decal 1 Color Correction Strength", Range (0, 1)) = 0.5
+						_Decal1_Sharpness ("Decal 1 Sharpness", Range (0, 32)) = 16
+						_Decal2_ColorCorrectionStrenght ("Decal 2 Color Correction Strength", Range (0, 1)) = 0.5
+						_Decal2_Sharpness ("Decal 2 Sharpness", Range (0, 32)) = 16
 
-			_CombinedNormal12 (" Combined Normal 1 (RG) Normal 2 (BA)", 2D) = "white" {}
-			_CombinedNormal34 (" Combined Normal 3 (RG) Normal 4 (BA)", 2D) = "white" {}
-			_CombinedNormal56 (" Combined Normal 5 (RG) Normal 6 (BA)", 2D) = "white" {}
+						_CombinedNormal12 (" Combined Normal 1 (RG) Normal 2 (BA)", 2D) = "white" {}
+						_CombinedNormal34 (" Combined Normal 3 (RG) Normal 4 (BA)", 2D) = "white" {}
+						_CombinedNormal56 (" Combined Normal 5 (RG) Normal 6 (BA)", 2D) = "white" {}
 
-			_Fresnel ("Fresnel: Intensity/Power/Bias/-)", Vector) = (2.0, 1.5, -0.5,0.0)
-			_ReflectionColor ("Terrain Reflection Color", Color) = (1,1,1,1)
+						_Fresnel ("Fresnel: Intensity/Power/Bias/-)", Vector) = (2.0, 1.5, -0.5,0.0)
+						_ReflectionColor ("Terrain Reflection Color", Color) = (1,1,1,1)
 
-			_Elev ("Elevation for Tex 1-4)", Vector) = (1.0, 1.0, 1.0, 1.0)
-			_Elev1 ("Elevation for Tex 5-6)", Vector) = (1.0, 1.0, 1.0, 1.0)
-			*/
+						_Elev ("Elevation for Tex 1-4)", Vector) = (1.0, 1.0, 1.0, 1.0)
+						_Elev1 ("Elevation for Tex 5-6)", Vector) = (1.0, 1.0, 1.0, 1.0)
+						*/
 				}
 
 				public void ApplySettings(Material atsMaterial)
 				{
-//			Vector4 terrainCombinedFloats = new Vector4 (MultiUV, Desaturation, SplattingDistance, TerrainSpecPower);
-//			atsMaterial.SetVector ("_terrainCombinedFloats", terrainCombinedFloats);
+						/*
+						Vector4 terrainCombinedFloats = new Vector4 (MultiUV, Desaturation, SplattingDistance, TerrainSpecPower);
+						atsMaterial.SetVector ("_terrainCombinedFloats", terrainCombinedFloats);
 
-//			atsMaterial.SetColor ("_SpecColor", TerrainSpecColor);
+						atsMaterial.SetColor ("_SpecColor", TerrainSpecColor);
+						*/
 
 						atsMaterial.SetFloat("_Splat0Tiling", Splat0Tiling);
 						atsMaterial.SetFloat("_Splat1Tiling", Splat1Tiling);
@@ -190,15 +192,17 @@ namespace Frontiers
 						atsMaterial.SetColor("_ColTex5", Texture5Average);
 						atsMaterial.SetColor("_ColTex6", Texture6Average);
 
-//			atsMaterial.SetFloat ("_Spec1", Texture1Shininess);
-//			atsMaterial.SetFloat ("_Spec2", Texture2Shininess);
-//			atsMaterial.SetFloat ("_Spec3", Texture3Shininess);
-//			atsMaterial.SetFloat ("_Spec4", Texture4Shininess);
-//			atsMaterial.SetFloat ("_Spec5", Texture5Shininess);
-//			atsMaterial.SetFloat ("_Spec6", Texture6Shininess);
+						/*
+						atsMaterial.SetFloat ("_Spec1", Texture1Shininess);
+						atsMaterial.SetFloat ("_Spec2", Texture2Shininess);
+						atsMaterial.SetFloat ("_Spec3", Texture3Shininess);
+						atsMaterial.SetFloat ("_Spec4", Texture4Shininess);
+						atsMaterial.SetFloat ("_Spec5", Texture5Shininess);
+						atsMaterial.SetFloat ("_Spec6", Texture6Shininess);
 
-//			Vector4 fresnelSettings	= new Vector4 (FresnelIntensity, FresnelPower, FresnelBias, 0f);
-//			atsMaterial.SetVector ("_Fresnel", fresnelSettings);
+						Vector4 fresnelSettings	= new Vector4 (FresnelIntensity, FresnelPower, FresnelBias, 0f);
+						atsMaterial.SetVector ("_Fresnel", fresnelSettings);
+						*/
 				}
 
 				public void ApplyMaps(Material atsMaterial, string chunkName, Dictionary <string, Texture2D> maps)
@@ -208,16 +212,18 @@ namespace Frontiers
 						ApplyMap("Splat1", "_Control", maps, atsMaterial);
 						ApplyMap("Splat2", "_Control2nd", maps, atsMaterial);
 
-//			Texture2D splat = null;
-//			if (maps.TryGetValue ("Splat1", out splat)) {
-//				atsMaterial.SetTexture ("_Control", splat);
-//			}
-//			if (maps.TryGetValue ("Splat2", out splat)) {
-//				atsMaterial.SetTexture ("_Control2nd", splat);
-//			}
+						/*
+						Texture2D splat = null;
+						if (maps.TryGetValue ("Splat1", out splat)) {
+							atsMaterial.SetTexture ("_Control", splat);
+						}
+						if (maps.TryGetValue ("Splat2", out splat)) {
+							atsMaterial.SetTexture ("_Control2nd", splat);
+						}
 
-//			ApplyMap ("Splat1", "_Control", maps, atsMaterial);
-//			ApplyMap ("Splat2", "_Control2nd", maps, atsMaterial);
+						ApplyMap ("Splat1", "_Control", maps, atsMaterial);
+						ApplyMap ("Splat2", "_Control2nd", maps, atsMaterial);
+						*/
 
 						ApplyMap("Ground0", "_Splat0", maps, atsMaterial);
 						ApplyMap("Ground1", "_Splat1", maps, atsMaterial);
@@ -227,28 +233,28 @@ namespace Frontiers
 						ApplyMap("Ground5", "_Splat5", maps, atsMaterial);
 
 						Texture2D cn12 = null;
-						if (Plants.Get.GetTerrainGroundTexture(CombinedNormals12, out cn12)) {
+						if (Mats.Get.GetTerrainGroundTexture(CombinedNormals12, out cn12)) {
 								atsMaterial.SetTexture("_CombinedNormal12", cn12);
 						}
 						Texture2D cn34 = null;
-						if (Plants.Get.GetTerrainGroundTexture(CombinedNormals34, out cn34)) {
+						if (Mats.Get.GetTerrainGroundTexture(CombinedNormals34, out cn34)) {
 								atsMaterial.SetTexture("_CombinedNormal34", cn34);
 						}
 						Texture2D cn56 = null;
-						if (Plants.Get.GetTerrainGroundTexture(CombinedNormals56, out cn56)) {
+						if (Mats.Get.GetTerrainGroundTexture(CombinedNormals56, out cn56)) {
 								atsMaterial.SetTexture("_CombinedNormal56", cn56);
 						}
 
 						/*			
-			_CustomColorMap ("Color Map (RGB)", 2D) = "white" {}
-			_TerrainNormalMap ("Terrain Normalmap", 2D) = "bump" {}
-			_Control ("SplatAlpha 0", 2D) = "red" {}
-			_Control2nd ("SplatAlpha 1", 2D) = "black" {}
+						_CustomColorMap ("Color Map (RGB)", 2D) = "white" {}
+						_TerrainNormalMap ("Terrain Normalmap", 2D) = "bump" {}
+						_Control ("SplatAlpha 0", 2D) = "red" {}
+						_Control2nd ("SplatAlpha 1", 2D) = "black" {}
 
-			_CombinedNormal12 (" Combined Normal 1 (RG) Normal 2 (BA)", 2D) = "white" {}
-			_CombinedNormal34 (" Combined Normal 3 (RG) Normal 4 (BA)", 2D) = "white" {}
-			_CombinedNormal56 (" Combined Normal 5 (RG) Normal 6 (BA)", 2D) = "white" {}
-			*/
+						_CombinedNormal12 (" Combined Normal 1 (RG) Normal 2 (BA)", 2D) = "white" {}
+						_CombinedNormal34 (" Combined Normal 3 (RG) Normal 4 (BA)", 2D) = "white" {}
+						_CombinedNormal56 (" Combined Normal 5 (RG) Normal 6 (BA)", 2D) = "white" {}
+						*/
 				}
 
 				protected void	ApplyMap(string mapName, string propertyName, Dictionary <string, Texture2D> maps, Material atsMaterial)
@@ -375,6 +381,12 @@ namespace Frontiers
 				[XmlIgnore]
 				public STransform WorldPosition = new STransform();
 
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
+				}
+
 				public bool RequiresStructure {
 						get {
 								return !string.IsNullOrEmpty(StructureName);
@@ -386,7 +398,7 @@ namespace Frontiers
 				public string StructureName;
 				public bool ClearInventory = false;
 				public bool DestroyClearedItems = true;
-				public bool ClearWearables = true;
+				public bool ClearWearables = false;
 				public bool ClearLog = false;
 				public string CharacterName = string.Empty;
 				//what time it should be
@@ -436,6 +448,12 @@ namespace Frontiers
 				public string DefaultBiome;
 				public AmbientAudioManager.ChunkAudioSettings DefaultAmbientAudio = new AmbientAudioManager.ChunkAudioSettings();
 				public AmbientAudioManager.ChunkAudioItem DefaultAmbientAudioInterior = new AmbientAudioManager.ChunkAudioItem();
+
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
+				}
 
 				public bool RequiresCompletedWorlds {
 						get {
@@ -495,6 +513,12 @@ namespace Frontiers
 										GenerateFullDescription();
 								}
 								return mFullDescription;
+						}
+				}
+
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
 						}
 				}
 
@@ -679,6 +703,12 @@ namespace Frontiers
 		[Serializable]
 		public class Region : Mod
 		{
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
+				}
+
 				public int RegionID = 0;
 				[FrontiersBitMaskAttribute("Region")]
 				public int RegionFlag;
@@ -707,6 +737,12 @@ namespace Frontiers
 		[Serializable]
 		public class Biome : Mod
 		{
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
+				}
+
 				public int BiomeID = 0;
 				[FrontiersBitMaskAttribute("Climate")]
 				public int BiomeFlag = 0;
@@ -951,6 +987,12 @@ namespace Frontiers
 		{
 				public ChunkBiomeData() : base()
 				{
+				}
+
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
 				}
 
 				public ClimateType Climate = ClimateType.Temperate;
@@ -1302,6 +1344,12 @@ namespace Frontiers
 				{
 				}
 
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
+				}
+
 				public AmbientAudioManager.ChunkAudioSettings AmbientAudio = new AmbientAudioManager.ChunkAudioSettings();
 		}
 
@@ -1310,6 +1358,12 @@ namespace Frontiers
 		{
 				public ChunkState() : base()
 				{
+				}
+
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
 				}
 
 				public int ID = 0;
@@ -1334,6 +1388,12 @@ namespace Frontiers
 		{
 				public ChunkSceneryData() : base()
 				{
+				}
+
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
 				}
 
 				public int TotalChunkPrefabs {
@@ -1362,6 +1422,12 @@ namespace Frontiers
 				{
 				}
 
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
+				}
+
 				public PlantInstanceTemplate[] PlantInstances = new PlantInstanceTemplate [0];
 		}
 
@@ -1370,6 +1436,12 @@ namespace Frontiers
 		{
 				public ChunkTreeData() : base()
 				{
+				}
+
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
 				}
 
 				public TreeInstanceTemplate[] TreeInstances = new TreeInstanceTemplate [0];
@@ -1430,6 +1502,7 @@ namespace Frontiers
 				public SDictionary <string, string> SceneryScripts = new SDictionary <string, string>();
 				[XmlIgnore]
 				public WorldChunk ParentChunk;
+
 				[XmlIgnore]
 				public bool UseBoxColliders {
 						get { return BoxColliders.Count > 0; }
@@ -1453,6 +1526,12 @@ namespace Frontiers
 		[Serializable]
 		public class ChunkTerrainData : Mod
 		{
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
+				}
+
 				public int HeightmapResolution = 0;
 				public int HeightmapHeight = 0;
 				public List <GroundType> SplatmapGroundTypes = new List <GroundType>();
@@ -1481,7 +1560,7 @@ namespace Frontiers
 				public bool ReadyToBePlanted {
 						get {
 								if (PickedTime > 0) {
-										return (WorldClock.Time - PickedTime > WorldClock.RTSecondsToGameSeconds(Globals.PlantAutoRegrowInterval));
+										return (WorldClock.AdjustedRealTime - PickedTime > Globals.PlantAutoRegrowInterval);
 								}
 								return true;
 						}
@@ -1716,6 +1795,12 @@ namespace Frontiers
 				[Serializable]
 				public class Path : Mod
 				{
+						public override bool IgnoreProfileDataIfOutdated {
+								get {
+										return true;
+								}
+						}
+
 						public SBounds PathBounds = new SBounds();
 						public List <PathMarkerInstanceTemplate> Templates = new List<PathMarkerInstanceTemplate>();
 

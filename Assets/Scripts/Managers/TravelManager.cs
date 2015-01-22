@@ -76,7 +76,7 @@ namespace Frontiers
 				protected void OnStartTraveling(PathMarker startingPathMarker)
 				{
 						State = FastTravelState.ArrivingAtDestination;
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.FastTravelStart), WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction((AvatarAction.FastTravelStart), WorldClock.AdjustedRealTime);
 
 						LastFastTravelStartPathMarker = startingPathMarker;
 						LastChosenPathMarker = startingPathMarker.Props;
@@ -105,7 +105,7 @@ namespace Frontiers
 				protected void OnFinishTraveling()
 				{
 						State = FastTravelState.None;
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.FastTravelStop), WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction((AvatarAction.FastTravelStop), WorldClock.AdjustedRealTime);
 						FastTravelInterface.Minimize();
 						mTerrainHit.feetPosition = CurrentPosition;
 						CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit) + 0.25f;//just in case, pad it out

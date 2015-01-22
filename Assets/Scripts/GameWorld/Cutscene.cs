@@ -34,9 +34,6 @@ namespace Frontiers
 				public GameObject Interfaces;
 				public GameObject Props;
 				public bool ShowCursor = true;
-				public bool FreezeApparentTime	= true;
-				public float ApparentHourOfDay	= 12f;
-				public bool UnfreezeOnFinish	= true;
 				public string CameraAnimationStarting;
 				public string CameraAnimationFinishing;
 				public string LookTargetAnimationStarting;
@@ -215,12 +212,12 @@ namespace Frontiers
 								CameraLookTarget.animation.Play(LookTargetAnimationStarting, AnimationPlayMode.Stop);
 						}
 						//get the camera animatinon started before hijacking
-						yield return null;
-
-						State = CutsceneState.Starting;
 						Player.Local.HijackControl();
 						RefreshCamera();
 						Player.Local.SnapToHijackedPosition();
+						yield return null;
+
+						State = CutsceneState.Starting;
 
 						Interfaces.BroadcastMessage("OnCutsceneStart", SendMessageOptions.DontRequireReceiver);
 						Props.BroadcastMessage("OnCutsceneStart", SendMessageOptions.DontRequireReceiver);

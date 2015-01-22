@@ -36,16 +36,16 @@ namespace Frontiers
 						StopWatch.Start();
 						mRTime = 0f;
 						mRTLastUpdateTime = 0f;
-				}
-
-				public override void OnGameLoadStart()
-				{
-						//set the current adjusted real time to the last saved realtime offset
-						mARTime = Profile.Get.CurrentGame.GameTimeOffset;
+						SetCycleLength(Globals.DefaultInGameMinutesPerRealTimeSecond);
 				}
 
 				public override void OnGameStart()
 				{
+						//set the current adjusted real time to the last saved realtime offset
+						SetCycleLength(Profile.Get.CurrentGame.InGameMinutesPerRealtimeSecond);
+						//game time offset is raw adjusted realtime, not world time
+						//so don't modify it in any way
+						mARTime = Profile.Get.CurrentGame.GameTimeOffset;
 						SetTargetSpeed(1.0f);
 				}
 
@@ -68,7 +68,7 @@ namespace Frontiers
 						//- minus any time passed while the game is paused
 						//- multiplied by a time scale set by the player
 						if (GameManager.Is(FGameState.InGame)) {
-								mARTDeltaTime = mRTDeltaTime * mARTimeScale + mLastARTDeltaTimeAdded;
+								mARTDeltaTime = (mRTDeltaTime * mARTimeScale) + mLastARTDeltaTimeAdded;
 						} else {
 								mARTDeltaTime = 0.0;
 						}
@@ -83,11 +83,11 @@ namespace Frontiers
 						//we can stop if we're any of these things
 						//the game won't be set etc
 						if (GameManager.Is(
-								    FGameState.WaitingForGame |
-								    FGameState.Unloading |
-								    FGameState.Startup |
-								    FGameState.Quitting |
-								    FGameState.Saving)) {
+								 FGameState.WaitingForGame |
+								 FGameState.Unloading |
+								 FGameState.Startup |
+								 FGameState.Quitting |
+								 FGameState.Saving)) {
 								UnityEngine.Time.timeScale = 1f;
 								return;
 						}
@@ -98,35 +98,26 @@ namespace Frontiers
 						mLastARTDeltaTimeAdded = 0.0;
 
 						//set our cycles - the values are in RT but we use the ART plus the offset
-						mARTOffsetTime = mARTime + Profile.Get.CurrentGame.WorldTimeOffset;
+						mARTOffsetTime = mARTime + GameSecondsToRTSeconds(Profile.Get.CurrentGame.WorldTimeOffset);
 						gHourCycleCurrentART = (mARTOffsetTime % gHourCycleRT);
 						gDayCycleCurrentART = (mARTOffsetTime % gDayCycleRT);
 						gMonthCycleCurrentART = (mARTOffsetTime % gMonthCycleRT);
 						gSeasonCycleCurrentRT = (mARTOffsetTime % gSeasonCycleRT);
 						gYearCycleCurrentART = (mARTOffsetTime % gYearCycleRT);
 						gCenturyCycleCurrentART = (mARTOffsetTime % gCenturyCycleRT);
-
-						//-----WORLD TIME TIME-----//
-						//this is what in-game entities use to calculate time
-						//this is also where we apply game time offsets for seasons and day/night cycles etc
-						//mWCTime is the world time from the start of the GAME (not the game session)
-						//it's a straightforward conversion from mARTime plus an offset from the player's profile
-						mWCTime = RTSecondsToGameSeconds(mARTOffsetTime);// Profile.Get.CurrentGame.GameTimeOffset;
-						mWCDeltaTime = mWCTime - mWCLastUpdatedTime;
-						mWCLastUpdatedTime = mWCTime;
 						gTimeOfDayCurrent = HourOfDayToTimeOfDay(HourOfDay);
 
 						//broadcast events
 						if (!SuspendMessagesThisFrame) {
 								if (HourOfDay != mLastHour) {
-										TimeActions.ReceiveAction(TimeActionType.HourStart, Time);
+										TimeActions.ReceiveAction(TimeActionType.HourStart, AdjustedRealTime);
 								}
 								mLastHour = HourOfDay;
 								if (IsDay != mIsDay) {
 										if (IsDay) {
-												TimeActions.ReceiveAction(TimeActionType.DaytimeStart, Time);
+												TimeActions.ReceiveAction(TimeActionType.DaytimeStart, AdjustedRealTime);
 										} else {
-												TimeActions.ReceiveAction(TimeActionType.NightTimeStart, Time);
+												TimeActions.ReceiveAction(TimeActionType.NightTimeStart, AdjustedRealTime);
 										}
 								}
 								mIsDay = IsDay;
@@ -149,9 +140,9 @@ namespace Frontiers
 						}
 
 						//-----DAYS/MONTHS/YEARS-----//
-						gDaysSinceBeginningOfTime = (int)System.Math.Floor(mWCTime / gDayCycleWT);
-						gMonthsSinceBeginningOfTime = (int)System.Math.Floor(mWCTime / gMonthCycleWT);
-						gYearsSinceBeginningOfTime = (int)System.Math.Floor(mWCTime / gYearCycleWT);
+						gDaysSinceBeginningOfTime = (int)System.Math.Floor(mARTime / gDayCycleRT);
+						gMonthsSinceBeginningOfTime = (int)System.Math.Floor(mARTime / gMonthCycleRT);
+						gYearsSinceBeginningOfTime = (int)System.Math.Floor(mARTime / gYearCycleRT);
 
 						//-----SEAONS-----//
 						switch (MonthOfYear) {
@@ -235,12 +226,6 @@ namespace Frontiers
 				public static double AdjustedRealTime {
 						get {
 								return  mARTOffsetTime;//this includes the offset from the profile / game
-						}
-				}
-
-				public static double Time {
-						get {
-								return  mWCTime;
 						}
 				}
 
@@ -356,14 +341,11 @@ namespace Frontiers
 				{		//this assumes non-overlapping time of year
 						if (Flags.Check((uint)timeOfYear, (uint)TimeOfYear.SeasonSpring, Flags.CheckType.MatchAny)) {
 								return TimeOfYear.SeasonSpring;
-						}
-						else if (Flags.Check((uint)timeOfYear, (uint)TimeOfYear.SeasonSummer, Flags.CheckType.MatchAny)) {
+						} else if (Flags.Check((uint)timeOfYear, (uint)TimeOfYear.SeasonSummer, Flags.CheckType.MatchAny)) {
 								return TimeOfYear.SeasonSummer;
-						}
-						else if (Flags.Check((uint)timeOfYear, (uint)TimeOfYear.SeasonAutumn, Flags.CheckType.MatchAny)) {
+						} else if (Flags.Check((uint)timeOfYear, (uint)TimeOfYear.SeasonAutumn, Flags.CheckType.MatchAny)) {
 								return TimeOfYear.SeasonAutumn;
-						}
-						else {
+						} else {
 								return TimeOfYear.SeasonWinter;
 						}
 				}
@@ -518,6 +500,16 @@ namespace Frontiers
 						while (RealTime < start + time) {
 								yield return null;
 						}
+						yield break;
+				}
+
+				public static IEnumerator WaitForSeconds(double time)
+				{
+						double start = AdjustedRealTime;
+						while (AdjustedRealTime < start + time) {
+								yield return null;
+						}
+						yield break;
 				}
 
 				public TimeOfDay TimeOfDayAfter(TimeOfDay timeOfDay)
@@ -731,49 +723,25 @@ namespace Frontiers
 						return timeOfDay;
 				}
 
-				public static double YearsToSeconds(double years)
-				{
-						return years * 11352960000;
-				}
-
-				public static double MonthsToSeconds(double months)
-				{
-						return months * 2592000;
-				}
-
-				public static double DaysToSeconds(double days)
-				{
-						return days * 86400;
-				}
-
-				public static double HoursToSeconds(double hours)
-				{
-						return hours * 3600;
-				}
-
-				public static double HoursToGameHours(double hours)
-				{
-						return RTSecondsToGameSeconds(HoursToSeconds(hours));
-				}
-
-				public static double GameSecondsToRTSeconds(double gameSeconds)
-				{
-						return  (gameSeconds / gSecondsPerRTSecond);
-				}
-
 				public static double RTSecondsToGameSeconds(double RTSeconds)
 				{
-						return  (RTSeconds * gSecondsPerRTSecond);
+						return RTSeconds * gSecondsPerRTSecond;
 				}
 
 				public static double RTSecondsToGameHours(double RTSeconds)
 				{
-						return  ((RTSeconds * gSecondsPerRTSecond) / gHourCycleSeconds);
+						return  (RTSeconds / gHourCycleSeconds);
 				}
 
 				public static double RTSecondsToGameMinutes(double RTSeconds)
 				{
-						return  ((RTSeconds * gSecondsPerRTSecond) / gMinuteCycleSeconds);
+						return  (RTSeconds / gMinuteCycleSeconds);
+				}
+
+				public static double GameSecondsToRTSeconds(double gameSeconds)
+				{
+
+						return ((gameSeconds / 60f) / gRTSecondsPerGameMinute);
 				}
 
 				public static double GameHoursToRTSeconds(double gameHours)
@@ -781,19 +749,39 @@ namespace Frontiers
 						return  (gameHours / gHoursPerRTSecond);
 				}
 
-				public static double GameSecondsToGameMinutes(double gameSeconds)
+				public static double SecondsToMinutes(double gameSeconds)
 				{
 						return  (gameSeconds / gHourCycleMinutes);
 				}
 
-				public static double GameSecondsToGameHours(double gameSeconds)
+				public static double SecondsToHours(double gameSeconds)
 				{
 						return  (gameSeconds / gHourCycleSeconds);
 				}
 
-				public static double GameSecondsToGameDays(double gameSeconds)
+				public static double SecondsToDays(double gameSeconds)
 				{
 						return  (gameSeconds / gDayCycleSeconds);
+				}
+
+				public static double YearsToSeconds(double years)
+				{
+						return years * gYearCycleSeconds;
+				}
+
+				public static double MonthsToSeconds(double months)
+				{
+						return months * gMonthCycleSeconds;
+				}
+
+				public static double DaysToSeconds(double days)
+				{
+						return days * gDayCycleSeconds;
+				}
+
+				public static double HoursToSeconds(double hours)
+				{
+						return hours * gHourCycleSeconds;
 				}
 
 				public static string TimeOfYearToString(TimeOfYear selectedSeasonality)
@@ -821,14 +809,14 @@ namespace Frontiers
 
 				public static double FutureTime(int numberOf, TimeUnit unit)
 				{
-						double futureTime = Time;
+						double futureTime = AdjustedRealTime;
 						switch (unit) {
 								case TimeUnit.Hour:
-										futureTime += RTSecondsToGameSeconds(gRTSecondsPerGameHour * numberOf);
+										futureTime += gRTSecondsPerGameHour * numberOf;
 										break;
 
 								case TimeUnit.Day:
-										futureTime += RTSecondsToGameSeconds(gRTSecondsPerGameHour * numberOf);
+										futureTime += gRTSecondsPerGameHour * numberOf;
 										break;
 
 								default:
@@ -850,6 +838,12 @@ namespace Frontiers
 						mLastARTDeltaTimeAdded += deltaTime;
 				}
 
+				public static double AdjustedRealTimeWithoutOffset {
+						get {
+								return mARTime;
+						}
+				}
+
 				public static double RTDeltaTime {
 						get {
 								return  mRTDeltaTime;
@@ -868,21 +862,15 @@ namespace Frontiers
 						}
 				}
 
-				public static double DeltaTime {
-						get {
-								return  mWCDeltaTime;
-						}
-				}
-
 				public static double DeltaTimeHours {
 						get {
-								return GameSecondsToGameHours(mWCDeltaTime);
+								return SecondsToHours(mRTDeltaTime);
 						}
 				}
 
 				public static double DeltaTimeMinutes {
 						get {
-								return GameSecondsToGameMinutes(mWCDeltaTime);
+								return SecondsToMinutes(mRTDeltaTime);
 						}
 				}
 
@@ -921,20 +909,45 @@ namespace Frontiers
 				public double TimeScaleEditor;
 				public bool ForceStart = false;
 				#endif
+				public static void SetCycleLength(double inGameMinutesPerRealTimeSecond)
+				{
+						Debug.Log("Setting in game minutes per rt minute to " + inGameMinutesPerRealTimeSecond.ToString());
+
+						gMinutesPerRTSecond = inGameMinutesPerRealTimeSecond;
+						gSecondsPerRTSecond = gMinutesPerRTSecond * gMinuteCycleSeconds;
+						gHoursPerRTSecond = gMinutesPerRTSecond * gHourCycleMinutes;
+
+						gRTSecondsPerGameSecond = 1.0f / gRTSecondsPerGameSecond;
+						gRTSecondsPerGameMinute = gRTSecondsPerGameSecond * gMinuteCycleSeconds;
+						gRTSecondsPerGameHour = gRTSecondsPerGameMinute * gHourCycleSeconds;
+
+						gHourCycleRT = gHourCycleSeconds * gRTSecondsPerGameSecond;
+						gDayCycleRT = gDayCycleSeconds * gRTSecondsPerGameSecond;
+						gMonthCycleRT = gMonthCycleSeconds * gRTSecondsPerGameSecond;
+						gYearCycleRT = gYearCycleSeconds * gRTSecondsPerGameSecond;
+						gCenturyCycleRT = gCenturyCycleSeconds * gRTSecondsPerGameSecond;
+
+						Debug.Log("Hour cycle RT: " + gHourCycleRT.ToString());
+						Debug.Log("Day cycle RT: " + gDayCycleRT.ToString());
+						Debug.Log("Month cycle RT: " + gMonthCycleRT.ToString());
+						Debug.Log("Year cycle RT: " + gYearCycleRT.ToString());
+						Debug.Log("Century cycle RT: " + gCenturyCycleRT.ToString());
+				}
+
 				public bool SuspendMessagesThisFrame = false;
 				public static System.Diagnostics.Stopwatch StopWatch = new System.Diagnostics.Stopwatch();
 				//conversion
-				protected readonly static double gSecondsPerRTSecond = 60.0;
-				protected readonly static double gMinutesPerRTSecond = 1.0;
-				protected readonly static double gHoursPerRTSecond = 1.0 / 60.0;
-				protected readonly static double gRTSecondsPerGameSecond = 1.0 / gSecondsPerRTSecond;
-				protected readonly static double gRTSecondsPerGameMinute = gRTSecondsPerGameSecond * 60;
-				protected readonly static double gRTSecondsPerGameHour = gRTSecondsPerGameMinute * 60;
+				public static double gSecondsPerRTSecond = 60.0;
+				public static double gMinutesPerRTSecond = 1.0;
+				public static double gHoursPerRTSecond = 1.0 / 60.0;
+				public static double gRTSecondsPerGameSecond = 1.0 / gSecondsPerRTSecond;
+				public static double gRTSecondsPerGameMinute = gRTSecondsPerGameSecond * 60;
+				public static double gRTSecondsPerGameHour = gRTSecondsPerGameMinute * 60;
 				//time scales
-				public readonly static double gTimeScaleTravel = 5.0;
-				public readonly static double gTimeScaleSleep = 15.0;
-				public readonly static double gTimeScalePaused = 0.00001;
-				public readonly static double gMaxTimeScale = gTimeScaleSleep;
+				public static double gTimeScaleTravel = 5.0;
+				public static double gTimeScaleSleep = 15.0;
+				public static double gTimeScalePaused = 0.00001;
+				public static double gMaxTimeScale = gTimeScaleSleep;
 				//real time
 				protected static double gHourCycleCurrentART = 0.0;
 				protected static double gDayCycleCurrentART = 0.0;
@@ -955,53 +968,47 @@ namespace Frontiers
 
 				//for easy conversion from one game time to another
 				//hour cycle
-				public readonly static double gMinuteCycleSeconds = 60;
-				public readonly static double gHourCycleMinutes = 60;
-				public readonly static double gHourCycleSeconds = 3600;
-				public readonly static double gHourCycleRT = 60;
-				public readonly static double gHourCycleWT = gHourCycleRT * gSecondsPerRTSecond;
+				public const double gMinuteCycleSeconds = 60;
+				public const double gHourCycleMinutes = 60;
+				public const double gHourCycleSeconds = 3600;
+				public static double gHourCycleRT = 60;
 				//30;
 				//day cycle
-				public readonly static double gDayCycleHours = 24;
-				public readonly static double gDayCycleMinutes = 1440;
-				public readonly static double gDayCycleSeconds = 86400;
-				public readonly static double gDayCycleRT = 1440;
-				public readonly static double gDayCycleWT = gDayCycleRT * gSecondsPerRTSecond;
+				public const double gDayCycleHours = 24;
+				public const double gDayCycleMinutes = 1440;
+				public const double gDayCycleSeconds = 86400;
+				public static double gDayCycleRT = 1440;
 				//720;
 				//month cycle
-				public readonly static double gMonthCycleDays = 30;
-				public readonly static double gMonthCycleHours = 720;
-				public readonly static double gMonthCycleMinutes = 43200;
-				public readonly static double gMonthCycleSeconds = 2592000;
-				public readonly static double gMonthCycleRT = 21600;
-				public readonly static double gMonthCycleWT = gMonthCycleRT * gSecondsPerRTSecond;
+				public const double gMonthCycleDays = 30;
+				public const double gMonthCycleHours = 720;
+				public const double gMonthCycleMinutes = 43200;
+				public const double gMonthCycleSeconds = 2592000;
+				public static double gMonthCycleRT = 21600;
 				//season cycle
-				public readonly static double gSeasonCycleMonths = 3;
-				public readonly static double gSeasonCycleDays = 90;
-				public readonly static double gSeasonCycleHours = 2160;
-				public readonly static double gSeasonCycleMinutes = 129600;
-				public readonly static double gSeasonCycleSeconds = 7776000;
-				public readonly static double gSeasonCycleRT = 64800;
-				public readonly static double gSeasonCycleWT = gSeasonCycleRT * gSecondsPerRTSecond;
+				public const double gSeasonCycleMonths = 3;
+				public const double gSeasonCycleDays = 90;
+				public const double gSeasonCycleHours = 2160;
+				public const double gSeasonCycleMinutes = 129600;
+				public const double gSeasonCycleSeconds = 7776000;
+				public static double gSeasonCycleRT = 64800;
 				//year cycle
-				public readonly static uint gYearCycleSeasons = 4;
-				public readonly static uint gYearCycleMonths = 12;
-				public readonly static uint gYearCycleDays = 360;
-				public readonly static uint gYearCycleHours = 8640;
-				public readonly static uint gYearCycleMinutes = 518400;
-				public readonly static uint gYearCycleSeconds = 31104000;
-				public readonly static uint gYearCycleRT = 259200;
-				public readonly static double gYearCycleWT = gYearCycleRT * gSecondsPerRTSecond;
+				public const double gYearCycleSeasons = 4;
+				public const double gYearCycleMonths = 12;
+				public const double gYearCycleDays = 360;
+				public const double gYearCycleHours = 8640;
+				public const double gYearCycleMinutes = 518400;
+				public const double gYearCycleSeconds = 31104000;
+				public static double gYearCycleRT = 259200;
 				//century cycle
-				public readonly static uint gCenturyCycleYears = 100;
-				public readonly static uint gCenturyCycleSeasons = 400;
-				public readonly static uint gCenturyCycleMonths = 1200;
-				public readonly static uint gCenturyCycleDays = 36000;
-				public readonly static uint gCenturyCycleHours = 864000;
-				public readonly static uint gCenturyCycleMinutes = 51840000;
-				public readonly static uint gCenturyCycleSeconds = 3110400000;
-				public readonly static uint gCenturyCycleRT = 25920000;
-				public readonly static double gCenturyCycleWT = gCenturyCycleRT * gSecondsPerRTSecond;
+				public const double gCenturyCycleYears = 100;
+				public const double gCenturyCycleSeasons = 400;
+				public const double gCenturyCycleMonths = 1200;
+				public const double gCenturyCycleDays = 36000;
+				public const double gCenturyCycleHours = 864000;
+				public const double gCenturyCycleMinutes = 51840000;
+				public const double gCenturyCycleSeconds = 3110400000;
+				public static double gCenturyCycleRT = 25920000;
 
 				#endregion
 
@@ -1017,9 +1024,6 @@ namespace Frontiers
 				protected static double mARTimeScaleTarget = 1.0f;
 				protected static double mARTOffsetTime = 0.0f;
 				protected static double mARTDeltaTime = 0.0f;
-				protected static double mWCTime = 0.0f;
-				protected static double mWCDeltaTime = 0.0f;
-				protected static double mWCLastUpdatedTime = 0.0f;
 				protected static double mTimeScaleChangeSpeed = 0.25f;
 				protected static int mLastHour = 0;
 				protected static int mNextHour = 0;

@@ -1,6 +1,7 @@
 using UnityEngine;
-using System.Collections;
 using System;
+using System.Collections;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -57,9 +58,12 @@ namespace Frontiers.World
 				{
 						Location location = worlditem.Get <Location>();
 						while (location.LocationGroup == null || !location.LocationGroup.Is(WIGroupLoadState.Loaded)) {
-								yield return new WaitForSeconds(0.5f);
+								yield return WorldClock.WaitForSeconds(0.5);
 						}
 						while (Den.SpawnedCreatures.Count < State.NumOrbs) {
+								if (mDestroyed)
+										yield break;
+
 								//spawn an orb and immobilize it
 								Creature orb = null;
 								if (!Creatures.SpawnCreature(Den, location.LocationGroup, SpawnerParent.position, out orb)) {
@@ -70,6 +74,11 @@ namespace Frontiers.World
 								//start the animation and move the orb along with the spawner parent object
 								//the body will follow it automatically
 								yield return null;
+
+								if (DispenseAnimator == null) {
+										yield break;
+								}
+
 								try {
 										DispenseAnimator[DispenseAnimationName].normalizedTime = 0f;
 										DispenseAnimator.Play(DispenseAnimationName);
@@ -77,7 +86,8 @@ namespace Frontiers.World
 										Debug.LogError(e.ToString());
 										yield break;
 								}
-								while (DispenseAnimator[DispenseAnimationName].normalizedTime < 1f) {
+
+								while (DispenseAnimator != null && DispenseAnimator[DispenseAnimationName].normalizedTime < 1f) {
 										orb.worlditem.tr.position = SpawnerParent.position;
 										orb.worlditem.tr.rotation = SpawnerParent.rotation;
 										yield return null;
@@ -85,7 +95,11 @@ namespace Frontiers.World
 								//now release the orb and let it do whatever
 								motile.IsImmobilized = false;
 								yield return null;
-								DispenseAnimator.Stop();
+								if (DispenseAnimator == null) {
+										yield break;
+								} else {
+										DispenseAnimator.Stop();
+								}
 						}
 						mDispensingOrbs = false;
 						yield break;

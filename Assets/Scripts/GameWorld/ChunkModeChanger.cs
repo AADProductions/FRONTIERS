@@ -16,7 +16,10 @@ public class ChunkModeChanger : MonoBehaviour
 		WorldChunk Chunk;
 		//this is what we use to determine loading steps
 		public ChunkMode StartTargetMode = ChunkMode.Unloaded;
-		public static List <int> DebugChunkIDs = new List<int>() { 3, 4 };
+
+		protected WaitForSeconds mWaitAdjascent = new WaitForSeconds(0.05f);
+		protected WaitForSeconds mWaitDistant = new WaitForSeconds(0.1f);
+		protected WaitForSeconds mWaitForTerrain = new WaitForSeconds(0.5f);
 
 		public void RefreshTargetMode()
 		{	//if we haven't started yet
@@ -158,46 +161,45 @@ public class ChunkModeChanger : MonoBehaviour
 								yield return null;
 						}
 						//run the sequence
+						IEnumerator preStep = null;
+						IEnumerator nextStep = null;
 						switch (GetNextStep()) {
 								case LoadStep.LoadImmediate:
-										GameWorld.IsLoadingChunk = true;
-										yield return StartCoroutine(LoadImmediate());
-										RefreshTerrainSettings(Chunk.CurrentMode);
-										GameWorld.IsLoadingChunk = false;
+										nextStep = LoadImmediate();
 										break;
 
 								case LoadStep.LoadAdjascent:
-										GameWorld.IsLoadingChunk = true;
-										yield return StartCoroutine(LoadAdjascent());
-										RefreshTerrainSettings(Chunk.CurrentMode);
-										GameWorld.IsLoadingChunk = false;
+										nextStep = LoadAdjascent();
 										break;
 
 								case LoadStep.LoadDistant:
 								default:
-										GameWorld.IsLoadingChunk = true;
-										yield return StartCoroutine(LoadChunk());
-										yield return StartCoroutine(LoadDistant());
-										RefreshTerrainSettings(Chunk.CurrentMode);
-										GameWorld.IsLoadingChunk = false;
+										preStep = LoadChunk();
+										nextStep = LoadDistant();
 										break;
 
 								case LoadStep.UnloadDistant:
-										yield return StartCoroutine(UnloadDistant());
-										yield return StartCoroutine(UnloadChunk());
-										RefreshTerrainSettings(Chunk.CurrentMode);
+										preStep = UnloadDistant();
+										nextStep = UnloadChunk();
 										break;
 
 								case LoadStep.UnloadAdjascent:
-										yield return StartCoroutine(UnloadAdjascent());
-										RefreshTerrainSettings(Chunk.CurrentMode);
+										nextStep = UnloadAdjascent();
 										break;
 
 								case LoadStep.UnloadImmediate:
-										yield return StartCoroutine(UnloadImmediate());
-										RefreshTerrainSettings(Chunk.CurrentMode);
+										nextStep = UnloadImmediate();
 										break;
 						}
+						if (preStep != null) {
+								while (preStep.MoveNext()) {
+										yield return preStep.Current;
+								}
+						}
+						while (nextStep.MoveNext()) {
+								yield return nextStep.Current;
+						}
+						RefreshTerrainSettings(Chunk.CurrentMode);
 						yield return null;
 				}
 				Finish();
@@ -219,7 +221,7 @@ public class ChunkModeChanger : MonoBehaviour
 								//whoops! something changed while we were waiting
 								yield break;
 						} else if (GameManager.Is(FGameState.InGame)) {
-								yield return new WaitForSeconds(0.5f);
+								yield return mWaitForTerrain;
 						} else {
 								yield return null;
 						}
@@ -229,29 +231,49 @@ public class ChunkModeChanger : MonoBehaviour
 				yield return StartCoroutine(Chunk.GenerateTerrain(newTerrain, !Player.Local.Surroundings.IsUnderground));
 				//now re-set the neighbors
 				GameWorld.Get.ReattachChunkNeighbors();
-
-				yield return StartCoroutine(Chunk.RefreshTerrainTextures());
-				yield return Chunk.StartCoroutine(Chunk.RefreshTerrainObjects());
-				yield return Chunk.StartCoroutine(Chunk.AddTerrainTrees());
-				yield return Chunk.StartCoroutine(Chunk.AddTerrainDetails());
-				//Chunk.PrimaryTerrain.castShadows = false;
+				var refreshTerrainTextures = Chunk.RefreshTerrainTextures();
+				while (refreshTerrainTextures.MoveNext()) {
+						yield return refreshTerrainTextures.Current;
+				}
+				var refreshTerrainObjects = Chunk.RefreshTerrainObjects();
+				while (refreshTerrainObjects.MoveNext()) {
+						yield return refreshTerrainObjects.Current;
+				}
+				var addTerrainTrees = Chunk.AddTerrainTrees();
+				while (addTerrainTrees.MoveNext()) {
+						yield return addTerrainTrees.Current;
+				}
+				var addTerrainDetails = Chunk.AddTerrainDetails();
+				while (addTerrainDetails.MoveNext()) {
+						yield return addTerrainDetails.Current;
+				}
 				yield break;
 		}
 
 		protected IEnumerator LoadImmediate()
 		{
-				while (GameManager.Is(FGameState.Cutscene)) {
+				while (GameManager.Is(FGameState.Cutscene) || Conversations.Get.LocalConversation.Initiating) {
 						yield return null;
 				}
-				yield return Chunk.StartCoroutine(Chunk.AddTerainFX(ChunkMode.Immediate));
+
+				var nextTask = Chunk.AddTerainFX(ChunkMode.Immediate);
+				while (nextTask.MoveNext()) {
+						yield return nextTask.Current;
+				}
 
 				Chunk.PrimaryTerrain.Flush();
 
 				for (int i = 0; i < Chunk.SceneryData.AboveGround.SolidTerrainPrefabs.Count; i++) {
-						Structures.LoadChunkPrefab(Chunk.SceneryData.AboveGround.SolidTerrainPrefabs[i], Chunk, ChunkMode.Immediate);
+						nextTask = Structures.LoadChunkPrefab(Chunk.SceneryData.AboveGround.SolidTerrainPrefabs[i], Chunk, ChunkMode.Immediate);
+						while (nextTask.MoveNext()) {
+								yield return nextTask.Current;
+						}
 				}
 				for (int i = 0; i < Chunk.SceneryData.BelowGround.SolidTerrainPrefabs.Count; i++) {
-						Structures.LoadChunkPrefab(Chunk.SceneryData.BelowGround.SolidTerrainPrefabs[i], Chunk, ChunkMode.Immediate);
+						nextTask = Structures.LoadChunkPrefab(Chunk.SceneryData.BelowGround.SolidTerrainPrefabs[i], Chunk, ChunkMode.Immediate);
+						while (nextTask.MoveNext()) {
+								yield return nextTask.Current;
+						}
 				}
 				if (Chunk.TargetMode == ChunkMode.Primary) {
 						Chunk.CurrentMode = ChunkMode.Primary;
@@ -264,19 +286,22 @@ public class ChunkModeChanger : MonoBehaviour
 		protected IEnumerator LoadAdjascent()
 		{
 				for (int i = 0; i < Chunk.SceneryData.AboveGround.SolidTerrainPrefabsAdjascent.Count; i++) {
-						Structures.LoadChunkPrefab(Chunk.SceneryData.AboveGround.SolidTerrainPrefabsAdjascent[i], Chunk, ChunkMode.Adjascent);
+						var nextTask = Structures.LoadChunkPrefab(Chunk.SceneryData.AboveGround.SolidTerrainPrefabsAdjascent[i], Chunk, ChunkMode.Adjascent);
+						while (nextTask.MoveNext()) {
+								yield return nextTask.Current;
+						}
 						switch (Chunk.TargetMode) {
 								case ChunkMode.Immediate:
 								case ChunkMode.Primary:
 										break;
 
 								case ChunkMode.Adjascent:
-										yield return WorldClock.WaitForRTSeconds(0.05f);
+										yield return null;
 										break;
 
 								default:
 										//if we don't need this >rightaway< give the world some time to breathe
-										yield return WorldClock.WaitForRTSeconds(0.1f);
+										yield return mWaitDistant;
 										break;
 						}
 				}
@@ -286,22 +311,28 @@ public class ChunkModeChanger : MonoBehaviour
 
 		protected IEnumerator LoadDistant()
 		{
-				yield return Chunk.StartCoroutine(Chunk.AddRivers(ChunkMode.Immediate));
+				var nextTask = Chunk.AddRivers(ChunkMode.Immediate);
+				while (nextTask.MoveNext()) {
+						yield return nextTask.Current;
+				}
 
 				for (int i = 0; i < Chunk.SceneryData.AboveGround.SolidTerrainPrefabsDistant.Count; i++) {
-						Structures.LoadChunkPrefab(Chunk.SceneryData.AboveGround.SolidTerrainPrefabsDistant[i], Chunk, ChunkMode.Distant);
+						nextTask = Structures.LoadChunkPrefab(Chunk.SceneryData.AboveGround.SolidTerrainPrefabsDistant[i], Chunk, ChunkMode.Distant);
+						while (nextTask.MoveNext()) {
+								yield return nextTask.Current;
+						}
 						switch (Chunk.TargetMode) {
 								case ChunkMode.Immediate:
 								case ChunkMode.Primary:
 										break;
 
 								case ChunkMode.Adjascent:
-										yield return WorldClock.WaitForRTSeconds(0.05f);
+										yield return null;
 										break;
 
 								default:
 										//if we don't need this >rightaway< give the world some time to breathe
-										yield return WorldClock.WaitForRTSeconds(0.1f);
+										yield return mWaitDistant;
 										break;
 						}
 				}

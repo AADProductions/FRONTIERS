@@ -19,7 +19,7 @@ namespace Frontiers
 			}
 		}
 
-		private Dictionary <string, ParticleSystem>	emitterDict = new Dictionary<string, ParticleSystem> ();
+				private Dictionary <string, ParticleSystem>	emitterDict = new Dictionary<string, ParticleSystem> ();
 		public float transitionSpeed;
 
 		[Serializable]
@@ -32,7 +32,7 @@ namespace Frontiers
 
 		public ParticleSystemSetting[] particleSettings;
 		public GameObject[] bugParticlePrefabs;
-		private Dictionary<string, AtmoParticleSetting> particleSettingDict = new Dictionary<string, AtmoParticleSetting> ();
+				private Dictionary<string, AtmoParticleSetting> particleSettingDict = new Dictionary<string, AtmoParticleSetting> ();
 
 		public void ChangeAtmoSettingDensity (string atmoType, float atmoDensity)
 		{

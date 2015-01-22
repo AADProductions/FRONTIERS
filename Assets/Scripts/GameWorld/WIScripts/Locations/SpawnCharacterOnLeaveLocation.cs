@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System;
 using Frontiers;
-using Frontiers.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -34,7 +34,7 @@ namespace Frontiers.World
 				protected IEnumerator CheckConditionOverTime()
 				{
 						//wait for a second because missions may need to update in response to leaving this location
-						yield return new WaitForSeconds(5f);
+						yield return WorldClock.WaitForSeconds(5.0);
 						//see if our mission conditions are met
 						if (MissionCondition.CheckCondition(State.Condition)) {
 								//create a spawner that follows the player around

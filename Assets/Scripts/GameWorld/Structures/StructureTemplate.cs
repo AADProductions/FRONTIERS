@@ -66,13 +66,14 @@ namespace Frontiers.World
 		{
 			//instantiate the child objects
 			ChildPiece childPiece = ChildPiece.Empty;
-			ChildPiece[] childPieces = StructureTemplate.ExtractChildPiecesFromLayer(staticLayer.Instances);
+			List <ChildPiece> childPieces = new List<ChildPiece>();
+			StructureTemplate.ExtractChildPiecesFromLayer(childPieces, staticLayer.Instances);
 			//send the child pieces to the mesh combiner and wait for it to finish
 			StructurePackPrefab prefab = null;
 			if (Structures.Get.PackStaticPrefab(staticLayer.PackName, staticLayer.PrefabName, out prefab)) {
 				//add the child pieces to the mesh combiner
-				if (childPieces.Length > 0) {
-					for (int j = 0; j < childPieces.Length; j++) {
+				if (childPieces.Count > 0) {
+					for (int j = 0; j < childPieces.Count; j++) {
 						childPiece = childPieces[j];
 						//use the helper to create a world matrix
 						GameObject instantiatedPrefab = GameObject.Instantiate(prefab.Prefab) as GameObject;
@@ -84,7 +85,7 @@ namespace Frontiers.World
 						instantiatedPrefab.tag = staticLayer.Tag;
 					}
 				}
-				Array.Clear(childPieces, 0, childPieces.Length);
+				childPieces.Clear();
 				childPieces = null;
 			} else {	
 				//Debug.Log ("Couldn't load " + staticLayer.PackName + ", " + staticLayer.PrefabName + " in " + childParent.name);
@@ -95,11 +96,12 @@ namespace Frontiers.World
 		{
 			//instantiate the child objects
 			ChildPiece childPiece = ChildPiece.Empty;
-			ChildPiece[] childPieces = StructureTemplate.ExtractChildPiecesFromLayer(dynamicInstances);
+			List <ChildPiece> childPieces = new List<ChildPiece>();
+			StructureTemplate.ExtractChildPiecesFromLayer(childPieces, dynamicInstances);
 			//send the child pieces to the mesh combiner and wait for it to finish
 			DynamicPrefab prefab = null;
-			if (childPieces.Length > 0) {
-				for (int j = 0; j < childPieces.Length; j++) {
+			if (childPieces.Count > 0) {
+				for (int j = 0; j < childPieces.Count; j++) {
 					childPiece = childPieces[j];
 					//use the helper to create a world matrix
 					if (Structures.Get.PackDynamicPrefab(childPiece.PackName, childPiece.ChildName, out prefab)) {
@@ -120,7 +122,7 @@ namespace Frontiers.World
 					}
 				}
 			}
-			Array.Clear(childPieces, 0, childPieces.Length);
+			childPieces.Clear();
 			childPieces = null;
 		}
 
@@ -743,15 +745,14 @@ namespace Frontiers.World
 			childLayer = childLayer + (childLayerPieces.JoinToString(",\t") + "\n");
 		}
 
-		public static ChildPiece [] ExtractChildPiecesFromLayer(string layer)
+		public static void ExtractChildPiecesFromLayer(List<ChildPiece> childPieces, string layer)
 		{
-			//Debug.Log ("Exctracing layer " + layer);
-			string[] splitLayer = layer.Split(new string [] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
-			ChildPiece[] childPieces = new ChildPiece [splitLayer.Length];
-			for (int i = 0; i < splitLayer.Length; i++) {
+			List <string> splitLayer = Data.GameData.SplitString(layer, new string [] { "\n" });
+			for (int i = 0; i < splitLayer.Count; i++) {
 				ChildPiece childPiece = new ChildPiece();
-				string[] splitChild = splitLayer[i].Split(new string [] { ",\t" }, StringSplitOptions.None);
+				List <string> splitChild = Data.GameData.SplitString(splitLayer[i], new string [] { ",\t" });
 				//0:packname, 1:childname, 2:xpos, 3:ypos, 4:zpos, 5:xrot, 6:yrot, 7:zrot, 8:xscl, 9:yscl, 10:zscl, 11:mat1|mat2|mat3\n\r
+				//Debug.Log("Splitting " + splitLayer[i] + " into " + splitChild.Count.ToString());
 				childPiece.PackName = splitChild[0];
 				childPiece.ChildName = splitChild[1];
 				childPiece.Position = Vector3.zero;
@@ -774,23 +775,26 @@ namespace Frontiers.World
 					childPiece.Materials = new string [] { splitChild[11] };
 				}
 				//not all child pieces will have a behavior so check first
-				if (splitChild.Length > 12) {
+				if (splitChild.Count > 12) {
 					childPiece.DestroyedBehavior = Int32.Parse(splitChild[12]);
 				} else {
 					childPiece.DestroyedBehavior = 0;//None
 				}
-				childPieces[i] = childPiece;
+				splitChild.Clear();
+				splitChild = null;
+				childPieces.Add(childPiece);
 			}
-			return childPieces;
+			splitLayer.Clear();
+			splitLayer = null;
 		}
 
 		public static LightPiece [] ExtractLightPiecesFromLayer(string layer)
 		{
-			string[] splitLayer = layer.Split(new string [] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
-			LightPiece[] lightPieces = new LightPiece [splitLayer.Length];
-			for (int i = 0; i < splitLayer.Length; i++) {
+			List <string> splitLayer = Data.GameData.SplitString(layer, new string [] { "\n" });
+			LightPiece[] lightPieces = new LightPiece [splitLayer.Count];
+			for (int i = 0; i < splitLayer.Count; i++) {
 				LightPiece lightPiece = new LightPiece();
-				string[] splitChild = splitLayer[i].Split(new string [] { ",\t" }, StringSplitOptions.RemoveEmptyEntries);
+				List <string> splitChild = Data.GameData.SplitString(splitLayer[i], new string [] { ",\t" });
 				//0:name, 1:type, 2:intensity, 3:colr, 4:colg, 5:colb, 6:range, 7:spotangle, 8:posx, 9:posy, 10:posz, 11:rotx, 12:roty, 13rotz
 				lightPiece.LightName = splitChild[0];
 				lightPiece.LightType = splitChild[1];
@@ -817,11 +821,11 @@ namespace Frontiers.World
 
 		public static FXPiece [] ExtractFXPiecesFromLayer(string layer)
 		{
-			string[] splitLayer = layer.Split(new string [] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
-			FXPiece[] fxPieces = new FXPiece [splitLayer.Length];
-			for (int i = 0; i < splitLayer.Length; i++) {
+			List <string> splitLayer = Data.GameData.SplitString(layer, new string [] { "\n" });
+			FXPiece[] fxPieces = new FXPiece [splitLayer.Count];
+			for (int i = 0; i < splitLayer.Count; i++) {
 				FXPiece fxPiece = new FXPiece();
-				string[] splitChild = splitLayer[i].Split(new string [] { ",\t" }, StringSplitOptions.RemoveEmptyEntries);
+				List <string> splitChild = Data.GameData.SplitString(splitLayer[i], new string [] { ",\t" });
 				//0:fxname, 1:soundname, 2:soundtype, 3:fxcolr, 4:fxcolg, 5:fxcolb, 6:delay, 7:duration, 8:posx, 9:posy, 10:posz, 11:rotx, 12:roty, 13:rotz
 				fxPiece.FXName = splitChild[0];
 				fxPiece.SoundName = splitChild[1];

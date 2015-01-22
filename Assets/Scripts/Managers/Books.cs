@@ -613,7 +613,7 @@ namespace Frontiers
 								book.NumCopiesReceived++;
 								//now that we've altered it, save it!
 								Mods.Get.Runtime.SaveMod <Book>(book, "Book", bookName);
-								Player.Get.AvatarActions.ReceiveAction(AvatarAction.BookRead, WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.BookRead, WorldClock.AdjustedRealTime);
 								//launch the book reader
 								Get.LaunchBookReader(book, callBack);
 						}
@@ -632,7 +632,7 @@ namespace Frontiers
 								//now that we've altered it, save it!
 								Mods.Get.Runtime.SaveMod <Book>(book, "Book", bookName);
 								GUIManager.PostGainedItem(book);
-								Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.BookAquire), WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.BookAquire, WorldClock.AdjustedRealTime);
 						}
 				}
 

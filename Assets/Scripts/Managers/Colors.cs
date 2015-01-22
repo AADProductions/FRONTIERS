@@ -8,23 +8,14 @@ using System;
 namespace Frontiers
 {
 		public class Colors : Manager
-		{		//used mostly to manipulate colors on the fly
+		{
+				//used mostly to manipulate colors on the fly
 				//will also store / load color schemes
 				public static Colors Get;
-
 				public static PathColorManager PathColors;
 				public static BannerColorManager BannerColors;
 				public FontColorManager FontColors;
 				public List <FlagsetColor> FlagsetColors = new List <FlagsetColor>();
-				public string CurrentColorSchemeName {
-						get {
-								return mCurrentColorSchemeName;
-						}
-						set {
-								mCurrentColorSchemeName = value;
-								//TODO load color scheme
-						}
-				}
 
 				[HideInInspector]
 				public string [] ColorNames {
@@ -57,6 +48,63 @@ namespace Frontiers
 
 				}
 
+				public void PushInterfaceColors(IEnumerable<ColorKey> interfaceColors)
+				{
+						Type type = typeof(Colors);
+						foreach (ColorKey key in interfaceColors) {
+								FieldInfo field = type.GetField(key.Name);
+								if (field != null && field.FieldType == typeof(Color)) {
+										field.SetValue(this, key.color);
+								} else {
+										Debug.Log("Couldn't set field " + key.Name + ", was null or not type of color");
+								}
+						}
+
+						//get all label and button setup components
+						//set them all to the new colors
+						UILabel[] labels = GameObject.FindObjectsOfType <UILabel>();
+						UITiledSprite[] bgSprites = GameObject.FindObjectsOfType <UITiledSprite>();
+						UISlicedSprite[] borderSprites = GameObject.FindObjectsOfType <UISlicedSprite>();
+						GUI.GUIButtonSetup[] buttonSetup = GameObject.FindObjectsOfType <GUI.GUIButtonSetup>();
+						GUI.GUISliderSetColors[] sliderColors = GameObject.FindObjectsOfType <GUI.GUISliderSetColors>();
+						GUI.GUIPopupSetup[] popupSetup = GameObject.FindObjectsOfType <GUI.GUIPopupSetup>();
+
+						for (int i = 0; i < labels.Length; i++) {
+								if (labels[i].useDefaultLabelColor) {
+										labels[i].color = Colors.Alpha(MenuButtonTextColorDefault, labels[i].alpha);
+								}
+						}
+
+						for (int i = 0; i < bgSprites.Length; i++) {
+								if (bgSprites[i].useDefaultBackgroundColor) {
+										bgSprites[i].color = Colors.Alpha(TiledBackgroundColorDefault, bgSprites[i].alpha);
+								}
+						}
+
+						for (int i = 0; i < borderSprites.Length; i++) {
+								if (borderSprites[i].useDefaultBorderSpriteColor) {
+										borderSprites[i].color = Colors.Alpha(WindowBorderColorDefault, borderSprites[i].alpha);
+								}
+						}
+
+						for (int i = 0; i < buttonSetup.Length; i++) {
+								buttonSetup[i].RefreshColors();
+						}
+
+						for (int i = 0; i < sliderColors.Length; i++) {
+								sliderColors[i].RefreshColors();
+						}
+
+						for (int i = 0; i < popupSetup.Length; i++) {
+								popupSetup[i].RefreshColors();
+						}
+				}
+
+				public List <ColorKey> DefaultInterfaceColors()
+				{
+						return mDefaultInterfaceColors;
+				}
+
 				public void FindColorNames()
 				{
 						FieldInfo[] fields = this.GetType().GetFields();
@@ -86,6 +134,12 @@ namespace Frontiers
 										if (field.FieldType == typeof(Color)) {	//TODO find best way to clean fields
 												string colorName = field.Name;
 												Color color = (Color)field.GetValue(this);
+												if (field.IsDefined(typeof(InterfaceColorAttribute), true)) {
+														ColorKey cc = new ColorKey();
+														cc.Name = field.Name;
+														cc.color = color;
+														mDefaultInterfaceColors.Add(cc);
+												}
 												mStandardColorLookup.Add(colorName, color);
 										}
 								}
@@ -125,7 +179,6 @@ namespace Frontiers
 						}
 						return color;
 				}
-
 				#if UNITY_EDITOR
 				public string GetOrCreateColor(Color existingColor, int tolerance, string newColorName)
 				{
@@ -202,6 +255,23 @@ namespace Frontiers
 				}
 
 				public List <ColorKey> ColorKeys = new List <ColorKey>();
+
+				public List <ColorKey> InterfaceColorKeys()
+				{
+						List <ColorKey> colorKeys = new List<ColorKey>();
+						System.Type type = typeof(Colors);
+						FieldInfo[] fields = type.GetFields();
+						foreach (FieldInfo f in fields) {
+								if (f.IsDefined(typeof(InterfaceColorAttribute), true)) {
+										ColorKey cc = new ColorKey();
+										cc.Name = f.Name;
+										cc.color = (Color)f.GetValue(this);
+										colorKeys.Add(cc);
+								}
+						}
+						return colorKeys;
+				}
+
 				public Color InteriorAmbientColorDay;
 				public Color InteriorAmbientColorNight;
 				public Color BelowGroundAmbientColor;
@@ -215,25 +285,8 @@ namespace Frontiers
 				public Color DayBaseColor;
 				public Color NightBaseColor;
 				public Color LightningFlashColor = Color.white;
-				public Color GenericHighValue = Color.white;
-				public Color GenericMidValue = Color.white;
-				public Color GenericLowValue = Color.white;
-				public Color GenericNeutralValue = Color.white;
-				public Color HUDNameColor = Color.white;
-				public Color HUDNegativeFGColor = Color.white;
-				public Color HUDNegativeBGColor = Color.white;
-				public Color HUDPositiveFGColor = Color.white;
-				public Color HUDPositiveBGColor = Color.white;
-				public Color HUDNeutralFGColor = Color.white;
-				public Color HUDNeutralBGColor = Color.white;
-				public Color PingNegativeColor = Color.white;
-				public Color PingPositiveColor = Color.white;
-				public Color PingNeutralColor = Color.white;
 				public Color DarkLuminiteMaterialColor = Color.white;
 				public Color OptionDialogCredentialsText = Color.white;
-				public Color ConversationBracketedText = Color.white;
-				public Color ConversationPlayerText = Color.white;
-				public Color ConversationCharacterText = Color.white;
 				public Color PathEvaluatingColor1 = Color.white;
 				public Color PathEvaluatingColor2 = Color.white;
 				public Color WorldPathDifficultyEasy = Color.white;
@@ -244,38 +297,103 @@ namespace Frontiers
 				public Color WorldPathDifficultyImpassable = Color.white;
 				public Color WorldItemPlacementPermitted = Color.white;
 				public Color WorldItemPlacementNotPermitted = Color.white;
-				public Color MessageSuccessColor = Color.white;
-				public Color MessageInfoColor = Color.white;
-				public Color MessageWarningColor = Color.white;
-				public Color MessageDangerColor = Color.white;
-				public Color MenuButtonTextColorDefault = Color.white;
-				public Color MenuButtonTextOutlineColor = Color.white;
-				public Color MenuButtonBackgroundColorDefault	= Color.white;
-				public Color MenuButtonOverlayColorDefault = Color.white;
-				public Color PopupListBackgroundColor = Color.white;
-				public Color PopupListForegroundColor = Color.white;
-				public Color SliderThumbColor = Color.white;
-				public Color SliderForegroundColor = Color.white;
-				public Color SliderBackgroundColor = Color.white;
-				public Color GeneralHighlightColor = Color.white;
-				public Color WarningHighlightColor = Color.white;
-				public Color SuccessHighlightColor = Color.white;
-				public Color SkillIconColor = Color.white;
 				public Color FoodStuffEdible = Color.white;
 				public Color FoodStuffPoisonous = Color.white;
 				public Color FoodStuffHallucinogen = Color.white;
 				public Color FoodStuffMedicinal = Color.white;
 				public Color WorldRouteMarkerRevealed = Color.white;
 				public Color WorldRouteMarkerVisited = Color.white;
+				[InterfaceColorAttribute]
+				public Color GenericHighValue = Color.white;
+				[InterfaceColorAttribute]
+				public Color GenericMidValue = Color.white;
+				[InterfaceColorAttribute]
+				public Color GenericLowValue = Color.white;
+				[InterfaceColorAttribute]
+				public Color GenericNeutralValue = Color.white;
+				[InterfaceColorAttribute]
+				public Color HUDNameColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color HUDNegativeFGColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color HUDNegativeBGColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color HUDPositiveFGColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color HUDPositiveBGColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color HUDNeutralFGColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color HUDNeutralBGColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color PingNegativeColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color PingPositiveColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color PingNeutralColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color ConversationBracketedText = Color.white;
+				[InterfaceColorAttribute]
+				public Color ConversationPlayerOption = Color.white;
+				[InterfaceColorAttribute]
+				public Color ConversationPlayerBackground = Color.white;
+				[InterfaceColorAttribute]
+				public Color MessageSuccessColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color MessageInfoColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color MessageWarningColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color MessageDangerColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color MenuButtonTextColorDefault = Color.white;
+				[InterfaceColorAttribute]
+				public Color MenuButtonTextOutlineColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color MenuButtonBackgroundColorDefault = Color.white;
+				[InterfaceColorAttribute]
+				public Color MenuButtonOverlayColorDefault = Color.white;
+				[InterfaceColorAttribute]
+				public Color WindowBorderColorDefault = Color.white;
+				[InterfaceColorAttribute]
+				public Color PopupListBackgroundColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color PopupListForegroundColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color TiledBackgroundColorDefault = Color.white;
+				[InterfaceColorAttribute]
+				public Color SliderThumbColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color SliderForegroundColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color SliderBackgroundColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color GeneralHighlightColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color WarningHighlightColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color SuccessHighlightColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color SkillIconColor = Color.white;
+				[InterfaceColorAttribute]
 				public Color SkillMasteredColor = Color.white;
+				[InterfaceColorAttribute]
 				public Color SkillLearnedColorLow = Color.white;
+				[InterfaceColorAttribute]
 				public Color SkillLearnedColorMid = Color.white;
+				[InterfaceColorAttribute]
 				public Color SkillLearnedColorHigh = Color.white;
+				[InterfaceColorAttribute]
 				public Color SkillKnownColor = Color.white;
+				[InterfaceColorAttribute]
 				public Color SkillUnknownColor = Color.white;
+				[InterfaceColorAttribute]
 				public Color BookColorGeneric = Color.white;
+				[InterfaceColorAttribute]
 				public Color BookColorMission = Color.white;
+				[InterfaceColorAttribute]
 				public Color BookColorLore = Color.white;
+				[InterfaceColorAttribute]
 				public Color BookColorSkill = Color.white;
 
 				public Color ByName(string colorName)
@@ -510,12 +628,46 @@ namespace Frontiers
 						return hex;
 				}
 
+				public static Color HexToColor(string hex, Color failSafe)
+				{
+						hex = hex.ToLower();
+						//Debug.Log ("Converting hex " + hex);
+						byte r = 0;
+						byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+						byte g = 0;
+						byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+						byte b = 0;
+						byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+
+						try {
+								r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+								g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+								b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+						} catch (Exception e) {
+								Debug.LogError("Error in HexToColor: " + e.ToString());
+								return failSafe;
+						}
+						return new Color32(r, g, b, 255);
+				}
+
 				public static Color HexToColor(string hex)
 				{
+						hex = hex.ToLower();
 						//Debug.Log ("Converting hex " + hex);
-						byte r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
-						byte g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
-						byte b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+						byte r = 0;
+						byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+						byte g = 0;
+						byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+						byte b = 0;
+						byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+
+						try {
+								r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+								g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+								b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+						} catch (Exception e) {
+								Debug.LogError("Error in HexToColor: " + e.ToString());
+						}
 						return new Color32(r, g, b, 255);
 				}
 
@@ -556,6 +708,7 @@ namespace Frontiers
 				}
 
 				public float MenuButtonOverlayAlpha = 0.25f;
+				protected List <ColorKey> mDefaultInterfaceColors = new List<ColorKey>();
 				protected Dictionary <string, Color> mStandardColorLookup = new Dictionary <string, Color>();
 				protected Dictionary <string, Color> mCustomColorLookup = new Dictionary <string, Color>();
 				protected Dictionary <string, Color> mSkillGroupColorLookup = new Dictionary <string, Color>();
@@ -567,7 +720,7 @@ namespace Frontiers
 				{
 						public string Flagset = "GuildCredentials";
 						[FrontiersBitMaskAttribute("GuildCredentials")]//TODO fix this
-			public int Flags = 0;
+						public int Flags = 0;
 						public Color Color = new Color();
 				}
 		}
@@ -582,8 +735,14 @@ namespace Frontiers
 		[Serializable]
 		public class ColorScheme : Mod
 		{
-				SDictionary <string, SColor> StandardColors = new SDictionary <string, SColor>();
-				SDictionary <string, SColor> CustomColors = new SDictionary <string, SColor>();
+				public bool IsEmpty {
+						get {
+								return (GameColors == null || GameColors.Count == 0) && (InterfaceColors == null || InterfaceColors.Count == 0);
+						}
+				}
+
+				public List <ColorKey> GameColors = new List<ColorKey>();
+				public List <ColorKey> InterfaceColors = new List<ColorKey>();
 		}
 }
 //class CompileBreaker { public CompileBreaker() { var i = 0 / 0; } }

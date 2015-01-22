@@ -114,6 +114,7 @@ namespace Frontiers
 				public double GameTime = 0.0f;
 				public double GameTimeOffset = 0.0f;
 				public double WorldTimeOffset = 0.0f;
+				public double InGameMinutesPerRealtimeSecond = Globals.DefaultInGameMinutesPerRealTimeSecond;
 				public System.DateTime LastTimeSaved;
 				public PlayerCharacter Character;
 				public List <MobileReference> MarkedLocations;
@@ -208,26 +209,29 @@ namespace Frontiers
 				public static LightShadows DefaultShadowSetting = LightShadows.Soft;
 
 				public static PlayerPreferences Default()
-				{
+				{	//TODO this isn't really necessary any more, remove it
 						PlayerPreferences prefs = new PlayerPreferences();
+						/*prefs.InitializedAsDefault = true;
 						prefs.Video = VideoPrefs.Default();
 						prefs.Sound = SoundPrefs.Default();
 						prefs.Controls = ControlPrefs.Default();
 						prefs.Immersion = ImmersionPrefs.Default();
 						prefs.Accessibility = AccessibilityPrefs.Default();
-						prefs.Mods = ModPrefs.Default();
+						prefs.Mods = ModPrefs.Default();*/
 						return prefs;
 				}
 
 				public PlayerPreferences()
 				{
-						Version = GameManager.Version;
+						Version = GameManager.VersionString;
+						InitializedAsDefault = true;
 						Video = VideoPrefs.Default();
 						Sound = SoundPrefs.Default();
 						Controls = ControlPrefs.Default();
 						Immersion = ImmersionPrefs.Default();
 						Accessibility = AccessibilityPrefs.Default();
 						Mods = ModPrefs.Default();
+						CustomColors = null;
 						HideDialogs = new HashSet <string>();
 				}
 
@@ -239,13 +243,18 @@ namespace Frontiers
 						Controls.Apply();
 						Immersion.Apply();
 						Mods.Apply();
+						Accessibility.Apply();
+						if (CustomColors != null && !CustomColors.IsEmpty) {
+								Colors.Get.PushInterfaceColors(CustomColors.InterfaceColors);
+						}
 
 						if (save) {
-								Profile.Get.SaveImmediately(Profile.ProfileComponents.Preferences);
+								Profile.Get.SaveImmediately(ProfileComponents.Preferences);
 						}
 				}
 
 				public string Version;
+				public bool InitializedAsDefault = false;
 				public VideoPrefs Video;
 				public SoundPrefs Sound;
 				public ControlPrefs Controls;
@@ -253,6 +262,7 @@ namespace Frontiers
 				public AccessibilityPrefs Accessibility;
 				public ModPrefs Mods;
 				public HashSet <string> HideDialogs;
+				public ColorScheme CustomColors;
 
 				[Serializable]
 				public class ImmersionPrefs
@@ -340,12 +350,25 @@ namespace Frontiers
 										Player.Local.FPSCamera.MouseSensitivity = new Vector2(MouseSensitivityFPSCamera, MouseSensitivityFPSCamera);
 										Player.Local.FPSCamera.InvertyMouseYAxis = MouseInvertYAxis;
 								}
+
+								if (InterfaceActionSettings == null || InterfaceActionSettings.Count == 0) {
+										InterfaceActionSettings = InterfaceActionManager.Get.DefaultActionSettings;
+								}
+								if (UserActionSettings == null || UserActionSettings.Count == 0) {
+										UserActionSettings = UserActionManager.Get.DefaultActionSettings;
+								}
+
+								InterfaceActionManager.Get.PushSettings(InterfaceActionSettings);
+								UserActionManager.Get.PushSettings(UserActionSettings);
 						}
 
-						public List <UserActionSetting> Settings = new List<UserActionSetting>();
+						public List <ActionSetting> InterfaceActionSettings;
+						public List <ActionSetting> UserActionSettings;
 						public float MouseSensitivityFPSCamera = 5.0f;
 						public float MouseSensitivityInterface = 0.25f;
 						public bool MouseInvertYAxis = false;
+						public bool UseControllerMouse = true;
+						public bool UseCustomDeadZoneSettings = false;
 				}
 
 				[Serializable]
@@ -357,13 +380,15 @@ namespace Frontiers
 								return prefs;
 						}
 
+						public string DefaultFont = Globals.DefaultFontName;
 						public bool UseDyslexicFont = false;
 						public bool ColorBlindMode = false;
 						public bool ClosedCaptionMode = false;
+						public float OnScreenTextSpeed = 1f;
 
 						public void Apply()
 						{
-							
+								Mats.Get.PushDefaultFont(DefaultFont);
 						}
 				}
 
@@ -392,7 +417,7 @@ namespace Frontiers
 								prefs.Shadows = 3;
 								prefs.LodDistance = 3;
 								prefs.AmbientLightBooster = 0f;
-								prefs.AdjustBrightness = 0;
+								prefs.AdjustBrightness = 50;
 
 								prefs.TerrainGrassDistance = 100f;
 								prefs.TerrainGrassDensity = 0.5f;
@@ -657,14 +682,14 @@ namespace Frontiers
 								bool setFirst = false;
 								bool setDefault = false;
 								foreach (Resolution res in mSupportedResolutions) {
-										if (!setFirst) {	//set the first so we have something
+										if (!setFirst) { //set the first so we have something
 												ResolutionWidth = res.width;
 												ResolutionHeight = res.height;
 												setFirst = true;
 										} else if (!setDefault) {
 												if (res.width >= 1280) {
 														ResolutionWidth = res.width;
-														ResolutionHeight	= res.height;
+														ResolutionHeight = res.height;
 														setDefault = true;
 												}
 										} else {
@@ -824,7 +849,7 @@ namespace Frontiers
 						} else {
 								LastCredentialsByFlagset[flagset] = credentials;
 						}
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SkillCredentialsGain, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SkillCredentialsGain, WorldClock.AdjustedRealTime);
 				}
 
 				public int LastCredByFlagset(string flagset)
@@ -849,7 +874,7 @@ namespace Frontiers
 						}
 						ExperienceByFlagset[flagSet] = currentExperience + experience;
 
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SkillExperienceGain, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SkillExperienceGain, WorldClock.AdjustedRealTime);
 						//credentials will be handled by Skills
 				}
 
@@ -861,7 +886,7 @@ namespace Frontiers
 						}
 						ExperienceByFlagset[flagSet] = Mathf.Max(currentExperience - experience, 0);
 
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SkillExperienceLose, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SkillExperienceLose, WorldClock.AdjustedRealTime);
 						//credentials will be handled by Skills
 				}
 		}

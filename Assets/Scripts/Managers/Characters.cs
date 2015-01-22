@@ -38,6 +38,8 @@ namespace Frontiers.World
 				public List <DailyRoutineState> GenericRoutines = new List <DailyRoutineState>();
 				public GameObject CharacterBase;
 				public PlayerBody PlayerBodyPrefab;
+				public List <Speech> DamageResponseSpeeches = new List<Speech>();
+				public List <string> DamageResponseSpeechNames = new List<string>();
 
 				public List <string> AvailableBodyNames {
 						get {
@@ -174,6 +176,17 @@ namespace Frontiers.World
 						}
 				}
 
+				public override void OnGameLoadStart()
+				{
+						Speech speech = null;
+						DamageResponseSpeeches.Clear();
+						foreach (string speechName in DamageResponseSpeechNames) {
+								if (Mods.Get.Runtime.LoadMod <Speech>(ref speech, "Speech", speechName)) {
+										DamageResponseSpeeches.Add(speech);
+								}
+						}
+				}
+
 				public override void OnGameStart()
 				{
 						StartCoroutine(UpdatePilgrims());
@@ -285,6 +298,7 @@ namespace Frontiers.World
 
 				public bool GetBody(bool generic, string bodyName, out CharacterBody body)
 				{
+						body = null;
 						return !string.IsNullOrEmpty(bodyName) && mBodyLookup.TryGetValue(bodyName, out body);
 				}
 
@@ -486,7 +500,7 @@ namespace Frontiers.World
 						return false;
 				}
 				//used to mass-spawn characters by cities
-				public static void SpawnRandomCharacter(ActionNode node, List <string> templateNames, WIFlags locationFlags, WIGroup group)
+				public static void SpawnRandomCharacter(ActionNode node, List <string> templateNames, WIFlags locationFlags, WIGroup group, out Character newCharacter)
 				{
 						string templateName = node.State.OccupantName;
 						if (string.IsNullOrEmpty(templateName)) {
@@ -498,7 +512,7 @@ namespace Frontiers.World
 								}
 						}
 						Character character = null;
-						SpawnRandomCharacter(node, templateName, locationFlags, group, out character);
+						SpawnRandomCharacter(node, templateName, locationFlags, group, out newCharacter);
 				}
 
 				protected IEnumerator DespawnCharacterOverTime(Character character, bool fade)
@@ -1124,6 +1138,14 @@ namespace Frontiers.World
 
 				#region updates
 
+				public Speech SpeechInResponseToDamage (float normalizedDamage, bool knowsPlayer, int characterRepWithPlayer, int characterRepInGeneral)
+				{
+						//TODO make this not just random
+						return DamageResponseSpeeches[UnityEngine.Random.Range(0, DamageResponseSpeeches.Count)];
+				}
+
+				protected WaitForSeconds mWaitForUpdatePilgrims = new WaitForSeconds (1f);
+
 				public IEnumerator UpdatePilgrims()
 				{
 						mUpdatingPilgrims = true;
@@ -1165,9 +1187,9 @@ namespace Frontiers.World
 														}
 												}
 										}
-										yield return new WaitForSeconds(1.0f);
+										yield return mWaitForUpdatePilgrims;
 								}
-								yield return new WaitForSeconds(1.0f);
+								yield return mWaitForUpdatePilgrims;
 						}
 						mUpdatingPilgrims = false;
 						yield break;
@@ -1186,7 +1208,6 @@ namespace Frontiers.World
 				#endregion
 
 				#if UNITY_EDITOR
-
 				public int SelectedCharacter {
 						get {
 								return mSelectedCharacter;
@@ -1237,7 +1258,6 @@ namespace Frontiers.World
 						}
 				}
 				#endif
-
 				protected int mSelectedCharacter = 0;
 				protected List <string> mAvailableCharacterBodies;
 				protected Dictionary <string, Character> mSpawnedCharacters = new Dictionary <string, Character>();

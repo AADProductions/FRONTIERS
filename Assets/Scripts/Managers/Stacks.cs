@@ -549,11 +549,14 @@ namespace Frontiers
 										if (mClearTopItem == null) {
 												stack.Items.RemoveAt(i);
 										} else if (mClearTopItem.Is(WIMode.RemovedFromGame)) {
+												//Debug.Log("Item was removed from game, removing");
 												mClearTopItem.Clear();
 												stack.Items.RemoveAt(i);
 										} else if (mClearTopItem.Group != stack.Group) {
-												if (mClearTopItem.Group != null && stack.Group != null) {
-												}
+												//Debug.Log("Item group wasn't the same as stack group, removing");
+												//if (mClearTopItem.Group != null && stack.Group != null) {
+												//
+												//}
 												stack.Items.RemoveAt(i);
 										}
 								}

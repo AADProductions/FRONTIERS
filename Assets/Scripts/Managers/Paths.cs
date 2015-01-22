@@ -103,7 +103,7 @@ namespace Frontiers
 						for (int i = 0; i < Globals.MaxSplineNodesPerPath; i++) {
 								GameObject newSplineNode = GameObject.Instantiate(SplineNodePrefab.gameObject, splineNodePosition, Quaternion.identity) as GameObject;
 								newSplineNode.transform.parent = ActivePath.transform;
-								newSplineNode.name = "Node " + i.ToString();
+								//newSplineNode.name = "Node " + i.ToString();
 								splineNodePosition.Set(0f, splineNodePosition.y + 1f, 0f);
 								mActivePathNodes.Add(newSplineNode.GetComponent <SplineNode>());
 						}
@@ -439,7 +439,7 @@ namespace Frontiers
 						if (pmOriginTemplate.HasParentPath) {
 								pmOriginHasPath = true;
 								pmOriginIsTerminal = (pmOriginTemplate.IndexInParentPath == 0 || pmOriginTemplate.IndexInParentPath == pmOriginTemplate.ParentPath.Templates.LastIndex());
-								flwgPmOriginPath = ActivePath.name == pmOriginTemplate.PathName;
+								flwgPmOriginPath = (ActivePath.name == pmOriginTemplate.PathName);
 						}
 						if (pmHasPath && pmOriginHasPath) {
 								pathsAreSame = (pmTemplate.ParentPath == pmOriginTemplate.ParentPath);
@@ -545,7 +545,7 @@ namespace Frontiers
 						Get.ActivePathFollower.spline.enabled = true;
 						Get.FollowPathSkill.FollowPathPassively();
 
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.PathStartFollow), WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.PathStartFollow, WorldClock.AdjustedRealTime);
 				}
 
 				public static SplineNode GeneratePathMarker(PathMarkerInstanceTemplate state, WIGroup group)
@@ -979,6 +979,8 @@ namespace Frontiers
 						}
 				}
 
+				protected WaitForSeconds mWaitForUpdatePathMarkers = new WaitForSeconds (0.1f);
+
 				protected IEnumerator UpdateWorldPathMarkers()
 				{
 						if (GameManager.Get.TestingEnvironment) {
@@ -990,7 +992,7 @@ namespace Frontiers
 										yield return null;
 								}
 
-								yield return new WaitForSeconds(0.1f);
+								yield return mWaitForUpdatePathMarkers;
 								//check to see if our paths are still relevant
 								Bounds chunkBounds = GameWorld.Get.PrimaryChunk.ChunkBounds;
 
@@ -1067,9 +1069,9 @@ namespace Frontiers
 				{
 						//TODO re-implement this
 						//it adds plants to the path that you have to clear away
-						while (GameWorld.Get.WorldLoaded) {
-								yield return new WaitForSeconds(1f);
-						}
+						//while (GameWorld.Get.WorldLoaded) {
+						//		yield return WorldClock.WaitForSeconds(1.0);
+						//}
 						yield break;
 				}
 				#if UNITY_EDITOR

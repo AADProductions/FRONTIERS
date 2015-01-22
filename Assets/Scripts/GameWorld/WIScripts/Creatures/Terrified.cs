@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -46,13 +47,13 @@ namespace Frontiers.World
 
 				public void Update()
 				{
-						if (WorldClock.Time > mLastUpdateTime + WorldClock.RTSecondsToGameSeconds(RTUpdateInterval)) {
-								mLastUpdateTime = WorldClock.Time;
+						if (WorldClock.AdjustedRealTime > mLastUpdateTime + RTUpdateInterval) {
+								mLastUpdateTime = WorldClock.AdjustedRealTime;
 								creature.FleeFromThing(ThingToFlee);
 								FXManager.Get.SpawnFX(TargetFXObject, FXOnUpdate);
 						}
 
-						if (WorldClock.Time > StartTime + WorldClock.RTSecondsToGameSeconds(RTEffectTime)) {
+						if (WorldClock.AdjustedRealTime > StartTime + RTEffectTime) {
 								enabled = false;
 								Finish();
 						}

@@ -182,43 +182,6 @@ namespace Frontiers.World
 	}
 
 	[Serializable]
-	public enum BookSealStatus
-	{
-		None,
-		Sealed,
-		Broken,
-	}
-
-	[Serializable]
-	[Flags]
-	public enum BookStatus
-	{
-		None = 0,
-		Dormant = 1,
-		Received = 2,
-		PartlyRead = 4,
-		FullyRead = 8,
-		Archived = 16,
-		Read = FullyRead | PartlyRead,
-	}
-
-	[Serializable]
-	[Flags]
-	public enum BookType
-	{
-		None = 0,
-		Book = 1,
-		Diary = 2,
-		Scripture = 3,
-		Envelope = 4,
-		Parchment = 5,
-		PidgeonMessage = 6,
-		Scrap = 7,
-		Scroll = 8,
-		Map = 9
-	}
-
-	[Serializable]
 	public class Chapter
 	{
 		public Chapter ()

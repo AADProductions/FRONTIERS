@@ -122,7 +122,7 @@ namespace Frontiers.World
 						}
 
 						if (WorldClock.IsNight) {
-								NightTimeStart(WorldClock.Time);
+								NightTimeStart(WorldClock.AdjustedRealTime);
 						}
 				}
 

@@ -19,8 +19,6 @@ namespace Frontiers
 				public GameObject Prototypes;
 				public List <GameObject> PathWeedPrototypes = new List<GameObject>();
 				public List <GameObject> TerrainPlantPrototypes = new List<GameObject>();
-				public List <Texture2D> TerrainGrassTextures = new List<Texture2D>();
-				public List <Texture2D> TerrainGroundTextures = new List<Texture2D>();
 				public DamagePackage ThornDamage = new DamagePackage();
 				public static float MinimumGatheringSkillToRevealBasicProps = 0.25f;
 				public static float MinimumGatheringSkillToRevealEdibleProps = 0.5f;
@@ -56,30 +54,6 @@ namespace Frontiers
 				}
 
 				protected List <Plant> mKnownPlantsResult = new List <Plant>();
-
-				public bool GetTerrainGroundTexture(string terrainGroundTextureName, out Texture2D terrainGroundTexture)
-				{
-						terrainGroundTexture = null;
-						foreach (Texture2D tgt in TerrainGroundTextures) {
-								if (string.Equals(tgt.name, terrainGroundTextureName)) {
-										terrainGroundTexture = tgt;
-										break;
-								}
-						}
-						return terrainGroundTexture != null;
-				}
-
-				public bool GetTerrainGrassTexture(string terrainGrassTextureName, out Texture2D terrainGrassTexture)
-				{
-						terrainGrassTexture = null;
-						foreach (Texture2D tgt in TerrainGrassTextures) {
-								if (string.Equals(tgt.name, terrainGrassTextureName)) {
-										terrainGrassTexture = tgt;
-										break;
-								}
-						}
-						return terrainGrassTexture != null;
-				}
 
 				public bool GetTerrainPlantPrototype(string terrainPlantPrototypeName, out GameObject terrainPlantPrototype)
 				{
@@ -136,7 +110,7 @@ namespace Frontiers
 						//set up the empty grass array
 						DefaultDetailPrototype = new DetailPrototype();
 						Texture2D emptyGrassTexture = null;
-						if (GetTerrainGrassTexture("EmptyGrass", out emptyGrassTexture)) {
+						if (Mats.Get.GetTerrainGrassTexture("EmptyGrass", out emptyGrassTexture)) {
 								DefaultDetailPrototype.prototypeTexture = emptyGrassTexture;
 								DefaultDetailPrototype.usePrototypeMesh = false;
 						}
@@ -440,8 +414,8 @@ namespace Frontiers
 								//now that it has been picked
 								//anything can grow there
 								//let it know it's no longer planted
-								plantInstance.PickedTime = WorldClock.Time;//changes ReadyForPlant
-								//plantInstance.NextGrowTime = WorldClock.Time + Globals.PlantAutoRegrowInterval;
+								plantInstance.PickedTime = WorldClock.AdjustedRealTime;//changes ReadyForPlant
+								//plantInstance.NextGrowTime = WorldClock.AdjustedRealTime + Globals.PlantAutoRegrowInterval;
 								plantInstance.HasInstance = false;
 								//tell the parent chunk to save
 								//plantInstance.ParentChunk.SavePlants ();
@@ -472,7 +446,7 @@ namespace Frontiers
 						if (addToInventory) {
 								//okay, first we get a stack item of the plant
 								//don't destroy the original - just send it back to the nursury
-								worldPlant.State.TimePicked = WorldClock.Time;
+								worldPlant.State.TimePicked = WorldClock.AdjustedRealTime;
 								StackItem pickedPlant = worldPlant.worlditem.GetStackItem(WIMode.None);
 								//then add the picked plant to the inventory
 								//if we're successful, update general plant data
@@ -524,11 +498,12 @@ namespace Frontiers
 
 				public IEnumerator UpdateWorldPlants()
 				{	//update the plants surrounding the player
+						ElevationNumberGenerator = new System.Random(Profile.Get.CurrentGame.Seed);
 						while (GameWorld.Get.WorldLoaded) {
 								while (!GameManager.Is(FGameState.InGame) || !mPlantsLoaded) {
 										yield return null;
 								}
-								yield return new WaitForSeconds(0.1f);
+								yield return WorldClock.WaitForSeconds(0.1);
 								//get all the now-irrelevant instances
 								var enumerator = PlantAssigner.FindIrrelevantInstances(Player.Local, this).GetEnumerator();
 								while (enumerator.MoveNext()) {
@@ -548,7 +523,6 @@ namespace Frontiers
 												//get the plants by climate
 												List <Plant> plantsByClimate = null;
 												if (closestPlant.AboveGround && closestPlant.Climate < AGPlantsByClimate.Count) {
-														ElevationNumberGenerator = new System.Random(closestPlant.PrototypeIndex);
 														plantsByClimate = AGPlantsByClimate[closestPlant.Climate];
 												} else if (closestPlant.Climate < BGPlantsByClimate.Count) {
 														plantsByClimate = BGPlantsByClimate[closestPlant.Climate];
@@ -566,7 +540,7 @@ namespace Frontiers
 														string plantName = null;
 
 														if (closestPlant.AboveGround) {
-																elevationCheck = ElevationNumberGenerator.Next(Globals.ElevationLow, Globals.ElevationHigh);
+																elevationCheck = ElevationNumberGenerator.Next (Globals.ElevationLow, Globals.ElevationHigh);
 														}
 
 														for (int i = 0; i < plantsByClimate.Count; i++) {
@@ -595,7 +569,7 @@ namespace Frontiers
 														closestPlant.HasInstance = true;
 														closestPlant.PlantName = plantName;
 														if (closestPlant.PlantedTime < 0) {
-																closestPlant.PlantedTime = WorldClock.Time;
+																closestPlant.PlantedTime = WorldClock.AdjustedRealTime;
 														}
 
 														irrelevantInstance.transform.position = closestPlant.Position;
@@ -627,7 +601,10 @@ namespace Frontiers
 				public IEnumerator BuildPlantMeshes(Plant plant)
 				{
 						foreach (PlantSeasonalSettings seasonalSettings in plant.SeasonalSettings) {
-								yield return StartCoroutine(BuildPlantSeasonalMesh(plant, seasonalSettings));
+								var buildPlantSeasonalMesh = BuildPlantSeasonalMesh(plant, seasonalSettings);
+								while (buildPlantSeasonalMesh.MoveNext()) {
+										yield return buildPlantSeasonalMesh.Current;
+								}
 						}
 						yield break;
 				}
@@ -808,7 +785,10 @@ namespace Frontiers
 						SortPlantsByClimateAndSeason();
 						//create the meshes for the plant
 						for (int i = 0; i < PlantList.Count; i++) {
-								yield return StartCoroutine(BuildPlantMeshes(PlantList[i]));
+								var buildPlantMeshes = BuildPlantMeshes(PlantList[i]);
+								while (buildPlantMeshes.MoveNext()) {
+										yield return buildPlantMeshes.Current;
+								}
 						}
 						mPlantsLoaded = true;
 						yield break;

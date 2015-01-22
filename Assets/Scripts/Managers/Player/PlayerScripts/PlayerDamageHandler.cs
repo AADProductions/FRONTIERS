@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {
@@ -127,7 +128,7 @@ namespace Frontiers
 						Player.Local.Status.ReduceStatus(actualDamage / MeterValueMultiplier, "Health");
 						Player.Local.FPSCamera.DoBomb(Vector3.one, 0.0001f * attemptedForce.magnitude, 0.001f * attemptedForce.magnitude);
 						Player.Local.FPSController.AddSoftForce(attemptedForce, 3f);
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalTakeDamage, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalTakeDamage, WorldClock.AdjustedRealTime);
 						return true;
 				}
 

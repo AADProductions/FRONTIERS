@@ -121,37 +121,27 @@ namespace Frontiers
 										GameWorld.Get.Sky.Cycle.Hour = Cutscene.CurrentCutscene.ApparentHourOfDay;
 								}
 						}
-						//update tide
-						Biome biome = GameWorld.Get.CurrentBiome;
-						double minorVariation = Math.Abs(Math.Sin(WorldClock.AdjustedRealTime * biome.WaveSpeed * Globals.WaveSpeed)) * biome.WaveIntensity;
-						double tideWaterElevation = Math.Abs(Math.Sin(WorldClock.DayCycleCurrentNormalized)) * (GameWorld.Get.TideBaseElevationAtPlayerPosition * biome.TideVariation) + biome.TideBaseElevation;
-						TideWaterElevation = (float)(tideWaterElevation + minorVariation);
-						//TODO update rain and wind based on biomes
-						PrecipitationIntensity = Mathf.Lerp(PrecipitationIntensity, mTargetPrecipitationIntensity, (float)WorldClock.ARTDeltaTime);
-						WindIntensity = Mathf.Lerp(WindIntensity, mBaseWindIntensity, (float)WorldClock.ARTDeltaTime);
-
-						if (Player.Local.Surroundings.IsOutside) {
-								if (GameWorld.Get.CurrentBiome.Climate == ClimateType.Arctic || GameWorld.Get.CurrentRegionData.g > 0) {
-										SnowIntensity = PrecipitationIntensity;
-										RainIntensity = 0f;
+		
+						if (UseTimeOfDayOverride) {
+								GameWorld.Get.Sky.Cycle.Hour = HourOfDayOverride;
+						} else {
+								//update the sky so it knows what time it is
+								//smooth it out so we don't get herky jerky lighting
+								//make sure not to smooth it if we've looped, though
+								float newHour = (float)(WorldClock.DayCycleCurrentNormalized * 24.0);
+								if (GameWorld.Get.Sky.Cycle.Hour > newHour) {
+										GameWorld.Get.Sky.Cycle.Hour = newHour;
 								} else {
-										RainIntensity = PrecipitationIntensity;
-										SnowIntensity = 0f;
+										GameWorld.Get.Sky.Cycle.Hour = Mathf.Lerp(GameWorld.Get.Sky.Cycle.Hour, newHour, 0.5f);
 								}
-						} else {
-								RainIntensity = 0f;
-								SnowIntensity = 0f;
-						}
-						//update the sky so it knows what time it is
-						//smooth it out so we don't get herky jerky lighting
-						GameWorld.Get.Sky.Cycle.Hour = Mathf.Lerp(GameWorld.Get.Sky.Cycle.Hour, (float)(WorldClock.DayCycleCurrentNormalized * 24.0), 0.5f);
-						GameWorld.Get.Sky.Cycle.MoonPhase = (float)(WorldClock.MoonCycleCurrentNormalized);
-						if (WorldClock.SkippingAhead) {
-								//make things look like they're rustling a lot
-								GameWorld.Get.SkyAnimation.WindSpeed = WindIntensity + 5f;
-						} else {
-								//otherwise just look normal
-								GameWorld.Get.SkyAnimation.WindSpeed = WindIntensity;
+								GameWorld.Get.Sky.Cycle.MoonPhase = (float)(WorldClock.MoonCycleCurrentNormalized);
+								if (WorldClock.SkippingAhead) {
+										//make things look like they're rustling a lot
+										GameWorld.Get.SkyAnimation.WindSpeed = WindIntensity + 5f;
+								} else {
+										//otherwise just look normal
+										GameWorld.Get.SkyAnimation.WindSpeed = WindIntensity;
+								}
 						}
 						//if we're not in game that's all we need to do right now
 						if (!GameManager.Is(FGameState.InGame | FGameState.GamePaused | FGameState.GameLoading)) {
@@ -162,12 +152,33 @@ namespace Frontiers
 						bool isOutside = Player.Local.Surroundings.IsOutside;
 						float transitionTime = 0.0f;
 						if (isUnderground) {
-								transitionTime = (float)(Player.Local.Surroundings.State.TimeSinceEnteredUnderground / WorldClock.RTSecondsToGameSeconds(Globals.AmbientLightTransitionTime));
+								transitionTime = (float)(Player.Local.Surroundings.State.TimeSinceEnteredUnderground / Globals.AmbientLightTransitionTime);
 						} else {
-								transitionTime = (float)(Player.Local.Surroundings.State.TimeSinceExitedUnderground / WorldClock.RTSecondsToGameSeconds(Globals.AmbientLightTransitionTime));
+								transitionTime = (float)(Player.Local.Surroundings.State.TimeSinceExitedUnderground / Globals.AmbientLightTransitionTime);
 						}
 
 						if (GameWorld.Get.WorldLoaded) {
+								//wind and snow and rain
+								if (Player.Local.Surroundings.IsOutside) {
+										if (GameWorld.Get.CurrentBiome.Climate == ClimateType.Arctic || GameWorld.Get.CurrentRegionData.g > 0) {
+												SnowIntensity = PrecipitationIntensity;
+												RainIntensity = 0f;
+										} else {
+												RainIntensity = PrecipitationIntensity;
+												SnowIntensity = 0f;
+										}
+								} else {
+										RainIntensity = 0f;
+										SnowIntensity = 0f;
+								}
+								//update tides
+								double minorVariation = Math.Abs(Math.Sin(WorldClock.AdjustedRealTime * GameWorld.Get.CurrentBiome.WaveSpeed * Globals.WaveSpeed)) * GameWorld.Get.CurrentBiome.WaveIntensity;
+								double tideWaterElevation = Math.Abs(Math.Sin(WorldClock.DayCycleCurrentNormalized)) * (GameWorld.Get.TideBaseElevationAtPlayerPosition * GameWorld.Get.CurrentBiome.TideVariation) + GameWorld.Get.CurrentBiome.TideBaseElevation;
+								TideWaterElevation = (float)(tideWaterElevation + minorVariation);
+								//TODO update rain and wind based on biomes
+								PrecipitationIntensity = Mathf.Lerp(PrecipitationIntensity, mTargetPrecipitationIntensity, (float)WorldClock.ARTDeltaTime);
+								WindIntensity = Mathf.Lerp(WindIntensity, mBaseWindIntensity, (float)WorldClock.ARTDeltaTime);
+
 								//update season effects based on biome
 								UpdateSeason();
 

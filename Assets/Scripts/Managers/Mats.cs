@@ -36,6 +36,14 @@ namespace Frontiers
 						//Mods.Get.LoadAvailableGenericTextures("Atlas", false, AtlasTextures);
 				}
 
+				public override void OnTextureLoadFinish()
+				{
+						for (int i = 0; i < TerrainGrassTextures.Count; i++) {
+								TerrainGrassTextures[i].wrapMode = TextureWrapMode.Clamp;
+						}
+						mTexturesLoaded = true;
+				}
+
 				public override void WakeUp()
 				{
 						Get = this;

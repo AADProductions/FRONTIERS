@@ -1,9 +1,10 @@
 using UnityEngine;
-using System.Collections;
 using System;
-using Frontiers.World.Gameplay;
+using System.Collections;
 using System.Collections.Generic;
+using Frontiers.World.Gameplay;
 using Frontiers.GUI;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -45,11 +46,11 @@ namespace Frontiers.World
 						}
 				}
 
-				public override void PopulateOptionsList(List<GUIListOption> options, List<string> message)
+				public override void PopulateOptionsList(List<WIListOption> options, List<string> message)
 				{
 						if (State.HasBeenCreated) {
 								if (gRenameOption == null) {
-										gRenameOption = new GUIListOption("Rename Campsite", "Rename");
+										gRenameOption = new WIListOption("Rename Campsite", "Rename");
 								}
 								options.Add(gRenameOption);
 						}
@@ -57,7 +58,7 @@ namespace Frontiers.World
 
 				public void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;			
+						WIListResult dialogResult = secondaryResult as WIListResult;			
 						switch (dialogResult.SecondaryResult) {
 								case "Rename":
 										TryToRename();
@@ -162,7 +163,7 @@ namespace Frontiers.World
 				}
 
 				protected bool mWaitingForRename = false;
-				protected static GUIListOption gRenameOption;
+				protected static WIListOption gRenameOption;
 		}
 
 		[Serializable]

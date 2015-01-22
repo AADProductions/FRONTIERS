@@ -126,7 +126,7 @@ namespace Frontiers
 								if (GameData.IO.LoadPreferences(ref prefs, profileName, out errorMessage)) {
 										//make sure these prefs are legitimate
 										//otherwise they might have wonky values
-										if (prefs.Version != GameManager.Version || !prefs.InitializedAsDefault) {
+										if (prefs.Version != GameManager.VersionString || !prefs.InitializedAsDefault) {
 												prefs = PlayerPreferences.Default ( );
 												//save the new preferences immediately
 												GameData.IO.SavePreferences(profileName, prefs);
@@ -175,15 +175,13 @@ namespace Frontiers
 						if (Flags.Check((uint)components, (uint)ProfileComponents.Game, Flags.CheckType.MatchAny)) {
 								//save the whole world
 								CurrentGame.LastTimeSaved = DateTime.Now;
-								CurrentGame.GameTime = WorldClock.Time;
-								CurrentGame.GameTimeOffset = WorldClock.AdjustedRealTime;
+								CurrentGame.GameTimeOffset = WorldClock.AdjustedRealTimeWithoutOffset;
 								GameData.IO.SaveGame(CurrentGame);
 						} else if (Flags.Check((uint)components, (uint)ProfileComponents.Character, Flags.CheckType.MatchAny)) {
 								//just save the character
 								//don't bother with the rest of the world
 								CurrentGame.LastTimeSaved = DateTime.Now;
-								CurrentGame.GameTime = WorldClock.Time;
-								CurrentGame.GameTimeOffset = WorldClock.AdjustedRealTime;
+								CurrentGame.GameTimeOffset = WorldClock.AdjustedRealTimeWithoutOffset;
 								GameData.IO.SaveGame(CurrentGame);
 						}
 
@@ -196,7 +194,7 @@ namespace Frontiers
 				{
 						if (mSaveNextAvailable != ProfileComponents.None) {
 								if (Flags.Check((uint)mSaveNextAvailable, (uint)ProfileComponents.Preferences, Flags.CheckType.MatchAny)) {
-										CurrentPreferences.Version = GameManager.Version;
+										CurrentPreferences.Version = GameManager.VersionString;
 										GameData.IO.SavePreferences(Current.Name, CurrentPreferences);
 										mSaveNextAvailable &= ~ProfileComponents.Preferences;
 								}
@@ -210,20 +208,20 @@ namespace Frontiers
 										//save the whole world
 										//TODO get all game data
 										CurrentGame.LastTimeSaved = DateTime.Now;
-										CurrentGame.GameTime = WorldClock.Time;
-										CurrentGame.Version = GameManager.Version;
+										CurrentGame.GameTime = WorldClock.AdjustedRealTime;
+										CurrentGame.Version = GameManager.VersionString;
 										GameData.IO.SaveGame(CurrentGame);
 								} else if (Flags.Check((uint)mSaveNextAvailable, (uint)ProfileComponents.Character, Flags.CheckType.MatchAny)) {
 										//just save the character
 										//don't bother with the rest of the world
 										CurrentGame.LastTimeSaved = DateTime.Now;
-										CurrentGame.GameTime = WorldClock.Time;
-										CurrentGame.Version = GameManager.Version;
+										CurrentGame.GameTime = WorldClock.AdjustedRealTime;
+										CurrentGame.Version = GameManager.VersionString;
 										GameData.IO.SaveGame(CurrentGame);
 								}
 
 								if (Flags.Check((uint)mSaveNextAvailable, (uint)ProfileComponents.Profile, Flags.CheckType.MatchAny)) {
-										Current.Version = GameManager.Version;
+										Current.Version = GameManager.VersionString;
 										GameData.IO.SaveProfile(Current);
 								}
 
@@ -250,7 +248,7 @@ namespace Frontiers
 								//try to load the game
 								if (!Mods.Get.Runtime.LoadGame(ref mCurrentGame, worldName, gameName)) {//if the game doesn't exist, create it, then save it immediately
 										mCurrentGame = new PlayerGame();
-										mCurrentGame.Version = GameManager.Version;
+										mCurrentGame.Version = GameManager.VersionString;
 										mCurrentGame.LastTimeSaved = DateTime.Now;
 										mCurrentGame.GameTime = 0;
 										mCurrentGame.WorldName = worldName;

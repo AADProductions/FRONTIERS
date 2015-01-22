@@ -16,7 +16,6 @@ namespace Frontiers
 		public partial class Structures : Manager
 		{
 				public static Structures Get;
-
 				public static bool StructureShadows = true;
 				public static bool SceneryObjectShadows = true;
 				public static List <Structure> ExteriorsWaitingToLoad;
@@ -91,7 +90,8 @@ namespace Frontiers
 				public Dictionary <string, List<Structure>> mCachedTemplateInstancesExterior;
 				//we only cache exterior meshes for now
 				//if that works well we'll do the same for interiors later
-				public bool GetCachedInstance (string templateName, Structure parentStructure, out Structure cachedInstance) {
+				public bool GetCachedInstance(string templateName, Structure parentStructure, out Structure cachedInstance)
+				{
 						cachedInstance = null;
 						List <Structure> instances = null;
 						if (!mCachedTemplateInstancesExterior.TryGetValue(templateName, out instances)) {
@@ -106,7 +106,7 @@ namespace Frontiers
 										//this way we know how many 'live' copies
 										//of the meshes are out there
 										instances.RemoveAt(i);
-								} else if (parentStructure != instances [i]) {
+								} else if (parentStructure != instances[i]) {
 										//hooray we found a cached version
 										//i'm not positive that check is necessary but whatever
 										cachedInstance = instances[i];
@@ -116,7 +116,8 @@ namespace Frontiers
 						return cachedInstance != null;
 				}
 
-				public void AddCachedInstance (string templateName, Structure cachedInstance) {
+				public void AddCachedInstance(string templateName, Structure cachedInstance)
+				{
 						List <Structure> instances = null;
 						if (!mCachedTemplateInstancesExterior.TryGetValue(templateName, out instances)) {
 								instances = new List<Structure>();
@@ -282,13 +283,13 @@ namespace Frontiers
 														//use the LOD mesh as a collider substitute
 														mColliderMeshes.Add(prefab.name, lodMesh);
 														} else {*/
-														//otherwise use our mesh filter's mesh
-														//this is inefficient but it's better than broken colliders
-														MeshFilter mf = prefab.GetComponent <MeshFilter>();
-														if (mf != null) {
-																mColliderMeshes.Add(mf.name, mf.sharedMesh);
-														}
-														//}
+												//otherwise use our mesh filter's mesh
+												//this is inefficient but it's better than broken colliders
+												MeshFilter mf = prefab.GetComponent <MeshFilter>();
+												if (mf != null) {
+														mColliderMeshes.Add(mf.name, mf.sharedMesh);
+												}
+												//}
 										}
 								}
 						}
@@ -447,12 +448,11 @@ namespace Frontiers
 						mc.enabled = false;
 						foreach (Mesh collisionMesh in mColliderMeshes.Values) {
 								try {
-									mc.sharedMesh = collisionMesh;
-									mc.enabled = true;
-									//this should trigger collision data creation
-									mc.enabled = false;
-								}
-								catch (Exception e){
+										mc.sharedMesh = collisionMesh;
+										mc.enabled = true;
+										//this should trigger collision data creation
+										mc.enabled = false;
+								} catch (Exception e) {
 										e = null;
 								}
 						}
@@ -760,20 +760,32 @@ namespace Frontiers
 										mainTemplate.Name = structure.State.TemplateName;
 										//wuhoo got the template, time to rock and roll
 										structure.LoadState = intermediateState;
-										yield return StartCoroutine(structure.CreateStructureGroups(finalState));
+										var createStructureGroups = structure.CreateStructureGroups(finalState);
+										while (createStructureGroups.MoveNext()) {
+												yield return createStructureGroups.Current;
+										}
 										//this will run in parallel with the exterior building
 										structure.LoadMinorStructures(finalState);
 										//initialize structure (it'll wait until it's ready to start), then build the exterior
-										yield return StartCoroutine(withBuilder.Initialize(structure, mainTemplate, structure.LoadPriority));
+										var initialize = withBuilder.Initialize(structure, mainTemplate, structure.LoadPriority);
+										while (initialize.MoveNext()) {
+												yield return initialize.Current;
+										}
 										//first build the structure meshes
 										//then add doors, windows and worlditems
 										//this prevents live objects and characters etc from falling through things
 										//TODO add some kind of time-out system
-										yield return StartCoroutine(withBuilder.GenerateStructureMeshes());
+										var generateStructureMeshes = withBuilder.GenerateStructureMeshes();
+										while (generateStructureMeshes.MoveNext()) {
+												yield return initialize.Current;
+										}
 										if (withBuilder.State != StructureBuilder.BuilderState.Error && structure.Is(intermediateState)) {
 												//if there's an error it usually means the structure was 'unbuilt' before it could finish
 												//and if the exterior is no longer loading then it may have been asked to unload
-												yield return StartCoroutine(withBuilder.GenerateStructureItems());
+												var generateStructureItems = withBuilder.GenerateStructureItems();
+												while (generateStructureItems.MoveNext()) {
+														yield return generateStructureItems.Current;
+												}
 										}
 										if (withBuilder.State != Builder.BuilderState.Error) {
 												//let the structure know it's been built
@@ -819,10 +831,16 @@ namespace Frontiers
 								//we always want to close all entrances
 								//so wait for that before proceeding
 								structure.UnloadMinorStructures(finalState);
-								yield return StartCoroutine(CloseOuterEntrances(structure));
+								var closeOuterEntrances = CloseOuterEntrances(structure);
+								while (closeOuterEntrances.MoveNext()) {
+										yield return closeOuterEntrances.Current;
+								}
 								//now send the structure to the mesh builder to be broken down
 								//the structure builder's mode will figure out which meshes need to be destroyed
-								yield return StartCoroutine(StructureBuilder.UnloadStructureMeshes(withBuilder, structure));
+								var unloadStructureMeshes = StructureBuilder.UnloadStructureMeshes(withBuilder, structure);
+								while (unloadStructureMeshes.MoveNext()) {
+										yield return unloadStructureMeshes.Current;
+								}
 								StructureBuilder.ReclaimColliders(withBuilder, structure);
 								structure.LoadState = finalState;
 								structure.OnUnloadFinish(finalState);
@@ -840,16 +858,22 @@ namespace Frontiers
 								StructureTemplate template = null;
 								if (Mods.Get.Runtime.LoadMod(ref template, "Structure", minorStructure.TemplateName)) {
 										//initialize (it will wait until it's ready to start)
-										yield return StartCoroutine(MinorBuilder.Initialize(minorStructure, template, minorStructure.LoadPriority));
+										var initialize = MinorBuilder.Initialize(minorStructure, template, minorStructure.LoadPriority);
+										while (initialize.MoveNext()) {
+												yield return initialize.Current;
+										}
 										//build the meshes, there's no need to build worlditems or anything
-										yield return StartCoroutine(MinorBuilder.GenerateStructureMeshes());
+										var generateStructureMeshes = MinorBuilder.GenerateStructureMeshes();
+										while (generateStructureMeshes.MoveNext()) {
+												yield return generateStructureMeshes.Current;
+										}
 										//reset the builder
 										minorStructure.LoadState = StructureLoadState.ExteriorLoaded;
 										minorStructure.RefreshColliders();
 										minorStructure.RefreshRenderers(true);
 										MinorBuilder.Reset();
 										LoadedMinorStructures.SafeAdd(minorStructure);
-										yield return new WaitForSeconds(0.05f);
+										yield return WorldClock.WaitForRTSeconds(0.05f);
 								}
 
 								template = null;
@@ -864,7 +888,10 @@ namespace Frontiers
 						if (minorStructure != null && minorStructure.LoadState == StructureLoadState.ExteriorWaitingToUnload || minorStructure.LoadState == StructureLoadState.ExteriorLoaded) {
 								MinorBuilder.IsUnloading = true;
 								minorStructure.LoadState = StructureLoadState.ExteriorUnloading;
-								yield return StartCoroutine(StructureBuilder.UnloadStructureMeshes(minorStructure.ExteriorMeshes));
+								var unloadStructureMeshes = StructureBuilder.UnloadStructureMeshes(minorStructure.ExteriorMeshes);
+								while (unloadStructureMeshes.MoveNext()) {
+										yield return unloadStructureMeshes.Current;
+								}
 								minorStructure.LoadState = StructureLoadState.ExteriorUnloaded;
 						}
 						MinorBuilder.IsUnloading = false;
@@ -880,10 +907,14 @@ namespace Frontiers
 						for (int i = 0; i < structure.OuterEntrances.Count; i++) {
 								dyn = structure.OuterEntrances[i];
 								if (dyn != null) {
+										IEnumerator close = null;
 										if (dyn.worlditem.Is <Window>(out window)) {
-												yield return StartCoroutine(window.ForceClose());
+												close = window.ForceClose();
 										} else if (dyn.worlditem.Is <Door>(out door)) {
-												yield return StartCoroutine(door.ForceClose());
+												close = door.ForceClose();
+										}
+										while (close.MoveNext()) {
+												yield return close.Current;
 										}
 								}
 						}
@@ -1060,7 +1091,7 @@ namespace Frontiers
 						cpo.Deactivate();
 						Get.SceneryObjectPool.Push(cpo);
 						var enumerator = chunkPrefab.LoadedObject.CfSceneryScripts.GetEnumerator();
-						while (enumerator.MoveNext ()) {
+						while (enumerator.MoveNext()) {
 								//foreach (KeyValuePair <string,string> sceneryScript in chunkPrefab.SceneryScripts) {
 								GameObject.Destroy(enumerator.Current);
 						}
@@ -1068,20 +1099,20 @@ namespace Frontiers
 						chunkPrefab.LoadedObject = null;
 				}
 
-				public static void LoadChunkPrefab(ChunkPrefab chunkPrefab, WorldChunk chunk, ChunkMode mode)
+				public static IEnumerator LoadChunkPrefab(ChunkPrefab chunkPrefab, WorldChunk chunk, ChunkMode mode)
 				{
 						if (chunkPrefab == null || chunkPrefab.IsLoaded) {
-								return;
+								yield break;
 						}
 
 						if (string.IsNullOrEmpty(chunkPrefab.PackName)) {
-								return;
+								yield break;
 						}
 
 						//see if we can build this prefab
 						if (!Get.PackStaticPrefab(chunkPrefab.PackName, chunkPrefab.PrefabName, out gCfoSpp)) {
 								Debug.Log("CHUNK PREFAB " + chunkPrefab.Name + " USES MESH WE COULDN'T FIND");
-								return;
+								yield break;
 						}
 
 						//get a chunk prefab from the pool
@@ -1105,6 +1136,8 @@ namespace Frontiers
 						chunkPrefab.ParentChunk = chunk;
 						chunkPrefab.LoadedObject = gCfo;
 
+						yield return null;
+
 						if (chunkPrefab.UseMeshCollider) {
 								if (gCfoSpp.ColliderMesh != null && gCfo.PrimaryCollider.sharedMesh != gCfoSpp.ColliderMesh) {
 										gCfo.PrimaryCollider.sharedMesh = gCfoSpp.ColliderMesh;
@@ -1124,6 +1157,9 @@ namespace Frontiers
 						} else {
 								gCfoSharedMaterialList.Clear();
 						}
+
+						yield return null;
+
 						for (int i = 0; i < chunkPrefab.SharedMaterialNames.Count; i++) {
 								if (Get.mSharedMaterialLookup.TryGetValue(chunkPrefab.SharedMaterialNames[i], out gCfoSharedMaterial)) {
 										gCfoSharedMaterialList.Add(gCfoSharedMaterial);
@@ -1132,6 +1168,9 @@ namespace Frontiers
 										gCfoSharedMaterialList.Add(null);
 								}
 						}
+
+						yield return null;
+
 						if (chunkPrefab.EnableSnow) {
 								gCfoSharedMaterialList.Add(Mats.Get.SnowOverlayMaterial);
 						}
@@ -1154,18 +1193,20 @@ namespace Frontiers
 
 						gCfo.Lod.RecalculateBounds();
 
-
+						yield return null;
 						//add scripts
 						//do this after the gameobject is set to active
 						var enumerator = chunkPrefab.SceneryScripts.GetEnumerator();
-						while (enumerator.MoveNext ()) {
-							//foreach (KeyValuePair <string,string> sceneryScript in chunkPrefab.SceneryScripts) {
-							KeyValuePair <string,string> sceneryScript = enumerator.Current;
-							SceneryScript script = (SceneryScript)chunkPrefab.LoadedObject.go.GetOrAdd(sceneryScript.Key);
-							script.cfo = gCfo;
-							script.UpdateSceneryState(sceneryScript.Value, chunk);
-							chunkPrefab.LoadedObject.CfSceneryScripts.Add(script);
+						while (enumerator.MoveNext()) {
+								//foreach (KeyValuePair <string,string> sceneryScript in chunkPrefab.SceneryScripts) {
+								KeyValuePair <string,string> sceneryScript = enumerator.Current;
+								SceneryScript script = (SceneryScript)chunkPrefab.LoadedObject.go.GetOrAdd(sceneryScript.Key);
+								script.cfo = gCfo;
+								script.UpdateSceneryState(sceneryScript.Value, chunk);
+								chunkPrefab.LoadedObject.CfSceneryScripts.Add(script);
+								yield return null;
 						}
+						yield break;
 				}
 
 				public static void CopyMeshData(Mesh mesh, MeshCombiner.BufferedMesh bufferedMesh)
@@ -1261,7 +1302,7 @@ namespace Frontiers
 				protected static StructurePackPrefab gCfoSpp = null;
 				protected static Mesh gCfoPrimaryMesh = null;
 				protected static Mesh gCfoLodMesh = null;
-				protected static Renderer[] gEmptyLodRenderers = new Renderer[] {};
+				protected static Renderer[] gEmptyLodRenderers = new Renderer[] { };
 
 				#endregion
 

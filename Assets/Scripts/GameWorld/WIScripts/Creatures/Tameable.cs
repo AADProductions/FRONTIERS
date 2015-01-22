@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System;
 using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -63,7 +64,7 @@ namespace Frontiers.World
 												Debug.Log("Player has the food we like equipped");
 												creature.Eat(foodStuff);
 												Tamed tamed = worlditem.GetOrAdd <Tamed>();
-												tamed.Imprint(Player.Local, WorldClock.Time, skill.EffectTime, skill.HasBeenMastered);
+												tamed.Imprint(Player.Local, WorldClock.AdjustedRealTime, skill.EffectTime, skill.HasBeenMastered);
 												result = true;
 										}
 								}

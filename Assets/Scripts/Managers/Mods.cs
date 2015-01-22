@@ -62,8 +62,6 @@ namespace Frontiers
 						Shader.WarmupAllShaders();
 						//this seems to load some dangly bits that we don't need yet
 						//so force a collect before loading textures
-						Resources.UnloadUnusedAssets();
-						System.GC.Collect();
 						StartCoroutine(LoadGenericTexturesOverTime());
 				}
 
@@ -204,14 +202,15 @@ namespace Frontiers
 																//load...
 																yield return null;
 														}
-														System.GC.Collect();
-														System.GC.WaitForPendingFinalizers();
-														Resources.UnloadUnusedAssets();
 												}
+												System.GC.Collect();
+												System.GC.WaitForPendingFinalizers();
 										}
 								}
+								yield return null;
+								Resources.UnloadUnusedAssets();
 						}
-						mTexturesLoaded = true;
+						Manager.TexturesLoadFinish();
 						yield break;
 				}
 
@@ -799,8 +798,12 @@ namespace Frontiers
 										Manager.WakeUp <GameWorld>("__WORLD");
 								}
 								GameData.GetTextureFormat(mapName, ref resolution, ref format, ref linear);
-
-								return GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.Base);
+								if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.Profile)) {
+										if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.World)) {
+												return GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.Base);
+										}
+								}
+								return true;
 						}
 
 						public bool LoadStackItemFromGroup(ref StackItem stackItem, string groupPath, string fileName)

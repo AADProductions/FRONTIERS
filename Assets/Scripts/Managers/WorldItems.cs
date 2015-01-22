@@ -18,7 +18,6 @@ namespace Frontiers.World
 		public partial class WorldItems : Manager
 		{
 				public static WorldItems Get;
-
 				#if UNITY_EDITOR
 				public GameObject EditorStructureParent = null;
 				public string EditorSelectedItem = string.Empty;
@@ -29,7 +28,6 @@ namespace Frontiers.World
 				public string MeshesFolder = "Meshes";
 				public string TexturesFolder = "Textures";
 				#endif
-
 				public static bool ObjectShadows = true;
 				protected bool mUpdatingActiveStates = false;
 				public List <WorldItemPackPaths> PackPaths = new List<WorldItemPackPaths>();
@@ -80,7 +78,7 @@ namespace Frontiers.World
 								int index = 0;
 								foreach (GameObject prefab in pack.Prefabs) {
 										if (prefab == null) {
-												Debug.Log ("Prefab was null in pack " + pack.Name + " at index " + index);
+												Debug.Log("Prefab was null in pack " + pack.Name + " at index " + index);
 										}
 										index++;
 										WorldItem worlditem = null;
@@ -89,8 +87,8 @@ namespace Frontiers.World
 										if (prefab.HasComponent <WorldItem>(out worlditem)) {
 												WITemplate template = null;
 												if (Mods.Get.Runtime.LoadMod <WITemplate>(
-														    ref template,
-														    System.IO.Path.Combine("WorldItem", pack.Name), worlditem.name)) {
+														ref template,
+														System.IO.Path.Combine("WorldItem", pack.Name), worlditem.name)) {
 														worlditem.Props = template.Props;
 														//set script states, etc
 														//for now this is just about loading the right props
@@ -111,7 +109,6 @@ namespace Frontiers.World
 				{
 						if (!GameManager.Get.TestingEnvironment && !mUpdatingActiveStates) {
 								mUpdatingActiveStates = true;
-								LastPlayerPosition = SpawnManager.Get.CurrentStartupPosition.WorldPosition.Position;
 								StartCoroutine(UpdateStackItemsToLoad());
 						}
 				}
@@ -121,6 +118,9 @@ namespace Frontiers.World
 						//this will force the active states to update
 						LastPlayerPosition = Player.Local.Position;
 						LastPlayerSortPosition = Vector3.zero;
+						if (SpawnManager.Get.UseStartupPosition) {
+								LastPlayerPosition = SpawnManager.Get.CurrentStartupPosition.WorldPosition.Position;
+						}
 				}
 
 				#endregion
@@ -274,7 +274,7 @@ namespace Frontiers.World
 						GameObject.Destroy(worlditem.gameObject);
 				}
 
-				public void Save (WorldItem worlditem, bool immediately)
+				public void Save(WorldItem worlditem, bool immediately)
 				{
 						if (worlditem == null || !worlditem.SaveItemOnUnloaded || worlditem.SaveStateLocked) {
 								//we don't actually want to save this worlditem
@@ -282,7 +282,7 @@ namespace Frontiers.World
 						}
 
 						if (worlditem.Group == null) {
-								Debug.Log ("Couldn't save worlditem " + worlditem.name + ", group was null");
+								Debug.Log("Couldn't save worlditem " + worlditem.name + ", group was null");
 								return;
 						}
 
@@ -310,7 +310,7 @@ namespace Frontiers.World
 						worlditem.tr.parent = WIGroups.Get.Graveyard.tr;
 						worlditem.tr.localPosition = Vector3.zero;
 						//put it in the queue to be saved later over time
-						WorldItemsToSave.Enqueue (new KeyValuePair<string,WorldItem>(worlditem.Group.Props.UniqueID, worlditem));
+						WorldItemsToSave.Enqueue(new KeyValuePair<string,WorldItem>(worlditem.Group.Props.UniqueID, worlditem));
 				}
 
 				public void Save(WIGroup group)
@@ -369,6 +369,7 @@ namespace Frontiers.World
 				protected Renderer mShadowRenderer = null;
 
 				#region dopplegangers
+
 				//dopplegangers are used in inventory squares, crafting squares, anywhere that we
 				//need to see an item but don't actually want it to exist
 				//they're expensive to create and destroy so i try to use them sparingly
@@ -760,7 +761,6 @@ namespace Frontiers.World
 								GameObject.Destroy(doppleganger);
 						}
 				}
-
 				//overloads
 				//TODO a lot of these can be removed now
 				public static GameObject GetDoppleganger(IWIBase item, Transform dopplegangerParent, GameObject currentDoppleganger, WIMode mode)
@@ -831,7 +831,7 @@ namespace Frontiers.World
 								worlditem.tr.parent = group.tr;
 								//copy global properties into new worlditem
 								//copy local and stack item props to worlditem
-								worlditem.ReceiveState (ref stackItem);
+								worlditem.ReceiveState(ref stackItem);
 								worlditem.Props.Local.Transform.ApplyTo(newWorldItemGameObject.transform);
 								worlditem.Props.Global = prefab.Props.Global;
 								if (string.IsNullOrEmpty(worlditem.Props.Name.StackName)) {
@@ -852,11 +852,11 @@ namespace Frontiers.World
 				{	
 						worlditem = null;
 						if (prefab == null) {
-								Debug.Log ("Prefab was null in clone from prefab");
+								Debug.Log("Prefab was null in clone from prefab");
 								return false;
 						}
 						if (group == null) {
-								Debug.LogWarning ("Group was null when trying to clone prefab " + prefab.name);
+								Debug.LogWarning("Group was null when trying to clone prefab " + prefab.name);
 								return false;
 						}
 
@@ -907,7 +907,6 @@ namespace Frontiers.World
 				{
 						return CloneFromStackItem(worlditem.GetStackItem(WIMode.None), worlditem.Group, out newWorldItem);
 				}
-
 				//overloads
 				public static bool CloneWorldItem(WorldItem worlditem, WIGroup group, out WorldItem newWorldItem)
 				{
@@ -1091,17 +1090,33 @@ namespace Frontiers.World
 								mCheckOwnershipList.Clear();
 								mCheckOwnership = null;
 								if (!worlditem.Is<QuestItem>()
-								  && !worlditem.Is<OwnedByPlayer>()
-								  && (worlditem.UseRemoveItemSkill(mCheckOwnershipList, ref mCheckOwnership)
-								  && mCheckOwnership != Player.Local
-								  && mCheckOwnership.IsWorldItem
-								  && mCheckOwnership.worlditem.Is <Character>(out owner))) {
+								&& !worlditem.Is<OwnedByPlayer>()
+								&& (worlditem.UseRemoveItemSkill(mCheckOwnershipList, ref mCheckOwnership)
+								&& mCheckOwnership != Player.Local
+								&& mCheckOwnership.IsWorldItem
+								&& mCheckOwnership.worlditem.Is <Character>(out owner))) {
 										return true;
 								}
 						
 						} catch (Exception e) {
 								Debug.LogWarning("Error when determining ownership: " + e.ToString());
 						}
+						return false;
+				}
+
+				public static bool IsOwnedByPlayer(WorldItem worlditem)
+				{
+						if (worlditem == null) {
+								Debug.Log("Worlditem was null, not owned by player");
+								return false;
+						}
+
+						if (worlditem.Group == WIGroups.Get.Player
+						 || worlditem.Is <OwnedByPlayer>()) {
+								Debug.Log("Worlditem is owned by player, returning true");
+								return true;
+						}
+						Debug.Log("Worlditem was not owned by player, returning false");
 						return false;
 				}
 
@@ -1238,12 +1253,13 @@ namespace Frontiers.World
 						return itemName;
 				}
 
-				protected static HashSet <string> mCheckOwnershipList = new HashSet<string> ();
+				protected static HashSet <string> mCheckOwnershipList = new HashSet<string>();
 				protected static IStackOwner mCheckOwnership = null;
 				protected static Rigidbody mIoiRBCheck = null;
 				protected static WorldItem mWorlditemCheck = null;
 				protected static BodyPart mBodyPartCheck = null;
 				protected static RaycastHit mLineOfSightHit;
+				protected static GameObject mGoIoiCheck;
 
 				public static T CopyComponent<T>(T original, GameObject destination) where T : Component
 				{
@@ -1277,8 +1293,9 @@ namespace Frontiers.World
 						return false;
 				}
 
-				public static bool GetIOIFromCollider(Collider other, out IItemOfInterest ioi) {
-						return GetIOIFromCollider (other, true, out ioi);
+				public static bool GetIOIFromCollider(Collider other, out IItemOfInterest ioi)
+				{
+						return GetIOIFromCollider(other, true, out ioi);
 				}
 
 				public static bool GetIOIFromCollider(Collider other, bool ignoreTrigger, out IItemOfInterest ioi)
@@ -1288,58 +1305,41 @@ namespace Frontiers.World
 								return false;
 						}
 
-						ioi = (IItemOfInterest)other.gameObject.GetComponent(typeof(IItemOfInterest));
-						//nothing on the collider?
-						//try the attached rigid body
-						if (ioi == null) {
-								mIoiRBCheck = other.attachedRigidbody;
-								if (mIoiRBCheck != null) {
-										//if the tag is BodyGeneral then it's a world body
-										ioi = (IItemOfInterest)mIoiRBCheck.GetComponent(typeof(IItemOfInterest));
+						mIoiRBCheck = other.attachedRigidbody;
+						if (mIoiRBCheck != null) {
+								ioi = (IItemOfInterest)mIoiRBCheck.GetComponent(typeof(IItemOfInterest));
+								if (ioi != null) {
+										return true;
 								}
 						}
-						//still nothing? try a worlditem for good measure
-						//this will check for body parts
-						//(which are not guaranteed to be kept under the worlditem's attached rigidbody)
-						if (ioi == null) {
-								GetIOIFromGameObject(other.gameObject, out ioi);
-						}
-						return ioi != null;
+						return GetIOIFromGameObject(other.collider.gameObject, out ioi);
 				}
 
 				public static bool GetIOIFromGameObject(GameObject go, out IItemOfInterest ioi)
 				{
-						ioi = (IItemOfInterest)go.GetComponent(typeof(IItemOfInterest));
-						if (ioi == null) {
-								switch (go.tag) {
-										case "ColliderFluid":
-					//collider fluid objects are immediately parented under worlidtem
-												ioi = (IItemOfInterest)go.transform.parent.GetComponent(typeof(IItemOfInterest));
-												break;
+						ioi = null;
+						if (go.CompareTag(Globals.TagColliderFluid)) {
+								//collider fluid objects are immediately parented under worlidtem
+								ioi = (IItemOfInterest)go.transform.parent.GetComponent(typeof(IItemOfInterest));
+						} else if (go.CompareTag(Globals.TagBodyLeg)
+						        || go.CompareTag(Globals.TagBodyArm)
+						        || go.CompareTag(Globals.TagBodyHead)
+						        || go.CompareTag(Globals.TagBodyTorso)
+						        || go.CompareTag(Globals.TagBodyGeneral)) {
 								//body parts are kept separate - they store a link to their worlditem
-										case "BodyLeg":
-										case "BodyArm":
-										case "BodyHead":
-										case "BodyTorso":
-										case "BodyGeneral":
-												if (go.HasComponent <BodyPart>(out mBodyPartCheck)) {
-														ioi = mBodyPartCheck.Owner;
-												}
-												break;
-										//state child object
-										case "StateChild":
-												//state child objects are immediately parented under worlditem
-												ioi = go.transform.parent.GetComponent <WorldItem>();
-												break;
-
-										default:
-												break;
+								if (go.HasComponent <BodyPart>(out mBodyPartCheck)) {
+										ioi = mBodyPartCheck.Owner;
 								}
+						} else if (go.CompareTag(Globals.TagStateChild)) {
+								//state child objects are immediately parented under worlditem
+								ioi = go.transform.parent.GetComponent <WorldItem>();
+						} else {
+								ioi = (IItemOfInterest)go.GetComponent(typeof(IItemOfInterest));
 						}
 						return ioi != null;
 				}
 
-				public static void ReplaceWorldItem (WorldItem worlditem, StackItem replacement)
+				public static void ReplaceWorldItem(WorldItem worlditem, StackItem replacement)
 				{
 						WorldItem replacementWorldItem = null;
 						if (CloneFromStackItem(replacement, worlditem.Group, out replacementWorldItem)) {
@@ -1365,7 +1365,26 @@ namespace Frontiers.World
 
 				public static void ReplaceWorldItem(WorldItem worlditem, GenericWorldItem replacementTemplate)
 				{
-						ReplaceWorldItem(worlditem, replacementTemplate.ToStackItem());
+						WorldItem replacementWorldItem = null;
+						if (WorldItems.CloneWorldItem(replacementTemplate, STransform.zero, false, worlditem.Group, out replacementWorldItem)) {
+								//initialize immediately
+								replacementWorldItem.Props.Local.Transform.CopyFrom(worlditem.transform);
+								replacementWorldItem.Initialize();
+								if (worlditem.Is(WIMode.Equipped)) {
+										//ok, we can get away with equipping the stack item
+										//presumably it won't stack or we would have stacked it
+										WIStackError error = WIStackError.None;
+										Player.Local.Inventory.AddItems(replacementWorldItem, ref error);
+								} else {
+										//initialize immediately
+										replacementWorldItem.Props.Local.Transform.CopyFrom(worlditem.transform);
+										replacementWorldItem.Initialize();
+								}		
+								//in all cases, kill the original
+								worlditem.SetMode(WIMode.RemovedFromGame);
+						} else {
+								Debug.LogWarning("Couldn't clone generic item in ReplaceWorldItem");
+						}
 				}
 
 				public static int MaxItemsFromSize(WISize size)
@@ -1404,6 +1423,5 @@ namespace Frontiers.World
 
 				protected Dictionary <string, WorldItemPack> mWorldItemPackLookup = new Dictionary <string, WorldItemPack>();
 				protected Dictionary <string, WICategory> mWICategoryLookup = new Dictionary <string, WICategory>();
-
 		}
 }

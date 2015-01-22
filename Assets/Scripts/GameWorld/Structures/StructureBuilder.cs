@@ -1,13 +1,11 @@
-#pragma warning disable 0219
 using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Frontiers;
 using Frontiers.Data;
 using Frontiers.World;
-using Frontiers.World.Locations;
-using Frontiers;
-using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 using Hydrogen.Threading.Jobs;
 
 namespace Frontiers.World
@@ -32,7 +30,7 @@ namespace Frontiers.World
 				public bool IsUnloading = false;
 
 				public IEnumerator Initialize(Structure parentStructure, StructureTemplate template, StructureLoadPriority priority)
-				{	//if we're still doing another job (for some reason) wait for it to finish
+				{		//if we're still doing another job (for some reason) wait for it to finish
 						while (State != BuilderState.Dormant) {
 								yield return null;
 						}
@@ -189,14 +187,14 @@ namespace Frontiers.World
 						if (Mods.Get.Editor.LoadMod <StructureTemplate>(ref template, "Structure", StructureBuilder.GetTemplateName(name))) {
 								GameObject foundation = gameObject.FindOrCreateChild("__TEMP_FOUNDATION").gameObject;
 								foreach (StructureLayer staticLayer in template.Exterior.StaticStructureLayers) {
-										//Debug.Log ("Seeing if layer " + staticLayer.PrefabName + " has any foundation...");
 										string prefabName = staticLayer.PrefabName.Trim().ToLower();
 										if (prefabName.Contains("foundation")) {
-												//Debug.Log ("Instantiating foundation layer!");
 												StructurePackPrefab prefab = null;
 												if (Structures.Get.PackStaticPrefab(staticLayer.PackName, staticLayer.PrefabName, out prefab)) {
-														ChildPiece[] staticPieces = StructureTemplate.ExtractChildPiecesFromLayer(staticLayer.Instances);
-														for (int i = 0; i < staticPieces.Length; i++) {
+														List <ChildPiece> staticPieces = new List<ChildPiece>();
+														StructureTemplate.ExtractChildPiecesFromLayer(staticPieces, staticLayer.Instances);
+														//ChildPiece[] staticPieces = StructureTemplate.ExtractChildPiecesFromLayer(staticLayer.Instances);
+														for (int i = 0; i < staticPieces.Count; i++) {
 																ChildPiece piece = staticPieces[i];
 																GameObject instantiatedPrefab = UnityEditor.PrefabUtility.InstantiatePrefab(prefab.Prefab) as GameObject;
 																//instantiate a new prefab - keep it as a prefab!
@@ -226,6 +224,8 @@ namespace Frontiers.World
 																		instantiatedPrefab.renderer.materials = variationsArray;
 																}
 														}
+														staticPieces.Clear();
+														staticPieces = null;
 												}
 										}
 								}
@@ -278,40 +278,61 @@ namespace Frontiers.World
 								default:
 										mCurrentTemplateGroup = Template.Exterior;
 										//extract the fires from the template and add it to the template
-										ParentStructure.DestroyedFires = StructureTemplate.ExtractChildPiecesFromLayer(Template.Exterior.DestroyedFires);
+										if (ParentStructure.DestroyedFires == null) {
+												ParentStructure.DestroyedFires = new List<ChildPiece>();
+										}
+										StructureTemplate.ExtractChildPiecesFromLayer(ParentStructure.DestroyedFires, Template.Exterior.DestroyedFires);
 										ParentStructure.DestroyedFX = StructureTemplate.ExtractFXPiecesFromLayer(Template.Exterior.DestroyedFX);
 										switch (Template.BuildMethod) {
 												case StructureBuildMethod.MeshCombiner:
-														//Debug.Log ("Generating meshes and colliders for exterior group in " + ParentStructure.name);
-														yield return StartCoroutine(StructureBuilder.GenerateMeshes(
-																mCurrentTemplateGroup,
-																PrimaryCombiner,
-																LODCombiner,
-																DestroyedCombiner,
-																LODDestroyedCombiner,
-																GetChildName(false, false),
-																ParentStructure.ExteriorMeshes,
-																ParentStructure.ExteriorRenderers,
-																ParentStructure.ExteriorRenderersDestroyed,
-																ParentStructure.ExteriorLodRenderers,
-																ParentStructure.ExteriorLodRenderersDestroyed,
-																false,
-																this));
-					//non-destroyed custom colliders
-					//Debug.Log ("Generating non-destroyed custom colliders");
-														yield return StartCoroutine(StructureBuilder.GenerateColliders(
-																GetChildName(false, false),
-																ParentStructure.ExteriorLayers,
-																ParentStructure.ExteriorBoxColliders,
-																ParentStructure.ExteriorMeshColliders,
-																ParentStructure.ExteriorBoxCollidersDestroyed,
-																ParentStructure.ExteriorMeshCollidersDestroyed,
-																ParentStructure.ExteriorMeshes,
-																mCurrentTemplateGroup.CustomStructureColliders,
-																false,//exterior
-																this));
-					//non-destroyed static colliders
-														yield return StartCoroutine(StructureBuilder.GenerateColliders(
+														//before we actually generate the meshes
+														//see if it's cached
+														/*Structure cachedInstance = null;
+														if (Structures.Get.GetCachedInstance(Template.Name, ParentStructure, out cachedInstance)) {
+																//hooray it's cached
+																//duplicate it piece for piece
+																yield return StartCoroutine(StructureBuilder.InstantiateMeshes(
+																		ParentStructure,
+																		cachedInstance,
+																		this));
+
+														} else {*/
+														//otherwise just generate the meshes normally
+														var generateMeshes = StructureBuilder.GenerateMeshes(
+																                     mCurrentTemplateGroup,
+																                     PrimaryCombiner,
+																                     LODCombiner,
+																                     DestroyedCombiner,
+																                     LODDestroyedCombiner,
+																                     GetChildName(false, false),
+																                     ParentStructure.ExteriorMeshes,
+																                     ParentStructure.ExteriorRenderers,
+																                     ParentStructure.ExteriorRenderersDestroyed,
+																                     ParentStructure.ExteriorLodRenderers,
+																                     ParentStructure.ExteriorLodRenderersDestroyed,
+																                     false,
+																                     this);
+														while (generateMeshes.MoveNext()) {
+																yield return generateMeshes.Current;
+														}
+														/*}*/
+														//non-destroyed custom colliders
+														var generateCustomColliders = StructureBuilder.GenerateColliders(
+																                        GetChildName(false, false),
+																                        ParentStructure.ExteriorLayers,
+																                        ParentStructure.ExteriorBoxColliders,
+																                        ParentStructure.ExteriorMeshColliders,
+																                        ParentStructure.ExteriorBoxCollidersDestroyed,
+																                        ParentStructure.ExteriorMeshCollidersDestroyed,
+																                        ParentStructure.ExteriorMeshes,
+																                        mCurrentTemplateGroup.CustomStructureColliders,
+																                        false,//exterior
+																                        this);
+														while (generateCustomColliders.MoveNext()) {
+																yield return generateCustomColliders.Current;
+														}
+														//non-destroyed static colliders
+														var generateStaticColliders = StructureBuilder.GenerateColliders(
 																GetChildName(false, false),
 																ParentStructure.ExteriorLayers,
 																ParentStructure.ExteriorBoxColliders,
@@ -321,79 +342,95 @@ namespace Frontiers.World
 																ParentStructure.ExteriorMeshes,
 																mCurrentTemplateGroup.StaticStructureColliders,
 																false,//exterior
-																this));
+																this);
+														while (generateStaticColliders.MoveNext()) {
+																yield return generateStaticColliders.Current;
+														}
 
 														break;
 
 												case StructureBuildMethod.MeshInstances:
-					//extract the fires from the template and add it to the template
-														ParentStructure.DestroyedFires = StructureTemplate.ExtractChildPiecesFromLayer(Template.Exterior.DestroyedFires);
+														//extract the fires from the template and add it to the template
+														if (ParentStructure.DestroyedFires == null) {
+																ParentStructure.DestroyedFires = new List<ChildPiece>();
+														}
+														StructureTemplate.ExtractChildPiecesFromLayer(ParentStructure.DestroyedFires, Template.Exterior.DestroyedFires);
 														ParentStructure.DestroyedFX = StructureTemplate.ExtractFXPiecesFromLayer(Template.Exterior.DestroyedFX);
-														yield return StartCoroutine(InstanceMeshes(
-																mCurrentTemplateGroup,
-																GetChildName(false, false),
-																mExteriorRenderers,
-																mExteriorLODRenderers,
-																Globals.StructureExteriorLODRatio));
+														var instanceMeshes = InstanceMeshes(
+																                     mCurrentTemplateGroup,
+																                     GetChildName(false, false),
+																                     mExteriorRenderers,
+																                     mExteriorLODRenderers,
+																                     Globals.StructureExteriorLODRatio);
+														while (instanceMeshes.MoveNext()) {
+																yield return instanceMeshes.Current;
+														}
 														break;
 										}
 										mCurrentTemplateGroup = null;
 										break;
 
 								case BuilderMode.Interior:
+										//we're not caching interior meshes yet
 										for (int i = 0; i < InteriorVariants.Count; i++) {
 												int interiorVariant = InteriorVariants[i];
-												//Debug.Log ("Generating interior variant " + interiorVariant.ToString ());
 												if (interiorVariant < Template.InteriorVariants.Count) {
 														mCurrentTemplateGroup = Template.InteriorVariants[interiorVariant];
-														//Debug.Log ("Generating interior variant " + interiorVariant.ToString () + " for " + ParentStructure.name + ", state is " + State.ToString ());
-														yield return StartCoroutine(StructureBuilder.GenerateMeshes(
-																mCurrentTemplateGroup,
-																PrimaryCombiner,
-																LODCombiner,
-																DestroyedCombiner,
-																LODDestroyedCombiner,
-																GetChildName(true, false),
-																ParentStructure.InteriorMeshes,
-																ParentStructure.InteriorRenderers,
-																ParentStructure.InteriorRenderersDestroyed,
-																null,
-																null,
-																true,
-																this));
+														var generateMeshes = StructureBuilder.GenerateMeshes(
+																                     mCurrentTemplateGroup,
+																                     PrimaryCombiner,
+																                     LODCombiner,
+																                     DestroyedCombiner,
+																                     LODDestroyedCombiner,
+																                     GetChildName(true, false),
+																                     ParentStructure.InteriorMeshes,
+																                     ParentStructure.InteriorRenderers,
+																                     ParentStructure.InteriorRenderersDestroyed,
+																                     null,
+																                     null,
+																                     true,
+																                     this);
+														while (generateMeshes.MoveNext()) {
+																yield return generateMeshes.Current;
+														}
 														MaterialLookup.Clear();
 														//non-destroyed custom colliders
-														yield return StartCoroutine(StructureBuilder.GenerateColliders(
-																GetChildName(true, false),
-																ParentStructure.InteriorLayers,
-																ParentStructure.InteriorBoxColliders,
-																ParentStructure.InteriorMeshColliders,
-																ParentStructure.InteriorBoxCollidersDestroyed,
-																ParentStructure.InteriorMeshCollidersDestroyed,
-																ParentStructure.InteriorMeshes,
-																mCurrentTemplateGroup.CustomStructureColliders,
-																true,//interior
-																this));
+														var generateCustomColliders = StructureBuilder.GenerateColliders(
+																                              GetChildName(true, false),
+																                              ParentStructure.InteriorLayers,
+																                              ParentStructure.InteriorBoxColliders,
+																                              ParentStructure.InteriorMeshColliders,
+																                              ParentStructure.InteriorBoxCollidersDestroyed,
+																                              ParentStructure.InteriorMeshCollidersDestroyed,
+																                              ParentStructure.InteriorMeshes,
+																                              mCurrentTemplateGroup.CustomStructureColliders,
+																                              true,//interior
+																                              this);
+														while (generateCustomColliders.MoveNext()) {
+																yield return generateCustomColliders.Current;
+														}
 														//non-destroyed static colliders
-														yield return StartCoroutine(StructureBuilder.GenerateColliders(
-																GetChildName(true, true),
-																ParentStructure.InteriorLayers,
-																ParentStructure.InteriorBoxColliders,
-																ParentStructure.InteriorMeshColliders,
-																ParentStructure.InteriorBoxCollidersDestroyed,
-																ParentStructure.InteriorMeshCollidersDestroyed,
-																ParentStructure.InteriorMeshes,
-																mCurrentTemplateGroup.StaticStructureColliders,
-																true,//interior
-																this));
-
+														var generateStaticColliders = StructureBuilder.GenerateColliders(
+																                              GetChildName(true, true),
+																                              ParentStructure.InteriorLayers,
+																                              ParentStructure.InteriorBoxColliders,
+																                              ParentStructure.InteriorMeshColliders,
+																                              ParentStructure.InteriorBoxCollidersDestroyed,
+																                              ParentStructure.InteriorMeshCollidersDestroyed,
+																                              ParentStructure.InteriorMeshes,
+																                              mCurrentTemplateGroup.StaticStructureColliders,
+																                              true,//interior
+																                              this);
+														while (generateCustomColliders.MoveNext()) {
+																yield return generateCustomColliders.Current;
+														}
 														yield return null;
 														//Debug.Log ("Done generating interior variant " + interiorVariant.ToString () + ", state is " + State.ToString ());
 												} else {
-														//Debug.Log ("Interior variant " + i.ToString () + " is out of range");
+														Debug.Log ("Interior variant " + i.ToString () + " is out of range");
 												}
 										}
-				//Debug.Log ("Finished generating states");
+										//Debug.Log ("Finished generating states");
 										mCurrentTemplateGroup = null;
 										break;
 
@@ -401,36 +438,42 @@ namespace Frontiers.World
 										mCurrentTemplateGroup = Template.Exterior;
 										switch (Template.BuildMethod) {
 												case StructureBuildMethod.MeshCombiner:
-														yield return StartCoroutine(StructureBuilder.GenerateMeshes(
-																mCurrentTemplateGroup,
-																PrimaryCombiner,
-																LODCombiner,
-																DestroyedCombiner,
-																LODDestroyedCombiner,
-																GetChildName(false, false, MinorParent.Number),
-																MinorParent.ExteriorMeshes,
-																MinorParent.ExteriorRenderers,
-																MinorParent.ExteriorRenderersDestroyed,
-																MinorParent.ExteriorLODRenderers,
-																MinorParent.ExteriorLODRenderersDestroyed,
-																false,
-																this));
+														var generateMeshes = StructureBuilder.GenerateMeshes(
+																                     mCurrentTemplateGroup,
+																                     PrimaryCombiner,
+																                     LODCombiner,
+																                     DestroyedCombiner,
+																                     LODDestroyedCombiner,
+																                     GetChildName(false, false, MinorParent.Number),
+																                     MinorParent.ExteriorMeshes,
+																                     MinorParent.ExteriorRenderers,
+																                     MinorParent.ExteriorRenderersDestroyed,
+																                     MinorParent.ExteriorLODRenderers,
+																                     MinorParent.ExteriorLODRenderersDestroyed,
+																                     false,
+																                     this);
+														while (generateMeshes.MoveNext()) {
+																yield return generateMeshes.Current;
+														}
 														StructurePiece.transform.ResetLocal();
 
-														yield return StartCoroutine(StructureBuilder.GenerateColliders(
-																GetChildName(false, false, MinorParent.Number),
-																MinorParent.ExteriorLayers,
-																MinorParent.ExteriorBoxColliders,
-																MinorParent.ExteriorMeshColliders,
-																MinorParent.ExteriorBoxColliders,
-																MinorParent.ExteriorMeshColliders,
-																MinorParent.ExteriorMeshes,
-																mCurrentTemplateGroup.CustomStructureColliders,
-																false,
-																this));
+														var generateStaticColliders = StructureBuilder.GenerateColliders(
+																                              GetChildName(false, false, MinorParent.Number),
+																                              MinorParent.ExteriorLayers,
+																                              MinorParent.ExteriorBoxColliders,
+																                              MinorParent.ExteriorMeshColliders,
+																                              MinorParent.ExteriorBoxColliders,
+																                              MinorParent.ExteriorMeshColliders,
+																                              MinorParent.ExteriorMeshes,
+																                              mCurrentTemplateGroup.CustomStructureColliders,
+																                              false,
+																                              this);
+														while (generateStaticColliders.MoveNext()) {
+																yield return generateStaticColliders.Current;
+														}
 														//StructurePiece.transform.ResetLocal ();
 
-														yield return StartCoroutine(StructureBuilder.GenerateColliders(
+														var generateCustomColliders = StructureBuilder.GenerateColliders(
 																GetChildName(false, false, MinorParent.Number),
 																MinorParent.ExteriorLayers,
 																MinorParent.ExteriorBoxColliders,
@@ -440,17 +483,23 @@ namespace Frontiers.World
 																MinorParent.ExteriorMeshes,
 																mCurrentTemplateGroup.StaticStructureColliders,
 																false,
-																this));
+																this);
+														while (generateCustomColliders.MoveNext()) {
+																yield return generateCustomColliders.Current;
+														}
 														//StructurePiece.transform.ResetLocal ();
 														break;
 
 												case StructureBuildMethod.MeshInstances:
-														yield return StartCoroutine(InstanceMeshes(
-																mCurrentTemplateGroup,
-																GetChildName(false, false, MinorParent.Number),
-																mExteriorRenderers,
-																mExteriorLODRenderers,
-																Globals.StructureExteriorLODRatio));
+														var instanceMeshes = InstanceMeshes(
+																                     mCurrentTemplateGroup,
+																                     GetChildName(false, false, MinorParent.Number),
+																                     mExteriorRenderers,
+																                     mExteriorLODRenderers,
+																                     Globals.StructureExteriorLODRatio);
+														while (instanceMeshes.MoveNext()) {
+																yield return instanceMeshes.Current;
+														}
 														break;
 										}
 										//StructurePiece.transform.ResetLocal();
@@ -472,11 +521,14 @@ namespace Frontiers.World
 								default:
 										group = ParentStructure.StructureGroup;
 										structureItems = group.gameObject.FindOrCreateChild("_ITEMS_EXT");
-										yield return StartCoroutine(StructureBuilder.GenerateExteriorItems(
-												ParentStructure,
-												Template.Exterior,
-												group,
-												structureItems));
+										var generateExtItems = StructureBuilder.GenerateExteriorItems(
+												                       ParentStructure,
+												                       Template.Exterior,
+												                       group,
+												                       structureItems);
+										while (generateExtItems.MoveNext()) { 
+												yield return generateExtItems.Current;
+										}
 										break;
 
 								case BuilderMode.Interior:
@@ -486,12 +538,15 @@ namespace Frontiers.World
 												structureItems = group.gameObject.FindOrCreateChild("_ITEMS_INT_" + interiorVariant.ToString());
 												//Debug.Log ("Generating items for interior variant " + interiorVariant.ToString ());
 												if (!ParentStructure.State.InteriorsLoadedOnce.Contains(interiorVariant) && interiorVariant < Template.InteriorVariants.Count) {
-														yield return StartCoroutine(StructureBuilder.GenerateInteriorItems(
-																ParentStructure,
-																interiorVariant,
-																Template.InteriorVariants[interiorVariant],
-																group,
-																structureItems));
+														var generateIntItems = StructureBuilder.GenerateInteriorItems(
+																                       ParentStructure,
+																                       interiorVariant,
+																                       Template.InteriorVariants[interiorVariant],
+																                       group,
+																                       structureItems);
+														while (generateIntItems.MoveNext()) { 
+																yield return generateIntItems.Current;
+														}
 												}
 												yield return null;
 										}

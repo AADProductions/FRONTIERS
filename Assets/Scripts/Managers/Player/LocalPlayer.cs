@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
+using Frontiers.GUI;
 
 namespace Frontiers
 {
@@ -214,6 +215,7 @@ namespace Frontiers
 				public PlayerStartupPosition GetStartupPosition()
 				{
 						PlayerStartupPosition psp = new PlayerStartupPosition();
+						psp.ClearWearables = false;
 						psp.ClearRevealedLocations = false;
 						psp.ClearInventory = false;
 						psp.ClearLog = false;
@@ -299,7 +301,7 @@ namespace Frontiers
 				{
 						double timeStart = WorldClock.AdjustedRealTime;
 						while (WorldClock.AdjustedRealTime < timeStart + earthquakeDuration) {
-								yield return new WaitForSeconds(UnityEngine.Random.value);
+								yield return WorldClock.WaitForSeconds(UnityEngine.Random.value);
 								FPSCamera.DoBomb(Vector3.one, earthquakeIntensity, earthquakeIntensity);
 						}
 				}
@@ -374,8 +376,10 @@ namespace Frontiers
 						HijackedPosition.transform.rotation = GameManager.Get.GameCamera.transform.rotation;
 						HijackedPosition.transform.position = GameManager.Get.GameCamera.transform.position;
 						HijackLookSpeed = Globals.PlayerHijackLerp;
+						mPitchOnHijack = FPSCamera.Pitch;
+						mYawOnHijack = FPSCamera.Yaw;
 
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.ControlHijack), WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.ControlHijack, WorldClock.AdjustedRealTime);
 						State.HijackMode = PlayerHijackMode.LookAtTarget;
 						State.IsHijacked = true;
 						Controller.enabled = false;
@@ -391,15 +395,18 @@ namespace Frontiers
 								//we want to take the hijacked camera rotation and apply it to the fps camera's rotation
 								//then we'll reset the game camera's rotation
 								if (keepLookDirection) {
-										Vector3 gameCameraRotation = gameCamera.transform.localRotation.eulerAngles;
-										FPSCamera.Pitch = gameCameraRotation.x;
-										FPSCamera.Yaw = gameCameraRotation.z;
+										FPSCamera.Pitch = gameCamera.transform.localRotation.eulerAngles.x;
+										FPSCamera.Yaw = gameCamera.transform.localRotation.eulerAngles.z;
+								} else {
+										FPSCamera.Pitch = mPitchOnHijack;
+										FPSCamera.Yaw = mYawOnHijack;
 								}
 								gameCamera.transform.localRotation = Quaternion.identity;
 
-								Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.ControlRestore), WorldClock.Time);
 								State.IsHijacked = false;
 								Controller.enabled = true;
+
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.ControlRestore, WorldClock.AdjustedRealTime);
 						}
 				}
 
@@ -433,6 +440,8 @@ namespace Frontiers
 
 				protected Transform mLockSource;
 				protected Action mHijackCancel;
+				protected float mPitchOnHijack;
+				protected float mYawOnHijack;
 
 				#endregion
 
@@ -477,13 +486,19 @@ namespace Frontiers
 								HijackedLookTarget.transform.position = Position;
 						}
 						Manager.LocalPlayerDespawn();
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalDespawn, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalDespawn, WorldClock.AdjustedRealTime);
 				}
 
 				public void Die(string causeOfDeath)
 				{
-						if (!HasSpawned || IsDead || GameManager.Get.JustLookingMode) {
+						if (!HasSpawned || IsDead) {
 								//whoops, we made a mistake
+								return;
+						}
+
+						//if our difficulty setting doesn't allow death, skip this
+						if (Profile.Get.CurrentGame.Difficulty.DeathStyle == DifficultyDeathStyle.NoDeath) {
+								Debug.Log("Death mode is set to 'No Death' so not applying death");
 								return;
 						}
 
@@ -492,7 +507,7 @@ namespace Frontiers
 						State.IsDead = true;
 						Despawn();
 						Manager.LocalPlayerDie();
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalDie, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalDie, WorldClock.AdjustedRealTime);
 						GameObject deathDialog = GUIManager.Get.Dialog("NGUIDeathDialog");
 						//the death dialog will figure out what the player wants to do next
 						GUIManager.SpawnNGUIChildEditor(gameObject, deathDialog, false);
@@ -520,7 +535,7 @@ namespace Frontiers
 								mHijackCancel.Invoke();
 								mHijackCancel = null;
 								RestoreControl(false);
-						} else if (Player.Get.UserActions.HasFocus && GameManager.Is(FGameState.InGame | FGameState.GamePaused)) {
+						} else if (Player.Get.UserActions.HasFocus && GameManager.Is(FGameState.InGame | FGameState.GamePaused) && !GUILoading.IsLoading) {
 								GameManager.Get.SpawnStartMenu(FGameState.GamePaused, FGameState.InGame);
 						}
 						return true;
@@ -1053,12 +1068,5 @@ namespace Frontiers
 				public bool IsDead = false;
 				public PlayerHijackMode HijackMode = PlayerHijackMode.LookAtTarget;
 				public SDictionary <string, string> ScriptStates = new SDictionary <string, string>();
-		}
-
-		public enum PlayerHijackMode
-		{
-				LookAtTarget,
-				OrientToTarget,
-				Zoom,
 		}
 }

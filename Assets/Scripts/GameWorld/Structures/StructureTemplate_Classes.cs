@@ -181,13 +181,14 @@ namespace Frontiers.World
 
 				public static ChildPiece [] ExtractInstances(string instances)
 				{
-						//Debug.Log ("Exctracing layer " + layer);
-						string[] splitLayer = instances.Split(new string [] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
-						ChildPiece[] childPieces = new ChildPiece [splitLayer.Length];
-						if (splitLayer.Length > 0) {
-								for (int i = 0; i < splitLayer.Length; i++) {
+						List <string> splitLayer = Data.GameData.SplitString (instances, new string [] { "\n" });
+						//string[] splitLayer = instances.Split(new string [] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+						ChildPiece[] childPieces = new ChildPiece [splitLayer.Count];
+						if (splitLayer.Count > 0) {
+								for (int i = 0; i < splitLayer.Count; i++) {
 										ChildPiece childPiece = new ChildPiece();
-										string[] splitChild = splitLayer[i].Split(new string [] { ",\t" }, StringSplitOptions.RemoveEmptyEntries);
+										List <string> splitChild = Data.GameData.SplitString (splitLayer[i], new string [] { ",\t" });
+										//string[] splitChild = splitLayer[i].Split(new string [] { ",\t" }, StringSplitOptions.RemoveEmptyEntries);
 										//0:packname, 1:childname, 2:xpos, 3:ypos, 4:zpos, 5:xrot, 6:yrot, 7:zrot, 8:xscl, 9:yscl, 10:zscl, 11:mat1|mat2|mat3, 12:destroyedBehavior\n\r
 										childPiece.PackName = splitChild[0];
 										childPiece.ChildName = splitChild[1];
@@ -204,15 +205,15 @@ namespace Frontiers.World
 										childPiece.Scale.y = float.Parse(splitChild[9]);
 										childPiece.Scale.z = float.Parse(splitChild[10]);
 										childPiece.Materials = new string[0];
-										if (splitChild.Length > 11) {
+										if (splitChild.Count > 11) {
 												childPiece.DestroyedBehavior = Int32.Parse(splitChild[11]);
 										}
 										childPieces[i] = childPiece;
-										Array.Clear(splitChild, 0, splitChild.Length);
+										splitChild.Clear();
 										splitChild = null;
 								}
 						}
-						Array.Clear(splitLayer, 0, splitLayer.Length);
+						splitLayer.Clear();
 						splitLayer = null;
 						return childPieces;
 				}
@@ -356,18 +357,5 @@ namespace Frontiers.World
 				public int DestroyedBehavior;
 				public static ChildPiece gEmpty;
 // = new ChildPiece (); //TODO this is BAD
-		}
-
-		public enum StructureMode
-		{
-				Normal,
-				Destroyed,
-				Burning,
-		}
-
-		public enum StructureBuildMethod
-		{
-				MeshCombiner,
-				MeshInstances,
 		}
 }

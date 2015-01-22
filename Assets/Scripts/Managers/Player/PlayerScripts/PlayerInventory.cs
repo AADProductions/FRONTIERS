@@ -6,6 +6,7 @@ using Frontiers.World;
 using Frontiers.World.Gameplay;
 using Frontiers.GUI;
 using Frontiers.Data;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {
@@ -63,7 +64,7 @@ namespace Frontiers
 						if (State.OwnedStructures.SafeAdd(ownedStructure)) {
 								//if we don't already own it
 								//announce that we gained a thing
-								Player.Get.AvatarActions.ReceiveAction(AvatarAction.LocationAquire, WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.LocationAquire, WorldClock.AdjustedRealTime);
 								if (announceOwnership) {
 										GUIManager.PostGainedItem(ownedStructure);
 								}
@@ -212,7 +213,7 @@ namespace Frontiers
 						StartCoroutine(CheckQuickslotStatus());
 						StartCoroutine(CheckCarryItemStatus());
 						if (State.ActiveQuickslot < 0) {
-								SelectionNext(WorldClock.Time);
+								SelectionNext(WorldClock.AdjustedRealTime);
 						}
 				}
 
@@ -243,8 +244,8 @@ namespace Frontiers
 						Stacks.Clear.Items(State.QuickslotsStackCarry, destroyItems);
 						mActiveQuickslotItem = null;
 						mActiveCarryItem = null;
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemAQIChange, WorldClock.Time);
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemACIChange, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemAQIChange, WorldClock.AdjustedRealTime);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemACIChange, WorldClock.AdjustedRealTime);
 						//always add a single sack, even if we've cleared everything else
 						WorldItem containerItem = null;
 						WIStackError error = WIStackError.None;
@@ -256,7 +257,7 @@ namespace Frontiers
 				public void AddQuestItem(string questItem)
 				{
 						if (State.QuestItemsAcquired.SafeAdd(questItem)) {
-								Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemQuestItemAddToInventory, WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemQuestItemAddToInventory, WorldClock.AdjustedRealTime);
 						}
 				}
 
@@ -329,11 +330,13 @@ namespace Frontiers
 						if (player.LockQuickslots)
 								return true;
 
-						State.ActiveQuickslot++;
-						if (State.ActiveQuickslot >= Globals.MaxStacksPerContainer) {	//quickslots will always cap at MaxStacksPerContainer
-								State.ActiveQuickslot = 0;
+						if (GameManager.Is(FGameState.InGame)) {
+								State.ActiveQuickslot++;
+								if (State.ActiveQuickslot >= Globals.MaxStacksPerContainer) {	//quickslots will always cap at MaxStacksPerContainer
+										State.ActiveQuickslot = 0;
+								}
+								GUIInventoryInterface.Get.SetActiveQuickslots(State.ActiveQuickslot);
 						}
-						GUIInventoryInterface.Get.SetActiveQuickslots(State.ActiveQuickslot);
 						return true;
 				}
 
@@ -342,11 +345,13 @@ namespace Frontiers
 						if (player.LockQuickslots)
 								return true;
 
-						State.ActiveQuickslot--;
-						if (State.ActiveQuickslot < 0) {	//quickslots will always cap at MaxStacksPerContainer
-								State.ActiveQuickslot = Globals.MaxStacksPerContainer - 1;
+						if (GameManager.Is(FGameState.InGame)) {
+								State.ActiveQuickslot--;
+								if (State.ActiveQuickslot < 0) {	//quickslots will always cap at MaxStacksPerContainer
+										State.ActiveQuickslot = Globals.MaxStacksPerContainer - 1;
+								}
+								GUIInventoryInterface.Get.SetActiveQuickslots(State.ActiveQuickslot);
 						}
-						GUIInventoryInterface.Get.SetActiveQuickslots(State.ActiveQuickslot);
 						return true;
 				}
 
@@ -363,7 +368,7 @@ namespace Frontiers
 
 				public void OnBankChange()
 				{
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemCurrencyExchange, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemCurrencyExchange, WorldClock.AdjustedRealTime);
 				}
 
 				#endregion
@@ -448,7 +453,8 @@ namespace Frontiers
 								return true;
 						}
 
-						if (item.Is <BookAvatar>()) {	
+						if (item.Is <BookAvatar>()) {
+								Debug.Log("Item is book avatar");
 								if (item.IsWorldItem) {	
 										BookAvatar avatar = item.worlditem.Get <BookAvatar>();
 										Books.AquireBook(avatar.State.BookName);
@@ -461,9 +467,12 @@ namespace Frontiers
 												//get state using generic method since it may be a stackitem
 												BookAvatarState bookAvatarState = (BookAvatarState)bookAvatarStateObject;
 												Books.AquireBook(bookAvatarState.BookName);
+										} else {
+												Debug.Log("Couldn't get state of book avatar");
 										}
 								}
 								//never put books in our inventory
+								Debug.Log("Removing book from game");
 								item.RemoveFromGame();
 								return true;
 						}
@@ -480,6 +489,7 @@ namespace Frontiers
 						if (!addResult) {
 								//whoops! drop it at our feed
 								GUIManager.PostInfo(item.DisplayName + " wouldn't fit.");
+								item.Add("OwnedByPlayer");
 								player.ItemPlacement.ItemDropAtFeet(item);
 								return true;
 						} else {
@@ -488,14 +498,14 @@ namespace Frontiers
 										item.worlditem.OnAddedToPlayerInventory.SafeInvoke();
 										item.worlditem.SetMode(WIMode.Stacked);
 										LastAddedItems.Add(item);
-										LastAddedTime = WorldClock.Time;
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.ItemAddToInventory), WorldClock.Time);
+										LastAddedTime = WorldClock.AdjustedRealTime;
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.ItemAddToInventory), WorldClock.AdjustedRealTime);
 								}
 								if (item.IsQuestItem) {
 										State.QuestItemsAcquired.SafeAdd(item.QuestName);
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.ItemQuestItemAddToInventory), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.ItemQuestItemAddToInventory), WorldClock.AdjustedRealTime);
 								}
-								Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.ItemAddToInventory), WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction((AvatarAction.ItemAddToInventory), WorldClock.AdjustedRealTime);
 								GUIManager.PostInfo("Added " + item.DisplayName + " to inventory.");
 						}
 						mAddingItem = false;
@@ -510,6 +520,7 @@ namespace Frontiers
 						bool foundFirstCompatible = false;
 						WIStack firstEmpty = null;
 						WIStack firstCompatible = null;
+						mostRelevantStack = null;
 
 						if (item.IsStackContainer) {	
 								if (!QuickslotEnabler.HasEnablerTopItem) {	//if quickslots are empty
@@ -520,7 +531,7 @@ namespace Frontiers
 								}
 
 								if (QuickslotEnabler.IsEnabled
-								    && Stacks.Can.Fit(item.Size, QuickslotEnabler.EnablerContainer.Size)) {	//if quickslots have a stack and they're enabled
+								&& Stacks.Can.Fit(item.Size, QuickslotEnabler.EnablerContainer.Size)) {	//if quickslots have a stack and they're enabled
 										//and the item will fit in a container that size
 										//fill quickslots first
 										checkedQuickslots = true;
@@ -573,7 +584,7 @@ namespace Frontiers
 												if (Stacks.Can.Fit(item.Size, enabler.EnablerContainer.Size)) {
 														foreach (WIStack stack in enabler.EnablerStacks) {
 																if (!foundFirstEmpty
-																    && stack.IsEmpty) {
+																&& stack.IsEmpty) {
 																		foundFirstEmpty = true;
 																		firstEmpty = stack;
 																}
@@ -893,7 +904,7 @@ namespace Frontiers
 								qsEnabledPrev = QuickslotsEnabled;
 								hadItemPrev = qsEnabledPrev && State.QuickslotsStackCarry.HasTopItem && mActiveCarryItem == State.QuickslotsStackCarry.TopItem;
 
-								yield return new WaitForSeconds(0.025f);
+								yield return WorldClock.WaitForRTSeconds(0.025f);
 
 								mChangingAci = false;
 								//do we want to change our active quickslot item?
@@ -929,10 +940,10 @@ namespace Frontiers
 
 								//---this part is relatively safe so don't bother with exception handling
 								if (mChangingAci) {
-										//Debug.Log ("----Changing quickslot...");
+										Debug.Log ("----Changing quickslot ACI...");
 										//if it has changed and we're supposed to announce the change do so now
 										//this action should ONLY originate from here
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.ItemACIChange), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemACIChange, WorldClock.AdjustedRealTime);
 										//give objects a bit to reaction before actually refreshing containers
 										yield return null;
 										//if the previous item was equipped then we have to wait for the tool to finish unequipping it
@@ -962,14 +973,11 @@ namespace Frontiers
 				{	//check over time to see if quickslot has changed in some way
 						//if it has announce it to any subscribers
 						int lastQuickslot = 0;
-						WIStack lastQuickslotStack = null;
-						WIStack currentQuickslotStack = null;
 						bool qsEnabledPrev = false;
 						bool hadItemPrev = false;
 						bool changeAQI = false;
 						bool qsEnabledNow = false;
 						bool hasItemNow = false;
-						bool restartLoop = false;
 
 						mCheckingQuickslotStatus = true;
 						while (mCheckingQuickslotStatus) {
@@ -978,7 +986,6 @@ namespace Frontiers
 										yield return null;
 								}
 
-								restartLoop = false;
 								mChangingAqi = false;
 
 								while (player.LockQuickslots) {
@@ -1004,7 +1011,7 @@ namespace Frontiers
 								hadItemPrev = qsEnabledPrev && lastQuickslotStack.HasTopItem && mActiveQuickslotItem == lastQuickslotStack.TopItem;
 								//wait a bit (delay to prevent 'spamming' of quickslot changes)
 
-								yield return new WaitForSeconds(0.025f);//non-realtime seconds
+								yield return WorldClock.WaitForRTSeconds (0.025f);
 
 								//---Check to see if anything has changed
 								//try {
@@ -1038,32 +1045,17 @@ namespace Frontiers
 										changeAQI |= (qsEnabledPrev && !qsEnabledNow);
 								}
 
-								if (restartLoop) {
-										yield return null;
-										continue;
-								}
-
-								try {
-										//---Change the AQI if it's now different
-										if (changeAQI && ChangeAQI(hadItemPrev, qsEnabledNow, lastQuickslotStack, currentQuickslotStack)) {
-												mChangingAqi = true;
-										}
-								} catch (Exception e) {
-										//f'ing coroutines...
-										Debug.LogException(e);
-										restartLoop = true;
-								}
-
-								if (restartLoop) {
-										yield return null;
-										continue;
+								//---Change the AQI if it's now different
+								if (changeAQI && ChangeAQI(hadItemPrev, qsEnabledNow, lastQuickslotStack, currentQuickslotStack)) {
+										mChangingAqi = true;
 								}
 
 								//---this part is relatively safe so don't bother with exception handling
 								if (mChangingAqi) {
+										Debug.Log ("----Changing quickslot AQI...");
 										//if it has changed and we're supposed to announce the change do so now
 										//this action should ONLY originate from here
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.ItemAQIChange), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemAQIChange, WorldClock.AdjustedRealTime);
 										//give objects a bit to reaction before actually refreshing containers
 										yield return null;
 										//if the previous item was equipped then we have to wait for the tool to finish unequipping it
@@ -1083,7 +1075,6 @@ namespace Frontiers
 										//this will keep quickslots locked until the tool is ready to go
 										while (player.Tool.ToolState == PlayerToolState.Equipping) {
 												//then wait for the tool to equip
-												//Debug.Log ("Waiting for tool to equip in inventory...");
 												yield return null;
 										}
 										GUIInventoryInterface.Get.RefreshContainers();
@@ -1097,10 +1088,10 @@ namespace Frontiers
 				protected bool ChangeACI(bool hadItemPrev, bool qsEnabledNow)
 				{
 						bool announceChange = true;
-						WorldItem newACI = null;
+						newACI = null;
 						if (qsEnabledNow) {
 								if (State.QuickslotsStackCarry.HasTopItem) {
-										IWIBase newACIBase = State.QuickslotsStackCarry.TopItem;
+										newACIBase = State.QuickslotsStackCarry.TopItem;
 										if (newACIBase.IsWorldItem) {
 												newACI = newACIBase.worlditem;
 										} else {
@@ -1116,51 +1107,65 @@ namespace Frontiers
 						return announceChange;
 				}
 
+				protected IWIBase newACIBase = null;
+				protected WorldItem newACI = null;
+
 				protected bool ChangeAQI(bool hadItemPrev, bool qsEnabledNow, WIStack lastQuickslotStack, WIStack currentQuickslotStack)
 				{
 						bool announceChange = true;
-						WorldItem newAQI = null;
-						if (qsEnabledNow) {
-								//see if we need to send the previous AQI back
-								//(for now ignore because they function fine)
-								//now get the new AQI starting with quickslot stack
-								//this SHOULD work because the active quickslot will be error checked
-								//and we're guaranteed enabler stacks by quickslotsEnabled
-								WIStack quickslotStack = QuickslotEnabler.EnablerStacks[State.ActiveQuickslot];
-								//if the quickslot stack has a top item
-								if (quickslotStack.HasTopItem) {
-										//get the top item, then check if it's a world item
-										IWIBase newAQIBase = quickslotStack.TopItem;
-										if (newAQIBase.IsWorldItem) {
-												//if it's already a worlditem then great, we're done
-												newAQI = newAQIBase.worlditem;
-												if (newAQI == mActiveQuickslotItem) {
-														//if they're already the same object for some reason
-														//(maybe it was a stack swap?)
-														//then there's no need to announce anything
-														announceChange = false;
-												}//otherwise just set & announce it at the end normally
+						newAQI = null;
+
+						try {
+								if (qsEnabledNow) {
+										//see if we need to send the previous AQI back
+										//(for now ignore because they function fine)
+										//now get the new AQI starting with quickslot stack
+										//this SHOULD work because the active quickslot will be error checked
+										//and we're guaranteed enabler stacks by quickslotsEnabled
+										aqiQuickslotStack = QuickslotEnabler.EnablerStacks[State.ActiveQuickslot];
+										//if the quickslot stack has a top item
+										if (aqiQuickslotStack.HasTopItem) {
+												//get the top item, then check if it's a world item
+												newAQIBase = aqiQuickslotStack.TopItem;
+												if (newAQIBase.IsWorldItem) {
+														//if it's already a worlditem then great, we're done
+														newAQI = newAQIBase.worlditem;
+														if (newAQI == mActiveQuickslotItem) {
+																//if they're already the same object for some reason
+																//(maybe it was a stack swap?)
+																//then there's no need to announce anything
+																announceChange = false;
+														}//otherwise just set & announce it at the end normally
+												} else {
+														//if it's not a world item then we need to turn it into one
+														Stacks.Convert.TopItemToWorldItem(aqiQuickslotStack, out newAQI);
+														newAQI.SetMode(WIMode.Equipped);
+														//if this doesn't work... erm, TODO check for this not working lol
+												}
 										} else {
-												//if it's not a world item then we need to turn it into one
-												Stacks.Convert.TopItemToWorldItem(quickslotStack, out newAQI);
-												newAQI.SetMode(WIMode.Equipped);
-												//if this doesn't work... erm, TODO check for this not working lol
-										}
-								} else {
-										if (!hadItemPrev) { //Debug.Log ("PLAYERINVENTORY: had NO item previously, not announcing"); 
-												//if the quickslot stack doesn't have a top item
-												//if we already DON'T have an AQI
-												//then we don't need to announce anything
-												announceChange = false;
+												if (!hadItemPrev) { //Debug.Log ("PLAYERINVENTORY: had NO item previously, not announcing"); 
+														//if the quickslot stack doesn't have a top item
+														//if we already DON'T have an AQI
+														//then we don't need to announce anything
+														announceChange = false;
+												}
 										}
 								}
+								//set the new AQI (even if it's null)
+								mActiveQuickslotItem = newAQI;
+						} catch (Exception e) {
+								Debug.Log("Exception while changing AQI: " + e.ToString());
+								return false;
 						}
-						//set the new AQI (even if it's null)
-						mActiveQuickslotItem = newAQI;
 
 						return announceChange;
 				}
 
+				protected WIStack lastQuickslotStack = null;
+				protected WIStack currentQuickslotStack = null;
+				protected WIStack aqiQuickslotStack;
+				protected WorldItem newAQI = null;
+				protected IWIBase newAQIBase = null;
 				protected bool mChangingAqi = false;
 				protected bool mChangingAci = false;
 				protected bool mQuickslotChanged = false;
@@ -1202,8 +1207,8 @@ namespace Frontiers
 						for (int i = 0; i < Keys.Count; i++) {
 								//don't add the key if we already have a copy of it
 								if (Keys[i].KeyType == keyType &&
-								    Keys[i].KeyTag == keyTag &&
-								    Keys[i].KeyName == keyName) {
+								Keys[i].KeyTag == keyTag &&
+								Keys[i].KeyName == keyName) {
 										return false;
 								}
 						}
@@ -1224,8 +1229,8 @@ namespace Frontiers
 						for (int i = 0; i < Keys.Count; i++) {
 								//don't add the key if we already have a copy of it
 								if (Keys[i].KeyType == newKey.KeyType &&
-								    Keys[i].KeyTag == newKey.KeyTag &&
-								    Keys[i].KeyName == newKey.KeyName) {
+								Keys[i].KeyTag == newKey.KeyTag &&
+								Keys[i].KeyName == newKey.KeyName) {
 										return false;
 								}
 						}

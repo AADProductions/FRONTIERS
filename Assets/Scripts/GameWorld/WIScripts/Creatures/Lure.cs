@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -36,7 +37,7 @@ namespace Frontiers.World
 										LureEffectSphere = effectSphere.AddComponent <EffectSphere>();
 
 										LureEffectSphere.TargetRadius = LureRadius;
-										LureEffectSphere.StartTime = WorldClock.Time;
+										LureEffectSphere.StartTime = WorldClock.AdjustedRealTime;
 										LureEffectSphere.RTDuration = RTDuration;
 										LureEffectSphere.RTCooldownTime = 0f;
 										LureEffectSphere.RTExpansionTime = RTExpansionTime;

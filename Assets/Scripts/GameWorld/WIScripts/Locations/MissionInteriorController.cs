@@ -1,10 +1,9 @@
 using UnityEngine;
-using System.Collections;
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using Frontiers.World.Locations;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class MissionInteriorController : WIScript
 		{		//used a LOT to control when & where mission-related characters & items spawn
@@ -26,6 +25,9 @@ namespace Frontiers.World
 
 				public bool MissionUpdated(double timeStamp)
 				{
+						if (mDestroyed)
+								return true;
+
 						if (worlditem.Is(WIActiveState.Active | WIActiveState.Visible)) {
 								OnVisible();
 						}
@@ -79,7 +81,7 @@ namespace Frontiers.World
 
 				protected IEnumerator OnMissionUpdated()
 				{
-						yield return new WaitForSeconds(0.1f);
+						yield return WorldClock.WaitForSeconds(0.1);
 						if (!Player.Local.Surroundings.IsVisitingStructure(structure)) {
 								if (LastTopCondition != null) {
 										//if we've been through this before

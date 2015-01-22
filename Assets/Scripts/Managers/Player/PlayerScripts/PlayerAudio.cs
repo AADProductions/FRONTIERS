@@ -2,8 +2,9 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.World.Gameplay;
 using Frontiers.World;
+using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {
@@ -22,9 +23,10 @@ namespace Frontiers
 				public double FootStepIntervalSprint = 0.3f;
 				public double FootstepIntervalWalkInterior = 0.55f;
 				public double FootStepIntervalLand = 0.25f;
-				public string OutOfBreathSound = "MaleOutOfBreath";
-				public string TiredSound = "MaleTired";
-				public string CoughSound = "MaleCough";
+				public string OutOfBreathSound = "OutOfBreath";
+				public string TiredSound = "Tired";
+				public string CoughSound = "Cough";
+				public MasterAudio.SoundType PlayerVoiceType = MasterAudio.SoundType.PlayerVoiceMale;
 
 				public override void Initialize()
 				{
@@ -37,16 +39,22 @@ namespace Frontiers
 
 				public void Cough()
 				{
-						MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, CoughSound);
+						MasterAudio.PlaySound(PlayerVoiceType, CoughSound);
 				}
 
 				public void GetPushed()
 				{
-						MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, "SurvivalTakeDamage");
+						MasterAudio.PlaySound(PlayerVoiceType, "SurvivalTakeDamage");
 				}
 
 				public override void OnGameStart()
 				{
+						if (Profile.Get.CurrentGame.Character.Gender == CharacterGender.Male) {
+								PlayerVoiceType = MasterAudio.SoundType.PlayerVoiceMale;
+						} else {
+								PlayerVoiceType = MasterAudio.SoundType.PlayerVoiceFemale;
+						}
+
 						Player.Get.AvatarActions.Subscribe(AvatarAction.Move, new ActionListener(Move));
 						Player.Get.AvatarActions.Subscribe(AvatarAction.MoveJump, new ActionListener(MoveJump));
 						Player.Get.AvatarActions.Subscribe(AvatarAction.MoveLandOnGround, new ActionListener(MoveLandOnGround));
@@ -228,10 +236,10 @@ namespace Frontiers
 				{
 						float statusValue = player.Status.GetStatusValue("Strength");
 						if (statusValue <= 0f) {
-								MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, OutOfBreathSound);
+								MasterAudio.PlaySound(PlayerVoiceType, OutOfBreathSound);
 								CameraFX.Get.BlackOut(2f, Mathf.Abs(statusValue) * BlackoutIntensity);
 						} else if (statusValue < 0.25f) {
-								MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, TiredSound);
+								MasterAudio.PlaySound(PlayerVoiceType, TiredSound);
 						}
 
 						VolumeMovementMultiplier = 1f;
@@ -243,10 +251,10 @@ namespace Frontiers
 				{
 						float statusValue = player.Status.GetStatusValue("Strength");
 						if (statusValue <= 0f) {
-								MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, OutOfBreathSound);
+								MasterAudio.PlaySound(PlayerVoiceType, OutOfBreathSound);
 								CameraFX.Get.BlackOut(2f, Mathf.Abs(statusValue) * BlackoutIntensity);
 						} else if (statusValue < 0.25f) {
-								MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, TiredSound);
+								MasterAudio.PlaySound(PlayerVoiceType, TiredSound);
 						}
 
 						VolumeMovementMultiplier = 2f;
@@ -268,19 +276,19 @@ namespace Frontiers
 
 				public bool SurvivalTakeDamage(double timeStamp)
 				{
-						MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, "SurvivalTakeDamage");
+						MasterAudio.PlaySound(PlayerVoiceType, "SurvivalTakeDamage");
 						return true;
 				}
 
 				public bool SurvivalTakeDamageCritical(double timeStamp)
 				{
-						MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, "SurvivalTakeDamageCritical");
+						MasterAudio.PlaySound(PlayerVoiceType, "SurvivalTakeDamageCritical");
 						return true;
 				}
 
 				public bool SurvivalTakeDamageOverkill(double timeStamp)
 				{
-						MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, "SurvivalTakeDamageOverkill");
+						MasterAudio.PlaySound(PlayerVoiceType, "SurvivalTakeDamageOverkill");
 						return true;
 				}
 
@@ -297,7 +305,7 @@ namespace Frontiers
 
 				public bool SurvivalDie(double timeStamp)
 				{
-						MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, "SurvivalDie");
+						MasterAudio.PlaySound(PlayerVoiceType, "SurvivalDie");
 						return true;
 				}
 
@@ -336,10 +344,10 @@ namespace Frontiers
 						if (player.Tool.worlditem.Is <Weapon>()) {
 								float statusValue = player.Status.GetStatusValue("Strength");
 								if (statusValue <= 0f) {
-										MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, OutOfBreathSound);
+										MasterAudio.PlaySound(PlayerVoiceType, OutOfBreathSound);
 										CameraFX.Get.BlackOut(2f, Mathf.Abs(statusValue) * BlackoutIntensity);
 								} else if (statusValue < 0.25f) {
-										MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, TiredSound);
+										MasterAudio.PlaySound(PlayerVoiceType, TiredSound);
 								}
 						}
 						return true;

@@ -139,6 +139,8 @@ namespace Frontiers
 										mAudioClipLookup.Add(clip.Key, clip.Clip);
 								}
 						}
+						mWaitMusic = new WaitForSeconds(mUpdateMusicInterval);
+						mWaitAmbient = new WaitForSeconds(mUpdateAmbientInterval);
 				}
 
 				public override void OnInitialized()
@@ -199,7 +201,7 @@ namespace Frontiers
 				protected IEnumerator UpdateAmbientStateOverTime()
 				{
 						while (!GameManager.Is(FGameState.Quitting)) {
-								yield return new WaitForSeconds(mUpdateAmbientInterval);
+								yield return mWaitAmbient;
 								UpdateAmbientState();
 						}
 						yield break;
@@ -208,11 +210,12 @@ namespace Frontiers
 				protected IEnumerator UpdateMusicStateOverTime()
 				{
 						while (!GameManager.Is(FGameState.Quitting)) {
-								yield return new WaitForSeconds(mUpdateMusicInterval);
+								yield return mWaitMusic;
 								UpdateMusicState();
 						}
 						yield break;
 				}
+
 				//this is used to manage audio listeners and ensure that only one is active at any time
 				public static void ActivateAudioListener(AudioListener newAudioListener)
 				{
@@ -537,6 +540,8 @@ namespace Frontiers
 						}
 				}
 
+				protected WaitForSeconds mWaitAmbient;
+				protected WaitForSeconds mWaitMusic;
 				protected float mMasterMusicVolume = 1.0f;
 				protected Dictionary <string, AudioClip> mAudioClipLookup = new Dictionary <string, AudioClip>();
 				protected bool mUpdatingMusicState = false;

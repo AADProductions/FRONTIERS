@@ -24,7 +24,7 @@ namespace Frontiers {
 		public override void WakeUp ()
 		{
 			Get = this;
-			mTemplateLookup = new Dictionary<string, WorldLightTemplate> ();
+						mTemplateLookup = new Dictionary<string, WorldLightTemplate> (StringComparer.CurrentCultureIgnoreCase);
 		}
 
 		public override void OnGameLoadStart ()

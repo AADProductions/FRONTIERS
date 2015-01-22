@@ -1187,13 +1187,16 @@ namespace Frontiers
 												return true;
 										}
 
+										if (!File.Exists(fullPath)) {
+												if (type == DataType.Base) {
+														Debug.Log("Couldn't load terrain map " + fullPath);
+												}
+												return false;
+										}
+
 										FileMode mode = FileMode.Open;
 										FileShare share = FileShare.ReadWrite;
 										FileAccess access = FileAccess.ReadWrite;
-
-										if (!File.Exists(fullPath)) {
-												return false;
-										}
 
 										map = new Texture2D(resolution, resolution, format, false, linear);
 										map.filterMode = FilterMode.Bilinear;
@@ -1264,7 +1267,6 @@ namespace Frontiers
 												requiresResize = true;
 												//use uncompressed file format if we're resizing
 												//so we don't end up scaling down a muddy texture
-												format = TextureFormat.ARGB32;
 										}
 										//load the map - if we require a resize, get the resized map before setting other props
 										texture = new Texture2D(currentWidth, currentHeight, format, true, false);
@@ -1297,6 +1299,7 @@ namespace Frontiers
 										//so if we want this to be a normal map we have to take this step
 										//do this here BEFORE the threaded texture resize so we don't end up working on grey pixels
 										if (asNormalMap) {
+												Debug.Log("Converting to normal map");
 												Color oldColor = new Color();
 												Color newColor = new Color();
 												float r = 0f;
@@ -1325,7 +1328,7 @@ namespace Frontiers
 										//compress it to save TONS of space
 										texture.Compress(false);
 										//make it read-only to cut memory by 1/2
-										texture.Apply(false, true);
+										//texture.Apply(true, true);
 										yield break;	
 								}
 
@@ -1902,8 +1905,13 @@ namespace Frontiers
 								GroupPath = groupPath;
 						}
 
-						public string FileName = string.Empty;
-						public string GroupPath = string.Empty;
+						public void Refresh()
+						{
+								mFullPath = GroupPath + Frontiers.World.WIGroup.gPathJoinString + FileName;
+						}
+
+						public string FileName;
+						public string GroupPath;
 
 						public MobileReference AppendLocation(string locationName)
 						{
@@ -1920,9 +1928,11 @@ namespace Frontiers
 										return mFullPath;
 								}
 								set {
-										mFullPath = value;
-										GroupPath = System.IO.Path.GetDirectoryName(mFullPath);
-										FileName = System.IO.Path.GetFileName(mFullPath);
+										if (mFullPath != value) {
+												mFullPath = value;
+												GroupPath = System.IO.Path.GetDirectoryName(mFullPath);
+												FileName = System.IO.Path.GetFileName(mFullPath);
+										}
 								}
 						}
 

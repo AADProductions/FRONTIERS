@@ -5,6 +5,7 @@ using Frontiers;
 using Frontiers.World.Gameplay;
 using Frontiers.GUI;
 using Frontiers.Data;
+using System;
 
 namespace Frontiers.GUI
 {
@@ -23,7 +24,9 @@ namespace Frontiers.GUI
 								if (Cutscene.IsActive) {
 										return true;
 								}
-								//return Get.TopInterface.SuspendMessages;
+								if (Get.TopInterface != null) {
+										return Get.TopInterface.SuspendMessages;
+								}
 								return false;
 						}
 				}
@@ -135,11 +138,20 @@ namespace Frontiers.GUI
 				public GUIIntrospectionDisplay NGUIIntrospectionDisplay;
 				//cursor control
 				public GUIButtonHover ActiveButton;
+				public DebugConsole Console;
+				public MissionTestingUtility Missions;
 
 				public override void WakeUp()
 				{
 						Get = this;
+						Console = GameManager.Get.GameCamera.GetComponent <DebugConsole>();
+						Missions = GameManager.Get.GameCamera.GetComponent <MissionTestingUtility>();
 						VersionNumber.text = "Frontiers Beta v." + GameManager.Version;
+						//UNITY turn off the damn OnMouse events
+						Camera[] cameras = FindObjectsOfType <Camera>();
+						foreach (Camera cam in cameras) {
+								cam.eventMask = 0;
+						}
 				}
 
 				public override void Initialize()
@@ -189,31 +201,100 @@ namespace Frontiers.GUI
 								return;
 						}
 
+						if (Input.GetKeyDown(KeyCode.F5)) {
+								Missions.ShowEditor = !Missions.ShowEditor;
+						}
+
+						if (Input.GetKeyDown(KeyCode.F3)) {
+								Console.showWorldItems = !Console.showWorldItems;
+						}
+
+						if (Input.GetKeyDown(KeyCode.BackQuote) || Input.GetKeyDown(KeyCode.F1)) {
+								Console.enabled = !Console.enabled;
+								UserActionManager.Suspended = Console.enabled;
+								InterfaceActionManager.Suspended = Console.enabled;
+						}
+
+						//this is kind of a kludge but we want scrollbars to work whenever they're being hovered over
+						//so if there's a scrollbar being hovered over OR a draggable panel, we want to grab it
+						if (UICamera.hoveredObject == null) {
+								mHoveredObjectParent = null;
+								mActiveScrollBar = null;
+								mActiveDraggablePanel = null;
+								mActiveSlider = null;
+						} else if (UICamera.hoveredObject.CompareTag(Globals.TagActiveObject)) {
+								//first check to see if we have a slider
+								if (mActiveSlider == null || mActiveSlider.gameObject != UICamera.hoveredObject) {
+										mActiveSlider = UICamera.hoveredObject.GetComponent <UISlider>();
+								}
+								//if that doesn't work see if it's a scrollbar
+								if (mActiveSlider == null) {
+										mHoveredObjectParent = UICamera.hoveredObject.transform.parent.gameObject;
+										mActiveScrollBar = mHoveredObjectParent.GetComponent <UIScrollBar>();
+								}
+						} else if (UICamera.hoveredObject.CompareTag(Globals.TagBrowserObject)) {
+								mBrowserObjectTransform = UICamera.hoveredObject.transform;
+								int maxLoops = 10;
+								int currentLoop = 0;
+								while ((currentLoop < maxLoops) && (mBrowserObjectTransform != null) && mBrowserObjectTransform.CompareTag(Globals.TagBrowserObject)) {
+										mBrowserObjectTransform = mBrowserObjectTransform.parent;
+										currentLoop++;//just in case
+								}
+								if (mBrowserObjectTransform != null && mBrowserObjectTransform.CompareTag (Globals.TagActiveObject) && mBrowserObjectTransform.gameObject.HasComponent <UIDraggablePanel>(out mActiveDraggablePanel)) {
+										mActiveScrollBar = mActiveDraggablePanel.verticalScrollBar;
+								}
+						} else {
+								mHoveredObjectParent = null;
+								mActiveScrollBar = null;
+								mActiveDraggablePanel = null;
+								mActiveSlider = null;
+						}
+
+						//this is ALSO a kludge, we want to intercept key actions if an input field is active
+						if (UICamera.selectedObject != null && UICamera.selectedObject.CompareTag(Globals.TagGuiInputObject)) {
+								InterfaceActionManager.InputFieldActive = true;
+								UserActionManager.InputFieldActive = true;
+						} else {
+								InterfaceActionManager.InputFieldActive = false;
+								UserActionManager.InputFieldActive = false;
+						}
+
 						if (HasActiveSecondaryInterface) {
 								NGUISecondaryCamera.useMouse = true;
+								NGUISecondaryCamera.useKeyboard = true;
 								NGUIPrimaryCamera.useMouse = false;
+								NGUIPrimaryCamera.useKeyboard = false;
 								NGUIBaseCamera.useMouse = false;
+								NGUIBaseCamera.useKeyboard = false;
 
 								NGUISecondaryCamera.enabled = true;
 
 						} else if (HasActivePrimaryInterface) {
 								NGUISecondaryCamera.useMouse = false;
+								NGUISecondaryCamera.useKeyboard = false;
 								NGUIPrimaryCamera.useMouse = true;
+								NGUIPrimaryCamera.useKeyboard = true;
 								NGUIBaseCamera.useMouse = false;
+								NGUIBaseCamera.useKeyboard = false;
 
 								NGUISecondaryCamera.enabled = false;
 
 						} else if (HasActiveBaseInterface) {
 								NGUISecondaryCamera.useMouse = false;
+								NGUISecondaryCamera.useKeyboard = false;
 								NGUIPrimaryCamera.useMouse = false;
+								NGUIPrimaryCamera.useKeyboard = false;
 								NGUIBaseCamera.useMouse = true;
+								NGUIBaseCamera.useKeyboard = true;
 
 								NGUISecondaryCamera.enabled = false;
-
 						} else {
 								NGUISecondaryCamera.useMouse = false;
+								NGUISecondaryCamera.useKeyboard = true;
 								NGUIPrimaryCamera.useMouse = false;
+								NGUIPrimaryCamera.useKeyboard = false;
 								NGUIBaseCamera.useMouse = false;
+								NGUIBaseCamera.useKeyboard = true;
 
 								NGUISecondaryCamera.enabled = false;
 						}
@@ -281,6 +362,12 @@ namespace Frontiers.GUI
 						UnityEditor.EditorUtility.SetDirty(this);
 						#endif
 				}
+
+				protected Transform mBrowserObjectTransform;
+				protected GameObject mHoveredObjectParent;
+				protected UIScrollBar mActiveScrollBar;
+				protected UISlider mActiveSlider;
+				protected UIDraggablePanel mActiveDraggablePanel;
 
 				#region refreshing
 
@@ -419,6 +506,25 @@ namespace Frontiers.GUI
 								if (!HasActiveInterface) {
 										ManuallyPaused = !ManuallyPaused;
 										return false;
+								}
+						}
+
+						//intercept scrolling - we want to use it for our scrollbars and sliders
+						if (action == InterfaceActionType.SelectionPrev || action == InterfaceActionType.SelectionNext) {
+								//scrollbars come first, then sliders
+								if (mActiveScrollBar != null) {
+										//use the interface action mouse wheel
+										if (action == InterfaceActionType.SelectionPrev) {
+												mActiveScrollBar.scrollValue -= 0.05f;
+										} else {
+												mActiveScrollBar.scrollValue += 0.05f;
+										}
+								} else if (mActiveSlider != null) {
+										if (action == InterfaceActionType.SelectionPrev) {
+												mActiveSlider.sliderValue -= 0.05f;
+										} else {
+												mActiveSlider.sliderValue += 0.05f;
+										}
 								}
 						}
 
@@ -936,10 +1042,10 @@ namespace Frontiers.GUI
 
 				public static List<IGUIChildEditor>	GetGUIChildEditors(GameObject NGUIEditor)
 				{
-						Object[] objectList = NGUIEditor.GetComponents(typeof(IGUIChildEditor)) as Object[];
+						UnityEngine.Object[] objectList = NGUIEditor.GetComponents(typeof(IGUIChildEditor)) as UnityEngine.Object[];
 						List<IGUIChildEditor> childEditorList = new List<IGUIChildEditor>();
 
-						foreach (Object obj in objectList) {
+						foreach (UnityEngine.Object obj in objectList) {
 								IGUIChildEditor childEditor = (IGUIChildEditor)obj;
 								if (childEditor != null) {
 										childEditorList.Add(childEditor);
@@ -1098,4 +1204,54 @@ namespace Frontiers.GUI
 
 				protected static ulong gGUIID = 100;
 		}
+
+	[Serializable]
+	public class SemiStack <T> //TODO clean up enumerable
+	{
+		public List<T> items = new List<T>();
+
+		public bool Contains (T item)
+		{
+			return items.Contains (item);
+		}
+
+		public int Count {
+			get {
+				return items.Count;
+			}
+		}
+
+		public void Push(T item)
+		{
+			items.Add(item);
+		}
+
+		public T Peek ( )
+		{
+			return items [items.LastIndex ()];
+		}
+
+		public T Pop()
+		{
+			if (items.Count > 0)
+			{
+				T temp = items[items.Count - 1];
+				items.RemoveAt(items.Count - 1);
+				return temp;
+			}
+			else
+				return default(T);
+		}
+
+		public void Remove (T item)
+		{
+			items.Remove (item);
+		}
+
+		public void Remove(int itemAtPosition)
+		{
+			items.RemoveAt(itemAtPosition);
+		}
+	}
+
 }

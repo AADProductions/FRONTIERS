@@ -1,13 +1,13 @@
 using UnityEngine;
 using System;
-using Frontiers.Data;
+using System.Text;
+using System.Xml.Serialization;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Locations;
-using System.Text;
-using System.Xml.Serialization;
+using Frontiers.Data;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {

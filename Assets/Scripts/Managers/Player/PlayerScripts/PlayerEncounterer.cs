@@ -51,7 +51,7 @@ namespace Frontiers
 												mIoiCheck.worlditem.OnPlayerEncounter.SafeInvoke();
 												if (sendAvatarAction) {
 														//only send the avatar action if we've encountered one of the obstruction types
-														Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.PathEncounterObstruction), WorldClock.Time);
+														Player.Get.AvatarActions.ReceiveAction((AvatarAction.PathEncounterObstruction), WorldClock.AdjustedRealTime);
 												}
 										}
 										break;

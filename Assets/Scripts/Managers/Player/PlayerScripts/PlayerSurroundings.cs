@@ -5,9 +5,9 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Locations;
 using System.Text;
 using Frontiers.GUI;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {
@@ -45,6 +45,14 @@ namespace Frontiers
 				{
 						FireSources.Clear();
 						LightSources.Clear();
+						//cancel all hostile threats
+						for (int i = 0; i < Hostiles.Count; i++) {
+								if (Hostiles[i] != null && Hostiles[i].PrimaryTarget == Player.Local) {
+										Hostiles[i].CoolOff();
+								}
+						}
+						Hostiles.Clear();
+						HostilesTargetingPlayer = 0;
 				}
 
 				public override void OnLocalPlayerSpawn()
@@ -213,6 +221,20 @@ namespace Frontiers
 				protected void BuildDescription()
 				{
 						StringBuilder sb = new StringBuilder();
+
+						if (IsUnderground) {
+								sb.AppendLine("You are underground");
+						} else if (IsInSafeLocation) {
+								sb.AppendLine("You are in a safe location");
+						} else if (IsInsideStructure) {
+								sb.AppendLine("You are inside a structure");
+						}
+						if (IsInCivilization) {
+								sb.AppendLine("You are in a location with ties to civilization.");
+						} else {
+								sb.AppendLine("You are in the wild.");
+						}
+
 						switch (player.Status.LatestTemperatureExposure) {
 								case TemperatureRange.A_DeadlyCold:
 										sb.AppendLine("Your surroundings are deadly cold");
@@ -233,20 +255,6 @@ namespace Frontiers
 								case TemperatureRange.E_DeadlyHot:
 										sb.AppendLine("Your surroundings are deadly hot");
 										break;
-						}
-
-
-						if (IsUnderground) {
-								sb.AppendLine("You are underground");
-						} else if (IsInSafeLocation) {
-								sb.AppendLine("You are in a safe location");
-						} else if (IsInsideStructure) {
-								sb.AppendLine("You are inside a structure");
-						}
-						if (IsInCivilization) {
-								sb.AppendLine("You are in a location with ties to civilization");
-						} else {
-								sb.AppendLine("You are in the wild");
 						}
 
 						mCurrentDescription = sb.ToString();
@@ -402,7 +410,7 @@ namespace Frontiers
 								}
 
 								return (IsVisitingLocation && CurrentLocation.State.IsCivilized)
-								|| TerrainType.b > 0f
+										//|| TerrainType.b > 0f
 								|| (Paths.HasActivePath);
 						}
 				}
@@ -492,8 +500,8 @@ namespace Frontiers
 				public void EnterUnderground()
 				{
 						State.IsUnderground = true;
-						State.EnterUndergroundTime = WorldClock.Time;
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.LocationUndergroundEnter), WorldClock.Time);
+						State.EnterUndergroundTime = WorldClock.AdjustedRealTime;
+						Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationUndergroundEnter), WorldClock.AdjustedRealTime);
 						GUIManager.PostInfo("You are under ground.");
 						//player.SaveState ();
 				}
@@ -501,8 +509,8 @@ namespace Frontiers
 				public void ExitUnderground()
 				{
 						State.IsUnderground = false;
-						State.ExitUndergroundTime = WorldClock.Time;
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.LocationUndergroundExit), WorldClock.Time);
+						State.ExitUndergroundTime = WorldClock.AdjustedRealTime;
+						Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationUndergroundExit), WorldClock.AdjustedRealTime);
 						GUIManager.PostInfo("You are above ground.");
 						//player.SaveState ();
 				}
@@ -527,9 +535,9 @@ namespace Frontiers
 						}
 						LastStructureEntered = structure;
 						State.LastStructureEntered = structure.worlditem.StaticReference;
-						State.EnterStructureTime = WorldClock.Time;
+						State.EnterStructureTime = WorldClock.AdjustedRealTime;
 						structure.worlditem.Get <Revealable>().State.UnknownUntilVisited = false;
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.LocationStructureEnter), WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationStructureEnter), WorldClock.AdjustedRealTime);
 
 						if (structure.State.IsRespawnStructure) {
 								State.VisitedRespawnStructures.SafeAdd(structure.worlditem.StaticReference);
@@ -541,8 +549,8 @@ namespace Frontiers
 				{
 						LastStructureEntered = null;
 						State.LastStructureExited = structure.worlditem.StaticReference;
-						State.ExitStructureTime = WorldClock.Time;
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.LocationStructureExit), WorldClock.Time);
+						State.ExitStructureTime = WorldClock.AdjustedRealTime;
+						Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationStructureExit), WorldClock.AdjustedRealTime);
 						//player.SaveState ();
 				}
 
@@ -593,7 +601,7 @@ namespace Frontiers
 				{
 						if (Profile.Get.CurrentGame.RevealedLocations.SafeAdd(mr)) {
 								Profile.Get.CurrentGame.NewLocations.SafeAdd(mr);
-								Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.LocationReveal), WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationReveal), WorldClock.AdjustedRealTime);
 								return true;
 						} else {
 								return false;
@@ -613,7 +621,7 @@ namespace Frontiers
 										VisitingLocations.Sort();
 										State.VisitingLocations.SafeAdd(location.worlditem.StaticReference);
 										State.LastLocationVisited = location.worlditem.StaticReference;
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.LocationVisit), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationVisit), WorldClock.AdjustedRealTime);
 								}
 								//player.SaveState ();
 						}
@@ -627,7 +635,7 @@ namespace Frontiers
 								State.LastLocationExited = location.worlditem.StaticReference;
 								VisitingLocations.Sort();
 								VisitingLocations.Remove(location);
-								Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.LocationLeave), WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationLeave), WorldClock.AdjustedRealTime);
 								//player.SaveState ();
 						}
 				}
@@ -762,10 +770,10 @@ namespace Frontiers
 						bool isInDanger = IsInDanger;
 						if (mInDangerLastFrame) {
 								if (!isInDanger) {
-										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalDangerExit, WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalDangerExit, WorldClock.AdjustedRealTime);
 								}
 						} else if (isInDanger) {
-								Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalDangerEnter, WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalDangerEnter, WorldClock.AdjustedRealTime);
 						}
 						mInDangerLastFrame = isInDanger;
 				}
@@ -781,10 +789,10 @@ namespace Frontiers
 						bool isInCreatureDen = IsInCreatureDen;
 						if (mInCreatureDenLastFrame) {
 								if (!isInCreatureDen) {
-										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalCreatureDenExit, WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalCreatureDenExit, WorldClock.AdjustedRealTime);
 								}
 						} else if (isInCreatureDen) {
-								Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalCreatureDenEnter, WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalCreatureDenEnter, WorldClock.AdjustedRealTime);
 						}
 						mInCreatureDenLastFrame = isInCreatureDen;
 				}
@@ -792,7 +800,7 @@ namespace Frontiers
 				public void RemoveHostile(Hostile hostile)
 				{
 						if (Hostiles.Remove(hostile)) {
-								Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalHostileDeaggro, WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalHostileDeaggro, WorldClock.AdjustedRealTime);
 						}
 				}
 
@@ -802,7 +810,7 @@ namespace Frontiers
 								if (hostile.PrimaryTarget == player) {
 										HostilesTargetingPlayer++;
 								}
-								Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalHostileAggro, WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalHostileAggro, WorldClock.AdjustedRealTime);
 						}
 				}
 
@@ -845,33 +853,33 @@ namespace Frontiers
 				{
 						if (State.ExposedToRain) {
 								if (!mExposedToRainLastFrame) {
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.SurroundingsExposeToRain), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsExposeToRain), WorldClock.AdjustedRealTime);
 								}
 						} else {
 								if (mExposedToRainLastFrame) {
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.SurroundingsShieldFromRain), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsShieldFromRain), WorldClock.AdjustedRealTime);
 								}
 						}
 						mExposedToRainLastFrame = State.ExposedToRain;
 
 						if (State.ExposedToSun) {
 								if (!mExposedToSunLastFrame) {
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.SurroundingsExposeToSun), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsExposeToSun), WorldClock.AdjustedRealTime);
 								}
 						} else {
 								if (mExposedToSunLastFrame) {
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.SurroundingsShieldFromSun), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsShieldFromSun), WorldClock.AdjustedRealTime);
 								}
 						}
 						mExposedToSunLastFrame = State.ExposedToRain;
 
 						if (State.ExposedToSky) {
 								if (!mExposedToSkyLastFrame) {
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.SurroundingsExposeToSky), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsExposeToSky), WorldClock.AdjustedRealTime);
 								}
 						} else {
 								if (mExposedToSkyLastFrame) {
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.SurroundingsShieldFromSky), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsShieldFromSky), WorldClock.AdjustedRealTime);
 								}
 						}
 						mExposedToSkyLastFrame = State.ExposedToSky;
@@ -955,47 +963,28 @@ namespace Frontiers
 												LastPositionOnland = player.Position;
 												State.GroundBeneathPlayer = GroundType.Dirt;
 												if (IsSomethingBelowPlayer) {
-														switch (ClosestObjectBelow.gameObject.tag) {
-																case Globals.TagGroundDirt:
-																		State.GroundBeneathPlayer = GroundType.Dirt;
-																		break;
-
-																case Globals.TagGroundLeaves:
-																		State.GroundBeneathPlayer = GroundType.Leaves;
-																		break;
-
-																case Globals.TagGroundMetal:
-																		State.GroundBeneathPlayer = GroundType.Metal;
-																		break;
-
-																case Globals.TagGroundMud:
-																		State.GroundBeneathPlayer = GroundType.Mud;
-																		break;
-
-																case Globals.TagGroundSnow:
-																		State.GroundBeneathPlayer = GroundType.Snow;
-																		break;
-
-																case Globals.TagGroundStone:
-																		State.GroundBeneathPlayer = GroundType.Stone;
-																		break;
-
-																case Globals.TagGroundWater:
-																		State.GroundBeneathPlayer = GroundType.Water;
-																		break;
-
-																case Globals.TagGroundWood:
-																		State.GroundBeneathPlayer = GroundType.Wood;
-																		break;
-
-																case Globals.TagGroundTerrain:
-																		State.GroundBeneathPlayer = GameWorld.Get.GroundTypeAtInGamePosition(player.Position, IsUnderground);
-																		break;
-
-																default:
-								//Debug.Log ("Tag is " + ClosestObjectBelow.gameObject.tag);
-																		State.GroundBeneathPlayer = GroundType.Dirt;
-																		break;
+														//using if/else instead of a switch so we can use CompareTag
+														//saves us a bunch of allocations -_-
+														if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundDirt)) {
+																State.GroundBeneathPlayer = GroundType.Dirt;
+														} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundLeaves)) {
+																State.GroundBeneathPlayer = GroundType.Leaves;
+														} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundMetal)) {
+																State.GroundBeneathPlayer = GroundType.Metal;
+														} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundMud)) {
+																State.GroundBeneathPlayer = GroundType.Mud;
+														} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundSnow)) {
+																State.GroundBeneathPlayer = GroundType.Snow;
+														} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundStone)) {
+																State.GroundBeneathPlayer = GroundType.Stone;
+														} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundWater)) {
+																State.GroundBeneathPlayer = GroundType.Water;
+														} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundWood)) {
+																State.GroundBeneathPlayer = GroundType.Wood;
+														} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundTerrain)) {
+																State.GroundBeneathPlayer = GameWorld.Get.GroundTypeAtInGamePosition(player.Position, IsUnderground);
+														} else {
+																State.GroundBeneathPlayer = GroundType.Dirt;
 														}
 												}
 										}
@@ -1011,7 +1000,7 @@ namespace Frontiers
 						//check for terrain in front of us - used mostly for placement of stuff
 						if (Physics.Raycast(player.HeadPosition, player.FocusVector, out terrainHit, Globals.RaycastAllFocusDistance, Globals.LayersTerrain)) {
 								//check for structure terrain layer first - it will be the parent of the collider
-								bool foundTerrainLayer = WorldItems.GetIOIFromCollider(terrainHit.collider, out focusItemOfInterest);
+								bool foundTerrainLayer = WorldItems.GetIOIFromCollider(terrainHit.collider, false, out focusItemOfInterest);
 								if (!foundTerrainLayer && terrainHit.collider.transform.parent != null) {
 										//check for structure terrain layer - it will be the parent of the collider
 										focusItemOfInterest = (IItemOfInterest)terrainHit.collider.transform.parent.GetComponent(typeof(IItemOfInterest));
@@ -1041,7 +1030,7 @@ namespace Frontiers
 						}
 						//this result will override any fluid hit results
 						//this is desired behavior because we want to be able to pick up objects through triggers
-						sphereCastHits = Physics.SphereCastAll(player.HeadPosition, 0.1f, player.FocusVector, Globals.RaycastAllFocusDistance, Globals.LayerWorldItemActive | Globals.LayerBodyPart);
+						sphereCastHits = Physics.SphereCastAll (player.HeadPosition, 0.1f, player.FocusVector, Globals.RaycastAllFocusDistance, Globals.LayerWorldItemActive | Globals.LayerBodyPart);
 						if (sphereCastHits.Length > 0) {
 								for (int i = 0; i < sphereCastHits.Length; i++) {
 										worldItemHit = sphereCastHits[i];
@@ -1376,13 +1365,13 @@ namespace Frontiers
 
 				public double TimeSinceEnteredUnderground {
 						get {
-								return WorldClock.Time - EnterUndergroundTime;
+								return WorldClock.AdjustedRealTime - EnterUndergroundTime;
 						}
 				}
 
 				public double TimeSinceExitedUnderground {
 						get {
-								return WorldClock.Time - ExitUndergroundTime;
+								return WorldClock.AdjustedRealTime - ExitUndergroundTime;
 						}
 				}
 
@@ -1400,26 +1389,5 @@ namespace Frontiers
 				public int ChunkID;
 				public SVector3 ChunkPosition;
 				public SVector3 ChunkOffset;
-		}
-
-		public enum TerrainType
-		{
-				Coastal,
-				Civilization,
-				OpenField,
-				LightForest,
-				DeepForest,
-		}
-
-		public enum GroundType
-		{
-				Dirt,
-				Leaves,
-				Metal,
-				Mud,
-				Snow,
-				Stone,
-				Water,
-				Wood,
 		}
 }

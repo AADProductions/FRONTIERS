@@ -15,7 +15,7 @@ namespace Frontiers.World
 
 				public bool HasPaid {
 						get {
-								return WorldClock.Time < State.TimeLastPaid + WorldClock.HoursToGameHours(24);
+								return WorldClock.AdjustedRealTime < State.TimeLastPaid + WorldClock.HoursToSeconds (24);
 						}
 				}
 		}
