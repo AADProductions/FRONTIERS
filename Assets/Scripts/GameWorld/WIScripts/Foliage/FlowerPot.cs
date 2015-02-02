@@ -23,7 +23,7 @@ namespace Frontiers.World
 						if (State.AutoFill) {
 								WorldItem plantPrefab = null;
 								WorldItems.Get.PackPrefab("Plants", "WorldPlant", out plantPrefab);
-								WorldItems.CloneWorldItem(plantPrefab, WIGroups.Get.Plants, out worlditem);
+								WorldItems.CloneWorldItem(plantPrefab, WIGroups.Get.Plants, out plantPrefab);
 
 								if (!string.IsNullOrEmpty(State.PlantName)) {
 										Plant props = null;
@@ -37,16 +37,16 @@ namespace Frontiers.World
 						}
 				}
 
-				public override void PopulateOptionsList(List<GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(List<WIListOption> options, List <string> message)
 				{
 						if (!HasBeenPicked && worlditem.Is(WIMode.Frozen)) {
-								options.Add(new GUIListOption("Pick " + worlditem.DisplayName, "PickPlant"));
+								options.Add(new WIListOption("Pick " + worlditem.DisplayName, "PickPlant"));
 						}
 				}
 
 				public virtual void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{	//this is where we handle skills
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;
+						WIListResult dialogResult = secondaryResult as WIListResult;
 						switch (dialogResult.SecondaryResult) {
 								case "PickPlant":
 										PickPlant(true);

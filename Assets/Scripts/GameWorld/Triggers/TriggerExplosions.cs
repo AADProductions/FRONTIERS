@@ -72,7 +72,7 @@ namespace Frontiers.World
 										explosion.Position = child.position - transform.position;
 										explosion.Duration = 0.25f;
 										explosion.ForceAtEdge = 1f;
-										explosion.Type = FXManager.ExplosionType.Simple;
+										explosion.Type = ExplosionType.Simple;
 										State.Explosions.Add(explosion);
 										State.TotalDuration = Mathf.Max(State.TotalDuration, explosion.Delay);
 								}
@@ -116,7 +116,7 @@ namespace Frontiers.World
 		public class ExplosionTemplate
 		{
 				public SVector3 Position = new SVector3();
-				public FXManager.ExplosionType Type = FXManager.ExplosionType.Simple;
+				public ExplosionType Type = ExplosionType.Simple;
 				public string ExplosionSound = "GenericExplosion";
 				public float Radius = 3f;
 				public float ForceAtEdge = 1f;

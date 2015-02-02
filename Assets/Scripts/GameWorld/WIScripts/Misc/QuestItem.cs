@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System;
 using Frontiers;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class QuestItem : WIScript
 		{
@@ -14,6 +14,12 @@ namespace Frontiers.World
 				public override bool CanBeDropped {
 						get {
 								return State.CanBeDropped;
+						}
+				}
+
+				public override bool UnloadWhenStacked {
+						get {
+								return false;
 						}
 				}
 
@@ -76,7 +82,7 @@ namespace Frontiers.World
 
 				public override void OnStateChange()
 				{
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemQuestItemSetState, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemQuestItemSetState, WorldClock.AdjustedRealTime);
 				}
 
 				public void OnAddedToGroup()
@@ -113,7 +119,7 @@ namespace Frontiers.World
 				public void OnDie()
 				{
 						GameWorld.Get.State.DestroyedQuestItems.Add(State.QuestName);
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.ItemQuestItemDie), WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemQuestItemDie, WorldClock.AdjustedRealTime);
 				}
 
 				public override void OnEnable()

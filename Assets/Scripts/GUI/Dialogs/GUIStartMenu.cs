@@ -29,6 +29,10 @@ namespace Frontiers.GUI
 
 				public override void PushEditObjectToNGUIObject()
 				{
+						//the start menu automatically un-pauses a manual pause
+						//a little weird but it feels right in game
+						GUIManager.ManuallyPaused = false;
+
 						if (Profile.Get.Current.HasLastPlayedGame) {
 								EditObject.EnableContinueButton = true;
 						} else {

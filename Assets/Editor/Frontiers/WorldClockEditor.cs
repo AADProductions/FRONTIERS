@@ -31,7 +31,7 @@ public class WorldClockEditor : Editor
 				GUILayout.Button("HOUR OF DAY:\n " + WorldClock.Get.HourOfDay.ToString());
 				GUILayout.Button("DAY OF YEAR:\n " + WorldClock.Get.DayOfYear.ToString());
 				GUILayout.Button("NORMALIZED TIME OF DAY:\n" + WorldClock.DayCycleCurrentNormalized.ToString());
-				GUILayout.Button("WORLD TIME:\n" + WorldClock.Time.ToString());
+				GUILayout.Button("WORLD TIME:\n" + WorldClock.AdjustedRealTime.ToString());
 				GUILayout.Button("REAL TIME:\n" + WorldClock.RealTime.ToString());
 				GUILayout.Button("ADJUSTED REAL TIME:\n" + WorldClock.AdjustedRealTime.ToString());
 				GUILayout.Button("ADJUSTED REAL TIME OFFSET:\n" + WorldClock.AdjustedRealTime.ToString());

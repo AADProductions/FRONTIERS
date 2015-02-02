@@ -2,10 +2,12 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
+using Frontiers.World;
+using System;
 
 namespace Frontiers.GUI
 {
-		public class SpawnOptionsList : MonoBehaviour, IGUIParentEditor <OptionsListDialogResult>
+		public class SpawnOptionsList : MonoBehaviour, IGUIParentEditor <WIListResult>
 		{
 				public GameObject NGUIObject {
 						get {
@@ -53,7 +55,7 @@ namespace Frontiers.GUI
 				public string MessageType = "USE ITEM";
 				public string Message = string.Empty;
 				//"What do you want to do with this item?";
-				public List <GUIListOption> Options = new List <GUIListOption>();
+				public List <WIListOption> Options = new List <WIListOption>();
 				public bool OverrideBaseAvailabilty = false;
 				public bool PostMessageOnConditionsMet	= false;
 				public string PostedMessage = string.Empty;
@@ -87,12 +89,12 @@ namespace Frontiers.GUI
 
 				public void AddOption(string option)
 				{
-						AddOption(new GUIListOption(option));
+						AddOption(new WIListOption(option));
 				}
 
-				public virtual void AddOption(GUIListOption option)
+				public virtual void AddOption(WIListOption option)
 				{
-						if (GUIListOption.IsNullOrInvalid(option)) {
+						if (WIListOption.IsNullOrInvalid(option)) {
 								return;
 						}
 
@@ -107,8 +109,8 @@ namespace Frontiers.GUI
 
 				public virtual void RemoveOption(string optionResult)
 				{
-						GUIListOption optionToRemove = null;
-						foreach (GUIListOption option in Options) {
+						WIListOption optionToRemove = null;
+						foreach (WIListOption option in Options) {
 								if (option.Result == optionResult) {
 										optionToRemove = option;
 										break;
@@ -121,7 +123,7 @@ namespace Frontiers.GUI
 
 				public virtual bool ContainsOption(string optionResult)
 				{
-						foreach (GUIListOption option in Options) {
+						foreach (WIListOption option in Options) {
 								if (option.Result == optionResult) {
 										return true;
 								}
@@ -210,7 +212,7 @@ namespace Frontiers.GUI
 
 				public GUIOptionListDialog SpawnOptionsDialog()
 				{
-						OptionsListDialogResult editObject = new OptionsListDialogResult();
+						WIListResult editObject = new WIListResult();
 						if (MessageTypeFromTargetName) {
 								editObject.MessageType = FunctionTarget.name;
 						} else {
@@ -230,26 +232,29 @@ namespace Frontiers.GUI
 						GameObject childEditor = GUIManager.SpawnNGUIChildEditor(this.gameObject, GUIManager.Get.NGUIOptionsListDialog, false);
 						mChildEditor = childEditor.GetComponent <GUIOptionListDialog>();
 						//mChildEditor.Pause = PauseWhileOpen;
-						GUIManager.SendEditObjectToChildEditor <OptionsListDialogResult>(new ChildEditorCallback <OptionsListDialogResult>(ReceiveFromChildEditor), childEditor, editObject);
+						GUIManager.SendEditObjectToChildEditor <WIListResult>(new ChildEditorCallback <WIListResult>(ReceiveFromChildEditor), childEditor, editObject);
 						return mChildEditor;
 				}
 
-				protected List <GUIListOption> mOptions = new List<GUIListOption>();
+				protected List <WIListOption> mOptions = new List<WIListOption>();
 				protected List <string> mMessage = new List<string>();
 
-				public void ReceiveFromChildEditor(OptionsListDialogResult result, IGUIChildEditor <OptionsListDialogResult> childEditor)
+				public void ReceiveFromChildEditor(WIListResult result, IGUIChildEditor <WIListResult> childEditor)
 				{
 						if (childEditor == null) {
 								return;
 						}
 
-						GUIManager.ScaleDownEditor(childEditor.gameObject).Proceed(true);
-
-						if (FunctionTarget != null && result.Result != string.Empty) {
-								HandleResult(result, FunctionTarget);
-						} else if (result.SecondaryResult != string.Empty) {
-								HandleSecondaryResult(result);
+						if (FunctionTarget != null) {
+								if (!string.IsNullOrEmpty(result.Result)) {
+										HandleResult(result, FunctionTarget);
+								}
+								if (!string.IsNullOrEmpty(result.SecondaryResult)) {
+										HandleSecondaryResult(result, FunctionTarget);
+								}
 						}
+
+						GUIManager.ScaleDownEditor(childEditor.gameObject).Proceed(true);
 
 						mChildEditor = null;
 				}
@@ -261,12 +266,20 @@ namespace Frontiers.GUI
 
 				public virtual void HandleResult(object result, GameObject functionTarget)
 				{
-						functionTarget.SendMessage(FunctionName, result, SendMessageOptions.DontRequireReceiver);
+						try {
+								functionTarget.SendMessage(FunctionName, result, SendMessageOptions.DontRequireReceiver);
+						} catch (Exception e) {
+								Debug.LogError("Options List: Sending function " + FunctionName + " failed because: " + e.ToString());
+						}
 				}
 
-				public virtual void HandleSecondaryResult(object secondaryResult)
+				public virtual void HandleSecondaryResult(object secondaryResult, GameObject functionTarget)
 				{
-						FunctionTarget.SendMessage(SecondaryFunctionName, secondaryResult, SendMessageOptions.DontRequireReceiver);
+						try {
+								functionTarget.SendMessage(SecondaryFunctionName, secondaryResult, SendMessageOptions.DontRequireReceiver);
+						} catch (Exception e) {
+								Debug.LogError("Options List: Sending function " + SecondaryFunctionName + " failed because: " + e.ToString());
+						}
 				}
 
 				public virtual void OnGainPlayerFocus()

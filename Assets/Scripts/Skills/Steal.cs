@@ -2,8 +2,7 @@ using UnityEngine;
 using System.Collections;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Locations;
-using Frontiers.World.Gameplay;
+using Frontiers.GUI;
 
 namespace Frontiers.World.Gameplay
 {

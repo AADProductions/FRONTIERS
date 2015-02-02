@@ -46,7 +46,7 @@ namespace Frontiers.World
 						}
 				}
 
-				public List <CreatureDen> IntersectingDens { get { return mIntersectingDens; } }
+				public List <ICreatureDen> IntersectingDens { get { return mIntersectingDens; } }
 
 				#endregion
 
@@ -76,7 +76,7 @@ namespace Frontiers.World
 						}
 				}
 
-				protected List <CreatureDen> mIntersectingDens = new List<CreatureDen>();
+				protected List <ICreatureDen> mIntersectingDens = new List<ICreatureDen>();
 				protected static List <string> gCanCatch = new List <string>() { "Fish" };
 				protected static List <string> gExceptions = new List <string>();
 		}

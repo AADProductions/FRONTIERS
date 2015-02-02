@@ -27,6 +27,7 @@ namespace Frontiers.World
 				public string DefaultBodyTexture;
 				public Material CharacterBodyMaterial;
 				public Material CharacterFaceMaterial;
+				public Material CharacterHairMaterial;
 				public List <CharacterBody> MaleBodies = new List <CharacterBody>();
 				public List <CharacterBody> FemaleBodies = new List <CharacterBody>();
 				public List <CharacterBody> UnisexBodies = new List <CharacterBody>();

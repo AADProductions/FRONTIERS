@@ -104,7 +104,7 @@ namespace Frontiers
 				{
 						string flagName = string.Empty;
 						if (!mReverseLookup.ContainsKey(flagValue)) {
-								Debug.Log("No flag name for value " + flagValue.ToString());
+								//Debug.Log("No flag name for value " + flagValue.ToString());
 						}
 						mReverseLookup.TryGetValue(flagValue, out flagName);
 						return flagName;

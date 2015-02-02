@@ -65,14 +65,14 @@ namespace Frontiers.World
 				public string DisplayName(string displayName)
 				{
 						if (mCurrentState != null) {
-								if (!string.IsNullOrEmpty(mCurrentState.Suffix)) {
+								if (!string.IsNullOrEmpty(mCurrentState.Suffix) && !displayName.Contains (mCurrentState.Suffix)) {
 										displayName = displayName + " (" + mCurrentState.Suffix + ")";
 								}
 						}
 						return displayName;
 				}
 
-				public string StackName(string stackName)
+				/*public string StackName(string stackName)
 				{
 						if (mCurrentState != null) {
 								if (!string.IsNullOrEmpty(mCurrentState.StackName)) {
@@ -85,7 +85,7 @@ namespace Frontiers.World
 				public static string StackName(string stackName, string lastStateName)
 				{
 						return stackName + " (" + lastStateName + ")";
-				}
+				}*/
 
 				public List <WIState> States = new List <WIState>();
 
@@ -166,7 +166,7 @@ namespace Frontiers.World
 						}
 				}
 
-				public void PopulateOptionsList(List <GUIListOption> options, List <string> message)
+				public void PopulateOptionsList(List <WIListOption> options, List <string> message)
 				{
 						if (mCurrentState == null || !mCurrentState.IsInteractive) {
 								return;
@@ -175,7 +175,7 @@ namespace Frontiers.World
 						for (int i = 0; i < States.Count; i++) {
 								WIState state = States[i];
 								if (!string.IsNullOrEmpty(state.OptionListDisplay)) {
-										GUIListOption option = new GUIListOption(state.OptionListDisplay, "SetWIState" + state.Name);
+										WIListOption option = new WIListOption(state.OptionListDisplay, "SetWIState" + state.Name);
 										if (mCurrentState.Name == state.Name) {
 												option.Disabled = true;
 										}
@@ -184,9 +184,19 @@ namespace Frontiers.World
 						}
 				}
 
+				public void OnPlayerUse () {
+						for (int i = 0; i < States.Count; i++) {
+								WIState state = States[i];
+								if (state != mCurrentState && state.CanUseToSelect) {
+										SetState(state.Name);
+										break;
+								}
+						}
+				}
+
 				public void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{	//this is where we handle skills
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;
+						WIListResult dialogResult = secondaryResult as WIListResult;
 						if (dialogResult.SecondaryResult.Contains("SetWIState")) {
 								string stateName = dialogResult.SecondaryResult.Replace("SetWIState", "");
 								SetState(stateName);
@@ -199,6 +209,13 @@ namespace Frontiers.World
 						if (worlditem.HasSaveState && !string.IsNullOrEmpty(worlditem.SaveState.LastState)) {
 								startupState = worlditem.SaveState.LastState;
 						}
+
+						for (int i = 0; i < States.Count; i++) {
+								if (States[i].CanUseToSelect) {
+										worlditem.OnPlayerUse += OnPlayerUse;
+								}
+						}
+
 						SetState(startupState);
 						worlditem.OnModeChange += OnModeChange;
 				}
@@ -314,12 +331,11 @@ namespace Frontiers.World
 												//the rest have already been set to false
 										}
 								}
-
 								//clone the serialized properties
 								mInTransition = true;
 								mCurrentState = newState;
 								OnTransitionStart(oldState, newState, mCurrentState);
-								StartCoroutine(SetStateOverTime(oldState, newState, WorldClock.Time, WorldClock.RTSecondsToGameSeconds(newState.TransitionRTDuration)));
+								StartCoroutine(SetStateOverTime(oldState, newState, WorldClock.AdjustedRealTime, newState.TransitionRTDuration));
 						} else {
 								if (mCurrentState == null) {
 										return false;
@@ -379,8 +395,8 @@ namespace Frontiers.World
 								worlditem.Light = LightManager.GetWorldLight(worlditem.Light, newState.LightTemplateName, lightParent, newState.LightOffset, newState.LightRotation, true, wlType);
 						}
 
-						while (WorldClock.Time < transitionEndTime) {
-								normalizedTransition = (float)((WorldClock.Time - transitionStartTime) / (transitionEndTime - transitionStartTime));
+						while (WorldClock.AdjustedRealTime < transitionEndTime) {
+								normalizedTransition = (float)((WorldClock.AdjustedRealTime - transitionStartTime) / (transitionEndTime - transitionStartTime));
 								BlendState(oldState, newState, mCurrentState, normalizedTransition);
 								yield return null;
 						}
@@ -470,8 +486,9 @@ namespace Frontiers.World
 				public string Name = "Default";
 				public bool Enabled = true;
 				public string Suffix = string.Empty;
-				public string StackName	= string.Empty;
+				//public string StackName = string.Empty;
 				public string OptionListDisplay = string.Empty;
+				public bool CanUseToSelect = false;
 				public bool IsPermanent = false;
 				public bool CanEnterInventory = true;
 				public bool CanBeCarried = true;

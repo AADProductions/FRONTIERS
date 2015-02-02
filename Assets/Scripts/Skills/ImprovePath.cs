@@ -1,10 +1,8 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers.World.Gameplay;
 using Frontiers.World;
-using Frontiers.World.Locations;
-using Frontiers.GUI;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World.Gameplay
 {
@@ -59,11 +57,11 @@ namespace Frontiers.World.Gameplay
 		TrailMarker->CrossTrail
 		RoadMarker->CrossRoad
 		*/
-		public override GUIListOption GetListOption (IItemOfInterest targetObject)
+		public override WIListOption GetListOption (IItemOfInterest targetObject)
 		{
 			//Debug.Log ("Getting list option for improve path");
 
-			GUIListOption listOption = base.GetListOption (targetObject);
+			WIListOption listOption = base.GetListOption (targetObject);
 			listOption.Flavors.Clear ();
 			mLastflavors.Clear ();
 			HashSet <string> flavors = new HashSet <string> ();

@@ -42,6 +42,7 @@ namespace Frontiers.GUI
 						ScrollBar.scrollValue = 0f;
 						Show();
 						NameLabel.text = name;
+						DetailTextLabel.color = Colors.Get.MenuButtonTextColorDefault;
 						DetailTextLabel.text = detailText;
 						if (string.IsNullOrEmpty(iconName) || iconAtlas == null) {
 								Icon.enabled = false;
@@ -69,6 +70,7 @@ namespace Frontiers.GUI
 						ScrollBar.scrollValue = 0f;
 						Show();
 						NameLabel.text = name;
+						DetailTextLabel.color = Colors.Get.MenuButtonTextColorDefault;
 						DetailTextLabel.text = detailText;
 						if (string.IsNullOrEmpty(iconName) || iconAtlas == null) {
 								Icon.enabled = false;
@@ -119,6 +121,8 @@ namespace Frontiers.GUI
 						ScrollingPanel.enabled = true;
 						enabled = true;
 						RefreshDoppleganger();
+
+						gameObject.SetActive(true);
 				}
 
 				public void Hide()
@@ -133,6 +137,8 @@ namespace Frontiers.GUI
 						IconBackground.enabled = false;
 						DopplegangerButton.SetActive(false);
 						RefreshDoppleganger();
+
+						gameObject.SetActive(false);
 				}
 
 				public void Update()

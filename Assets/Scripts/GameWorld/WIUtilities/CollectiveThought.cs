@@ -25,7 +25,7 @@ namespace Frontiers.World
 						} else if (KeepThinking) {
 								//if we're being asked to keep thinking
 								//keep going until we forget
-								return (mTimeStartedThinking + WorldClock.RTSecondsToGameSeconds(rtShortTermMemory)) > WorldClock.Time;
+								return (mTimeStartedThinking + rtShortTermMemory) > WorldClock.AdjustedRealTime;
 						}
 						//otherwise we're just done
 						return true;
@@ -216,30 +216,5 @@ namespace Frontiers.World
 				protected int mMateWithIt = 0;
 				protected double mTimeStartedThinking = -1f;
 				protected Action <IItemOfInterest> mActionResult = null;
-		}
-
-		public enum IOIReaction
-		{
-				IgnoreIt,
-				WatchIt,
-				FollowIt,
-				EatIt,
-				KillIt,
-				FleeFromIt,
-				MateWithIt,
-		}
-
-		public enum FightOrFlight
-		{
-				Fight,
-				Flee,
-		}
-
-		public enum DomesticatedState
-		{
-				Wild,
-				Domesticated,
-				Tamed,
-				Custom,
 		}
 }

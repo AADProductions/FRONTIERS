@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Locations;
+
 using Frontiers.World.Gameplay;
 using System.Text.RegularExpressions;
 using Frontiers.GUI;

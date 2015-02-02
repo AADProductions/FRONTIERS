@@ -20,7 +20,7 @@ namespace Frontiers.World
 								if (!State.HasBeenDetected)
 										return true;
 
-								if (WorldClock.Time > (State.LastTimeDetected + WorldClock.RTSecondsToGameSeconds(DetectionInterval)))
+								if (WorldClock.AdjustedRealTime > (State.LastTimeDetected + DetectionInterval))
 										return true;
 
 								return false;
@@ -51,7 +51,7 @@ namespace Frontiers.World
 				public void PlayerDetect()
 				{
 						State.HasBeenDetected = true;
-						State.LastTimeDetected = WorldClock.Time;
+						State.LastTimeDetected = WorldClock.AdjustedRealTime;
 						OnPlayerDetect.SafeInvoke();
 				}
 

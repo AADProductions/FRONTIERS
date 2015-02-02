@@ -46,16 +46,4 @@ namespace Frontiers.World
 				}
 				#endif
 		}
-
-		[Serializable]
-		[Flags]
-		public enum TreeColliderFlags
-		{
-				None = 0,
-				Solid = 1,
-				Impede = 2,
-				Ignore = 4,
-				Thorns = 8,
-				Rustle = 16,
-		}
 }

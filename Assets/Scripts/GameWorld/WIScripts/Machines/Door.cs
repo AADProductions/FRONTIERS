@@ -5,7 +5,7 @@ using Frontiers;
 using Frontiers.GUI;
 using System.Collections.Generic;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Door : WIScript
 		{
@@ -86,7 +86,7 @@ namespace Frontiers.World
 						}
 				}
 
-				public override void PopulateOptionsList(System.Collections.Generic.List<GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(System.Collections.Generic.List<WIListOption> options, List <string> message)
 				{
 						if (mChangingDoorState) {
 								return;
@@ -95,21 +95,30 @@ namespace Frontiers.World
 						if (State.CurrentState == EntranceState.Closed) {
 								if (worlditem.Is <Trigger>()) {
 										if (State.OuterEntrance) {
-												options.Add(new GUIListOption("Knock"));
+												//if the structure is a residence
+												//we can knock on it
+												if (dynamic.ParentStructure.worlditem.Is <Residence>(out gCheckResidence)) {
+														options.Add(new WIListOption("Knock"));
+												}
 										}
-										options.Add(new GUIListOption("Open"));
+										options.Add(new WIListOption("Open"));
 								}
 						} else {
 								if (worlditem.Is <Trigger>()) {
-										options.Add(new GUIListOption("Close"));
+										options.Add(new WIListOption("Close"));
 								}
 						}
 				}
 
+				protected static Residence gCheckResidence = null;
+
 				public IEnumerator ForceClose()
 				{
 						if (State.IsOpen) {
-								yield return StartCoroutine(ChangingDoorState(EntranceState.Closed));
+								var changeDoorState = ChangingDoorState(EntranceState.Closed);
+								while (changeDoorState.MoveNext()) {
+										yield return changeDoorState.Current;
+								}
 						}
 						yield break;
 				}
@@ -127,7 +136,10 @@ namespace Frontiers.World
 														MasterAudio.PlaySound(State.SoundType, transform, State.SoundOnClose);
 												}
 												if (State.TargetState == EntranceState.Open) {
-														yield return StartCoroutine(dynamic.ParentStructure.OnDoorOpen(this));
+														var onOpen = dynamic.ParentStructure.OnDoorOpen(this);
+														while (onOpen.MoveNext()) {
+																yield return onOpen.Current;
+														}
 														State.CurrentState = EntranceState.Opening;
 														PivotObject.animation.Play(State.AnimationOpening);
 														MasterAudio.PlaySound(State.SoundType, transform, State.SoundOnOpen);
@@ -164,7 +176,7 @@ namespace Frontiers.World
 
 				public void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;
+						WIListResult dialogResult = secondaryResult as WIListResult;
 						switch (dialogResult.SecondaryResult) {
 
 								case "Open":
@@ -176,8 +188,10 @@ namespace Frontiers.World
 										break;
 
 								case "Knock":
-										//TODO implement time of day / knocking / reputation changes
-										GUIManager.PostInfo("You knock - no one answers.");
+										if (dynamic.ParentStructure.worlditem.Is <Residence>(out gCheckResidence)) {
+												Debug.Log("Found residence, knocking now");
+												gCheckResidence.Knock();
+										}
 										break;
 
 								default:
@@ -211,13 +225,5 @@ namespace Frontiers.World
 				public string AnimationClosing = string.Empty;
 				public string AnimationOnClosed	= string.Empty;
 				public string AnimationOnOpen = string.Empty;
-		}
-
-		public enum EntranceState
-		{
-				Open,
-				Opening,
-				Closed,
-				Closing,
 		}
 }

@@ -375,7 +375,14 @@ namespace Frontiers.World.BaseWIScripts
 						startAction.SafeInvoke();
 						DamagePackage damage = style.Damage;
 						//wait until the attack is supposed to hit
-						yield return WorldClock.WaitForSeconds(style.RTPreAttackInterval);
+						double waitUntil = WorldClock.AdjustedRealTime + style.RTPreAttackInterval;
+						while (waitUntil > WorldClock.AdjustedRealTime) {
+								if (Mode != HostileMode.Attacking) {
+										mAttackingNow = false;
+										yield break;
+								}
+								yield return null;
+						}
 						//now check and see if we actually hit
 						//by default use the position in case we don't have a body
 						//or in case we aren't motile
@@ -415,7 +422,14 @@ namespace Frontiers.World.BaseWIScripts
 								yield break;
 						}
 						//wait out the required amount of time before attacking again
-						yield return WorldClock.WaitForSeconds(style.RTPostAttackInterval);
+						waitUntil = WorldClock.AdjustedRealTime + style.RTPostAttackInterval;
+						while (waitUntil > WorldClock.AdjustedRealTime) {
+								if (Mode != HostileMode.Attacking) {
+										mAttackingNow = false;
+										yield break;
+								}
+								yield return null;
+						}
 						finishAction.SafeInvoke();
 						mAttackingNow = false;
 				}
@@ -453,11 +467,25 @@ namespace Frontiers.World.BaseWIScripts
 						OnWarn.SafeInvoke();
 						//even if the action is cancelled warn at least once before leaving
 						//start the warning
-						yield return WorldClock.WaitForSeconds(State.Attack1.RTPreAttackInterval);
+						double waitUntil = WorldClock.AdjustedRealTime + State.Attack1.RTPreAttackInterval;
+						while (waitUntil > WorldClock.AdjustedRealTime) {
+								if (Mode != HostileMode.Warning) {
+										mWarningOverTime = false;
+										yield break;
+								}
+								yield return null;
+						}
 						//send this message so the character / creature / whatever can emit sounds and effects and set animation
 						body.Animator.Warn = true;
 						//finish the warning
-						yield return WorldClock.WaitForSeconds(State.Attack1.RTPostAttackInterval);
+						waitUntil = WorldClock.AdjustedRealTime + State.Attack1.RTPostAttackInterval;
+						while (waitUntil > WorldClock.AdjustedRealTime) {
+								if (Mode != HostileMode.Warning) {
+										mWarningOverTime = false;
+										yield break;
+								}
+								yield return null;
+						}
 						NumTimesWarned++;
 						mWarningOverTime = false;
 						yield break;
@@ -492,7 +520,10 @@ namespace Frontiers.World.BaseWIScripts
 
 						OnCoolOff.SafeInvoke();
 						mPrimaryTarget = null;
-						yield return WorldClock.WaitForSeconds(0.5);
+						double waitUntil = WorldClock.AdjustedRealTime + 0.5f;
+						while (waitUntil > WorldClock.AdjustedRealTime) {
+								yield return null;
+						}
 						Finish();
 						mCoolingOff = false;
 						yield break;

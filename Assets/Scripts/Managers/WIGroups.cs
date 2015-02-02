@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.Data;
 using Frontiers.World;
-
 using System;
 
 namespace Frontiers
@@ -20,9 +19,9 @@ namespace Frontiers
 						//wheee collections
 						mParentUnderManager = false;
 						mGroupLookup = new Dictionary <string, WIGroup>();
-						UnloaderMappings = new Dictionary <IUnloadableParent, WIGroupUnloader>();
+						UnloaderMappings = new Dictionary <string, WIGroupUnloader>();
 						Unloaders = new List<WIGroupUnloader>();
-						GroupsToLoad = new List <WIGroup>();
+						LoadRequests = new List <WIGroupLoadRequest>();
 						GroupsLoading = new List<WIGroup>();
 						UnloadersToMerge = new List<WIGroupUnloader>();
 						Groups = new List <WIGroup>();
@@ -166,9 +165,9 @@ namespace Frontiers
 				public int NumActiveRefreshers = 0;
 				public bool PauseRefresh = false;
 				public WIGroupsState State;
-				public static Dictionary <IUnloadableParent, WIGroupUnloader> UnloaderMappings;
+				public static Dictionary <string, WIGroupUnloader> UnloaderMappings;
 				public static List <WIGroupUnloader> Unloaders;
-				public static List <WIGroup> GroupsToLoad;
+				public static List <WIGroupLoadRequest> LoadRequests;
 				public static List <WIGroup> GroupsLoading;
 				protected static List <WIGroupUnloader> UnloadersToMerge;
 				protected static Dictionary <string, WIGroup> mGroupLookup;
@@ -184,47 +183,9 @@ namespace Frontiers
 
 				public override void OnGameLoadStart()
 				{
-						StartCoroutine(UpdateGroups());
+						StartCoroutine(UpdateGroupLoading());
 				}
 
-				#if UNITY_EDITOR
-				WIGroupUnloader unloader;
-
-				public void DrawEditor()
-				{
-						var enumerator = Unloaders.GetEnumerator();
-						while (enumerator.MoveNext()) {
-								//foreach (WIGroupUnloader unloader in Unloaders) {
-								unloader = enumerator.Current;
-								switch (unloader.LoadState) {
-										case WIGroupLoadState.Loaded:
-										default:
-												UnityEngine.GUI.color = Color.green;
-												break;
-
-										case WIGroupLoadState.Unloaded:
-												UnityEngine.GUI.color = Color.red;
-												break;
-
-										case WIGroupLoadState.PreparingToUnload:
-										case WIGroupLoadState.Unloading:
-												UnityEngine.GUI.color = Color.yellow;
-												break;
-								}
-								string rootGroup = "(NULL)";
-								if (unloader.RootGroup != null) {
-										rootGroup = unloader.RootGroup.name;
-										rootGroup += "(" + unloader.NotPreparedToUnload.Count.ToString() + " NOT PREPARED)\n";
-										rootGroup += "(" + unloader.PreparingToUnload.Count.ToString() + " PREPARING)\n";
-										rootGroup += "(" + unloader.ReadyToUnload.Count.ToString() + " READY TO UNLOAD)\n";
-										rootGroup += "(" + unloader.Unloading.Count.ToString() + " UNLOADING)\n";
-										rootGroup += "(" + unloader.FinishedUnloading.Count.ToString() + " FINISHED UNLOADING)\n";
-								}
-								UnityEngine.GUILayout.Button(rootGroup + ": " + unloader.LoadState.ToString());
-						}
-						UnityEditor.EditorUtility.SetDirty(this);
-				}
-				#endif
 				#region refresh / load / unload / destroy
 
 				public static void Refresh(WIGroup group)
@@ -235,97 +196,162 @@ namespace Frontiers
 
 				public static void Load(WIGroup group)
 				{
-						if (group.Is(WIGroupLoadState.Loaded)) {
+						if (group == null) {
+								Debug.LogError("Attempted to load NULL group, ignoring");
 								return;
 						}
 
-						bool loadLater = false;
-						if (group.Is(WIGroupLoadState.PreparingToUnload)) {
-								CancelUnload(group);
-						}
+						WIGroupLoadRequest glr = null;
 
-						if (GameManager.Is(FGameState.InGame)) {
-								if (!GroupsLoading.Contains(group)) {
-										GroupsToLoad.SafeAdd(group);
-								}
-						} else if (group.PrepareToLoad() && group.ReadyToLoad) {
-								group.BeginLoad();
-						} else {
-								GroupsToLoad.SafeAdd(group);
+						switch (group.LoadState) {
+								case WIGroupLoadState.PreparingToLoad:
+								case WIGroupLoadState.Loading:
+								case WIGroupLoadState.Loaded:
+										//the only reason to load a group that's already loaded is if its parent is being UNloaded
+										//which means it may disappear soon
+										if (group.HasUnloadingParent) {
+												//so add a request to load it later
+												AddLoadRequest(group);
+										}
+										break;
+
+								case WIGroupLoadState.Uninitialized:
+								case WIGroupLoadState.Initializing:
+								case WIGroupLoadState.Initialized:
+										//load it normally, everything is dandy
+										AddLoadRequest(group);
+										break;
+
+								case WIGroupLoadState.PreparingToUnload:
+										//there's still a chance to cancel this unload request
+										if (!group.TryToCancelLoad()) {
+												//great! nothing left to do here
+												return;
+										} else {
+												//if we can't cancel the unload (usually due to having an unloading parent)
+												//there's nothing we can do but wait for it to unload
+												//and then try to load it again
+												AddLoadRequest(group);
+										}
+										break;
+
+								case WIGroupLoadState.Unloading:
+								case WIGroupLoadState.Unloaded:
+										//it's going to disappear soon, so add the request now
+										//and we'll load it again when the time comes
+										AddLoadRequest(group);
+										break;
+
+								default:
+										Debug.LogError("Group had weird load state, ignoring: " + group.LoadState.ToString());
+										break;
 						}
+						//and that's it
+						//we don't load groups directly any more
+						//we let them get handled by UpdateGroups
+						//that way there's no non-linear funny business
+				}
+
+				protected static void AddLoadRequest(WIGroup group)
+				{
+						for (int i = 0; i < LoadRequests.Count; i++) {
+								if (LoadRequests[i].Group == group || LoadRequests[i].UniqueID == group.Props.UniqueID) {
+										//it's already in there
+										return;
+								}		
+						}
+						LoadRequests.Add(new WIGroupLoadRequest(group));
 				}
 
 				public static void Unload(WIGroup group)
 				{
-						if (group.Is(
-								 WIGroupLoadState.PreparingToUnload
-								 | WIGroupLoadState.Unloading
-								 | WIGroupLoadState.Unloaded
-								 | WIGroupLoadState.Uninitialized
-								 | WIGroupLoadState.Initializing)) {
-								//no need
+						if (group.Is(WIGroupLoadState.PreparingToUnload
+						 | WIGroupLoadState.Unloading
+						 | WIGroupLoadState.Unloaded)) {
+								//no need, it's already doing its thing
 								return;
 						}
 
-						GroupsToLoad.Remove(group);
-						GroupsLoading.Remove(group);
+						if (group.Is(WIGroupLoadState.Loading)) {
+								group.AttemptedToUnload = true;
+								//we have to wait for it to finish loading first
+								return;
+						}
 
-						WIGroupUnloader unloader = null;
-						if (!UnloaderMappings.TryGetValue(group, out unloader)) {
-								//if there isn't already a group working on this group
-								//create one and add it to the list
-								unloader = new WIGroupUnloader(group);
-								unloader.Initialize();
-								UnloaderMappings.Add(group, unloader);
-								Unloaders.Add(unloader);
-								//this unload request may have resulted in 'lower' unloaders
-								//becoming irrelevant
-								ResolveUnloaders(unloader);
+						if (group.Is(WIGroupLoadState.Uninitialized
+						 | WIGroupLoadState.Initializing)) {
+								//this could be bad, potentially
+								Debug.Log("-----------ATTEMPTED TO UNLOAD WHILE " + group.Props.PathName + " WAS " + group.LoadState.ToString() + "---------------------");
+								group.AttemptedToUnload = true;
+								return;
+						}
+
+						//if there's already a key for this group then we don't need to create an unloader
+						if (UnloaderMappings.ContainsKey(group.Path)) {
+								return;
+						}
+
+						bool foundExistingUnloader = false;
+						//if there isn't then we need to try and find an unloader that's the parent first
+						for (int i = 0; i < Unloaders.Count; i++) {
+								if (Unloaders[i].LoadState != WIGroupLoadState.Unloaded && Unloaders[i].RootGroup.IsParentOf(group)) {
+										Debug.Log("ADDING NEW CHILD GROUP TO UNLOADER");
+										//in a perfect world it would already be in the unloader
+										//but whatever, weird shit happens
+										//add it now and the unloader will sort it out
+										Unloaders[i].AddChildGroup(group);
+										foundExistingUnloader = true;
+										break;
+								}
+						}
+						//if we STILL haven't found an unloader then we'll start a new one
+						if (!foundExistingUnloader) {
+								WIGroupUnloader unloader = null;
+								if (!UnloaderMappings.TryGetValue(group.Path, out unloader)) {
+										//if there isn't already a group working on this group
+										//create one and add it to the list
+										unloader = new WIGroupUnloader(group);
+										unloader.Initialize();
+										UnloaderMappings.Add(group.Path, unloader);
+										Unloaders.Add(unloader);
+										//newly irrelevant unloaders will be
+										//taken care of in the update function
+								}
 						}
 				}
 
-				public static void CancelUnload(WIGroup group)
+				public static bool TryToCancelUnload(WIGroup group)
 				{
+						//we're going to reject all cancellation requests across the board
+						/*
 						WIGroupUnloader unloader = null;
 						if (UnloaderMappings.TryGetValue(group, out unloader)) {
-								unloader.TryToCancel();
+							unloader.TryToCancel();
 						} else if (group.Is(WIGroupLoadState.PreparingToUnload)) {
-								group.LoadState = WIGroupLoadState.Loaded;
+							group.LoadState = WIGroupLoadState.Loaded;
 						}
+						*/
+						return false;
 				}
 
-				public static void ResolveUnloaders(WIGroupUnloader newUnloader)
+				public static void TryToAbsorbUnloaders (WIGroupUnloader parentUnloader)
 				{
-						//the root group might have been made irrelevant now
-						//if this new group is the new shallowest unloading parent of any earlier nodes
-						//then those old unloaders need to be gathered up and added to this new unloader
-						//otherwise just initialize it normally
-						UnloadersToMerge.Clear();
-						for (int i = Unloaders.LastIndex(); i >= 0; i--) {
-								WIGroupUnloader oldUnloader = Unloaders[i];
-								if (oldUnloader.RootGroup.HasUnloadingParent) {
-										//if it has an unloading parent then it's no longer a root
-										//this can only be caused by the new unloader
-										//(TODO verify that this is true??)
-										UnloadersToMerge.Add(oldUnloader);
-										UnloaderMappings.Remove(oldUnloader.RootGroup);
-										Unloaders.RemoveAt(i);
-								}
-						}
-						//the state of the merged unloaders isn't important
-						//because it will be recreated in the new unloader
-						//so clear them and destroy them
-						if (UnloadersToMerge.Count > 0) {
-								for (int i = 0; i < UnloadersToMerge.Count; i++) {
-										UnloadersToMerge[i].Clear();
-								}
-								UnloadersToMerge.Clear();
+						if (parentUnloader.LoadState == WIGroupLoadState.Unloaded) {
+								//there's no point
+								return;
 						}
 
-						//now initialize the new unloader
-						//this will find all the old groups that were unloading
-						//and recreate their state
-						newUnloader.Initialize();
+						for (int i = Unloaders.LastIndex(); i >= 0; i--) {
+								WIGroupUnloader childUnloader = Unloaders[i];
+								if (childUnloader != parentUnloader && parentUnloader.RootGroup.IsParentOf (childUnloader.RootGroup)) {
+										//absorb the child group into the parent group
+										parentUnloader.AddChildGroup(childUnloader.RootGroup);
+										//then remove all trace of the existing child group unloader
+										UnloaderMappings.Remove(childUnloader.RootGroup.Path);
+										Unloaders.RemoveAt(i);
+										childUnloader.Clear();
+								}
+						}
 				}
 
 				public static void SaveToDisk(WIGroup group)
@@ -365,41 +391,110 @@ namespace Frontiers
 						groupProps.Clear();
 				}
 
-				protected IEnumerator UpdateGroups()
-				{
+				protected IEnumerator UpdateGroupLoading() {
 						while (GameManager.State != FGameState.Quitting) {
 								while (!GameManager.Is(FGameState.InGame | FGameState.GameLoading | FGameState.GameStarting)) {
 										yield return null;
 								}
-								//first get any root groups to destroy
-								//this means that the entire chain has been destroyed
-								//and the group transforms are ready to be nuked
-								Unloaders.Sort();
+								//start with our load requests
+								//sort them shortest path to longest
+								LoadRequests.Sort();
+								for (int i = LoadRequests.LastIndex(); i >= 0; i--) {
+										WIGroupLoadRequest glr = LoadRequests[i];
+										if (glr.HasGroupReference) {
+												//see if it's being unloaded already
+												glr.OnHold = false;
+												for (int j = 0; j < Unloaders.Count; j++) {
+														if (Unloaders[j].RootGroup == glr.Group || Unloaders[j].RootGroup.IsParentOf(glr.Group)) {
+																//whoops, can't do anything yet
+																glr.OnHold = true;
+																break;
+														}
+												}
+
+												if (!glr.OnHold) {
+														if (glr.Group.PrepareToLoad()) {
+																//ooh, very exciting, put it in groups to load
+																GroupsLoading.Add(glr.Group);
+																LoadRequests.RemoveAt(i);
+																glr.Clear();
+																//we're done with load requests this round
+																//we don't want to overload the frame
+																break;
+														} else {
+																//see if we've timed out
+																if (WorldClock.AdjustedRealTime > glr.Timeout) {
+																		Debug.Log("GROUP TIMED OUT: " + glr.Group.Path);
+																		GroupsLoading.Add(glr.Group);
+																		glr.Clear();
+																}
+														}
+												}
+										} else {
+												//the group is gone but the requst lingers!
+												glr.Clear();
+												LoadRequests.RemoveAt(i);
+										}
+								}
+
+								yield return null;
+
+								for (int i = GroupsLoading.LastIndex(); i >= 0; i--) {
+										WIGroup groupLoading = GroupsLoading[i];
+										try {
+												if (groupLoading == null || groupLoading.FinishedLoading) {
+														GroupsLoading.RemoveAt(i);
+												} else if (groupLoading.ReadyToLoad) {
+														groupLoading.BeginLoad();
+												}
+										} catch (Exception e) {
+												Debug.Log("ERROR while loading groups: " + e.ToString());
+										}
+										if (GameManager.Is(FGameState.InGame)) {
+												yield return new WaitForSeconds(0.05f);
+										}
+								}
+
+								yield return null;
+
+								//now check to see if there are any unloaders that need to be merged
+								//unloaders may have been created for child groups
+								//and parents of those child groups may have received unloaders in the meantime
+								//so sort that out and merge them all
+								for (int i = 0; i < Unloaders.Count; i++) {
+										TryToAbsorbUnloaders(Unloaders[i]);
+								}
+
+								yield return null;
+								//now that we're all properly merged, sort everything
 								//sorting the unloaders arranged them by depth
 								//so we're getting the deepest groups first
+								Unloaders.Sort();
 								for (int i = Unloaders.LastIndex(); i >= 0; i--) {
 										while (!GameManager.Is(FGameState.InGame | FGameState.GameLoading | FGameState.GameStarting)) {
 												yield return null;
 										}
+										//first get any root groups to destroy
+										//this means that the entire chain has been destroyed
+										//and the group transforms are ready to be nuked
 										WIGroupUnloader unloader = Unloaders[i];
 										if (unloader == null) {
 												Unloaders.RemoveAt(i);
 										} else {
-												if (unloader.IsCanceled) {
-														UnloaderMappings.Remove(unloader.RootGroup);
+												if (unloader.LoadState == WIGroupLoadState.Unloaded) {
+														//BOOM it's dead, get rid of it
+														string rootGroupPath = unloader.RootGroup.Path;
+														var destroyGroup = DestroyGroup(unloader.RootGroup);
 														unloader.Clear();
 														Unloaders.RemoveAt(i);
-												} else if (unloader.LoadState == WIGroupLoadState.Unloaded) {
-														UnloaderMappings.Remove(unloader.RootGroup);
-														var destroyGroup = DestroyGroup(unloader.RootGroup);
 														while (destroyGroup.MoveNext()) {
 																yield return destroyGroup.Current;
 														}
-														unloader.Clear();
-														Unloaders.RemoveAt(i);
+														UnloaderMappings.Remove(rootGroupPath);
 														break;
 												}
 										}
+										yield return new WaitForSeconds(0.05f);
 								}
 								//that was intenst so wait a tick
 								yield return null;
@@ -418,6 +513,7 @@ namespace Frontiers
 												while (destroyGroup.MoveNext()) {
 														yield return destroyGroup.Current;
 												}
+												yield return new WaitForSeconds(0.05f);
 										}
 										mChildGroupsToDestroy.Clear();
 								}
@@ -432,6 +528,7 @@ namespace Frontiers
 										while (checkGroupLoadStates.MoveNext()) {
 												yield return checkGroupLoadStates.Current;
 										}
+										yield return new WaitForSeconds(0.05f);
 								}
 								//don't bother to check for unloaded groups yet
 								//we'll get them on the next cycle
@@ -450,7 +547,6 @@ namespace Frontiers
 								foreach (Transform childTransform in group.tr) {
 										transformsToDestroy.Add(childTransform);
 								}
-								yield return null;
 								for (int i = 0; i < transformsToDestroy.Count; i++) {
 										if (transformsToDestroy[i].gameObject.layer == Globals.LayerNumStructureTerrain) {
 												transformsToDestroy[i].SendMessage("OnGroupUnloaded", SendMessageOptions.DontRequireReceiver);
@@ -462,42 +558,8 @@ namespace Frontiers
 						yield break;
 				}
 
-				protected int mUpdateGroups = 0;
-
-				public void Update()
+				public void LateUpdate()
 				{
-						if (GameManager.Is(FGameState.InGame)) {
-								if (mUpdateGroups < 9) {
-										mUpdateGroups++;
-										return;
-								}
-						}
-						mUpdateGroups = 0;
-
-						//now take care of groups that need to be loaded
-						for (int i = GroupsToLoad.LastIndex(); i >= 0; i--) {
-								WIGroup groupToLoad = GroupsToLoad[i];
-								if (groupToLoad == null) {
-										GroupsToLoad.RemoveAt(i);
-								} else if (groupToLoad.PrepareToLoad()) {
-										GroupsToLoad.RemoveAt(i);
-										GroupsLoading.Add(groupToLoad);
-								} else {
-										GroupsToLoad.RemoveAt(i);
-								}
-						}
-
-						for (int i = GroupsLoading.LastIndex(); i >= 0; i--) {
-								WIGroup groupLoading = GroupsLoading[i];
-								if (groupLoading == null || groupLoading.FinishedLoading) {
-										GroupsLoading.RemoveAt(i);
-								} else if (groupLoading.ReadyToLoad) {
-										groupLoading.BeginLoad();
-								}
-						}
-				}
-
-				public void LateUpdate(){
 						//reset every frame for WIGroups
 						NumWorldItemsLoadedThisFrame = 0;
 				}
@@ -618,7 +680,8 @@ namespace Frontiers
 				protected string mGetStackItemsNextGroupPath;
 				protected List <string> mGetStackItemsChildNames;
 
-				public static IEnumerator GetAllPaths(string groupPath, GroupSearchType searchType, Queue <string> groupPathsQueue) {
+				public static IEnumerator GetAllPaths(string groupPath, GroupSearchType searchType, Queue <string> groupPathsQueue)
+				{
 						return Get.GetAllPathsOverTime(groupPath, searchType, groupPathsQueue);
 				}
 				//returns a full recursive search of the tree with groups
@@ -819,8 +882,15 @@ namespace Frontiers
 								parentGroup.AddChildGroup(group);
 
 								Get.Groups.Add(group);
-								mGroupLookup.Add(group.Props.UniqueID, group);
 								group.Initialize();
+								if (!mGroupLookup.ContainsKey(group.Props.UniqueID)) {
+										//Debug.Log("Adding group " + group.Path + " to lookup in GetOrAdd");
+										mGroupLookup.Add(group.Props.UniqueID, group);
+								} else {
+										//this is now the latest and greatest group
+										//Debug.Log ("Replacing group " + group.Path + " lookup in GetOrAdd");
+										mGroupLookup[group.Props.UniqueID] = group;
+								}
 						}
 						return group;
 				}
@@ -852,9 +922,16 @@ namespace Frontiers
 								Mods.Get.Runtime.LoadGroupProps(ref group.Props, WIGroup.GetUniqueID(WIGroup.GetChildPathName(parentGroup.Path, groupName)));
 
 								parentGroup.AddChildGroup(group);
-								Get.Groups.SafeAdd(group);
-								mGroupLookup.Add(group.Props.UniqueID, group);
 								group.Initialize();
+								Get.Groups.SafeAdd(group);
+								if (!mGroupLookup.ContainsKey(group.Props.UniqueID)) {
+										//Debug.Log("Adding group " + group.Path + " to lookup in GetOrAdd");
+										mGroupLookup.Add(group.Props.UniqueID, group);
+								} else {
+										//Debug.Log("Replacing group " + group.Path + " lookup in GetOrAdd");
+										//this is now the latest and greatest group
+										mGroupLookup[group.Props.UniqueID] = group;
+								}
 						}
 						return group;
 				}
@@ -870,23 +947,44 @@ namespace Frontiers
 
 				#endregion
 
-		}
+				#if UNITY_EDITOR
+				WIGroupUnloader unloader;
 
-		public class WIGroupsState
-		{
-				public WIGroupsState()
+				public void DrawEditor()
 				{
-						LocationExcludeTypes = new List <string>();
-						LocationLookup = new SDictionary <string, string>();
-						QuestItemLookup = new SDictionary <string, string>();
-						CharacterLookup = new SDictionary <string, string>();
-						LocationExcludeTypes.Add("PathMarker");
-				}
+						var enumerator = Unloaders.GetEnumerator();
+						while (enumerator.MoveNext()) {
+								//foreach (WIGroupUnloader unloader in Unloaders) {
+								unloader = enumerator.Current;
+								switch (unloader.LoadState) {
+										case WIGroupLoadState.Loaded:
+										default:
+												UnityEngine.GUI.color = Color.green;
+												break;
 
-				public string WorldName = "FRONTIERS";
-				public List <string> LocationExcludeTypes;
-				public SDictionary <string, string>	LocationLookup;
-				public SDictionary <string, string>	QuestItemLookup;
-				public SDictionary <string, string>	CharacterLookup;
+										case WIGroupLoadState.Unloaded:
+												UnityEngine.GUI.color = Color.red;
+												break;
+
+										case WIGroupLoadState.PreparingToUnload:
+										case WIGroupLoadState.Unloading:
+												UnityEngine.GUI.color = Color.yellow;
+												break;
+								}
+								string rootGroup = "(NULL)";
+								if (unloader.RootGroup != null) {
+										rootGroup = unloader.RootGroup.name;
+										rootGroup += "(" + unloader.NotPreparedToUnload.Count.ToString() + " NOT PREPARED)\n";
+										rootGroup += "(" + unloader.PreparingToUnload.Count.ToString() + " PREPARING)\n";
+										rootGroup += "(" + unloader.ReadyToUnload.Count.ToString() + " READY TO UNLOAD)\n";
+										rootGroup += "(" + unloader.Unloading.Count.ToString() + " UNLOADING)\n";
+										rootGroup += "(" + unloader.FinishedUnloading.Count.ToString() + " FINISHED UNLOADING)\n";
+								}
+								UnityEngine.GUILayout.Button(rootGroup + ": " + unloader.LoadState.ToString());
+						}
+						UnityEditor.EditorUtility.SetDirty(this);
+				}
+				#endif
+
 		}
 }

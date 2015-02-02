@@ -79,7 +79,7 @@ namespace Frontiers.World
 
 				public void Reconstruct()
 				{
-						GUIManager.PostIntrospection("This artifact has already been reconstructed");
+						GUI.GUIManager.PostIntrospection("This artifact has already been reconstructed");
 				}
 
 				public static float AgeToFloat(ArtifactAge age)
@@ -126,29 +126,5 @@ namespace Frontiers.World
 				public string MuseumName = "GuildMuseum";
 				public bool VisibleOnStartup = true;
 				public bool VisibleNow = true;
-		}
-
-		[Serializable]
-		public enum ArtifactQuality
-		{
-				None = 0,
-				VeryPoor = 1,
-				Poor = 2,
-				Fair = 3,
-				Good = 4,
-				VeryGood = 5,
-				Excellent = 6,
-				Perfect = 7
-		}
-
-		[Serializable]
-		public enum ArtifactAge
-		{
-				Recent,
-				Modern,
-				Old,
-				Antiquated,
-				Ancient,
-				Prehistoric,
 		}
 }

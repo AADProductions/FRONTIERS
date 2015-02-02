@@ -298,6 +298,11 @@ namespace Frontiers
 
 				}
 
+				public virtual void OnGameSaveStart()
+				{
+
+				}
+
 				public virtual void OnGameSave()
 				{
 

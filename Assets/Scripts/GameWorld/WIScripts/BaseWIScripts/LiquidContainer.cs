@@ -59,7 +59,7 @@ namespace Frontiers.World.BaseWIScripts
 												if (liquid.Is <FoodStuff>(out foodstuff)) {	//DON'T consume the foodstuff!
 														FoodStuff.Drink(foodstuff);
 														State.Contents.InstanceWeight--;
-														GUIManager.PostInfo("Drank 1 " + State.Contents.PrefabName + ", " + State.Contents.InstanceWeight.ToString() + "/" + State.Capacity.ToString() + " left.");						                      
+														GUIManager.PostInfo("Drank 1 " + State.Contents.DisplayName + ", " + State.Contents.InstanceWeight.ToString() + "/" + State.Capacity.ToString() + " left.");						                      
 												}
 										}
 										break;
@@ -134,13 +134,13 @@ namespace Frontiers.World.BaseWIScripts
 
 						if (!IsEmpty) {	//if we have some filled, see if the items are compatible
 								availableCapacity = Capacity - Contents.InstanceWeight;
-								return Stacks.Can.Stack(Contents.PrefabName, item.PrefabName);
+								return Stacks.Can.Stack(item, Contents.StackName);
 						}
 
 						if (CanContain.Count > 0) {	//if we have restrictions, check them
 								bool canContain = false;
 								foreach (string canContainType in CanContain) {
-										if (Stacks.Can.Stack(canContainType, item.PrefabName)) {	//if any item is compatible, yay we can fill
+										if (Stacks.Can.Stack(item, canContainType)) {//if any item is compatible, yay we can fill
 												canContain = true;
 												break;
 										}

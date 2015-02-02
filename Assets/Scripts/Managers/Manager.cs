@@ -191,12 +191,12 @@ namespace Frontiers
 				{
 						Debug.Log("MANAGER: GAME SAVE START");
 						foreach (Manager awakeManager in mAwakeManagers.Values) {
-								Debug.Log("Save starting in " + awakeManager.name);
+								//Debug.Log("Save starting in " + awakeManager.name);
 								awakeManager.OnGameSaveStart();
 						}
 						Debug.Log("MANAGER: GAME SAVE");
 						foreach (Manager awakeManager in mAwakeManagers.Values) {
-								Debug.Log("Save in " + awakeManager.name);
+								//Debug.Log("Save in " + awakeManager.name);
 								awakeManager.OnGameSave();
 						}
 				}
@@ -399,8 +399,7 @@ namespace Frontiers
 				{
 						Manager awakeManager = null;
 						if (mAwakeManagers.TryGetValue(typeof(T), out awakeManager)) {
-								if (!awakeManager.Initialized) {	
-										Debug.Log("MANAGER: Initializing manager " + typeof(T).Name);
+								if (!awakeManager.Initialized) {
 										awakeManager.Initialize();
 								}
 						}

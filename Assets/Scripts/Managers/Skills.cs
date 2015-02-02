@@ -15,6 +15,7 @@ namespace Frontiers
 				public static Skills Get;
 				public List <Skill> SkillList = new List <Skill>();
 				public List <Skill> SkillsInUse = new List <Skill>();
+				public List <SkillStartupSetting> DefaultSkillStartupSettings = new List<SkillStartupSetting>();
 				public List <CredentialLevel> CredentialLevels = new List <CredentialLevel>();
 				public GameObject EffectSpherePrefab;
 				public bool DebugSkills = true;
@@ -130,6 +131,25 @@ namespace Frontiers
 								SkillList[i].Save();
 						}
 						mGameSaved = true;
+				}
+
+				public override void OnGameStartFirstTime()
+				{
+						for (int j = 0; j < SkillList.Count; j++) {
+								Skill skill = SkillList[j];
+								//see if we have a startup setting
+								for (int i = 0; i < DefaultSkillStartupSettings.Count; i++) {
+										SkillStartupSetting ss = DefaultSkillStartupSettings[i];
+										if (DefaultSkillStartupSettings[i].SkillName == skill.name) {
+												if (ss.Mastered) {
+														skill.HasBeenMastered = true;
+												} else {
+														skill.State.KnowledgeState = ss.KnowledgeState;
+												}
+												break;
+										}
+								}
+						}
 				}
 
 				public override void OnGameStart()
@@ -450,6 +470,7 @@ namespace Frontiers
 								Manager.WakeUp <Mods>("__MODS");
 						}
 						Mods.Get.Editor.InitializeEditor();
+						DefaultSkillStartupSettings.Clear();
 
 						//load all skills from mods
 						List <string> skillNames = Mods.Get.ModDataNames("Skill");
@@ -482,6 +503,8 @@ namespace Frontiers
 												}
 												newSkill.transform.parent = parentObject.transform;
 										}
+
+										DefaultSkillStartupSettings.Add(new SkillStartupSetting(skillName, newSkill.State.KnowledgeState, newSkill.HasBeenMastered));
 								}
 						}
 				}
@@ -630,6 +653,26 @@ namespace Frontiers
 				protected Dictionary <string, Skill> mSkillsLookup = new Dictionary <string, Skill>();
 				protected Dictionary <string, List <Skill>> mSkillsLookupByWorldItem = new Dictionary <string, List<Skill>>();
 				protected Dictionary <string, List <Skill>> mSkillsLookupByWIScript = new Dictionary <string, List<Skill>>();
+		}
+
+		[Serializable]
+		public class SkillStartupSetting
+		{
+				public SkillStartupSetting()
+				{
+				
+				}
+
+				public SkillStartupSetting(string skillName, SkillKnowledgeState state, bool mastered)
+				{
+						SkillName = skillName;
+						KnowledgeState = state;
+						Mastered = mastered;
+				}
+
+				public string SkillName = string.Empty;
+				public bool Mastered = false;
+				public SkillKnowledgeState KnowledgeState = SkillKnowledgeState.Unknown;
 		}
 
 		[Serializable]

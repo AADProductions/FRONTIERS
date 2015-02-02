@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using Frontiers;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Armor : WIScript
 		{

@@ -47,6 +47,9 @@ namespace Frontiers
 								if (HasEnablerStack) {
 										EnablerStack.Group = value;
 								}
+								if (HasEnablerContainer) {
+										EnablerContainer.Group = value;
+								}
 						}
 						get {
 								if (HasEnablerStack) {
@@ -128,8 +131,8 @@ namespace Frontiers
 				}
 
 				public bool UseRawContainer {
-			//TODO break this functionality out into a different class?
-			//seems to cause problems
+				//TODO break this functionality out into a different class?
+				//seems to cause problems
 						get {
 								return mUseRawContainer;
 						}

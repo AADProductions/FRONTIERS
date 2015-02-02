@@ -114,13 +114,6 @@ namespace Frontiers
 						if (!mInitialized || Player.Local == null || GameManager.Get.TestingEnvironment) {
 								return;
 						}
-
-						if (GameManager.Is(FGameState.Cutscene)) {
-								//cutscenes can make it look like a different time of day
-								if (Cutscene.CurrentCutscene.FreezeApparentTime) {
-										GameWorld.Get.Sky.Cycle.Hour = Cutscene.CurrentCutscene.ApparentHourOfDay;
-								}
-						}
 		
 						if (UseTimeOfDayOverride) {
 								GameWorld.Get.Sky.Cycle.Hour = HourOfDayOverride;

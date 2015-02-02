@@ -14,6 +14,7 @@ namespace Frontiers.GUI
 				public UISprite PingSprite;
 				public UILabel StackLabel;
 				public Color IconColor;
+				public GUIButtonHover ButtonHover;
 				public float DisplaySize;
 				public float DisplayOffset;
 				public int DisplayPosition;
@@ -22,6 +23,13 @@ namespace Frontiers.GUI
 				{
 						condition = null;
 						transform.localScale = Vector3.one * 0.001f;
+						ButtonHover = gameObject.GetOrAdd <GUIButtonHover>();
+						ButtonHover.OnButtonHover += OnButtonHover;
+				}
+
+				public void OnButtonHover()
+				{
+						GUIPlayerStatusInterface.Get.PostInfo(UICamera.hoveredObject, condition.Description);
 				}
 
 				public void Initialize(Condition newCondition, string keeperName)

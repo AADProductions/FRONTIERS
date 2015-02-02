@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World.Gameplay;
-using Frontiers.World.Locations;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -47,7 +47,7 @@ namespace Frontiers.World
 						}
 				}
 
-				public List <CreatureDen> IntersectingDens { get { return mIntersectingDens; } }
+				public List <ICreatureDen> IntersectingDens { get { return mIntersectingDens; } }
 
 				#endregion
 
@@ -218,34 +218,9 @@ namespace Frontiers.World
 						animation.Play(AnimationCloseClipName);
 				}
 
-				protected List <CreatureDen> mIntersectingDens = new List<CreatureDen>();
+				protected List <ICreatureDen> mIntersectingDens = new List<ICreatureDen>();
 				protected List <string> gExceptions = new List <string>() { "Fish" };
 				protected List <string> gCanCatch = new List <string>();
-		}
-
-		public interface ITrap
-		{
-				double TimeLastChecked { get; set; }
-
-				double TimeSet { get; }
-
-				float SkillOnSet { get; }
-
-				WorldItem Owner { get; }
-
-				bool IsFinished { get; }
-
-				string TrappingSkillName { get; }
-
-				TrapMode Mode { get; set; }
-
-				bool SkillUpdating { get; set; }
-
-				List <string> CanCatch { get; }
-
-				List <string> Exceptions { get; }
-
-				List <CreatureDen> IntersectingDens { get; }
 		}
 
 		[Serializable]
@@ -258,13 +233,5 @@ namespace Frontiers.World
 				public float SkillOnSet = 0f;
 				public double TimeSet = 0f;
 				public DamagePackage Damage = new DamagePackage();
-		}
-
-		public enum TrapMode
-		{
-				Set,
-				Triggered,
-				Misfired,
-				Disabled,
 		}
 }

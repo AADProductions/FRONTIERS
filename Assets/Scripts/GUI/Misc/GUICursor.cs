@@ -28,16 +28,12 @@ namespace Frontiers.GUI
 
 				protected void LockCursor()
 				{
-						if (Application.platform != RuntimePlatform.LinuxPlayer) {
-								Screen.lockCursor = true;
-						}
+						Screen.lockCursor = true;
 				}
 
 				protected void ReleaseCursor()
 				{
-						if (Application.platform != RuntimePlatform.LinuxPlayer) {
-								Screen.lockCursor = false;
-						}
+						Screen.lockCursor = false;
 				}
 
 				public static bool gUseMouseLock = true;

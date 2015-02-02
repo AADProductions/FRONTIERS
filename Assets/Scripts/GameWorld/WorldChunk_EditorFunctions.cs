@@ -2,12 +2,11 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.Data;
-using Frontiers.World.Locations;
-using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 using ExtensionMethods;
-using System.Xml.Serialization;
 
 namespace Frontiers.World
 {
@@ -212,6 +211,7 @@ namespace Frontiers.World
 
 				public void RefreshPathsEditor()
 				{
+						/*
 						HashSet <SplineNode> splineNodes = new HashSet <SplineNode>();
 						HashSet <SplineNode> sharedSplineNodes = new HashSet <SplineNode>();
 						foreach (Transform pathTransform in Transforms.Paths) {
@@ -245,6 +245,7 @@ namespace Frontiers.World
 										sharedNode.transform.parent = sharedPathMarkerTransform;
 								}
 						}
+						*/
 				}
 
 				public void SaveChunkEditor()
@@ -342,6 +343,7 @@ namespace Frontiers.World
 								Mods.Get.Editor.SaveMod <ChunkNodeData>(NodeData, chunkDirectoryName, "Nodes");
 						}
 
+						/*
 						if (SavePathsOnSave) {
 								List <PathEditor> pes = new List<PathEditor>();
 								foreach (Transform pathChild in Transforms.Paths) {
@@ -355,6 +357,7 @@ namespace Frontiers.World
 										pe.EditorSave();
 								}
 						}
+						*/
 				}
 
 				protected void GetChunkScenery(List <ChunkPrefab> prefabs, Transform startTerrain, LocationTerrainType TerrainType)

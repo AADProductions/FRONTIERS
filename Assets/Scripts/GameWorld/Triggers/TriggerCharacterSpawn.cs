@@ -2,8 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers.World.Gameplay;
-using Frontiers.Data;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -60,7 +59,7 @@ namespace Frontiers.World
 								nodeState.CustomConversation = State.CustomConversation;
 						}
 						//wait until we're ready to spawn
-						yield return new WaitForSeconds(State.SpawnDelay);
+						yield return WorldClock.WaitForSeconds(State.SpawnDelay);
 						//then boom! go
 						if (!Characters.GetOrSpawnCharacter(CurrentSpawnNode, State.CharacterName, ParentChunk.AboveGroundGroup, out SpawnedCharacter)) {
 								Debug.Log("Couldn't spawn character");

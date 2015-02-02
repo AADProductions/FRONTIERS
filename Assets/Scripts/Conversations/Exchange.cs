@@ -12,7 +12,7 @@ using System.Linq;
 namespace Frontiers.Story.Conversations
 {
 		[Serializable]
-		public class Exchange : IComparable <Exchange>
+		public class Exchange : IComparable <Exchange>, IEqualityComparer<Exchange>
 		{
 				public string Name = string.Empty;
 				public int Index = 0;
@@ -64,6 +64,28 @@ namespace Frontiers.Story.Conversations
 				public string DtsOnFailure = string.Empty;
 				public List <string> OutgoingChoiceNames = new List<string>();
 				public List <ExchangeScript> Scripts = new List <ExchangeScript>();
+				public List <KeyValuePair<string,string>> SavedScripts = new List<KeyValuePair<string, string>>();
+
+				public void LoadScripts()
+				{
+						for (int i = 0; i < SavedScripts.Count; i++) {
+								//get the type of the object from the string
+								KeyValuePair <string,string> savedScript = SavedScripts[i];
+								ExchangeScript script = (ExchangeScript)WIScript.XmlDeserializeFromString(savedScript.Key, savedScript.Value);
+								if (script != null) {
+										script.exchange = this;
+										Scripts.Add(script);
+								}
+						}
+				}
+
+				public void SaveScripts()
+				{
+						SavedScripts.Clear();
+						for (int i = 0; i < Scripts.Count; i++) {
+								SavedScripts.Add(Scripts[i].SaveState);
+						}
+				}
 
 				public string ParentExchangeName { 
 						get {
@@ -389,6 +411,19 @@ namespace Frontiers.Story.Conversations
 								return -1;
 						}
 						return 0;
+				}
+
+				public bool Equals (Exchange e1, Exchange e2) {
+						return e1.Name.Equals(e2.Name);
+				}
+
+				public int GetHashCode (Exchange e) {
+						return e.GetHashCode();
+				}
+
+				public override int GetHashCode()
+				{
+						return Name.GetHashCode();
 				}
 
 				#endregion

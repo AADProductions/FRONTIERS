@@ -13,6 +13,11 @@ namespace Frontiers.World.BaseWIScripts
 {
 		public class Creature : WIScript
 		{
+				static Creature () {
+						//add the tags we need to difficulty settings
+						DifficultySetting.AvailableTags.Add("NoHostileCreatures");
+				}
+
 				public CreatureState State = new CreatureState();
 				public CreatureTemplate Template = null;
 				public CreatureBody Body = null;

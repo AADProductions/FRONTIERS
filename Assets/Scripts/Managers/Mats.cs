@@ -13,6 +13,7 @@ namespace Frontiers
 				public SetupAdvancedFoliageShader AFS;
 				public Cubemap FoliageShaderDiffuseMap;
 				public Cubemap FoliageShaderSpecMap;
+				public Vector3 DefaultLabelFontSize = new Vector3 (30f, 30f, 1f);
 				//set on startup
 				public UIFont DefaultLabelFont;
 				public List <Texture2D> TerrainGrassTextures = new List<Texture2D>();

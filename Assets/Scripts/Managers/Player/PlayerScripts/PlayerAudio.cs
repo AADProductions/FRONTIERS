@@ -23,7 +23,7 @@ namespace Frontiers
 				public double FootStepIntervalSprint = 0.3f;
 				public double FootstepIntervalWalkInterior = 0.55f;
 				public double FootStepIntervalLand = 0.25f;
-				public string OutOfBreathSound = "OutOfBreath";
+				public string ExhaustedSound = "OutOfBreath";
 				public string TiredSound = "Tired";
 				public string CoughSound = "Cough";
 				public MasterAudio.SoundType PlayerVoiceType = MasterAudio.SoundType.PlayerVoiceMale;
@@ -236,7 +236,7 @@ namespace Frontiers
 				{
 						float statusValue = player.Status.GetStatusValue("Strength");
 						if (statusValue <= 0f) {
-								MasterAudio.PlaySound(PlayerVoiceType, OutOfBreathSound);
+								MasterAudio.PlaySound(PlayerVoiceType, ExhaustedSound);
 								CameraFX.Get.BlackOut(2f, Mathf.Abs(statusValue) * BlackoutIntensity);
 						} else if (statusValue < 0.25f) {
 								MasterAudio.PlaySound(PlayerVoiceType, TiredSound);
@@ -251,7 +251,7 @@ namespace Frontiers
 				{
 						float statusValue = player.Status.GetStatusValue("Strength");
 						if (statusValue <= 0f) {
-								MasterAudio.PlaySound(PlayerVoiceType, OutOfBreathSound);
+								MasterAudio.PlaySound(PlayerVoiceType, ExhaustedSound);
 								CameraFX.Get.BlackOut(2f, Mathf.Abs(statusValue) * BlackoutIntensity);
 						} else if (statusValue < 0.25f) {
 								MasterAudio.PlaySound(PlayerVoiceType, TiredSound);
@@ -344,7 +344,7 @@ namespace Frontiers
 						if (player.Tool.worlditem.Is <Weapon>()) {
 								float statusValue = player.Status.GetStatusValue("Strength");
 								if (statusValue <= 0f) {
-										MasterAudio.PlaySound(PlayerVoiceType, OutOfBreathSound);
+										MasterAudio.PlaySound(PlayerVoiceType, ExhaustedSound);
 										CameraFX.Get.BlackOut(2f, Mathf.Abs(statusValue) * BlackoutIntensity);
 								} else if (statusValue < 0.25f) {
 										MasterAudio.PlaySound(PlayerVoiceType, TiredSound);

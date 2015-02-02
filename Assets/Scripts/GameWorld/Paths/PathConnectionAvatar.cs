@@ -1,9 +1,10 @@
 using UnityEngine;
 using System.Collections;
 using Frontiers;
-using Frontiers.World.Locations;
+
 using System.Collections.Generic;
 using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -22,7 +23,7 @@ namespace Frontiers.World
 
 				public PathMarker ConnectionPathMarker;
 				public PathMarker ConnectionPathOrigin;
-				public Paths.AlterAction PathAlterAction;
+				public MarkerAlterAction PathAlterAction;
 				public PathSkill SkillToUse;
 				public bool IsActive = true;
 				public Spline spline;
@@ -74,7 +75,7 @@ namespace Frontiers.World
 								return;
 						}
 
-						if (ConnectionPathMarker == null || ConnectionPathOrigin == null || PathAlterAction == Paths.AlterAction.None) {
+						if (ConnectionPathMarker == null || ConnectionPathOrigin == null || PathAlterAction == MarkerAlterAction.None) {
 								Finish();
 								return;
 						}
@@ -104,23 +105,23 @@ namespace Frontiers.World
 						SplineNode2.position = ConnectionPathOrigin.worlditem.tr.position;
 
 						switch (PathAlterAction) {
-								case Paths.AlterAction.None:
+								case MarkerAlterAction.None:
 								default:
 										break;
 
-								case Paths.AlterAction.AppendToPath:
+								case MarkerAlterAction.AppendToPath:
 										CurrentColor = Color.blue;
 										break;
 
-								case Paths.AlterAction.CreateBranch:
+								case MarkerAlterAction.CreateBranch:
 										CurrentColor = Color.green;
 										break;
 
-								case Paths.AlterAction.CreatePath:
+								case MarkerAlterAction.CreatePath:
 										CurrentColor = Color.red;
 										break;
 
-								case Paths.AlterAction.CreatePathAndBranch:
+								case MarkerAlterAction.CreatePathAndBranch:
 										CurrentColor = Color.yellow;
 										break;
 						}
@@ -136,7 +137,7 @@ namespace Frontiers.World
 
 						ConnectionPathMarker = null;
 						ConnectionPathOrigin = null;
-						PathAlterAction = Paths.AlterAction.None;
+						PathAlterAction = MarkerAlterAction.None;
 						SkillToUse = null;
 
 						mFinished = true;
@@ -145,7 +146,7 @@ namespace Frontiers.World
 
 				protected bool mFinished = false;
 
-				public void SetConnection(PathMarker pathMarker, PathMarker pathOrigin, Paths.AlterAction alterAction, PathSkill skillToUse)
+				public void SetConnection(PathMarker pathMarker, PathMarker pathOrigin, MarkerAlterAction alterAction, PathSkill skillToUse)
 				{
 						ConnectionPathMarker = pathMarker;
 						ConnectionPathOrigin = pathOrigin;

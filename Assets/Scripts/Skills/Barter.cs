@@ -3,11 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Locations;
+
 using Frontiers.World.Gameplay;
 using System.Linq;
 using System;
 using Frontiers.GUI;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World.Gameplay
 {
@@ -575,7 +576,7 @@ namespace Frontiers.World.Gameplay
 
 						ClearGoodsAndCurrency();
 						MadeTradeThisSession = true;
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.BarterMakeTrade, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.BarterMakeTrade, WorldClock.AdjustedRealTime);
 
 						BarterManager.StartCoroutine(GUILoading.LoadFinish());
 
@@ -736,17 +737,5 @@ namespace Frontiers.World.Gameplay
 								return topItem;
 						}
 				}
-		}
-
-		public enum BarterContainerMode
-		{
-				Goods,
-				Offer
-		}
-
-		public enum BarterParty
-		{
-				Player,
-				Character
 		}
 }

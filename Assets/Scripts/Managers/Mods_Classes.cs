@@ -373,6 +373,7 @@ namespace Frontiers
 		[Serializable]
 		public class PlayerStartupPosition : Mod
 		{
+				public bool CanBeUsedForNewGame = false;
 				public PlayerIDFlag PlayerID = PlayerIDFlag.Local;
 				//where to put the player
 				public int ChunkID;
@@ -408,6 +409,8 @@ namespace Frontiers
 				public float TimeDays = 0f;
 				public float TimeMonths = 0f;
 				public float TimeYears = 0f;
+				//stuff we could be standing on
+				public bool RequiresMeshTerrain = false;
 				//player stater
 				public string ControllerState;
 				public string InventoryFillCategory;
@@ -499,6 +502,8 @@ namespace Frontiers
 		[Serializable]
 		public class DifficultySetting : Mod
 		{
+				public DifficultySetting () : base () { }
+
 				public bool IsDefined(string setting)
 				{
 						if (DifficultyFlags != null && !string.IsNullOrEmpty(setting)) {
@@ -507,27 +512,15 @@ namespace Frontiers
 						return false;
 				}
 
-				public override string FullDescription {
-						get {
-								if (string.IsNullOrEmpty(mFullDescription)) {
-										GenerateFullDescription();
-								}
-								return mFullDescription;
-						}
-				}
-
-				public override bool IgnoreProfileDataIfOutdated {
-						get {
-								return true;
-						}
-				}
+				[XmlIgnore]
+				public bool HasBeenCustomized = false;
 
 				public DifficultyDeathStyle DeathStyle = DifficultyDeathStyle.Respawn;
-				public List <DifficultySettingGlobal> GlobalVariables;
+				public List <DifficultySettingGlobal> GlobalVariables = new List<DifficultySettingGlobal> ();
 				// = new List <DifficultySettingGlobal> ();
-				public List <string> DifficultyFlags;
+				public List <string> DifficultyFlags = new List<string>();
 				// = new List <string> ();
-				public static void Apply(DifficultySetting difficulty)
+				public void Apply( )
 				{
 						//set the globals to default
 						//then apply the difficulty setting on top of the default values
@@ -535,54 +528,69 @@ namespace Frontiers
 						string errorMessage = null;
 						if (GameData.IO.LoadGlobals(ref globalPairs, out errorMessage)) {
 								Globals.LoadDifficultySettingData(globalPairs);
-								for (int i = 0; i < difficulty.GlobalVariables.Count; i++) {
-										Globals.SetDifficultyVariable(difficulty.GlobalVariables[i].GlobalVariableName, difficulty.GlobalVariables[i].VariableValue);
+								for (int i = 0; i < GlobalVariables.Count; i++) {
+										Globals.SetDifficultyVariable(GlobalVariables[i].GlobalVariableName, GlobalVariables[i].VariableValue);
 								}
 						}
 				}
 
 				protected void GenerateFullDescription()
 				{
-						List <string> descriptionLines = new List <string>();
-						descriptionLines.Add(Description);
-						descriptionLines.Add("_");
-						switch (DeathStyle) {
-								case DifficultyDeathStyle.NoDeath:
-										descriptionLines.Add("Death: If your health reaches zero nothing will happen.");
-										break;
+						if (GlobalVariables != null && DifficultyFlags != null) {
+								List <string> descriptionLines = new List <string>();
+								descriptionLines.Add(Description);
+								descriptionLines.Add("_");
+								switch (DeathStyle) {
+										case DifficultyDeathStyle.NoDeath:
+												descriptionLines.Add("Death: If your health reaches zero nothing will happen.");
+												break;
 
-								case DifficultyDeathStyle.BlackOut:
-								case DifficultyDeathStyle.Respawn:
-								default:
-										descriptionLines.Add("Death: If your health reaches zero you will black out for a short time. Upon waking half of your money will be gone.");
-										break;
+										case DifficultyDeathStyle.BlackOut:
+										case DifficultyDeathStyle.Respawn:
+										default:
+												descriptionLines.Add("Death: If your health reaches zero you will black out for a short time. Upon waking half of your money will be gone.");
+												break;
 
-								case DifficultyDeathStyle.PermaDeath:
-										descriptionLines.Add("Death: If your health reaches zero your game is over permanently.");
-										break;
-						}
-						descriptionLines.Add("Globals defined in this setting:");
-						if (GlobalVariables != null && GlobalVariables.Count > 0) {
-								for (int i = 0; i < GlobalVariables.Count; i++) {
-										descriptionLines.Add(GlobalVariables[i].Description);
+										case DifficultyDeathStyle.PermaDeath:
+												descriptionLines.Add("Death: If your health reaches zero your game is over permanently.");
+												break;
 								}
-						} else {
-								descriptionLines.Add("(None)");
-						}
-						descriptionLines.Add("Flags defined in this setting:");
-						if (DifficultyFlags.Count > 0) {
+								descriptionLines.Add("Globals defined in this setting:");
+								if (GlobalVariables != null && GlobalVariables.Count > 0) {
+										for (int i = 0; i < GlobalVariables.Count; i++) {
+												descriptionLines.Add(GlobalVariables[i].Description);
+										}
+								} else {
+										descriptionLines.Add("(None)");
+								}
+								descriptionLines.Add("Flags defined in this setting:");
+								if (DifficultyFlags.Count > 0) {
 
-								descriptionLines.Add(GameData.CommaJoinWithLast(DifficultyFlags, "and"));
-						} else {
-								descriptionLines.Add("(None)");
+										descriptionLines.Add(GameData.CommaJoinWithLast(DifficultyFlags, "and"));
+								} else {
+										descriptionLines.Add("(None)");
+								}
+								mFullDescription = descriptionLines.JoinToString("\n");
 						}
-						mFullDescription = descriptionLines.JoinToString("\n");
 				}
+
+				public static List <string> AvailableTags {
+						get {
+								if (mAvailableTags == null) {
+										mAvailableTags = new List<string>();
+								}
+								return mAvailableTags;
+						}
+				}
+
+				protected static List <string> mAvailableTags = null;
 		}
 
 		[Serializable]
 		public class DifficultySettingGlobal
 		{
+				public DifficultySettingGlobal () { }
+
 				public string GlobalVariableName;
 				public string VariableValue;
 				public string Description;
@@ -591,7 +599,7 @@ namespace Frontiers
 		[Serializable]
 		public class ChunkTriggerData : Mod
 		{
-				public ChunkTriggerData()
+				public ChunkTriggerData() : base ()
 				{
 						Type = "ChunkTriggerData";
 						Name = "Trigger Group";

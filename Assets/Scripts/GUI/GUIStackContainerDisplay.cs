@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
+using System;
 
 namespace Frontiers.GUI
 {
@@ -289,24 +290,29 @@ namespace Frontiers.GUI
 								EnablerDisplay.UpdateDisplay();
 						}
 
-						if (setSquareStacks) {
-								//IN THEORY this should never result in an out of bounds error
-								//because setSquareStacks can't be true unless it has the stacks
-								//but we'll see what happens...
-								List <WIStack> enablerStacks = Enabler.EnablerStacks;
-								for (int i = 0; i < InventorySquares.Count; i++) {
-										InventorySquares[i].name = DisplayName + " square " + i.ToString();
-										InventorySquares[i].Enabler = Enabler;
-										InventorySquares[i].SetStack(enablerStacks[i]);
-										InventorySquares[i].UpdateDisplay();
-								}
-						} else {
-								//if we're not setting them, we're dropping them
-								for (int i = 0; i < InventorySquares.Count; i++) {
-										InventorySquares[i].name = DisplayName + " square " + i.ToString();
-										InventorySquares[i].DropStack();
-										InventorySquares[i].UpdateDisplay();
-								}
+						try {
+							if (setSquareStacks) {
+									//IN THEORY this should never result in an out of bounds error
+									//because setSquareStacks can't be true unless it has the stacks
+									//but we'll see what happens...
+									List <WIStack> enablerStacks = Enabler.EnablerStacks;
+									for (int i = 0; i < InventorySquares.Count; i++) {
+											InventorySquares[i].name = DisplayName + " square " + i.ToString();
+											InventorySquares[i].Enabler = Enabler;
+											InventorySquares[i].SetStack(enablerStacks[i]);
+											InventorySquares[i].UpdateDisplay();
+									}
+							} else {
+									//if we're not setting them, we're dropping them
+									for (int i = 0; i < InventorySquares.Count; i++) {
+											InventorySquares[i].name = DisplayName + " square " + i.ToString();
+											InventorySquares[i].DropStack();
+											InventorySquares[i].UpdateDisplay();
+									}
+							}
+						}
+						catch (Exception e) {
+								Debug.LogError("Error when setting stacks in stack container display, proceeding normally: " + e.ToString());
 						}
 				}
 

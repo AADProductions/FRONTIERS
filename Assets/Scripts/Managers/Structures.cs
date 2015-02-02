@@ -564,9 +564,6 @@ namespace Frontiers
 
 				public static void AddExteriorToLoad(Structure unloadedExterior)
 				{
-						if (!Globals.BuildStructures)
-								return;
-
 						if (ExteriorsWaitingToLoad.SafeAdd(unloadedExterior)) {
 								unloadedExterior.OnPreparingToBuild.SafeInvoke();
 						}
@@ -574,9 +571,6 @@ namespace Frontiers
 
 				public static void AddInteriorToLoad(Structure unloadedInterior)
 				{
-						if (!Globals.BuildStructures)
-								return;
-
 						if (InteriorsWaitingToLoad.SafeAdd(unloadedInterior)) {
 								unloadedInterior.OnPreparingToBuild.SafeInvoke();
 						}
@@ -594,9 +588,6 @@ namespace Frontiers
 
 				public static void AddMinorToload(MinorStructure unloadedMinor, int structureNumber, WorldItem worlditem)
 				{
-						if (!Globals.BuildStructures)
-								return;
-
 						if (unloadedMinor.LoadState == StructureLoadState.ExteriorUnloaded) {
 								if (!MinorsWaitingToLoad.Contains(unloadedMinor)) {
 										unloadedMinor.Number = structureNumber;
@@ -665,8 +656,8 @@ namespace Frontiers
 						}
 
 						if (ExteriorBuilder.State == StructureBuilder.BuilderState.Dormant ||
-						    ExteriorBuilder.State == StructureBuilder.BuilderState.Error ||
-						    ExteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
+						 ExteriorBuilder.State == StructureBuilder.BuilderState.Error ||
+						 ExteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
 								//Debug.Log ("Exterior builder is finished, starting new load structure");
 								StartCoroutine(LoadStructures(
 										ExteriorsWaitingToLoad,
@@ -682,8 +673,8 @@ namespace Frontiers
 						}
 
 						if (InteriorBuilder.State == StructureBuilder.BuilderState.Dormant ||
-						    InteriorBuilder.State == StructureBuilder.BuilderState.Error ||
-						    InteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
+						 InteriorBuilder.State == StructureBuilder.BuilderState.Error ||
+						 InteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
 								//Debug.Log ("Interior builder is finished, starting new load structure");
 								StartCoroutine(LoadStructures(
 										InteriorsWaitingToLoad,
@@ -725,9 +716,9 @@ namespace Frontiers
 
 						mloadMinors++;
 						if (mloadMinors > 3 && MinorsWaitingToLoad.Count > 0 &&
-						    (MinorBuilder.State == StructureBuilder.BuilderState.Dormant ||
-						    MinorBuilder.State == StructureBuilder.BuilderState.Error ||
-						    MinorBuilder.State == StructureBuilder.BuilderState.Finished)) {
+						 (MinorBuilder.State == StructureBuilder.BuilderState.Dormant ||
+						 MinorBuilder.State == StructureBuilder.BuilderState.Error ||
+						 MinorBuilder.State == StructureBuilder.BuilderState.Finished)) {
 								mloadMinors = 0;
 								StartCoroutine(LoadMinorStructure(MinorsWaitingToLoad[0]));
 						}
@@ -771,33 +762,39 @@ namespace Frontiers
 										while (initialize.MoveNext()) {
 												yield return initialize.Current;
 										}
-										//first build the structure meshes
-										//then add doors, windows and worlditems
-										//this prevents live objects and characters etc from falling through things
-										//TODO add some kind of time-out system
-										var generateStructureMeshes = withBuilder.GenerateStructureMeshes();
-										while (generateStructureMeshes.MoveNext()) {
-												yield return initialize.Current;
-										}
-										if (withBuilder.State != StructureBuilder.BuilderState.Error && structure.Is(intermediateState)) {
-												//if there's an error it usually means the structure was 'unbuilt' before it could finish
-												//and if the exterior is no longer loading then it may have been asked to unload
-												var generateStructureItems = withBuilder.GenerateStructureItems();
-												while (generateStructureItems.MoveNext()) {
-														yield return generateStructureItems.Current;
-												}
-										}
 										if (withBuilder.State != Builder.BuilderState.Error) {
-												//let the structure know it's been built
-												structure.LoadState = finalState;
-												LoadedStructures.SafeAdd(structure);
-												structure.OnLoadFinish(finalState);
-												//now that it's built, if it's an exterior, cache the meshes
-												/*if (structure.Is(StructureLoadState.ExteriorLoaded)) {
+												//first build the structure meshes
+												//then add doors, windows and worlditems
+												//this prevents live objects and characters etc from falling through things
+												//TODO add some kind of time-out system
+												var generateStructureMeshes = withBuilder.GenerateStructureMeshes();
+												while (generateStructureMeshes.MoveNext()) {
+														yield return initialize.Current;
+												}
+												if (withBuilder.State != StructureBuilder.BuilderState.Error && structure.Is(intermediateState)) {
+														//if there's an error it usually means the structure was 'unbuilt' before it could finish
+														//and if the exterior is no longer loading then it may have been asked to unload
+														var generateStructureItems = withBuilder.GenerateStructureItems();
+														while (generateStructureItems.MoveNext()) {
+																yield return generateStructureItems.Current;
+														}
+												} else {
+														Debug.Log("ERROR in structure builder when building " + mainTemplate.Name);
+												}
+												if (withBuilder.State != Builder.BuilderState.Error) {
+														//let the structure know it's been built
+														structure.LoadState = finalState;
+														LoadedStructures.SafeAdd(structure);
+														structure.OnLoadFinish(finalState);
+														//now that it's built, if it's an exterior, cache the meshes
+														/*if (structure.Is(StructureLoadState.ExteriorLoaded)) {
 														AddCachedInstance(mainTemplate.Name, structure);
 												}*/
+												} else {
+														Debug.Log("ERROR in structure builder when finished generating " + mainTemplate.Name);
+												}
 										} else {
-												Debug.Log("ERROR in structure builder when building " + mainTemplate.Name);
+												Debug.Log("ERROR in structure builder when initializing " + mainTemplate.Name);
 										}
 										//reset the builder state so we can use it again
 										withBuilder.Reset();
@@ -826,7 +823,7 @@ namespace Frontiers
 						Structure structure = null;
 						//getting this removes it from the waiting queue
 						if (GetNextStructure(desiredState, precursorState, fromList, disqualifiedState, out structure)) {
-								Debug.Log("Unloading structure " + structure.name + " in STRUCTURES");
+								//Debug.Log("Unloading structure " + structure.name + " in STRUCTURES");
 								structure.LoadState = intermediateState;
 								//we always want to close all entrances
 								//so wait for that before proceeding
@@ -898,9 +895,14 @@ namespace Frontiers
 						yield break;
 				}
 
+				public static bool IsUnloadingMinor(MinorStructure minorStructure)
+				{
+						return MinorsWaitingToUnload.Contains(minorStructure);
+				}
+
 				public IEnumerator CloseOuterEntrances(Structure structure)
 				{
-						Debug.Log("Closing outer entrances in structure " + structure.name);
+						//Debug.Log("Closing outer entrances in structure " + structure.name);
 						Dynamic dyn = null;
 						Door door = null;
 						Window window = null;
@@ -1109,89 +1111,96 @@ namespace Frontiers
 								yield break;
 						}
 
+						ChunkPrefabObject cfo = null;
+						StructurePackPrefab cfoSpp = null;
+
 						//see if we can build this prefab
-						if (!Get.PackStaticPrefab(chunkPrefab.PackName, chunkPrefab.PrefabName, out gCfoSpp)) {
+						if (!Get.PackStaticPrefab(chunkPrefab.PackName, chunkPrefab.PrefabName, out cfoSpp)) {
 								Debug.Log("CHUNK PREFAB " + chunkPrefab.Name + " USES MESH WE COULDN'T FIND");
 								yield break;
 						}
 
 						//get a chunk prefab from the pool
-						gCfo = Get.SceneryObjectPool.Pop();
+						cfo = Get.SceneryObjectPool.Pop();
 						//move / scale everything first
-						gCfo.tr.position = chunk.ChunkOffset + chunkPrefab.Transform.Position;
-						gCfo.tr.rotation = Quaternion.Euler(chunkPrefab.Transform.Rotation);
-						gCfo.PrimaryTransform.localScale = chunkPrefab.Transform.Scale.x * Vector3.one; //non-uniform scales NOT ALLOWED!
-						gCfo.LodTransform.localScale = Vector3.one;//gCfo.PrimaryTransform.localScale;
+						cfo.tr.position = chunk.ChunkOffset + chunkPrefab.Transform.Position;
+						cfo.tr.rotation = Quaternion.Euler(chunkPrefab.Transform.Rotation);
+						cfo.PrimaryTransform.localScale = chunkPrefab.Transform.Scale.x * Vector3.one; //non-uniform scales NOT ALLOWED!
+						cfo.LodTransform.localScale = Vector3.one;//cfo.PrimaryTransform.localScale;
 
-						gCfo.Layer = Globals.LayerNumSolidTerrain;//chunkPrefab.Layer;
-						gCfo.TerrainType = chunkPrefab.TerrainType;
-						//gCfo.go.SetActive(true);
-						//gCfo.rb.detectCollisions = true;
-						gCfo.go.name = chunkPrefab.Name;
-						gCfo.go.SetLayerRecursively(gCfo.Layer);
-						gCfo.go.tag = chunkPrefab.Tag;
-						gCfo.PrimaryMeshFilter.tag = chunkPrefab.Tag;
-						//gCfo.tr.parent = chunk.Transforms.AboveGroundStaticImmediate;
+						cfo.Layer = Globals.LayerNumSolidTerrain;//chunkPrefab.Layer;
+						cfo.TerrainType = chunkPrefab.TerrainType;
+						//cfo.go.SetActive(true);
+						//cfo.rb.detectCollisions = true;
+						cfo.go.name = chunkPrefab.Name;
+						cfo.go.SetLayerRecursively(cfo.Layer);
+						cfo.go.tag = chunkPrefab.Tag;
+						cfo.PrimaryMeshFilter.tag = chunkPrefab.Tag;
+						//cfo.tr.parent = chunk.Transforms.AboveGroundStaticImmediate;
 						//update the chunk prefab - set the parent and move it into position
 						chunkPrefab.ParentChunk = chunk;
-						chunkPrefab.LoadedObject = gCfo;
+						chunkPrefab.LoadedObject = cfo;
 
 						yield return null;
 
 						if (chunkPrefab.UseMeshCollider) {
-								if (gCfoSpp.ColliderMesh != null && gCfo.PrimaryCollider.sharedMesh != gCfoSpp.ColliderMesh) {
-										gCfo.PrimaryCollider.sharedMesh = gCfoSpp.ColliderMesh;
-								} else if (gCfo.PrimaryCollider.sharedMesh != gCfoSpp.MFilter.sharedMesh) {
-										gCfo.PrimaryCollider.sharedMesh = gCfoSpp.MFilter.sharedMesh;
+								if (cfoSpp.ColliderMesh != null && cfo.PrimaryCollider.sharedMesh != cfoSpp.ColliderMesh) {
+										cfo.PrimaryCollider.sharedMesh = cfoSpp.ColliderMesh;
+								} else if (cfo.PrimaryCollider.sharedMesh != cfoSpp.MFilter.sharedMesh) {
+										cfo.PrimaryCollider.sharedMesh = cfoSpp.MFilter.sharedMesh;
 								}
-								gCfo.PrimaryCollider.convex = chunkPrefab.UseConvexMesh;
-								gCfo.PrimaryCollider.enabled = true;
+								cfo.PrimaryCollider.convex = chunkPrefab.UseConvexMesh;
+								cfo.PrimaryCollider.enabled = true;
 						}
 
 						if (chunkPrefab.UseBoxColliders) {
 								//TODO instantiate box colliders
 						}
-						//set the shared materials
-						if (gCfoSharedMaterialList == null) {
-								gCfoSharedMaterialList = new List<Material>();
-						} else {
-								gCfoSharedMaterialList.Clear();
-						}
 
 						yield return null;
 
+						Material[] cfoSharedMaterialArray = null;
+						Material cfoSharedMaterial = null;
+						List <Material> cfoSharedMaterialList = new List<Material>();
+
 						for (int i = 0; i < chunkPrefab.SharedMaterialNames.Count; i++) {
-								if (Get.mSharedMaterialLookup.TryGetValue(chunkPrefab.SharedMaterialNames[i], out gCfoSharedMaterial)) {
-										gCfoSharedMaterialList.Add(gCfoSharedMaterial);
+								if (Get.mSharedMaterialLookup.TryGetValue(chunkPrefab.SharedMaterialNames[i], out cfoSharedMaterial)) {
+										cfoSharedMaterialList.Add(cfoSharedMaterial);
 								} else {
 										Debug.Log("COULDN'T FIND SHARED MATERIAL " + chunkPrefab.SharedMaterialNames[i] + ", using empty material");
-										gCfoSharedMaterialList.Add(null);
+										cfoSharedMaterialList.Add(null);
 								}
 						}
 
+						if (chunkPrefab.EnableSnow) {
+								cfoSharedMaterialList.Add(Mats.Get.SnowOverlayMaterial);
+						}
+
+						cfoSharedMaterialArray = cfoSharedMaterialList.ToArray();
+						cfo.PrimaryRenderer.sharedMaterials = cfoSharedMaterialArray;
+						cfo.LodRenderer.sharedMaterials = cfoSharedMaterialArray;
+
 						yield return null;
 
-						if (chunkPrefab.EnableSnow) {
-								gCfoSharedMaterialList.Add(Mats.Get.SnowOverlayMaterial);
-						}
-						gCfoSharedMaterialArray = gCfoSharedMaterialList.ToArray();
-						gCfo.PrimaryRenderer.sharedMaterials = gCfoSharedMaterialArray;
-						gCfo.LodRenderer.sharedMaterials = gCfoSharedMaterialArray;
-
 						//set the primary and LOD mesh
-						gCfo.PrimaryMeshFilter.sharedMesh = gCfoSpp.MFilter.sharedMesh;
-						gCfo.LodMeshFilter.sharedMesh = gCfoSpp.LodMesh;
-						gCfo.PrimaryRenderer.enabled = true;
-						gCfo.PrimaryRenderer.castShadows = Structures.SceneryObjectShadows;
-						gCfo.PrimaryRenderer.receiveShadows = Structures.SceneryObjectShadows;
-						gCfo.LodRenderer.enabled = true;
-						gCfo.Lod.enabled = true;
+						cfo.PrimaryMeshFilter.sharedMesh = cfoSpp.MFilter.sharedMesh;
+						cfo.LodMeshFilter.sharedMesh = cfoSpp.LodMesh;
+						cfo.PrimaryRenderer.enabled = true;
+						cfo.PrimaryRenderer.castShadows = Structures.SceneryObjectShadows;
+						cfo.PrimaryRenderer.receiveShadows = Structures.SceneryObjectShadows;
+						cfo.LodRenderer.enabled = true;
+						cfo.Lod.enabled = true;
 						//set the game object to active
-						gCfo.rb.detectCollisions = true;
-						gCfo.go.SetActive(true);
-						//gCfo.ShowAboveGround (!Player.Local.Surroundings.IsUnderground);
+						cfo.rb.detectCollisions = true;
+						cfo.go.SetActive(true);
+						//cfo.ShowAboveGround (!Player.Local.Surroundings.IsUnderground);
 
-						gCfo.Lod.RecalculateBounds();
+						cfo.Lod.RecalculateBounds();
+
+						cfoSharedMaterialList.Clear();
+						cfoSharedMaterialList = null;
+						Array.Clear(cfoSharedMaterialArray, 0, cfoSharedMaterialArray.Length);
+						cfoSharedMaterialArray = null;
 
 						yield return null;
 						//add scripts
@@ -1201,11 +1210,12 @@ namespace Frontiers
 								//foreach (KeyValuePair <string,string> sceneryScript in chunkPrefab.SceneryScripts) {
 								KeyValuePair <string,string> sceneryScript = enumerator.Current;
 								SceneryScript script = (SceneryScript)chunkPrefab.LoadedObject.go.GetOrAdd(sceneryScript.Key);
-								script.cfo = gCfo;
+								script.cfo = cfo;
 								script.UpdateSceneryState(sceneryScript.Value, chunk);
 								chunkPrefab.LoadedObject.CfSceneryScripts.Add(script);
 								yield return null;
 						}
+
 						yield break;
 				}
 
@@ -1294,14 +1304,11 @@ namespace Frontiers
 						cfo.tr = cfo.go.transform;
 						return cfo;
 				}
-
-				protected static Material[] gCfoSharedMaterialArray;
-				protected static Material gCfoSharedMaterial = null;
-				protected static List <Material> gCfoSharedMaterialList;
-				protected static ChunkPrefabObject gCfo = null;
-				protected static StructurePackPrefab gCfoSpp = null;
-				protected static Mesh gCfoPrimaryMesh = null;
-				protected static Mesh gCfoLodMesh = null;
+				/*protected static Material[] cfoSharedMaterialArray;
+				protected static Material cfoSharedMaterial = null;
+				protected static List <Material> cfoSharedMaterialList;
+				protected static ChunkPrefabObject cfo = null;
+				protected static StructurePackPrefab cfoSpp = null;*/
 				protected static Renderer[] gEmptyLodRenderers = new Renderer[] { };
 
 				#endregion

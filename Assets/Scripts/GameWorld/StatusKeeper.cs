@@ -76,6 +76,8 @@ namespace Frontiers
 
 				public float NormalizedValue { get { return Mathf.Clamp01(AdjustedValue); } }
 
+				public float NormalizedUrgency { get { return Mathf.Clamp01(mNormalizedUrgency); } }
+
 				public StatusKeeperState ActiveState { get { return mActiveState; } }
 
 				public float ChangeLastUpdate { get { return mValueWithFlow - mValueWithFlowLastUpdate; } }
@@ -199,7 +201,7 @@ namespace Frontiers
 				}
 				//called when ChangeLastUpdate exceeds ChangeThreshold
 				[XmlIgnore]//ignore this when serializing, player status is only one that uses it
-		public Action OnChangeAction = null;
+				public Action OnChangeAction = null;
 				public float OnChangeThreshold = 0.01f;
 
 				public void SetValue(float newValue, bool broadcast)
@@ -230,6 +232,7 @@ namespace Frontiers
 						mValueWithFlowLastUpdate = Value;
 						mNormalizedValue = NormalizedValue;
 						mNormalizedValueLastBroadcast = mNormalizedValue;
+						mNormalizedUrgency = 0f;
 				}
 
 				public void Initialize()
@@ -245,6 +248,7 @@ namespace Frontiers
 						mValueWithFlowLastUpdate = Value;
 						mNormalizedValue = NormalizedValue;
 						mNormalizedValueLastBroadcast = mNormalizedValue;
+						mNormalizedUrgency = 0f;
 
 						mStateLookup = new Dictionary <string, StatusKeeperState>();
 						mStateLookup.Add("Default", DefaultState);
@@ -281,32 +285,64 @@ namespace Frontiers
 												break;
 
 										case StatusSeekType.Neutral:
-												Value = Mathf.Lerp(Value, mActiveState.SeekValue, (float)(mActiveState.SeekSpeed * deltaTime));
+												Value = Mathf.Lerp(Value, mActiveState.SeekValue, Mathf.Clamp01((float)(mActiveState.SeekSpeed * deltaTime * Globals.StatusKeeperNeutralChangeMultiplier)));
 												break;
 								}
 						}
 
-						if (ManualChangeOnly)
-								return;
-
-						//TODO this may not be necessary, keeping it for now
-						mActiveState.Overflow.Disabled = (Value <= 1f) ? true : false;//not over one, disable
-						mActiveState.Underflow.Disabled = (Value >= 0f) ? true : false;//not under zero, disable
-						mActiveState.Overflow.FlowLastUpdate = Overflow;
-						mActiveState.Underflow.FlowLastUpdate = Underflow;
+						if (!ManualChangeOnly) {
+								//TODO this may not be necessary, keeping it for now
+								mActiveState.Overflow.Disabled = (Value <= 1f) ? true : false;//not over one, disable
+								mActiveState.Underflow.Disabled = (Value >= 0f) ? true : false;//not under zero, disable
+								mActiveState.Overflow.FlowLastUpdate = Overflow;
+								mActiveState.Underflow.FlowLastUpdate = Underflow;
+						}
 
 						//if we're over or under the status change threshold send a message
 						mNormalizedValue = NormalizedValue;
+						//now update how urgent we are
+						//how urgent we are depends on how far away we are from our ideal value
+						if (mActiveState.UseNeutralUrgency) {
+								//urgency is determined by how far away we are positive or negative from 0.5
+								if (mNormalizedValue < 0.5f) {
+										float checkValue = mNormalizedValue * 2;
+										mNormalizedUrgency = 1f - mNormalizedValue;
+								} else {
+										float checkValue = (mNormalizedValue - 0.5f) * 2;
+										mNormalizedUrgency = mNormalizedValue - 1f;
+								}
+						} else {
+								switch (mActiveState.PositiveChange) {
+										case StatusSeekType.Positive:
+										default:
+												//urgency is determined by how far away we are from 1
+												mNormalizedUrgency = 1f - mNormalizedValue;
+												break;
+
+										case StatusSeekType.Neutral:
+												mNormalizedUrgency = 0f;
+												break;
+
+										case StatusSeekType.Negative:
+												mNormalizedUrgency = mNormalizedValue;
+												break;
+								}
+						}
+
 						float normalizedChange = mNormalizedValue - mNormalizedValueLastBroadcast;
 						if (Mathf.Abs(normalizedChange) >= mMinimumNormalizeChange) {
+								if (!string.IsNullOrEmpty(PlayerVariable)) {
+										//auto ping player variable changes
+										Ping = true;
+								}
 								//reset the change tracker
 								mNormalizedValueLastBroadcast = NormalizedValue;
 								if (normalizedChange > 0) {
 										//broadcast a status gained message
-										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalRestoreStatus, WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalRestoreStatus, WorldClock.AdjustedRealTime);
 								} else {
 										//broadcast a status reduced message
-										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalLoseStatus, WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalLoseStatus, WorldClock.AdjustedRealTime);
 								}
 						}
 				}
@@ -340,6 +376,7 @@ namespace Frontiers
 						for (int i = Conditions.Count - 1; i >= 0; i--) {
 								if (Conditions[i] == null || Conditions[i].CheckExpired(deltaTime, subscribedActions, activeConditions, activeStates)) {
 										Conditions.RemoveAt(i);
+										//remove any symptoms
 								} else {
 										Value = Conditions[i].ApplyTo(this, deltaTime);
 								}
@@ -504,6 +541,7 @@ namespace Frontiers
 
 				protected bool mInitialized = false;
 				protected float mValueWithFlow = 0f;
+				protected float mNormalizedUrgency = 0f;
 				protected float mValueWithFlowLastUpdate = 0f;
 				protected float mNormalizedValue = 0f;
 				protected float mNormalizedValueLastBroadcast = 0f;
@@ -536,6 +574,7 @@ namespace Frontiers
 				public float DefaultValue = 1.0f;
 				public float SeekValue = 1.0f;
 				public float SeekSpeed = 1.0f;
+				public bool UseNeutralUrgency = false;
 				//these define how conditions affect the state
 				//they also define what colors are used when seeking
 				public StatusSeekType SeekType = StatusSeekType.Positive;
@@ -600,7 +639,7 @@ namespace Frontiers
 										break;
 
 								case StatusSeekType.Neutral:
-				//don't adjust flow
+								//don't adjust flow
 										break;
 
 								case StatusSeekType.Negative:
@@ -632,11 +671,11 @@ namespace Frontiers
 				public List <string> ForcedCures = new List <string>();
 				public List <string> SkillUseCures = new List <string>();
 				//camera FX
-				public CameraFX.FXType FXOnStart = CameraFX.FXType.None;
+				public FXType FXOnStart = FXType.None;
 				public float FXIntensityOnStart = 0f;
-				public CameraFX.FXType FXOnPing = CameraFX.FXType.None;
+				public FXType FXOnPing = FXType.None;
 				public float FXIntensityOnPing = 0f;
-				public CameraFX.FXType FXOnExpire = CameraFX.FXType.None;
+				public FXType FXOnExpire = FXType.None;
 				public float FXIntensityOnExpire = 0f;
 				public string SoundOnInitialized = string.Empty;
 
@@ -662,7 +701,7 @@ namespace Frontiers
 				public void Initialize()
 				{
 						if (!string.IsNullOrEmpty(SoundOnInitialized)) {
-								MasterAudio.PlaySound(MasterAudio.SoundType.PlayerVoice, Player.Local.tr, SoundOnInitialized);
+								MasterAudio.PlaySound(MasterAudio.SoundType.PlayerInterface, Player.Local.tr, SoundOnInitialized);
 						}
 
 						if (SkillUseCures.Count > 0) {
@@ -712,9 +751,9 @@ namespace Frontiers
 				//- Cured by condition 		- because another condition wiped it out, eg 'Wet' cures 'On Fire'
 				//- Forced cures 			- because something outside the condition forced a cure, eg 'Spotted Mushroom' curing specific diseases
 				public bool CheckExpired(double deltaTime,
-				                        List <AvatarAction> recentActions,
-				                        List <Condition> activeConditions,
-				                        List <string> activeStates)
+				                       List <AvatarAction> recentActions,
+				                       List <Condition> activeConditions,
+				                       List <string> activeStates)
 				{
 						TimeSoFar += deltaTime;
 						//check to see if any of the active states have cured us
@@ -810,12 +849,5 @@ namespace Frontiers
 				}
 
 				protected bool mHasBecomeActive;
-		}
-
-		public enum StatusSeekType
-		{
-				Positive,
-				Negative,
-				Neutral
 		}
 }

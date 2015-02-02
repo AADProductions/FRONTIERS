@@ -1,11 +1,11 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.World;
-using Frontiers.World.Gameplay;
-using System;
 using Frontiers.GUI;
+using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World.Gameplay
 {
@@ -32,7 +32,7 @@ namespace Frontiers.World.Gameplay
 
 				public override float NormalizedEffectTimeLeft {
 						get {
- if (IsInUse) {
+ 								if (IsInUse) {
 										return 1.0f - mProgressValue;
 								}
 								return 0f;
@@ -121,11 +121,13 @@ namespace Frontiers.World.Gameplay
 				protected void LoadBlueprintRow(List <InventorySquareCrafting> row, List <GenericWorldItem> requirements, BlueprintStrictness strictness)
 				{
 						for (int i = 0; i < row.Count; i++) {
+								//always true in this case
+								row[i].HasBlueprint = true;
 								if (requirements[i] == null || requirements[i].IsEmpty) {
 										row[i].DisableForBlueprint();
 								} else {
 										row[i].EnableForBlueprint(requirements[i], strictness);
-										Blueprints.Get.IsCraftable (requirements[i], out row[i].RequirementBlueprint, false);//TODO change this to true eventually to cover revealed
+										Blueprints.Get.IsCraftable(requirements[i], out row[i].RequirementBlueprint, false);//TODO change this to true eventually to cover revealed
 								}
 								row[i].RefreshRequest();
 						}
@@ -142,8 +144,8 @@ namespace Frontiers.World.Gameplay
 				{
 						numCraftableItems = Globals.NumItemsPerStack;
 						if (CheckRequirementsRow(blueprint, rows[0], ref numCraftableItems)
-						 && CheckRequirementsRow(blueprint, rows[1], ref numCraftableItems)
-						 && CheckRequirementsRow(blueprint, rows[2], ref numCraftableItems)) {
+						    && CheckRequirementsRow(blueprint, rows[1], ref numCraftableItems)
+						    && CheckRequirementsRow(blueprint, rows[2], ref numCraftableItems)) {
 								resultSquare.RequirementsMet = true;
 						} else {
 								numCraftableItems = 0;
@@ -191,7 +193,7 @@ namespace Frontiers.World.Gameplay
 				public static bool ConsumeRequirement(WIStack itemStack, IWIBase item, GenericWorldItem template)
 				{
 						bool result = false;
-						if (Stacks.Can.Stack(item.StackName, template.StackName)) {
+						if (Stacks.Can.Stack(item, template)) {
 								Stacks.Pop.AndToss(itemStack);
 								result = true;
 						} else if (item.Is <LiquidContainer>()) {
@@ -252,16 +254,24 @@ namespace Frontiers.World.Gameplay
 						}
 
 						if (Flags.Check((uint)strictness, (uint)BlueprintStrictness.PrefabName, Flags.CheckType.MatchAny)) {
-								prefabReqsMet = string.Equals(mCheckRequirements.PrefabName, template.PrefabName);
+								prefabReqsMet = string.Equals(mCheckRequirements.PrefabName, template.PrefabName, StringComparison.InvariantCultureIgnoreCase);
 						}
 						if (Flags.Check((uint)strictness, (uint)BlueprintStrictness.StackName, Flags.CheckType.MatchAny)) {
-								stackReqsMet = Stacks.Can.Stack(mCheckRequirements.StackName, template.StackName);
+								stackReqsMet = string.Equals(mCheckRequirements.StackName, template.StackName, StringComparison.InvariantCultureIgnoreCase);
 						}
 						if (Flags.Check((uint)strictness, (uint)BlueprintStrictness.StateName, Flags.CheckType.MatchAny)) {
-								stateReqsMet = string.Equals(mCheckRequirements.State, template.State);
+								if ((string.IsNullOrEmpty(mCheckRequirements.State) || string.IsNullOrEmpty(template.State)) || (mCheckRequirements.State.Equals("Default") || template.State.Equals("Default"))) {
+										stateReqsMet = true;
+								} else {
+										stateReqsMet = string.Equals(mCheckRequirements.State, template.State, StringComparison.InvariantCultureIgnoreCase);
+								}
 						}
 						if (Flags.Check((uint)strictness, (uint)BlueprintStrictness.Subcategory, Flags.CheckType.MatchAny)) {
-								subCatReqsMet = string.Equals(mCheckRequirements.Subcategory, template.Subcategory);
+								if (string.IsNullOrEmpty(mCheckRequirements.Subcategory) || string.IsNullOrEmpty(template.Subcategory)) {
+										subCatReqsMet = true;
+								} else {
+										subCatReqsMet = string.Equals(mCheckRequirements.Subcategory, template.Subcategory, StringComparison.InvariantCultureIgnoreCase);
+								}
 						}
 						//Debug.Log (template.PrefabName + " prefab reqs met: " + prefabReqsMet.ToString () + "\nstackReqsMet: " + stackReqsMet.ToString () + "\nstateReqsMet: " + stateReqsMet.ToString () + "\nsubCatReqsMet: " + subCatReqsMet.ToString ());
 						//max items to craft is the instance weight divided by instance weight of the template
@@ -272,7 +282,7 @@ namespace Frontiers.World.Gameplay
 				}
 
 				protected static GenericWorldItem mCheckRequirements;
-// = new GenericWorldItem ();
+				// = new GenericWorldItem ();
 				protected float mProgressValue = 0f;
 		}
 

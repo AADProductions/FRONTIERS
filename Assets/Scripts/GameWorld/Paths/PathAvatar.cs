@@ -2,11 +2,11 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers;
-using Frontiers.World;
-using Frontiers.World.Locations;
-using Frontiers.Data;
 using System.Xml.Serialization;
+using Frontiers;
+using Frontiers.Data;
+using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -59,7 +59,7 @@ namespace Frontiers.World
 						PathMarker pathMarker = null;
 						if (location.worlditem.Is <PathMarker> (out pathMarker)) {
 							pathMarker.State.NumTimesEdited++;
-							pathMarker.State.TimeLastEdited = WorldClock.Time;
+							pathMarker.State.TimeLastEdited = WorldClock.AdjustedRealTime;
 						}
 
 						Player.Local.GroundPath.Follower.SuspendNextFrame = true;
@@ -385,34 +385,6 @@ namespace Frontiers.World
 				protected bool mRebuildOnRefresh = false;
 		}
 
-		public enum PathMarkerSize
-		{
-				Path,
-				Street,
-				Road,
-		}
-
-		[Flags]
-		public enum PathMarkerType
-		{
-				None = 0,
-				Marker = 1,
-				Cross = 2,
-				Location = 4,
-				Campsite = 8,
-				Path = 16,
-				Street = 32,
-				Road = 64,
-				Landmark = 128,
-				PathMarker = Marker | Path,
-				CrossMarker = Cross | Path,
-				StreetMarker = Marker | Street,
-				CrossStreet = Cross | Street,
-				RoadMarker = Marker | Road,
-				CrossRoads = Cross | Road,
-				PathOrigin = Cross | Campsite | Location | Landmark,
-		}
-
 		[Serializable]
 		public class SegmentState
 		{
@@ -452,7 +424,7 @@ namespace Frontiers.World
 				[XmlIgnore]
 				[NonSerialized]
 				[HideInInspector]
-				public Frontiers.World.Locations.PathMarker Owner;
+				public PathMarker Owner;
 				[XmlIgnore]
 				[NonSerialized]
 				[HideInInspector]
@@ -513,7 +485,7 @@ namespace Frontiers.World
 								return Type != PathMarkerType.Location;
 						}
 				}
-
+				[BitMaskAttribute (typeof(PathMarkerType))]
 				public PathMarkerType Type = PathMarkerType.PathMarker;
 				public MobileReference Location = MobileReference.Empty;
 				public VisitableState Visitable = new VisitableState();

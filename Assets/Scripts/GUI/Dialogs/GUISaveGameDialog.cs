@@ -12,6 +12,7 @@ namespace Frontiers.GUI
 				public UILabel Message;
 				public GameObject SaveButton;
 				public GameObject DeleteButton;
+				public GameObject CancelButton;
 				public UILabel SaveButtonLabel;
 				public UIInput GameCreateResult;
 				//public UILabel CreateMessageLabel;
@@ -30,9 +31,16 @@ namespace Frontiers.GUI
 						gameBrowserObject.EditButton.functionName = "OnClickBrowserObject";
 
 						gameBrowserObject.Name.text = Colors.ColorWrap(
+								editObject.Name,
+								Colors.Get.MenuButtonTextColorDefault) + "\n" + Colors.ColorWrap(editObject.DifficultyName 
+										+ "Saved " + editObject.LastTimeSaved.ToLongDateString().ToLower() 
+										+ "\nat " + editObject.LastTimeSaved.ToLongTimeString().ToLower() + " (Hours Played: " + WorldClock.SecondsToHours (editObject.GameTimeOffset).ToString ("0.#") + ")",
+										Colors.Darken(Colors.Get.MenuButtonTextColorDefault));
+
+						/*gameBrowserObject.Name.text = Colors.ColorWrap(
 								editObject.Name, Colors.Get.MenuButtonTextColorDefault) + "\n" +
 						Colors.ColorWrap(editObject.DifficultyName + "Saved " + editObject.LastTimeSaved.ToLongDateString().ToLower() + "\nat " + editObject.LastTimeSaved.ToLongTimeString().ToLower(),
-								Colors.Darken(Colors.Get.MenuButtonTextColorDefault));
+								Colors.Darken(Colors.Get.MenuButtonTextColorDefault));*/
 						gameBrowserObject.Icon.atlas = Mats.Get.IconsAtlas;
 						gameBrowserObject.Icon.spriteName = "IconMission";
 
@@ -125,9 +133,14 @@ namespace Frontiers.GUI
 				public void OnClickSaveButton()
 				{
 						if (ValidNewGame || ValidExistingGame) {
+								CancelButton.SendMessage("SetDisabled");
 								SaveButton.SendMessage("SetDisabled");
 								StartCoroutine(SaveGameOverTime());
 						}
+				}
+
+				public void OnClickCancelButton(){
+						ActionCancel(WorldClock.RealTime);
 				}
 
 				public void OnClickDeleteButton()
@@ -175,7 +188,7 @@ namespace Frontiers.GUI
 								yield return null;
 						}
 						//this saves the current game and profile, naming it properly
-						Profile.Get.SaveImmediately(Profile.ProfileComponents.All);
+						Profile.Get.SaveImmediately(ProfileComponents.All);
 						//this copies _Live to the game of our choice
 						Mods.Get.SaveLiveGame(GameCreateResult.text);
 						Finish();

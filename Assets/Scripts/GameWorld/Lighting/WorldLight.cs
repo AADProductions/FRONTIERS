@@ -374,10 +374,13 @@ namespace Frontiers.World
 				public void TurnOff()
 				{
 						mIsOff = true;
+						gameObject.layer = Globals.LayerNumHidden;
 				}
 
 				public void Enable(bool isEnabled)
 				{
+						gameObject.layer = Globals.LayerNumAwarenessLight;
+
 						if (SpotlightTop != null) {
 								SpotlightTop.enabled = isEnabled;
 						}

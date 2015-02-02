@@ -42,17 +42,17 @@ namespace Frontiers.World
 						}
 				}
 
-				public override void PopulateOptionsList(System.Collections.Generic.List<GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(System.Collections.Generic.List<WIListOption> options, List <string> message)
 				{
 						if (!string.IsNullOrEmpty(RequireState) && worlditem.State != RequireState) {
 								return;
 						}
-						options.Add(new GUIListOption(MountOptionText, "LocalPlayerMount"));
+						options.Add(new WIListOption(MountOptionText, "LocalPlayerMount"));
 				}
 
 				public void OnPlayerUseWorldItemSecondary(object result)
 				{
-						OptionsListDialogResult dialogResult = result as OptionsListDialogResult;
+						WIListResult dialogResult = result as WIListResult;
 						switch (dialogResult.SecondaryResult) {
 								case "LocalPlayerMount":
 										Mount(Player.Local);
@@ -113,13 +113,6 @@ namespace Frontiers.World
 						transform.position = position;
 						transform.rotation = Quaternion.Lerp(transform.rotation, rotation, (float)(WorldClock.ARTDeltaTime * RotationInertia));
 				}
-		}
-
-		public enum PlayerMountType
-		{
-				Air,
-				Water,
-				Ground,
 		}
 
 		public class VehicleState

@@ -30,7 +30,7 @@ namespace Frontiers.World
 						}
 						Cutscene.CurrentCutsceneAnchor = gameObject;
 						Application.LoadLevelAdditive(State.CutsceneName);
-						yield return new WaitForSeconds(1.0f);
+						yield return WorldClock.WaitForRTSeconds(1.0f);
 						Finish();
 						yield break;
 				}

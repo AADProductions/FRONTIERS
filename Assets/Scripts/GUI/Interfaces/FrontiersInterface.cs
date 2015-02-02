@@ -138,11 +138,4 @@ namespace Frontiers.GUI
 				protected bool mDestroyed = false;
 				protected bool mFinished = false;
 		}
-
-		public enum InterfaceType
-		{
-				Secondary,
-				Primary,
-				Base,
-		}
 }

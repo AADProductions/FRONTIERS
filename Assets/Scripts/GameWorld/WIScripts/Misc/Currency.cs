@@ -6,35 +6,6 @@ using System.Xml.Serialization;
 
 namespace Frontiers.World
 {
-		public interface IBank
-		{
-				Action RefreshAction { get; set; }
-
-				void AddBaseCurrencyOfType(float numBaseCurrency, WICurrencyType type);
-
-				void AddBaseCurrencyOfType(int numBaseCurrency, WICurrencyType type);
-
-				void Add(int numCurrency, WICurrencyType type);
-
-				bool TryToRemove(int numToRemove, ref int numRemoved, WICurrencyType type);
-
-				void Absorb(IBank otherBank);
-
-				void Clear();
-
-				int BaseCurrencyValue { get; }
-
-				int Bronze { get; set; }
-
-				int Silver { get; set; }
-
-				int Gold { get; set; }
-
-				int Lumen { get; set; }
-
-				int Warlock { get; set; }
-		}
-
 		[Serializable]
 		public class Bank : IBank
 		{
@@ -180,60 +151,126 @@ namespace Frontiers.World
 						bank.RefreshAction.SafeInvoke();
 				}
 
-				public bool TryToRemove(int numToRemove, ref int numRemoved, WICurrencyType type)
-				{
-						if (numToRemove == 0) {
-								numRemoved = 0;
-								return true;
-						}
-
-						bool result = false;
-						switch (type) {
-								case WICurrencyType.A_Bronze:
-										result = TryToRemove(numToRemove, ref mBronze, ref numRemoved);
-										break;
-				
-								case WICurrencyType.B_Silver:
-										result = TryToRemove(numToRemove, ref mSilver, ref numRemoved);
-										break;
-				
-								case WICurrencyType.C_Gold:
-										result = TryToRemove(numToRemove, ref mGold, ref numRemoved);
-										break;
-				
-								case WICurrencyType.D_Luminite:
-										result = TryToRemove(numToRemove, ref mLumen, ref numRemoved);
-										break;
-				
-								case WICurrencyType.E_Warlock:
-										result = TryToRemove(numToRemove, ref mWarlock, ref numRemoved);
-										break;
-				
-								default:
-										break;
-						}
-						RefreshAction.SafeInvoke();
-						return result;
+				public bool TryToRemove(int numToRemove, WICurrencyType type) {
+						return TryToRemove(numToRemove, type, true);
 				}
 
-				protected bool TryToRemove(int numToRemove, ref int numCurrency, ref int numRemoved)
-				{
-						if (numToRemove == 0 || numCurrency == 0) {
-								numRemoved = 0;
+				public bool TryToRemove(int numToRemove, WICurrencyType type, bool makeChange)
+				{	
+						if (makeChange) {
+								return TryToRemove(Currency.ConvertToBaseCurrency(numToRemove, type));
+						} else if (numToRemove == 0) {
+								return true;
+						} else {
+								bool result = false;
+								switch (type) {
+										case WICurrencyType.A_Bronze:
+										default:
+												if (mBronze >= numToRemove) {
+														mBronze -= numToRemove;
+														result = true;
+												}
+												break;
+
+										case WICurrencyType.B_Silver:
+												if (mSilver >= numToRemove) {
+														mSilver -= numToRemove;
+														result = true;
+												}
+												break;
+
+										case WICurrencyType.C_Gold:
+												if (mGold >= numToRemove) {
+														mGold -= numToRemove;
+														result = true;
+												}
+												break;
+
+										case WICurrencyType.D_Luminite:
+												if (mLumen >= numToRemove) {
+														mLumen -= numToRemove;
+														result = true;
+												}
+												break;
+
+										case WICurrencyType.E_Warlock:
+												if (mWarlock >= numToRemove) {
+														mWarlock -= numToRemove;
+														result = true;
+												}
+												break;
+								}
+								if (result) {
+										RefreshAction.SafeInvoke();
+										OnMoneyRemoved.SafeInvoke();
+										return true;
+								}
+						}
+						return false;
+				}
+
+				public bool TryToRemove (int numBaseCurrency) {
+						if (numBaseCurrency == 0) {
+								return true;
+						}
+					
+						if (numBaseCurrency > BaseCurrencyValue) {
+								//there's no way we can make change for it
 								return false;
 						}
-			
-						if (numCurrency >= numToRemove) {
-								numRemoved = numToRemove;
-								numCurrency = numCurrency - numToRemove;
+
+						//back up our current values so we can roll back if we don't have enough
+						int bronze = mBronze;
+						int silver = mSilver;
+						int gold = mGold;
+						int lumen = mLumen;
+						int warlock = mWarlock;
+
+						//keep converting stuff to base currency until we have enough to make change
+						while (bronze < numBaseCurrency) {
+								if (!ConvertNextAvailableToBaseCurrency(ref bronze, ref silver, ref gold, ref lumen, ref warlock)) {
+										//whoops we don't have enough
+										break;
+								}
+						}
+						//if we're here and we have the bronze, we were successful
+						if (bronze >= numBaseCurrency) {
+								bronze -= numBaseCurrency;
+								//copy all our temp values to our actual values
+								mBronze = bronze;
+								mSilver = silver;
+								mGold = gold;
+								mLumen = lumen;
+								mWarlock = warlock;
 								RefreshAction.SafeInvoke();
 								OnMoneyRemoved.SafeInvoke();
 								return true;
-						} else {//if currency is less
-								numRemoved = numCurrency;
-								numCurrency = 0;
+						} else {
+								//we can't make change so don't copy anything
+								//nothing has changed
 								return false;
 						}
+				}
+
+				protected bool ConvertNextAvailableToBaseCurrency (ref int baseCurrency, ref int silver, ref int gold, ref int lumen, ref int warlock) {
+						if (silver > 0) {
+								silver--;
+								baseCurrency += Globals.BaseValueSilver;
+								return true;
+						} else if (gold > 0) {
+								gold--;
+								baseCurrency += Globals.BaseValueGold;
+								return true;
+						} else if (lumen > 0) {
+								lumen--;
+								baseCurrency += Globals.BaseValueLumen;
+								return true;
+						} else if (warlock > 0) {
+								warlock--;
+								baseCurrency += Globals.BaseValueWarlock;
+								return true;
+						}
+						return false;
 				}
 
 				public int BaseCurrencyValue {
@@ -449,15 +486,5 @@ namespace Frontiers.World
 				protected static GenericWorldItem gGoldIGenericWorldItem;
 				protected static GenericWorldItem gLumenGenericWorldItem;
 				protected static GenericWorldItem gWarlockGenericWorldItem;
-		}
-
-		public enum WICurrencyType
-		{
-				None,
-				A_Bronze,
-				B_Silver,
-				C_Gold,
-				D_Luminite,
-				E_Warlock,
 		}
 }

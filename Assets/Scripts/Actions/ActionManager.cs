@@ -27,7 +27,9 @@ namespace Frontiers
 				public static int LastMouseClick = 0;
 				public static bool AvailableKeyDown = false;
 				public static KeyCode LastKey = KeyCode.None;
+				public static string LastInputString = string.Empty;
 				public static InputControlType LastControllerAction = InputControlType.None;
+				public static bool InputFieldActive = false;
 				//used for tracking mouse & free look position
 				public InputControlType MouseXAxis;
 				public InputControlType MouseYAxis;
@@ -51,6 +53,7 @@ namespace Frontiers
 				public List <InputControlType> DefaultAvailableAxis = new List<InputControlType>();
 				public List <InputControlType> DefaultAvailableActions = new List<InputControlType>();
 				public List <ActionSetting.MouseAction> DefaultAvailableMouseButtons = new List<ActionSetting.MouseAction>();
+				public InputDevice Device = InputDevice.Null;
 
 				public void GetAvailableBindings(List<ActionSetting> settings)
 				{
@@ -82,6 +85,37 @@ namespace Frontiers
 						ClearSettings();
 						
 						CurrentActionSettings.AddRange(newSettings);
+
+						if (Profile.Get.CurrentPreferences.Controls.UseCustomDeadZoneSettings) {
+								//set the dead zones on current controllers
+								Device.GetControl(InputControlType.LeftStickX).LowerDeadZone = Globals.ControllerDeadZoneSizeLStickLower;
+								Device.GetControl(InputControlType.LeftStickX).UpperDeadZone = Globals.ControllerDeadZoneSizeLStickUpper;
+								Device.GetControl(InputControlType.LeftStickY).LowerDeadZone = Globals.ControllerDeadZoneSizeLStickLower;
+								Device.GetControl(InputControlType.LeftStickY).UpperDeadZone = Globals.ControllerDeadZoneSizeLStickUpper;
+								Device.GetControl(InputControlType.LeftStickX).Sensitivity = Globals.ControllerSensitivityLStick;
+								Device.GetControl(InputControlType.LeftStickY).Sensitivity = Globals.ControllerSensitivityLStick;
+
+								Device.GetControl(InputControlType.RightStickX).LowerDeadZone = Globals.ControllerDeadZoneSizeRStickLower;
+								Device.GetControl(InputControlType.RightStickX).UpperDeadZone = Globals.ControllerDeadZoneSizeRStickUpper;
+								Device.GetControl(InputControlType.RightStickY).LowerDeadZone = Globals.ControllerDeadZoneSizeRStickLower;
+								Device.GetControl(InputControlType.RightStickY).UpperDeadZone = Globals.ControllerDeadZoneSizeRStickUpper;
+								Device.GetControl(InputControlType.RightStickX).Sensitivity = Globals.ControllerSensitivityRStick;
+								Device.GetControl(InputControlType.RightStickY).Sensitivity = Globals.ControllerSensitivityRStick;
+
+								Device.GetControl(InputControlType.DPadLeft).LowerDeadZone = Globals.ControllerDeadZoneSizeDPadLower;
+								Device.GetControl(InputControlType.DPadLeft).UpperDeadZone = Globals.ControllerDeadZoneSizeDPadUpper;
+								Device.GetControl(InputControlType.DPadRight).LowerDeadZone = Globals.ControllerDeadZoneSizeDPadLower;
+								Device.GetControl(InputControlType.DPadRight).UpperDeadZone = Globals.ControllerDeadZoneSizeDPadUpper;
+								Device.GetControl(InputControlType.DPadLeft).Sensitivity = Globals.ControllerSensitivityDPad;
+								Device.GetControl(InputControlType.DPadRight).Sensitivity = Globals.ControllerSensitivityDPad;
+
+								Device.GetControl(InputControlType.DPadUp).LowerDeadZone = Globals.ControllerDeadZoneSizeDPadLower;
+								Device.GetControl(InputControlType.DPadUp).UpperDeadZone = Globals.ControllerDeadZoneSizeDPadUpper;
+								Device.GetControl(InputControlType.DPadDown).LowerDeadZone = Globals.ControllerDeadZoneSizeDPadLower;
+								Device.GetControl(InputControlType.DPadDown).UpperDeadZone = Globals.ControllerDeadZoneSizeDPadUpper;
+								Device.GetControl(InputControlType.DPadUp).Sensitivity = Globals.ControllerSensitivityDPad;
+								Device.GetControl(InputControlType.DPadDown).Sensitivity = Globals.ControllerSensitivityDPad;
+						}
 
 						//check for mouse and movement axis
 						//also add available keys for when we want to rebind them
@@ -139,9 +173,11 @@ namespace Frontiers
 						AddBindings();
 						AddDaisyChains();
 						//create the new device that uses these settings
+						InputManager.DetachDevice(Device);
 						CreateKeyboardAndMouseProfile();
 						if (KeyboardAndMouseProfile != null) {
-								InputManager.AttachDevice(new UnityInputDevice(KeyboardAndMouseProfile));
+								Device = new UnityInputDevice(KeyboardAndMouseProfile);
+								InputManager.AttachDevice(Device);
 						}
 						OnPushSettings();
 				}
@@ -249,7 +285,7 @@ namespace Frontiers
 				public void AddDaisyChain(T action, T daisyChainedAction)
 				{
 						if (action.Equals(daisyChainedAction)) {
-								Debug.LogError("Can't daisy chain the same action");
+								//Debug.LogError("Can't daisy chain the same action");
 								return;
 						}
 						//TODO check for third-level daisy chains?
@@ -380,15 +416,15 @@ namespace Frontiers
 						CursorRightClickHold = Input.GetMouseButton(1);
 						CursorRightClickUp = Input.GetMouseButtonUp(1);
 						//custom cursor clicks
-						if (CursorClickAction != InputControlType.None) {
-								CursorClickDown |= InputManager.ActiveDevice.GetControl(CursorClickAction).WasPressed;
-								CursorClickHold |= InputManager.ActiveDevice.GetControl(CursorClickAction).IsPressed;
-								CursorClickUp |= InputManager.ActiveDevice.GetControl(CursorClickAction).WasReleased;
+						if (CursorClickAction != InputControlType.None && !InputFieldActive) {
+								CursorClickDown |= (Device.GetControl(CursorClickAction).WasPressed | InputManager.ActiveDevice.GetControl (CursorClickAction).WasPressed);
+								CursorClickHold |= (Device.GetControl(CursorClickAction).IsPressed | InputManager.ActiveDevice.GetControl (CursorClickAction).IsPressed);
+								CursorClickUp |= (Device.GetControl(CursorClickAction).WasReleased | InputManager.ActiveDevice.GetControl (CursorClickAction).WasReleased);
 						}
-						if (CursorRightClickAction != InputControlType.None) {
-								CursorRightClickDown |= InputManager.ActiveDevice.GetControl(CursorRightClickAction).WasPressed;
-								CursorRightClickHold |= InputManager.ActiveDevice.GetControl(CursorRightClickAction).IsPressed;
-								CursorRightClickUp |= InputManager.ActiveDevice.GetControl(CursorClickAction).WasReleased;
+						if (CursorRightClickAction != InputControlType.None && !InputFieldActive) {
+								CursorRightClickDown |= (Device.GetControl(CursorRightClickAction).WasPressed | InputManager.ActiveDevice.GetControl (CursorRightClickAction).WasPressed);
+								CursorRightClickHold |= (Device.GetControl(CursorRightClickAction).IsPressed | InputManager.ActiveDevice.GetControl (CursorRightClickAction).IsPressed);
+								CursorRightClickUp |= (Device.GetControl(CursorRightClickAction).WasReleased | InputManager.ActiveDevice.GetControl (CursorRightClickAction).WasReleased);
 						}
 						//left clicks take priority
 						if (CursorClickDown) {
@@ -421,9 +457,9 @@ namespace Frontiers
 						}
 
 						/*if (ScrollWheelAxis != InputControlType.None) {
-								RawScrollWheelAxis = (float)InputManager.ActiveDevice.GetControl(ScrollWheelAxis).Value;
+								RawScrollWheelAxis = (float)Device.GetControl(ScrollWheelAxis).Value;
 						} else {*/
-								RawScrollWheelAxis = Input.GetAxisRaw("Mouse ScrollWheel");
+						RawScrollWheelAxis = Input.GetAxis("Mouse ScrollWheel");
 						//}
 
 						TimeStamp = WorldClock.AdjustedRealTime;
@@ -435,6 +471,7 @@ namespace Frontiers
 								if (Input.GetKeyDown(DefaultAvailableKeys[i])) {
 										AvailableKeyDown = true;
 										LastKey = DefaultAvailableKeys[i];
+										LastInputString = Input.inputString;
 										break;
 								}
 						}
@@ -443,9 +480,11 @@ namespace Frontiers
 								return;
 						}
 
-						CheckKeyDownMappings();
-						CheckKeyHoldMappings();
-						CheckKeyUpMappings();
+						if (!InputFieldActive) {
+								CheckKeyDownMappings();
+								CheckKeyHoldMappings();
+								CheckKeyUpMappings();
+						}
 						CheckAxisChanges();
 						OnUpdate();
 				}
@@ -458,15 +497,17 @@ namespace Frontiers
 
 				protected void Send(T action, double timeStamp)
 				{
-						if (HasInterfaceReceiver && InterfaceReceiver(action, TimeStamp)) {//send to interface first
-								if (HasPlayerReceiver) {
-										PlayerReceiver(action, TimeStamp);//if that doesn't score a hit, send to player
-										//see if any actions are supposed to be daisy-chained
-										List <T> daisyChainedActions = null;
-										//TODO prevent endless daisy chains!
-										if (mDaisyChains.TryGetValue(action, out daisyChainedActions)) {
-												for (int i = 0; i < daisyChainedActions.Count; i++) {
-														Send(daisyChainedActions[i], timeStamp);
+						if (HasInterfaceReceiver) {
+								if (InterfaceReceiver(action, TimeStamp)) {//send to interface first
+										if (HasPlayerReceiver) {
+												PlayerReceiver(action, TimeStamp);//if that doesn't score a hit, send to player
+												//see if any actions are supposed to be daisy-chained
+												List <T> daisyChainedActions = null;
+												//TODO prevent endless daisy chains!
+												if (mDaisyChains.TryGetValue(action, out daisyChainedActions)) {
+														for (int i = 0; i < daisyChainedActions.Count; i++) {
+																Send(daisyChainedActions[i], timeStamp);
+														}
 												}
 										}
 								}
@@ -476,13 +517,14 @@ namespace Frontiers
 				protected void CheckKeyDownMappings()
 				{
 						var enumerator = mKeyDownMappings.GetEnumerator();
+						//first pass
 						while (enumerator.MoveNext()) {
-								//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyDownMappings) {
 								keyMapping = enumerator.Current;
-								if (InputManager.ActiveDevice.GetControl(keyMapping.Key).WasPressed) {
-										//Debug.Log("Key " + keyMapping.Key.ToString() + " was pressed");
+								if (Device.GetControl(keyMapping.Key).WasPressed || InputManager.ActiveDevice.GetControl (keyMapping.Key).WasPressed) {
+										//Debug.Log("Key " + keyMapping.Key.ToString() + " was pressed in " + GetType().Name);
 										LastControllerAction = keyMapping.Key;
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
+												//Debug.Log("Sending " + keyMapping.Value[i].ToString() + " in " + GetType().Name);
 												Send(keyMapping.Value[i], TimeStamp);
 										}
 								}
@@ -495,7 +537,7 @@ namespace Frontiers
 						while (enumerator.MoveNext()) {
 								//foreach (KeyValuePair<KeyCode, List<T>> keyMapping in mKeyHoldMappings) {
 								keyMapping = enumerator.Current;
-								if (InputManager.ActiveDevice.GetControl(keyMapping.Key).IsPressed) {
+								if (Device.GetControl(keyMapping.Key).IsPressed || InputManager.ActiveDevice.GetControl (keyMapping.Key).IsPressed) {
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
 												Send(keyMapping.Value[i], TimeStamp);
 										}
@@ -509,7 +551,7 @@ namespace Frontiers
 						while (enumerator.MoveNext()) {
 								//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyUpMappings) {
 								keyMapping = enumerator.Current;
-								if (InputManager.ActiveDevice.GetControl(keyMapping.Key).WasReleased) {
+								if (Device.GetControl(keyMapping.Key).WasReleased || InputManager.ActiveDevice.GetControl (keyMapping.Key).WasReleased) {
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
 												Send(keyMapping.Value[i], TimeStamp);
 										}
@@ -523,8 +565,9 @@ namespace Frontiers
 						while (enumerator.MoveNext()) {
 								//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyUpMappings) {
 								keyMapping = enumerator.Current;
-								InputControl c = InputManager.ActiveDevice.GetControl(keyMapping.Key);								
-								if (c.HasChanged || c.Value != 0f) {
+								InputControl d = InputManager.ActiveDevice.GetControl(keyMapping.Key);
+								InputControl c = Device.GetControl(keyMapping.Key);								
+								if ((c.HasChanged || c.Value != 0f) || (d.HasChanged || d.Value != null)) {
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
 												Send(keyMapping.Value[i], TimeStamp);
 										}
@@ -535,8 +578,9 @@ namespace Frontiers
 						while (enumerator.MoveNext()) {
 								//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyUpMappings) {
 								keyMapping = enumerator.Current;
-								InputControl c = InputManager.ActiveDevice.GetControl(keyMapping.Key);								
-								if (c.Value < 0f) {
+								InputControl d = InputManager.ActiveDevice.GetControl(keyMapping.Key);
+								InputControl c = Device.GetControl(keyMapping.Key);								
+								if (c.Value < 0f || d.Value < 0f) {
 										//Debug.Log("Negative mapping " + c.ToString());
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
 												Send(keyMapping.Value[i], TimeStamp);
@@ -548,8 +592,9 @@ namespace Frontiers
 						while (enumerator.MoveNext()) {
 								//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyUpMappings) {
 								keyMapping = enumerator.Current;
-								InputControl c = InputManager.ActiveDevice.GetControl(keyMapping.Key);								
-								if (c.Value > 0f) {
+								InputControl d = InputManager.ActiveDevice.GetControl(keyMapping.Key);
+								InputControl c = Device.GetControl(keyMapping.Key);								
+								if (c.Value > 0f || d.Value > 0f) {
 										//Debug.Log("Positive mapping " + c.ToString());
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
 												Send(keyMapping.Value[i], TimeStamp);
@@ -656,6 +701,9 @@ namespace Frontiers
 						DefaultAvailableKeys.Add(KeyCode.RightBracket);
 						DefaultAvailableKeys.Add(KeyCode.RightControl);
 						DefaultAvailableKeys.Add(KeyCode.RightShift);
+
+						DefaultAvailableKeys.Add(KeyCode.Delete);
+						DefaultAvailableKeys.Add(KeyCode.Backspace);
 
 						DefaultAvailableAxis.Add(InputControlType.DPadX);
 						DefaultAvailableAxis.Add(InputControlType.DPadY);

@@ -68,19 +68,31 @@ namespace Frontiers.World
 						}
 				}
 
-				public void CancelUnload()
+				public bool TryToCancelUnload()
 				{
 						if (Is(WILoadState.PreparingToUnload)) {
-								//we can only cancel unload if we're preparing
-								//if we've already started uloading then it's too late
-						}
-
-						LoadState = WILoadState.Initialized;//???this isn't guaranteed to be true! TODO
-						IEnumerator <WIScript> enumerator = mScripts.Values.GetEnumerator();
-						while (enumerator.MoveNext ()) {
-								//foreach (WIScript script in mScripts.Values) {
-								//we don't need to check them all
-								enumerator.Current.CancelUnload();
+								//if we've only started preparing then we can cancel and be ok
+								IEnumerator <WIScript> enumerator = mScripts.Values.GetEnumerator();
+								while (enumerator.MoveNext()) {
+										//if any of our scripts veto the cancel request we're boned
+										if (!enumerator.Current.TryToCancelUnload()) {
+												//when wiscripts are asked to try and cancel
+												//they're guaranteed not to halt any process that's necessary for unloading
+												//so we can bail on the first false we hit
+												//without asking the others to start unloading again
+												return false;
+										}
+								}
+								//if we've gotten this far then we've successfully cancelled our unload
+								LoadState = WILoadState.Initialized;
+								return true;
+						} else if (Is(WILoadState.Unloaded | WILoadState.Unloaded)) {
+								//but if we've actually started uloading then we're boned
+								return false;
+						} else {
+								//return true since by not unloading in the first place
+								//it's the same result as canceling the unload
+								return true;
 						}
 				}
 
@@ -180,9 +192,6 @@ namespace Frontiers.World
 								if (IsTemplate || string.IsNullOrEmpty(Props.Name.StackName)) {
 										Props.Name.StackName = WorldItems.CleanWorldItemName(Props.Name.PrefabName);
 								}
-								if (HasStates) {
-										return States.StackName(Props.Name.StackName);
-								}
 								return Props.Name.StackName;
 						}
 				}
@@ -244,7 +253,9 @@ namespace Frontiers.World
 
 				public void Refresh()
 				{
-						if (!Is(WILoadState.Initialized | WILoadState.PreparingToUnload | WILoadState.Unloading) || Group == null) {
+						if (!Is(WILoadState.Initialized) || Group == null) {
+								//while we're initializing or unloading
+								//we don't want our scripts doing anything
 								return;
 						}
 

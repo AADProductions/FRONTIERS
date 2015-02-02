@@ -5,7 +5,10 @@ using Frontiers;
 using Frontiers.Gameplay;
 using Frontiers.World.Gameplay;
 using System.Collections.Generic;
+using Frontiers;
 using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
+
 //dev tool
 public class MissionTestingUtility : MonoBehaviour
 {
@@ -26,10 +29,6 @@ public class MissionTestingUtility : MonoBehaviour
 
 		public void Update()
 		{
-				if (Input.GetKeyDown(KeyCode.F5)) {
-						ShowEditor = !ShowEditor;
-				}
-
 				OffsetX = (int)(Screen.width * 0.75f);
 				OffsetY = (int)(Screen.height * 0.1f);
 
@@ -73,7 +72,7 @@ public class MissionTestingUtility : MonoBehaviour
 				GUILayout.Label("Conversation switcher:");
 				bool seesSomething = false;
 				if (Player.Local.Focus.IsFocusingOnSomething) {
-						if (Player.Local.Focus.LastFocusedObject.IOIType == Frontiers.World.ItemOfInterestType.WorldItem) {
+						if (Player.Local.Focus.LastFocusedObject.IOIType == Frontiers.ItemOfInterestType.WorldItem) {
 								if (character == null) {
 										if (Player.Local.Focus.LastFocusedObject.worlditem.Is <Character>(out character)) {
 												talkative = character.worlditem.Get <Talkative>();

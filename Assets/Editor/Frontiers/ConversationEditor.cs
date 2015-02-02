@@ -68,7 +68,7 @@ public class ConversationEditor : Editor
 
 				GUI.color = Color.cyan;
 				if (GUILayout.Button("(Refresh)", miniButtonStyle)) {
-						conversation.Refresh();
+						conversation.RefreshImmediately();
 				}
 				GUI.color = Color.Lerp(Color.cyan, Color.gray, 0.5f);
 				GUILayout.BeginHorizontal();

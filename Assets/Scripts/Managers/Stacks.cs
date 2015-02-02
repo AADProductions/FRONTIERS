@@ -328,27 +328,38 @@ namespace Frontiers
 
 				public static class Can
 				{
-						public static bool Stack(string item1Name, string item2Name)
-						{	//get rid of (state)
-								//also this generates a stupid amount of garbage
-								item1Name = System.Text.RegularExpressions.Regex.Replace(item1Name, @" ?\(.*?\)", string.Empty).Trim();
-								item2Name = System.Text.RegularExpressions.Regex.Replace(item2Name, @" ?\(.*?\)", string.Empty).Trim();
-								if (string.Equals(item1Name, item2Name, System.StringComparison.InvariantCultureIgnoreCase)) {
-										return true;
+						public static bool Stack(IWIBase item1, string item2Name)
+						{
+								return string.Equals(item1.StackName, item2Name, System.StringComparison.InvariantCultureIgnoreCase);
+						}
+
+						public static bool Stack(GenericWorldItem item1, string item2Name)
+						{
+								return string.Equals(item1.StackName, item2Name, System.StringComparison.InvariantCultureIgnoreCase);
+						}
+
+						public static bool Stack(IWIBase item1, IWIBase item2) {
+
+								if (item1.StackName.Equals(item2.StackName)) {
+										bool statesMatch = ((string.IsNullOrEmpty(item1.State) || string.IsNullOrEmpty(item2.State)) || (item1.State.Equals("Default") || item2.State.Equals("Default")));
+										bool subcatsMatch = ((string.IsNullOrEmpty(item1.Subcategory) || string.IsNullOrEmpty(item2.Subcategory)) || item1.Subcategory.Equals(item2.Subcategory));
+										return statesMatch && subcatsMatch;
 								}
 								return false;
 						}
 
 						public static bool Stack(IWIBase item1, GenericWorldItem item2)
 						{
-								return Stacks.Can.Stack(item1.StackName, item2.StackName);
+								return item1.StackName.Equals(item2.StackName) &&
+										((string.IsNullOrEmpty(item1.State) || string.IsNullOrEmpty(item2.State) || (item1.State.Equals(item2.State)))
+												&& (((string.IsNullOrEmpty (item1.Subcategory) || string.IsNullOrEmpty (item2.Subcategory)) || item1.Subcategory.Equals(item2.Subcategory))));
 						}
 
 						public static bool Stack(WIStack stack1, WIStack stack2)
 						{
 								if (stack1.HasTopItem) {
 										if (stack2.HasTopItem) {
-												return Stacks.Can.Stack(stack1.TopItem.StackName, stack2.TopItem.StackName);
+												return Stacks.Can.Stack(stack1.TopItem, stack2.TopItem);
 										}
 								}
 								//if either lacks a top item
@@ -359,7 +370,7 @@ namespace Frontiers
 						public static bool Stack(WIStack stack1, GenericWorldItem item)
 						{
 								if (stack1.HasTopItem) {
-										return Stacks.Can.Stack(stack1.TopItem.StackName, item.StackName);
+										return Stacks.Can.Stack(stack1.TopItem, item);
 								}
 								//if either lacks a top item
 								//then this will always be true
@@ -369,7 +380,7 @@ namespace Frontiers
 						public static bool Stack(WIStack stack1, IWIBase item)
 						{
 								if (stack1.HasTopItem) {
-										return Stacks.Can.Stack(stack1.TopItem.StackName, item.StackName);
+										return Stacks.Can.Stack(stack1.TopItem, item);
 								}
 								//if either lacks a top item
 								//then this will always be true
@@ -389,8 +400,8 @@ namespace Frontiers
 								} else {
 										switch (itemSize) {
 												case WISize.Huge:
-						//only containers that hold huge are nolimit,
-						//and we've already covered that possibility
+														//only containers that hold huge are nolimit,
+														//and we've already covered that possibility
 														break;
 
 												case WISize.Large:
@@ -508,7 +519,7 @@ namespace Frontiers
 								}
 
 								if (!toStack.IsEmpty) {
-										if (!Stacks.Can.Stack(newItem.StackName, toStack.TopItem.StackName)) {
+										if (!Stacks.Can.Stack(newItem, toStack.TopItem)) {
 												error = WIStackError.NotCompatible;
 												return false;
 										}
@@ -522,7 +533,7 @@ namespace Frontiers
 						public static bool Add(IWIBase item, WIStack toStack)
 						{
 								if (toStack.HasTopItem) {
-										return Stacks.Can.Stack(toStack.TopItem.StackName, item.StackName);
+										return Stacks.Can.Stack(toStack.TopItem, item);
 								}
 								return true;
 						}
@@ -553,10 +564,10 @@ namespace Frontiers
 												mClearTopItem.Clear();
 												stack.Items.RemoveAt(i);
 										} else if (mClearTopItem.Group != stack.Group) {
-												//Debug.Log("Item group wasn't the same as stack group, removing");
-												//if (mClearTopItem.Group != null && stack.Group != null) {
-												//
-												//}
+												Debug.Log("Item group wasn't the same as stack group, removing");
+												if (mClearTopItem.Group != null && stack.Group != null) {
+														Debug.Log("Group " + mClearTopItem.Group.name + " vs " + stack.Group.name);
+												}
 												stack.Items.RemoveAt(i);
 										}
 								}
@@ -847,6 +858,15 @@ namespace Frontiers
 								return containersList;
 						}
 
+						public static WIStackEnabler StackEnabler(WIStack enablerStack, WIGroup group)
+						{
+								WIStackEnabler enabler = new WIStackEnabler();
+								enabler.EnablerStack = enablerStack;
+								enabler.Group = group;
+								enabler.Initialize();
+								return enabler;
+						}
+
 						public static WIStackEnabler StackEnabler(WIStack enablerStack)
 						{
 								WIStackEnabler enabler = new WIStackEnabler();
@@ -874,6 +894,15 @@ namespace Frontiers
 								return enablerList;
 						}
 
+						public static List <WIStackEnabler> StackEnablers(List <WIStack> stackEnablers, WIGroup group)
+						{
+								List <WIStackEnabler> enablerList = new List<WIStackEnabler>();
+								for (int i = 0; i < stackEnablers.Count; i++) {
+										enablerList.Add(StackEnabler(stackEnablers[i], group));
+								}
+								return enablerList;
+						}
+
 						public static List <WIStackEnabler> StackEnablers(List <WIStack> stackEnablers)
 						{
 								List <WIStackEnabler> enablerList = new List<WIStackEnabler>();
@@ -895,20 +924,21 @@ namespace Frontiers
 								bool result = false;
 								if (stack.HasTopItem) {
 										topItem = stack.TopItem;
-										if (!topItem.IsWorldItem
-										&& WorldItems.CloneFromStackItem(topItem.GetStackItem(WIMode.Stacked), stack.Group, out newTopItem)) {
-												//set a few of the new top item's props so it behaves as expected
-												newTopItem.Props.Local.FreezeOnStartup = false;
-												newTopItem.Props.Local.Mode = WIMode.Frozen;
-												newTopItem.Props.Local.PreviousMode = WIMode.Stacked;
-												//now swap the top
-												if (Swap.Top(stack, newTopItem, true)) {//if it's not a world item
-														//and we're able to create a world item from the top item
-														//and we're able to set the top item to the new world item
-														result = true;
-														stack.Refresh();
-												} else {//TODO
-														//clean up created worlditem
+										if (!topItem.IsWorldItem) {
+												if (WorldItems.CloneFromStackItem(topItem.GetStackItem(WIMode.Stacked), stack.Group, out newTopItem)) {
+														//set a few of the new top item's props so it behaves as expected
+														newTopItem.Props.Local.FreezeOnStartup = false;
+														newTopItem.Props.Local.Mode = WIMode.Frozen;
+														newTopItem.Props.Local.PreviousMode = WIMode.Stacked;
+														//now swap the top
+														if (Swap.Top(stack, newTopItem, true)) {//if it's not a world item
+																//and we're able to create a world item from the top item
+																//and we're able to set the top item to the new world item
+																result = true;
+																stack.Refresh();
+														} else {//TODO
+																//clean up created worlditem
+														}
 												}
 										} else {//nothing to do here, wuhoo!
 												newTopItem = topItem.worlditem;

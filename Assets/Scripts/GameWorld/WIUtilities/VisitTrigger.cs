@@ -1,7 +1,8 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -25,7 +26,7 @@ namespace Frontiers.World
 
 				public void Awake()
 				{
-						gameObject.layer = Globals.LayerNumAwarenessBroadcaster;
+						gameObject.layer = Globals.LayerNumLocationBroadcaster;
 						if (VisitableCollider == null) {
 								VisitableCollider = gameObject.GetOrAdd <SphereCollider>();
 						}

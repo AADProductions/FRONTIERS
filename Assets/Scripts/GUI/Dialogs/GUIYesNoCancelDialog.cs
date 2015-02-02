@@ -58,7 +58,7 @@ namespace Frontiers.GUI
 				{
 						if (EditObject.DontShowInFutureCheckbox && !string.IsNullOrEmpty(EditObject.DialogName) && DoNotShowCheckbox.isChecked) {
 								Profile.Get.CurrentPreferences.HideDialogs.Add(EditObject.DialogName);
-								Profile.Get.SaveCurrent(Profile.ProfileComponents.Profile);
+								Profile.Get.SaveCurrent(ProfileComponents.Profile);
 						}
 						base.OnFinish();
 				}

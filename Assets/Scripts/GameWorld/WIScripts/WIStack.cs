@@ -35,6 +35,13 @@ namespace Frontiers
 						set {
 								//TODO set group on items (?)
 								mGroup = value;
+								if (mGroup != null) {
+										for (int i = 0; i < Items.Count; i++) {
+												if (Items[i] != null) {
+														Items[i].Group = mGroup;
+												}
+										}
+								}
 						}
 				}
 

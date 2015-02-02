@@ -10,6 +10,7 @@ namespace Frontiers.GUI
 		public class GUILoadGameDialog : GUIBrowserSelectView <PlayerGame>
 		{
 				public UIButton LoadButton;
+				public UIButton CancelButton;
 				public UILabel LoadButtonLabel;
 				public UILabel WorldLabel;
 				public UILabel WorldDescription;
@@ -71,7 +72,9 @@ namespace Frontiers.GUI
 
 						gameBrowserObject.Name.text = Colors.ColorWrap(
 								editObject.Name,
-								Colors.Get.MenuButtonTextColorDefault) + "\n" + Colors.ColorWrap(editObject.DifficultyName + "Saved " + editObject.LastTimeSaved.ToLongDateString().ToLower() + "\nat " + editObject.LastTimeSaved.ToLongTimeString().ToLower(),
+								Colors.Get.MenuButtonTextColorDefault) + "\n" + Colors.ColorWrap(editObject.DifficultyName 
+								        + "Saved " + editObject.LastTimeSaved.ToLongDateString().ToLower() 
+										+ "\nat " + editObject.LastTimeSaved.ToLongTimeString().ToLower() + " (Hours Played: " + WorldClock.SecondsToHours (editObject.GameTimeOffset).ToString ("0.#") + ")",
 								Colors.Darken(Colors.Get.MenuButtonTextColorDefault));
 						gameBrowserObject.Icon.atlas = Mats.Get.IconsAtlas;
 						gameBrowserObject.Icon.spriteName = "IconMission";
@@ -186,9 +189,14 @@ namespace Frontiers.GUI
 						ReceiveFromParentEditor(FetchItems(), null);
 				}
 
+				public void OnClickCancelButton (){
+						ActionCancel(WorldClock.RealTime);
+				}
+
 				public void  OnClickLoadButton()
 				{
-						LoadButton.SendMessage("SetDisabled");
+						CancelButton.gameObject.SendMessage("SetDisabled");
+						LoadButton.gameObject.SendMessage("SetDisabled");
 						StartCoroutine(LoadGameOverTime());
 				}
 
@@ -196,7 +204,7 @@ namespace Frontiers.GUI
 				{		//TODO this no longer requires a coroutine
 						LoadButtonLabel.text = "Loading...";
 						//ok we're done unloading the current game
-						if (Profile.Get.SetWorldAndGame(CurrentWorld.Name, SelectedGameLabel.text, true)) {
+						if (Profile.Get.SetWorldAndGame(CurrentWorld.Name, SelectedGameLabel.text, true, true)) {
 								GameManager.Load();
 								Finish();
 						}

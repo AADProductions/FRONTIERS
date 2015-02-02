@@ -69,6 +69,18 @@ public partial class GameWorld : Manager
 
 		#region terrain & chunks
 
+		public bool ChunkIDByTerrain(Terrain t, out int id)
+		{
+				id = -1;
+				for (int i = 0; i < WorldChunks.Count; i++) {
+						if (WorldChunks[i].HasPrimaryTerrain && WorldChunks[i].PrimaryTerrain == t) {
+								id = WorldChunks[i].State.ID;
+								break;
+						}
+				}
+				return id > 0;
+		}
+
 		public bool ChunkByID(int chunkID, out WorldChunk chunk)
 		{
 				chunk = null;
@@ -84,18 +96,23 @@ public partial class GameWorld : Manager
 				return false;
 		}
 
-		public void SetPrimaryChunk(int chunkID)
+		public bool SetPrimaryChunk(int chunkID)
 		{
-				if (PrimaryChunk != null || PrimaryChunk.State.ID != chunkID) {
-						WorldChunk newPrimaryChunk = null;
-						if (mChunkLookup.TryGetValue(chunkID, out newPrimaryChunk)) {
-								mPrimaryChunkIndex = WorldChunks.IndexOf(newPrimaryChunk);
-								mPrimaryChunkID = chunkID;
-								newPrimaryChunk.TargetMode = ChunkMode.Primary;
-						} else {
-								Debug.Log("Couldn't find primary chunk ID " + chunkID);
-						}
+				if (PrimaryChunk != null && PrimaryChunk.State.ID == chunkID) {
+						PrimaryChunk.TargetMode = ChunkMode.Primary;
+						return true;
 				}
+
+				WorldChunk newPrimaryChunk = null;
+				if (mChunkLookup.TryGetValue(chunkID, out newPrimaryChunk)) {
+						mPrimaryChunkIndex = WorldChunks.IndexOf(newPrimaryChunk);
+						mPrimaryChunkID = chunkID;
+						newPrimaryChunk.TargetMode = ChunkMode.Primary;
+						return true;
+				} else {
+						Debug.Log("Couldn't find primary chunk ID " + chunkID);
+				}
+				return false;
 		}
 
 		public void ShowAboveGround(bool show)
@@ -209,7 +226,7 @@ public partial class GameWorld : Manager
 				isNewPrimary = false;
 				if (isPrimary) {
 						isNewPrimary = (chunk.State.ID != mPrimaryChunkID);
-						if (setIfTrue) {	//this does the same job as SetPrimaryChunk but without the lookups
+						if (setIfTrue) {//this does the same job as SetPrimaryChunk but without the lookups
 								mPrimaryChunkID = chunk.State.ID;
 								mPrimaryChunkIndex	= chunkIndex;
 								//don't worry about un-setting the previous chunk
@@ -446,7 +463,7 @@ public partial class GameWorld : Manager
 
 				mLoadingWorld = false;
 				WorldLoaded = true;
-				ChunksLoaded = false;
+				ChunksLoaded = true;
 
 				StartCoroutine(UpdateTreeColliders());
 
@@ -501,7 +518,29 @@ public partial class GameWorld : Manager
 
 		public override void OnLocalPlayerSpawn()
 		{
+//				if (SpawnManager.Get.UseStartupPosition) {
+//						Debug.Log("Using startup position to set biome and region");
+//						FindBiomeAndRegion(
+//								SpawnManager.Get.CurrentStartupPosition.WorldPosition.Position,
+//								ref CurrentRegionData,
+//								ref CurrentRegion,
+//								ref CurrentBiome,
+//								ref CurrentAudioProfile);
+//				} else {
+//						Debug.Log("Using player local position to set biome and region");
+//						FindBiomeAndRegion(
+//								Player.Local.Position,
+//								ref CurrentRegionData,
+//								ref CurrentRegion,
+//								ref CurrentBiome,
+//								ref CurrentAudioProfile);
+//				}
+		}
+
+		public override void OnGameStart()
+		{
 				if (SpawnManager.Get.UseStartupPosition) {
+						Debug.Log("Using startup position to set biome and region");
 						FindBiomeAndRegion(
 								SpawnManager.Get.CurrentStartupPosition.WorldPosition.Position,
 								ref CurrentRegionData,
@@ -509,6 +548,7 @@ public partial class GameWorld : Manager
 								ref CurrentBiome,
 								ref CurrentAudioProfile);
 				} else {
+						Debug.Log("Using player local position to set biome and region");
 						FindBiomeAndRegion(
 								Player.Local.Position,
 								ref CurrentRegionData,
@@ -516,10 +556,6 @@ public partial class GameWorld : Manager
 								ref CurrentBiome,
 								ref CurrentAudioProfile);
 				}
-		}
-
-		public override void OnGameStart()
-		{
 				//now that we've safely placed the player in the opening chunk
 				//we can start loading other chunks
 				StartCoroutine(UpdateChunkModes());
@@ -583,7 +619,11 @@ public partial class GameWorld : Manager
 				mRaycastStartPosition.y = terrainHit.feetPosition.y + raycastDistance;
 				mRaycastStartPosition.z = terrainHit.feetPosition.z;
 				//first get the ground
-				if (Physics.Raycast(mRaycastStartPosition, Vector3.down, out mHitGround, raycastDistance + terrainHit.groundedHeight, Globals.LayersTerrain)) {
+				int layerMask = Globals.LayersTerrain;
+				if (!terrainHit.ignoreWorldItems) {
+						layerMask |= Globals.LayerWorldItemActive;
+				}
+				if (Physics.Raycast(mRaycastStartPosition, Vector3.down, out mHitGround, raycastDistance + terrainHit.groundedHeight, layerMask)) {
 						terrainHit.normal = mHitGround.normal;
 						terrainHit.isGrounded = true;
 						terrainHit.terrainHeight = mHitGround.point.y;
@@ -601,6 +641,10 @@ public partial class GameWorld : Manager
 
 								case Globals.LayerNumFluidTerrain:
 										terrainHit.hitWater = true;
+										break;
+
+								case Globals.LayerNumWorldItemActive:
+										terrainHit.hitTerrainMesh = true;
 										break;
 						}
 				}
@@ -638,7 +682,11 @@ public partial class GameWorld : Manager
 				mRaycastStartPosition.y = terrainHit.feetPosition.y + raycastDistance;
 				mRaycastStartPosition.z = terrainHit.feetPosition.z;
 				//first get the ground
-				if (Physics.Raycast(mRaycastStartPosition, Vector3.down, out mHitGround, raycastDistance + terrainHit.groundedHeight, Globals.LayersTerrain | Globals.LayerWorldItemActive)) {
+				int layerMask = Globals.LayersTerrain;
+				if (!terrainHit.ignoreWorldItems) {
+						layerMask |= Globals.LayerWorldItemActive;
+				}
+				if (Physics.Raycast(mRaycastStartPosition, Vector3.down, out mHitGround, raycastDistance + terrainHit.groundedHeight, layerMask)) {
 						terrainHit.normal = mHitGround.normal;
 						terrainHit.isGrounded = true;
 						terrainHit.terrainHeight = mHitGround.point.y;
@@ -659,6 +707,7 @@ public partial class GameWorld : Manager
 										break;
 
 								case Globals.LayerNumWorldItemActive:
+										terrainHit.hitTerrainMesh = true;
 										break;
 						}
 				}
@@ -907,6 +956,7 @@ public partial class GameWorld : Manager
 				public float terrainHeight;
 				public Vector3 normal;
 				public Vector3 overhangNormal;
+				public bool ignoreWorldItems;
 				public bool isGrounded;
 				public bool hitTerrain;
 				public bool hitTerrainMesh;

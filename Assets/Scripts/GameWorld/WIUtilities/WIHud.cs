@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
+using Frontiers.GUI;
 
 namespace Frontiers.World
 {
@@ -104,16 +105,5 @@ namespace Frontiers.World
 				protected NGUIHUD mHud = null;
 				protected bool mIsActive = false;
 				protected bool mGetPlayerAttention = false;
-		}
-
-		[Flags]
-		public enum HudActiveType
-		{
-				None = 0,
-				OnWorldMode = 1,
-				OnDeadMode = 2,
-				OnPlayerFocus = 4,
-				OnPlayerAttention	= 8,
-				All = OnWorldMode | OnDeadMode | OnPlayerFocus | OnPlayerAttention,
 		}
 }

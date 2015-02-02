@@ -162,8 +162,8 @@ namespace Frontiers.GUI
 
 														case GainedSomethingType.Mission:
 																IconSprite.atlas = Mats.Get.IconsAtlas;
-																MissionState missionState = Missions.Get.MissionStateByName(mCurrentMessage.GainedSomethingName);
-																if (missionState.ObjectivesCompleted) {
+																MissionState missionState = null;
+																if (Missions.Get.MissionStateByName(mCurrentMessage.GainedSomethingName, out missionState) && missionState.ObjectivesCompleted) {
 																		IconSprite.color = Colors.Get.MessageSuccessColor;
 																		IconBackground.color = Colors.Get.SuccessHighlightColor;
 																} else {
@@ -399,7 +399,7 @@ namespace Frontiers.GUI
 
 				protected double mCurrentMessageHoldTime {
 						get {
-								return Mathf.Clamp((float)(mCurrentMessage.Message.Length * mSecondsPerCharacter), 3.0f, 6.0f);
+								return Mathf.Clamp((float)(mCurrentMessage.Message.Length * mSecondsPerCharacter), 3.0f, 6.0f) * Profile.Get.CurrentPreferences.Accessibility.OnScreenTextSpeed;
 						}
 				}
 
@@ -492,19 +492,5 @@ namespace Frontiers.GUI
 						public string GainedSomethingName;
 						public bool UpdatedIcon;
 				}
-		}
-
-		public enum GainedSomethingType
-		{
-				None = 0,
-				Skill,
-				Condition,
-				Credential,
-				Mission,
-				Structure,
-				Blueprint,
-				Book,
-				Currency,
-				Money,
 		}
 }

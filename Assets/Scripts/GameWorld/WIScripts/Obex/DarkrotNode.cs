@@ -228,10 +228,10 @@ namespace Frontiers.World
 						}
 
 						if (mLastExposureUpdate < 0) {
-								mLastExposureUpdate = WorldClock.Time - WorldClock.DeltaTime;
+								mLastExposureUpdate = WorldClock.AdjustedRealTime - WorldClock.ARTDeltaTime;
 						}
 
-						LightManager.CalculateExposure(this, (float)(WorldClock.Time - mLastExposureUpdate));
+						LightManager.CalculateExposure(this, (float)(WorldClock.AdjustedRealTime - mLastExposureUpdate));
 
 						float dissipation = 1f - ((LightExposure + HeatExposure) / Globals.DarkrotMaxLightAndHeatExposure);
 						SmokeEmitter.maxSize = mMaxEmissionSize * dissipation;
@@ -242,7 +242,7 @@ namespace Frontiers.World
 								////Debug.Log ("DisperseD DUE TO LIGHT IN DARKROT NODE");
 								Disperse(Mathf.Infinity);
 						}
-						mLastExposureUpdate = WorldClock.Time;
+						mLastExposureUpdate = WorldClock.AdjustedRealTime;
 				}
 
 				public void ExposureIncrease()
@@ -363,7 +363,7 @@ namespace Frontiers.World
 
 				protected IEnumerator DestroyOverTime()
 				{
-						yield return new WaitForSeconds(2f);
+						yield return WorldClock.WaitForSeconds(2);
 						GameObject.Destroy(CenterGlow.renderer.material);
 						GameObject.Destroy(gameObject);
 				}

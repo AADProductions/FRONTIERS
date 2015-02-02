@@ -19,6 +19,7 @@ namespace Frontiers.World.BaseWIScripts
 				//very very old class with a lot of gunk hanging around
 				public bool UnloadOnInvisible = true;
 				public Action OnLocationGroupLoaded;
+				public Action OnLocationGroupUnloaded;
 
 				public override bool CanBeCarried {
 						get {
@@ -150,6 +151,8 @@ namespace Frontiers.World.BaseWIScripts
 				{
 						if (mLocationGroup.Is(WIGroupLoadState.Loaded)) {
 								OnLocationGroupLoaded.SafeInvoke();
+						} else if (mLocationGroup.Is (WIGroupLoadState.Unloaded)) {
+								OnLocationGroupUnloaded.SafeInvoke();
 						}
 				}
 

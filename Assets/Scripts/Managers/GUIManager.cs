@@ -140,12 +140,15 @@ namespace Frontiers.GUI
 				public GUIButtonHover ActiveButton;
 				public DebugConsole Console;
 				public MissionTestingUtility Missions;
+				public GroupTestingUtility GroupTesting;
 
 				public override void WakeUp()
 				{
 						Get = this;
 						Console = GameManager.Get.GameCamera.GetComponent <DebugConsole>();
 						Missions = GameManager.Get.GameCamera.GetComponent <MissionTestingUtility>();
+						GroupTesting = GameManager.Get.GameCamera.GetComponentInParent <GroupTestingUtility>();
+						GroupTesting.enabled = false;
 						VersionNumber.text = "Frontiers Beta v." + GameManager.Version;
 						//UNITY turn off the damn OnMouse events
 						Camera[] cameras = FindObjectsOfType <Camera>();
@@ -195,14 +198,23 @@ namespace Frontiers.GUI
 						}
 				}
 
+		public static int Frame;
+
 				public void Update()
 				{
+			Frame++;
+
 						if (!mInitialized) {
 								return;
 						}
 
 						if (Input.GetKeyDown(KeyCode.F5)) {
 								Missions.ShowEditor = !Missions.ShowEditor;
+				Missions.enabled = Missions.ShowEditor;
+						}
+
+						if (Input.GetKeyDown(KeyCode.F6)) {
+								GroupTesting.enabled = !GroupTesting.enabled;
 						}
 
 						if (Input.GetKeyDown(KeyCode.F3)) {
@@ -231,6 +243,12 @@ namespace Frontiers.GUI
 								if (mActiveSlider == null) {
 										mHoveredObjectParent = UICamera.hoveredObject.transform.parent.gameObject;
 										mActiveScrollBar = mHoveredObjectParent.GetComponent <UIScrollBar>();
+								}
+								//finally, if THAT doesn't work see if it's a scrolling panel
+								if (mActiveSlider == null) {
+										if (UICamera.hoveredObject.HasComponent <UIDraggablePanel>(out mActiveDraggablePanel)) {
+												mActiveScrollBar = mActiveDraggablePanel.verticalScrollBar;
+										}
 								}
 						} else if (UICamera.hoveredObject.CompareTag(Globals.TagBrowserObject)) {
 								mBrowserObjectTransform = UICamera.hoveredObject.transform;
@@ -290,7 +308,7 @@ namespace Frontiers.GUI
 								NGUISecondaryCamera.enabled = false;
 						} else {
 								NGUISecondaryCamera.useMouse = false;
-								NGUISecondaryCamera.useKeyboard = true;
+								NGUISecondaryCamera.useKeyboard = false;
 								NGUIPrimaryCamera.useMouse = false;
 								NGUIPrimaryCamera.useKeyboard = false;
 								NGUIBaseCamera.useMouse = false;
@@ -361,6 +379,12 @@ namespace Frontiers.GUI
 						#if UNITY_EDITOR
 						UnityEditor.EditorUtility.SetDirty(this);
 						#endif
+				}
+
+				public void LateUpdate () {
+						//this has to be called each frame
+						//to clear its toggle interface action
+						PrimaryInterface.ResetToggle();
 				}
 
 				protected Transform mBrowserObjectTransform;
@@ -512,18 +536,18 @@ namespace Frontiers.GUI
 						//intercept scrolling - we want to use it for our scrollbars and sliders
 						if (action == InterfaceActionType.SelectionPrev || action == InterfaceActionType.SelectionNext) {
 								//scrollbars come first, then sliders
-								if (mActiveScrollBar != null) {
+								if (mActiveScrollBar != null && mActiveScrollBar.alpha > 0) {
 										//use the interface action mouse wheel
 										if (action == InterfaceActionType.SelectionPrev) {
-												mActiveScrollBar.scrollValue -= 0.05f;
+												mActiveScrollBar.scrollValue = Mathf.Clamp01 (mActiveScrollBar.scrollValue - 0.1f);
 										} else {
-												mActiveScrollBar.scrollValue += 0.05f;
+												mActiveScrollBar.scrollValue = Mathf.Clamp01 (mActiveScrollBar.scrollValue + 0.1f);
 										}
 								} else if (mActiveSlider != null) {
 										if (action == InterfaceActionType.SelectionPrev) {
-												mActiveSlider.sliderValue -= 0.05f;
+												mActiveSlider.sliderValue = Mathf.Clamp01 (mActiveSlider.sliderValue - 0.1f);
 										} else {
-												mActiveSlider.sliderValue += 0.05f;
+												mActiveSlider.sliderValue = Mathf.Clamp01 (mActiveSlider.sliderValue + 0.1f);
 										}
 								}
 						}
@@ -653,8 +677,13 @@ namespace Frontiers.GUI
 										if (!BaseInterfaces.Contains(focusObject)) {
 												BaseInterfaces.Add(focusObject);
 										}
-										focusObject.GainFocus();
-										result = true;
+										//base interface can't get focus unless everything else is gone
+										if (HasActiveSecondaryInterface || HasActivePrimaryInterface) {
+												result = false;
+										} else {
+												focusObject.GainFocus();
+												result = true;
+										}
 										break;
 
 								default:

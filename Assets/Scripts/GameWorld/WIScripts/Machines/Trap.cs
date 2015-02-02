@@ -1,9 +1,10 @@
 using UnityEngine;
-using System.Collections;
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using Frontiers.World.Gameplay;
 using ExtensionMethods;
+using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -79,7 +80,7 @@ namespace Frontiers.World
 								if (skill.LastSkillResult) {
 										MasterAudio.PlaySound(MisfireAnimationSoundType, worlditem.tr, MisfireAnimationSound);
 										State.Mode = TrapMode.Misfired;
-										GUIManager.PostDanger("Trap misfired");
+										GUI.GUIManager.PostDanger("Trap misfired");
 										return;
 								}
 						}
@@ -102,7 +103,7 @@ namespace Frontiers.World
 				{
 						State.Mode = TrapMode.Triggered;
 						//delay before trigger
-						yield return new WaitForSeconds(InitialDelay);
+						yield return WorldClock.WaitForSeconds(InitialDelay);
 						//spawn fx and sounds
 						MasterAudio.PlaySound(TriggerAnimationSoundType, worlditem.tr, TriggerAnimationSound);
 						for (int i = 0; i < TriggerFXParents.Count; i++) {
@@ -121,7 +122,7 @@ namespace Frontiers.World
 								yield return null;
 						}
 						//delay before reset
-						yield return new WaitForSeconds(ResetDelay);
+						yield return WorldClock.WaitForSeconds(ResetDelay);
 						//play the reset animation
 						AnimationTarget[ResetAnimationName].normalizedTime = 0f;
 						AnimationTarget.Play(ResetAnimationName, PlayMode.StopSameLayer);

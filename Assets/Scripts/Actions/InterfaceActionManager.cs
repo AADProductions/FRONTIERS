@@ -43,17 +43,12 @@ namespace Frontiers
 								MouseSmoothX.Clear();
 								MouseSmoothY.Clear();
 								ControllerDrivenMouseMovement = false;
-						} else {
+						} else if (Profile.Get.CurrentPreferences.Controls.UseControllerMouse) {
 								//if it's not moving, our controller drives the mouse
 								ControllerDrivenMouseMovement = true;
 								if (RawMouseAxisX != 0f || RawMouseAxisY != 0f) {
 										int mouseX = (int)Input.mousePosition.x + (int)(RawMouseAxisX * ControllerMouseSensitivity * Screen.width);
 										int mouseY = (int)Input.mousePosition.y + (int)(RawMouseAxisY * ControllerMouseSensitivity * Screen.height);
-										//keep the mouse from going to a second monitor
-										if (Screen.fullScreen) {
-												mouseX = Mathf.Clamp(mouseX, 0, Screen.width);
-												mouseY = Mathf.Clamp(mouseY, 0, Screen.height);
-										}
 
 										MouseSmoothX.Add(mouseX);
 										MouseSmoothY.Add(mouseY);

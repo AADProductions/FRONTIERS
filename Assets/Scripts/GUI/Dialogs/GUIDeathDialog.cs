@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
+using Frontiers.World;
 using Frontiers.World.Gameplay;
 
 namespace Frontiers.GUI
@@ -12,6 +13,7 @@ namespace Frontiers.GUI
 		public UIPanel DialogPanel;
 		public UILabel CauseOfDeathLabel;
 		public UILabel OfLabel;
+		public UILabel TitleLabel;
 		public bool UsingSkillList = false;
 
 		public override void WakeUp()
@@ -35,14 +37,34 @@ namespace Frontiers.GUI
 				return;
 			}
 
-			OfLabel.enabled = true;
-			CauseOfDeathLabel.text = Player.Local.Status.LatestCauseOfDeath;
+			switch (Profile.Get.CurrentGame.Difficulty.DeathStyle) {
+				case DifficultyDeathStyle.BlackOut:
+				case DifficultyDeathStyle.Respawn:
+					TitleLabel.text = "You have lost consciousness";
+					OfLabel.enabled = false;
+					CauseOfDeathLabel.text = Player.Local.Status.LatestCauseOfDeath;
+					ShowRespawnList();
+					break;
+
+				case DifficultyDeathStyle.PermaDeath:
+					TitleLabel.text = "YOU HAVE DIED";
+					OfLabel.enabled = true;
+					CauseOfDeathLabel.text = Player.Local.Status.LatestCauseOfDeath;
+					break;
+
+				case DifficultyDeathStyle.NoDeath:
+				default:
+					break;
+			}
 
 			Debug.Log("Showing death dialog");
+		}
 
+		public void ShowRespawnList() {
 			//add the option list we'll use to select the skill
 			SpawnOptionsList optionsList = gameObject.GetOrAdd <SpawnOptionsList>();
-			optionsList.Message = "Respawn";
+			optionsList.MessageType = "Use Respawn Skill";
+			optionsList.Message = string.Empty;
 			optionsList.FunctionName = "OnSelectSpawnSkill";
 			optionsList.RequireManualEnable = false;
 			optionsList.OverrideBaseAvailabilty = true;
@@ -64,7 +86,7 @@ namespace Frontiers.GUI
 
 		public void OnSelectSpawnSkill(System.Object result)
 		{
-			OptionsListDialogResult dialogResult = result as OptionsListDialogResult;
+			WIListResult dialogResult = result as WIListResult;
 			RespawnSkill skillToUse = null;
 			foreach (Skill removeSkill in mSpawnSkills) {
 				if (removeSkill.name == dialogResult.Result) {
@@ -85,6 +107,12 @@ namespace Frontiers.GUI
 			}
 		}
 
+		public override bool ActionCancel(double timeStamp)
+		{
+			//can't cancel
+			return true;
+		}
+
 		protected IEnumerator WaitForPlayerToSpawn(Skill respawnSkill)
 		{
 			while (Player.Local.IsDead) {
@@ -98,5 +126,15 @@ namespace Frontiers.GUI
 		}
 
 		protected List <RespawnSkill> mSpawnSkills = new List<RespawnSkill>();
+
+		public override void DisableInput()
+		{
+			return;
+		}
+
+		public override void EnableInput()
+		{
+			return;
+		}
 	}
 }

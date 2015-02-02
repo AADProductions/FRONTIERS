@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -56,11 +57,13 @@ namespace Frontiers.World
 				{
 						switch (worlditem.State) {
 								case "Mined":
+										Debug.Log("DIED in luminite node with state mined");
 										worlditem.Get <Damageable>().ResetDamage();
-										State.TimeMined = WorldClock.Time;
+										State.TimeMined = WorldClock.AdjustedRealTime;
 										break;
 
 								default:
+										Debug.Log("DIED in luminite node with state " + worlditem.State);
 										worlditem.Get <Damageable>().ResetDamage();
 										//set luminite type to mined raw, then get a stack item for the player
 										//add that to player inventory
@@ -81,11 +84,13 @@ namespace Frontiers.World
 												rawLuminite.SetMode(WIMode.World);
 												rawLuminite.rigidbody.AddForce(worlditem.tr.up * 0.25f);
 										}
-										State.TimeMined = WorldClock.Time;
+										State.TimeMined = WorldClock.AdjustedRealTime;
 										State.AbsorbedDarkRot = 0f;
 										worlditem.State = "Mined";
 										break;
 						}
+
+						Debug.Log("State is now " + worlditem.State);
 
 				}
 
@@ -94,6 +99,7 @@ namespace Frontiers.World
 						switch (worlditem.State) {
 								case "Mined":
 										if (State.IsReadyToRegrow) {
+												Debug.Log("Ready to regrow in luminite");
 												//luminite always grows back as light
 												//even if it was dark before
 												worlditem.State = "Light";
@@ -237,7 +243,7 @@ namespace Frontiers.World
 
 				public bool IsReadyToRegrow {
 						get {
-								return WorldClock.Time > TimeMined + WorldClock.RTSecondsToGameSeconds(Globals.LuminiteRegrowTime);
+								return WorldClock.AdjustedRealTime > TimeMined + Globals.LuminiteRegrowTime;
 						}
 				}
 		}

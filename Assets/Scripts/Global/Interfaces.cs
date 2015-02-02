@@ -300,9 +300,9 @@ namespace Frontiers
 
 						bool ReadyToUnload { get; }
 
-						void BeginUnload();
+						bool TryToCancelUnload();
 
-						void CancelUnload();
+						void BeginUnload();
 
 						bool FinishedUnloading { get; }
 				}
@@ -318,9 +318,9 @@ namespace Frontiers
 
 						bool ReadyToLoad { get; }
 
-						void BeginLoad();
+						bool TryToCancelLoad();
 
-						void CancelLoad();
+						void BeginLoad();
 
 						bool FinishedLoading { get; }
 				}

@@ -61,16 +61,16 @@ namespace Frontiers.World
 						PrimaryInterface.MaximizeInterface("Inventory", "OpenStackContainer", worlditem.gameObject);
 				}
 
-				public override void PopulateOptionsList(System.Collections.Generic.List <GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(System.Collections.Generic.List <WIListOption> options, List <string> message)
 				{
 						if (CanOpen) {
-								options.Add(new GUIListOption(OpenText, "Open"));
+								options.Add(new WIListOption(OpenText, "Open"));
 						}
 				}
 
 				public virtual void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;
+						WIListResult dialogResult = secondaryResult as WIListResult;
 
 						switch (dialogResult.SecondaryResult) {
 								case "Open":
@@ -105,12 +105,5 @@ namespace Frontiers.World
 		{
 				public ContainerType Type = ContainerType.PersonalEffects;
 				public int ReputationChangeOnOpen = 0;//for coffins mainly
-		}
-
-		public enum ContainerType
-		{
-				//TODO find a better way to restrict options
-				PersonalEffects,
-				ShopGoods,
 		}
 }

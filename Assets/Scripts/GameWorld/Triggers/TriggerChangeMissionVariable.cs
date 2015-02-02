@@ -2,8 +2,6 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers.World.Gameplay;
-using Frontiers.Data;
 
 namespace Frontiers.World
 {
@@ -15,7 +13,7 @@ namespace Frontiers.World
 				{
 						Missions.Get.ChangeVariableValue(State.ChangeMissionName, State.ChangeVariableName, State.ChangeVariableValue, State.ChangeVariableType);
 						if (!string.IsNullOrEmpty(State.Introspection)) {
-								GUIManager.PostIntrospection(State.Introspection);
+								GUI.GUIManager.PostIntrospection(State.Introspection);
 						}
 						return true;
 				}

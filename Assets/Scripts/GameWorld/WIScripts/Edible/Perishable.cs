@@ -18,7 +18,7 @@ namespace Frontiers.World
 				public double TimeRottedSoFar {
 						get {
 								if (RotStartTime > 0.0f) {
-										return WorldClock.Time - RotStartTime;
+										return WorldClock.AdjustedRealTime - RotStartTime;
 								}
 								return 0.0f;
 						}
@@ -55,7 +55,7 @@ namespace Frontiers.World
 						}
 			
 						if (RotStartTime < 0) {
-								RotStartTime = WorldClock.Time;
+								RotStartTime = WorldClock.AdjustedRealTime;
 						}
 			
 						if (TimeRottedSoFar > TimeToRot) {

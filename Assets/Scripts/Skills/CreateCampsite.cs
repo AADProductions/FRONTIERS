@@ -2,10 +2,11 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Gameplay;
-using System.Reflection;
+using Frontiers.World.BaseWIScripts;
+using Frontiers.GUI;
 
 namespace Frontiers.World.Gameplay
 {
@@ -75,7 +76,7 @@ namespace Frontiers.World.Gameplay
 						campsite.State.CreatedByPlayer = true;
 						campsite.RefreshFlag();
 						yield return null;//wait a tick for the campsite to re-initialize
-						campsite.worlditem.Save();//save state immediately - this will calculate stuff like chunk position
+						WorldItems.Get.Save (campsite.worlditem, true);//save state immediately - this will calculate stuff like chunk position
 
 						yield break;
 				}
@@ -88,7 +89,7 @@ namespace Frontiers.World.Gameplay
 						SkillSphere = skillSphere.AddComponent <EffectSphere>();
 
 						SkillSphere.TargetRadius = EffectRadius;
-						SkillSphere.StartTime = WorldClock.Time;
+						SkillSphere.StartTime = WorldClock.AdjustedRealTime;
 						SkillSphere.RTDuration = Mathf.Infinity;
 						SkillSphere.RTExpansionTime = 1.0f;
 						SkillSphere.OnIntersectItemOfInterest += OnIntersectItemOfInterest;
@@ -144,11 +145,11 @@ namespace Frontiers.World.Gameplay
 
 				public void Update()
 				{
-						if (!GameManager.Is(FGameState.InGame) || !mPlacementStarted) {
+						if (!GameManager.Is(FGameState.InGame) || ActiveCampsite == null) {
 								return;
 						}
 
-						if (ActiveCampsite == null || !ActiveCampsite.worlditem.Is(WIMode.Equipped)) {
+						if (!ActiveCampsite.worlditem.Is(WIMode.Equipped)) {
 								StopPlacement();
 								return;
 						}

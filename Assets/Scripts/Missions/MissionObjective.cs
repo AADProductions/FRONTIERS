@@ -99,12 +99,12 @@ namespace Frontiers.World.Gameplay
 								}
 
 								State.Status = MissionStatus.Active;
-								State.TimeActivated	= WorldClock.Time;
+								State.TimeActivated	= WorldClock.AdjustedRealTime;
 
 								try {
 										//wrap this in a try catch to prevent random stuff listening from screwing up mission completion
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.MissionObjectiveActiveate), WorldClock.Time);
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.MissionUpdated), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.MissionObjectiveActiveate), WorldClock.AdjustedRealTime);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.MissionUpdated), WorldClock.AdjustedRealTime);
 								} catch (Exception e) {
 										Debug.LogError(e.ToString());
 								}
@@ -117,8 +117,8 @@ namespace Frontiers.World.Gameplay
 						State.Completed = true;
 						State.Status &= ~MissionStatus.Active;
 						State.Status &= ~MissionStatus.Dormant;
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.MissionObjectiveComplete, WorldClock.Time);
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.MissionUpdated), WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.MissionObjectiveComplete, WorldClock.AdjustedRealTime);
+						Player.Get.AvatarActions.ReceiveAction((AvatarAction.MissionUpdated), WorldClock.AdjustedRealTime);
 				}
 
 				public void ForceFail()
@@ -128,8 +128,8 @@ namespace Frontiers.World.Gameplay
 						State.Status |= MissionStatus.Failed;
 						State.Status &= ~MissionStatus.Active;
 						State.Status &= ~MissionStatus.Dormant;
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.MissionObjectiveFail, WorldClock.Time);
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.MissionUpdated), WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.MissionObjectiveFail, WorldClock.AdjustedRealTime);
+						Player.Get.AvatarActions.ReceiveAction((AvatarAction.MissionUpdated), WorldClock.AdjustedRealTime);
 				}
 
 				public void Refresh(bool refreshNextObjectives)
@@ -153,7 +153,7 @@ namespace Frontiers.World.Gameplay
 								State.Subscriptions.Clear();
 								State.Subscriptions.AddRange(subscriptions);
 								foreach (AvatarAction subscription in State.Subscriptions) {
-										Player.Get.AvatarActions.Subscribe(new PlayerAvatarAction(subscription), mSubscriptionListener);
+										Player.Get.AvatarActions.Subscribe((subscription), mSubscriptionListener);
 								}
 
 								mHasSubscribed = true;
@@ -222,7 +222,10 @@ namespace Frontiers.World.Gameplay
 								bool completedOverride = false;
 								for (int i = 0; i < State.Scripts.Count; i++) {
 										ObjectiveScript script = State.Scripts[i];
-										yield return StartCoroutine(HasCompletedObjective(script));
+										var hasCompletedObjective = HasCompletedObjective(script);
+										while (hasCompletedObjective.MoveNext()) {
+												yield return hasCompletedObjective.Current;
+										}
 										//if the script has completed AND it doesn't require all other scripts
 										thisObjectiveCompleted &= script.HasCompleted;
 										if (script.HasCompleted && !script.RequiresAll) {//then this objective is automatically completed regardless of the state of other scripts
@@ -248,7 +251,10 @@ namespace Frontiers.World.Gameplay
 										nextObjective.ActivateObjective(ObjectiveActivation.AutomaticOnPreviousCompletion, MissionOriginType.Mission, string.Empty);
 								}
 								//this will automatically set mission.State.ObjectivesCompleted
-								yield return StartCoroutine(nextObjective.TryToComplete());
+								var tryToComplete = nextObjective.TryToComplete();
+								while (tryToComplete.MoveNext()) {
+										yield return tryToComplete.Current;
+								}
 						}
 			
 						if (!checkThisObjective) {
@@ -259,7 +265,7 @@ namespace Frontiers.World.Gameplay
 						//alright we're checking whether we've completed
 						//check to see whether this results in failure
 						if (State.Completed) {
-								State.TimeCompleted = WorldClock.Time;
+								State.TimeCompleted = WorldClock.AdjustedRealTime;
 								//the mission objective is complete! yay!
 								//now check for success or failure
 								switch (State.Type) {
@@ -294,8 +300,8 @@ namespace Frontiers.World.Gameplay
 
 								//now check whether we've failed or succeeded
 								if (Flags.Check((uint)State.Status, (uint)MissionStatus.Failed, Flags.CheckType.MatchAny) && !State.HasAnnouncedFailure) {
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.MissionObjectiveFail), WorldClock.Time);
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.MissionUpdated), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.MissionObjectiveFail), WorldClock.AdjustedRealTime);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.MissionUpdated), WorldClock.AdjustedRealTime);
 										if (!string.IsNullOrEmpty(State.IntrospectionOnFail)) {
 												GUIManager.PostIntrospection(State.IntrospectionOnFail);
 										}
@@ -304,8 +310,8 @@ namespace Frontiers.World.Gameplay
 										}
 										State.HasAnnouncedFailure = true;
 								} else if (!State.HasAnnouncedCompletion) {
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.MissionObjectiveComplete), WorldClock.Time);
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.MissionUpdated), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.MissionObjectiveComplete), WorldClock.AdjustedRealTime);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.MissionUpdated), WorldClock.AdjustedRealTime);
 										if (!string.IsNullOrEmpty(State.IntrospectionOnComplete)) {
 												GUIManager.PostIntrospection(State.IntrospectionOnComplete);
 										}
@@ -464,12 +470,5 @@ namespace Frontiers.World.Gameplay
 				[NonSerialized]
 				protected List <ObjectiveState> mNextObjectiveStates = null;
 				protected bool mCompleted = false;
-		}
-
-		public enum ObjectiveTimeLimit
-		{
-				None,
-				BeforeNextNightfall,
-				BeforeNextMorning,
 		}
 }

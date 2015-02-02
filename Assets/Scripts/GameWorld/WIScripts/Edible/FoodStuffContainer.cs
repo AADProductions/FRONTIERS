@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.GUI;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -35,9 +36,9 @@ namespace Frontiers.World
 
 				public List <string> CanContain = new List <string>();
 
-				public override void PopulateOptionsList(List<GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(List<WIListOption> options, List <string> message)
 				{
-						options.Add(new GUIListOption("Eat Contents", "Eat"));
+						options.Add(new WIListOption("Eat Contents", "Eat"));
 				}
 
 				protected FoodStuff mContents;

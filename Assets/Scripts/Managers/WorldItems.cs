@@ -109,6 +109,7 @@ namespace Frontiers.World
 				{
 						if (!GameManager.Get.TestingEnvironment && !mUpdatingActiveStates) {
 								mUpdatingActiveStates = true;
+								LastPlayerPosition = SpawnManager.Get.CurrentStartupPosition.WorldPosition.Position;
 								StartCoroutine(UpdateStackItemsToLoad());
 						}
 				}
@@ -118,9 +119,6 @@ namespace Frontiers.World
 						//this will force the active states to update
 						LastPlayerPosition = Player.Local.Position;
 						LastPlayerSortPosition = Vector3.zero;
-						if (SpawnManager.Get.UseStartupPosition) {
-								LastPlayerPosition = SpawnManager.Get.CurrentStartupPosition.WorldPosition.Position;
-						}
 				}
 
 				#endregion
@@ -210,7 +208,7 @@ namespace Frontiers.World
 												stackItem.SaveState.LastState = genericWorldItem.State;
 										}
 										if (!string.IsNullOrEmpty(genericWorldItem.Subcategory)) {
-												///Debug.Log ("Setting stack item subcategory to " + genericWorldItem.Subcategory);
+												//Debug.Log ("Setting stack item subcategory to " + genericWorldItem.Subcategory);
 												stackItem.Props.Local.Subcategory = genericWorldItem.Subcategory;
 										}
 										if (!string.IsNullOrEmpty(genericWorldItem.StackName)) {
@@ -437,12 +435,13 @@ namespace Frontiers.World
 						float scaleAdjustment;
 						//find the object bounds by encapsulating all of its render bounds
 						Bounds objectBounds = new Bounds(doppleganger.transform.position, Vector3.zero);
-						List <Renderer> objectRenderers = new List<Renderer>(doppleganger.GetComponentsInChildren <Renderer>(false));
-						Renderer baseRenderer = null;
+						Renderer [] objectRenderers = doppleganger.GetComponentsInChildren <Renderer>(false);
+						//turns out get components in children gets renderer in base object too
+						/*Renderer baseRenderer = null;
 						if (doppleganger.HasComponent <Renderer>(out baseRenderer)) {
 								objectRenderers.Add(baseRenderer);
-						}
-						for (int i = 0; i < objectRenderers.Count; i++) {
+						}*/
+						for (int i = 0; i < objectRenderers.Length; i++) {
 								objectBounds.Encapsulate(objectRenderers[i].bounds);
 						}
 						//find the max scale of the item from the bounds
@@ -453,6 +452,57 @@ namespace Frontiers.World
 						dopplegangerOffset = (baseObjectBounds.center - objectBounds.center).WithZ(0f);
 						scaleMultiplier = scaleMultiplier / scaleAdjustment;
 						doppleganger.transform.parent = dopplegangerParent;
+				}
+
+				public static void ApplyDopplegangerMaterials (GameObject doppleganger, WIMode mode) {
+						Renderer [] renderers = doppleganger.GetComponentsInChildren <Renderer>(false);
+						List <Material> materials = new List<Material>();
+						for (int i = 0; i < renderers.Length; i++) {
+								GameObject dopGameObject = renderers[i].gameObject;
+								MeshFilter dopMf = dopGameObject.GetComponent <MeshFilter>();
+								Renderer dopMr = renderers[i];
+								materials.Clear();
+								int sharedMaterialsLength = 0;
+								switch (mode) {
+										case WIMode.Placing:
+												dopMr.castShadows = false;
+												dopMr.receiveShadows = false;
+												dopGameObject.layer = Globals.LayerNumWorldItemActive;
+												sharedMaterialsLength = dopMr.sharedMaterials.Length;
+												for (int j = 0; j < sharedMaterialsLength; j++) {
+														/*														
+														if (item.Props.Global.UseCutoutShader) {
+															Material baseMat = wiMr.sharedMaterials [j];
+															Material customMat = new Material (Mats.Get.InventoryRimCutoutMaterial);
+															customMat.SetTexture ("_MainTex", baseMat.GetTexture ("_MainTex"));
+															materials.Add (customMat);
+														} else {
+															materials.Add (Mats.Get.ItemPlacementOutlineMaterial);
+														}
+														*/
+														materials.Add(Mats.Get.ItemPlacementMaterial);
+												}
+												break;
+
+										case WIMode.Crafting:
+												dopMr.castShadows = false;
+												dopMr.receiveShadows = false;
+												dopGameObject.layer = Globals.LayerNumWorldItemInventory;
+												//materials.AddRange (wiMr.sharedMaterials);
+												sharedMaterialsLength = dopMr.sharedMaterials.Length;
+												for (int j = 0; j < sharedMaterialsLength; j++) {
+													materials.Add(Mats.Get.CraftingDoppleGangerMaterial);
+												}
+												break;
+
+										default:
+												break;
+								}
+								if (materials.Count > 0) {
+										dopMr.sharedMaterials = materials.ToArray();
+								}
+								dopMr.enabled = true;
+						}
 				}
 
 				public static void ApplyDopplegangerRenderers(WorldItem item, GameObject doppleGanger, string state, WIMode mode)
@@ -497,7 +547,7 @@ namespace Frontiers.World
 						transformEachRenderer = renderersToCopy.Count > 0;
 
 						Bounds rendererBounds = new Bounds();
-
+						List <Material> materials = new List<Material>();
 						for (int i = 0; i < renderersToCopy.Count; i++) {
 								GameObject dopGameObject = renderersToCreate[i];
 								Renderer wiMr = renderersToCopy[i];
@@ -517,7 +567,8 @@ namespace Frontiers.World
 								} else {
 										dopMf.sharedMesh = wiMf.sharedMesh;
 								}
-								List <Material> materials = new List <Material>();
+								materials.Clear();
+								int sharedMaterialsLength = 0;
 
 								switch (mode) {
 										case WIMode.Stacked:
@@ -542,7 +593,8 @@ namespace Frontiers.World
 												dopMr.castShadows = false;
 												dopMr.receiveShadows = false;
 												dopGameObject.layer = Globals.LayerNumWorldItemActive;
-												for (int j = 0; j < wiMr.sharedMaterials.Length; j++) {
+												sharedMaterialsLength = wiMr.sharedMaterials.Length;
+												for (int j = 0; j < sharedMaterialsLength; j++) {
 														/*
 														if (item.Props.Global.UseCutoutShader) {
 															Material baseMat = wiMr.sharedMaterials [j];
@@ -569,7 +621,10 @@ namespace Frontiers.World
 												dopMr.receiveShadows = false;
 												dopGameObject.layer = Globals.LayerNumWorldItemInventory;
 												//materials.AddRange (wiMr.sharedMaterials);
-												materials.Add(Mats.Get.CraftingDoppleGangerMaterial);
+												sharedMaterialsLength = wiMr.sharedMaterials.Length;
+												for (int j = 0; j < sharedMaterialsLength; j++) {
+														materials.Add(Mats.Get.CraftingDoppleGangerMaterial);
+												}
 												break;
 
 										case WIMode.Placed:
@@ -1306,7 +1361,7 @@ namespace Frontiers.World
 						}
 
 						mIoiRBCheck = other.attachedRigidbody;
-						if (mIoiRBCheck != null) {
+						if (mIoiRBCheck != null && !mIoiRBCheck.CompareTag (Globals.TagNonInteractive)) {
 								ioi = (IItemOfInterest)mIoiRBCheck.GetComponent(typeof(IItemOfInterest));
 								if (ioi != null) {
 										return true;
@@ -1333,7 +1388,7 @@ namespace Frontiers.World
 						} else if (go.CompareTag(Globals.TagStateChild)) {
 								//state child objects are immediately parented under worlditem
 								ioi = go.transform.parent.GetComponent <WorldItem>();
-						} else {
+						} else if (!go.CompareTag (Globals.TagNonInteractive)) {
 								ioi = (IItemOfInterest)go.GetComponent(typeof(IItemOfInterest));
 						}
 						return ioi != null;

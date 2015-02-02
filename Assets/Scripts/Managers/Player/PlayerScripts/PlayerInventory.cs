@@ -20,6 +20,12 @@ namespace Frontiers
 				public List <WIStackEnabler> InventoryEnablers = new List <WIStackEnabler>();
 				public List <string> NoSpaceNeededItems = new List <string> { "BookAvatar", "Currency", "Purse", "Key" };
 
+				public override void Initialize()
+				{
+						base.Initialize();
+						enabled = true;
+				}
+
 				public override bool LockQuickslots {
 						get {
 								return mChangingAqi;
@@ -59,7 +65,7 @@ namespace Frontiers
 						return false;
 				}
 
-				public void AquireStructure(MobileReference ownedStructure, bool announceOwnership)
+				public void AcquireStructure(MobileReference ownedStructure, bool announceOwnership)
 				{
 						if (State.OwnedStructures.SafeAdd(ownedStructure)) {
 								//if we don't already own it
@@ -125,18 +131,6 @@ namespace Frontiers
 				public void FillInventory(string inventoryFillCategory)
 				{
 						StartCoroutine(FillInventoryOverTime(inventoryFillCategory));
-						WICategory startupCategory = null;
-						WIStackError error = WIStackError.None;
-						if (WorldItems.Get.Category(inventoryFillCategory, out startupCategory)) {
-								foreach (GenericWorldItem item in startupCategory.GenericWorldItems) {
-										WorldItem worlditem = null;
-										if (WorldItems.CloneFromStackItem(item.ToStackItem(), WIGroups.Get.Player, out worlditem)) {
-												if (!AddItems(worlditem, ref error)) {
-														Debug.Log("PLAYERINVENTORY: Couldn't add item, error: " + error.ToString());
-												}
-										}
-								}
-						}
 				}
 
 				protected IEnumerator FillInventoryOverTime(string inventoryFillCategory)
@@ -146,10 +140,12 @@ namespace Frontiers
 						WIStackError error = WIStackError.None;
 						if (WorldItems.Get.Category(inventoryFillCategory, out startupCategory)) {
 								for (int i = 0; i < startupCategory.GenericWorldItems.Count; i++) {
-										WorldItem worlditem = null;
-										if (WorldItems.CloneWorldItem(startupCategory.GenericWorldItems[i], STransform.zero, false, WIGroups.Get.Player, out worlditem)) {
-												if (!AddItems(worlditem, ref error)) {
-														Debug.Log("PLAYERINVENTORY: Couldn't add item, error: " + error.ToString());
+										for (int j = 0; j < startupCategory.GenericWorldItems[i].InstanceWeight; j++) {
+												WorldItem worlditem = null;
+												if (WorldItems.CloneWorldItem(startupCategory.GenericWorldItems[i], STransform.zero, false, WIGroups.Get.Player, out worlditem)) {
+														if (!AddItems(worlditem, ref error)) {
+																Debug.Log("PLAYERINVENTORY: Couldn't add item, error: " + error.ToString());
+														}
 												}
 										}
 										yield return null;
@@ -165,15 +161,19 @@ namespace Frontiers
 								State.InventoryStacks = Stacks.Create.Stacks(Globals.NumInventoryStackContainers, WIGroups.Get.Player);
 						} else {
 								State.QuickslotsStack.Group = WIGroups.Get.Player;
-								State.QuickslotsStack.Bank = State.PlayerBank;
+								State.QuickslotsStackCarry.Group = WIGroups.Get.Player;
 								for (int i = 0; i < State.InventoryStacks.Count; i++) {
 										State.InventoryStacks[i].Group = WIGroups.Get.Player;
-										State.InventoryStacks[i].Bank = State.PlayerBank;
 								}
 						}
+						for (int i = 0; i < State.InventoryStacks.Count; i++) {
+								State.InventoryStacks[i].Bank = State.PlayerBank;
+						}
+						State.QuickslotsStackCarry.Bank = State.PlayerBank;
+						State.QuickslotsStack.Bank = State.PlayerBank;
 						//always create enablers
-						QuickslotEnabler = Stacks.Create.StackEnabler(State.QuickslotsStack);
-						InventoryEnablers = Stacks.Create.StackEnablers(State.InventoryStacks);
+						QuickslotEnabler = Stacks.Create.StackEnabler(State.QuickslotsStack, WIGroups.Get.Player);
+						InventoryEnablers = Stacks.Create.StackEnablers(State.InventoryStacks, WIGroups.Get.Player);
 
 						SelectedStack = Stacks.Create.Stack(WIGroups.Get.Player);
 						SelectedStack.StackMaxSize = WISize.NoLimit;
@@ -196,6 +196,11 @@ namespace Frontiers
 
 						State.PlayerBank.RefreshAction += OnBankChange;
 						GUIInventoryInterface.Get.CurrencyInterface.SetBank(State.PlayerBank);
+				}
+
+				public override void OnLocalPlayerDespawn()
+				{
+						mLastRelevantStack = null;
 				}
 
 				public override void OnGameStartFirstTime()
@@ -249,7 +254,9 @@ namespace Frontiers
 						//always add a single sack, even if we've cleared everything else
 						WorldItem containerItem = null;
 						WIStackError error = WIStackError.None;
+						mLastRelevantStack = null;
 						if (WorldItems.CloneWorldItem("Containers", "Sack 1", STransform.zero, false, WIGroups.Get.Player, out containerItem)) {
+								Debug.Log("adding sack to inventory");
 								AddItems(containerItem, ref error);
 						}
 				}
@@ -268,7 +275,12 @@ namespace Frontiers
 						if (player.LockQuickslots)
 								return true;
 
-						int selection = 0;
+						if (!GameManager.Is(FGameState.InGame)) {
+								return true;
+						}
+						int selection = -1;
+						//Debug.Log("Last key pressed: " + InterfaceActionManager.LastKey.ToString());
+
 						switch (InterfaceActionManager.LastKey) {
 								case KeyCode.None:
 								default:
@@ -315,13 +327,15 @@ namespace Frontiers
 										break;
 						}
 
-						State.ActiveQuickslot = selection;
-						if (State.ActiveQuickslot >= Globals.MaxStacksPerContainer) {	//quickslots will always cap at MaxStacksPerContainer
-								State.ActiveQuickslot = 0;
-						} else if (State.ActiveQuickslot < 0) {
-								State.ActiveQuickslot = 0;
+						if (selection >= 0) {
+								State.ActiveQuickslot = selection;
+								if (State.ActiveQuickslot >= Globals.MaxStacksPerContainer) {	//quickslots will always cap at MaxStacksPerContainer
+										State.ActiveQuickslot = 0;
+								} else if (State.ActiveQuickslot < 0) {
+										State.ActiveQuickslot = 0;
+								}
+								GUIInventoryInterface.Get.SetActiveQuickslots(State.ActiveQuickslot);
 						}
-						GUIInventoryInterface.Get.SetActiveQuickslots(State.ActiveQuickslot);
 						return true;
 				}
 
@@ -393,7 +407,6 @@ namespace Frontiers
 						if (player.LockQuickslots) {
 								//we'll add this once our quickslots aren't locked any more
 								mItemsToAddOnQuickslotsUnlocked.SafeEnqueue(item);
-								enabled = true;
 								return true;
 						}
 
@@ -481,9 +494,21 @@ namespace Frontiers
 						mAddingItem = true;
 						bool addResult = false;
 
-						WIStack mostRelevantStack = null;
-						if (FindMostRelevantStack(out mostRelevantStack, item, true, true, ref error)) {
-								addResult = Stacks.Push.Item(mostRelevantStack, item, true, StackPushMode.Manual, ref error);
+						//this may have been set by CanItemFit
+						//or it may have been set the last time we added something
+						//try to use it again
+						if (mLastRelevantStack != null && mLastRelevantStack.Group == WIGroups.Get.Player) {
+								addResult = Stacks.Push.Item(mLastRelevantStack, item, true, StackPushMode.Manual, ref error);
+						} else {
+								//bleh, set it to null, it's outdated
+								mLastRelevantStack = null;
+						}
+						if (!addResult) {
+								if (FindMostRelevantStack(ref mLastRelevantStack, item, true, true, ref error)) {
+										addResult = Stacks.Push.Item(mLastRelevantStack, item, true, StackPushMode.Manual, ref error);
+								} else {
+										Debug.Log("Couldn't find a relevant stack");
+								}
 						}
 
 						if (!addResult) {
@@ -513,14 +538,21 @@ namespace Frontiers
 						return addResult;
 				}
 				//this is where we find the best stack to put something when it's added to the inventory
-				public bool FindMostRelevantStack(out WIStack mostRelevantStack, IWIBase item, bool enablerStacksOk, bool compatibleOK, ref WIStackError error)
+				public bool FindMostRelevantStack(ref WIStack mostRelevantStack, IWIBase item, bool enablerStacksOk, bool compatibleOK, ref WIStackError error)
 				{
+						//first see if the stack we have will fit it
+						if (mostRelevantStack != null) {
+								if (!mostRelevantStack.IsFull && Stacks.Can.Stack(mostRelevantStack, item)) {
+										return true;
+								}
+						}
+
+						mostRelevantStack = null;
 						bool checkedQuickslots = false;
 						bool foundFirstEmpty = false;
 						bool foundFirstCompatible = false;
 						WIStack firstEmpty = null;
 						WIStack firstCompatible = null;
-						mostRelevantStack = null;
 
 						if (item.IsStackContainer) {	
 								if (!QuickslotEnabler.HasEnablerTopItem) {	//if quickslots are empty
@@ -628,10 +660,11 @@ namespace Frontiers
 				//instead of popping and adding items one at a time
 				//this function adds the whole stack to the supplied stack
 				//this totally bypasses all checks so it's quick, like swapping stacks in an inventory square
-				public bool QuickAddItems(WIStack fromStack, WIStack toStack, ref WIStackError error)
+				public bool QuickAddItems(WIStack fromStack, ref WIStackError error)
 				{
 						Debug.Log("Swapping stacks");
-						return Stacks.Swap.Stacks(fromStack, toStack, ref error);
+						return false;
+						//return Stacks.Swap.Stacks(fromStack, toStack, ref error);
 				}
 
 				public bool AddItems(WIStack stack, ref WIStackError error)
@@ -653,18 +686,13 @@ namespace Frontiers
 						return true;
 				}
 
-				public bool CanItemFit(IWIBase item, out WIStack relevantStack)
-				{
-						WIStackError error = WIStackError.None;
-						//find the first empty stack we can put this stuff in
-						return item.HasAtLeastOne(NoSpaceNeededItems) || FindMostRelevantStack(out relevantStack, item, true, false, ref error);
-				}
-
 				public bool CanItemFit(IWIBase item)
 				{
-						WIStack relevantStack = null;
-						return CanItemFit(item, out relevantStack);
+						WIStackError error = WIStackError.None;
+						return item.HasAtLeastOne(NoSpaceNeededItems) || FindMostRelevantStack(ref mLastRelevantStack, item, true, true, ref error);
 				}
+
+				protected WIStack mLastRelevantStack;
 
 				public bool PushSelectedStack()
 				{
@@ -867,6 +895,10 @@ namespace Frontiers
 
 				public void Update()
 				{
+						if (InterfaceActionManager.AvailableKeyDown) {
+								SelectionNumeric(WorldClock.RealTime);
+						}
+
 						if (player.LockQuickslots)
 								return;
 
@@ -874,7 +906,6 @@ namespace Frontiers
 								WIStackError error = WIStackError.None;
 								AddItems(mItemsToAddOnQuickslotsUnlocked.Dequeue(), ref error);
 						}
-						enabled = false;
 				}
 
 				protected IEnumerator CheckCarryItemStatus()
@@ -904,7 +935,10 @@ namespace Frontiers
 								qsEnabledPrev = QuickslotsEnabled;
 								hadItemPrev = qsEnabledPrev && State.QuickslotsStackCarry.HasTopItem && mActiveCarryItem == State.QuickslotsStackCarry.TopItem;
 
-								yield return WorldClock.WaitForRTSeconds(0.025f);
+								double waitUntil = WorldClock.RealTime + 0.025f;
+								while (WorldClock.RealTime < waitUntil) {
+										yield return null;
+								}
 
 								mChangingAci = false;
 								//do we want to change our active quickslot item?
@@ -940,7 +974,7 @@ namespace Frontiers
 
 								//---this part is relatively safe so don't bother with exception handling
 								if (mChangingAci) {
-										Debug.Log ("----Changing quickslot ACI...");
+										//Debug.Log ("----Changing quickslot ACI...");
 										//if it has changed and we're supposed to announce the change do so now
 										//this action should ONLY originate from here
 										Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemACIChange, WorldClock.AdjustedRealTime);
@@ -1011,7 +1045,10 @@ namespace Frontiers
 								hadItemPrev = qsEnabledPrev && lastQuickslotStack.HasTopItem && mActiveQuickslotItem == lastQuickslotStack.TopItem;
 								//wait a bit (delay to prevent 'spamming' of quickslot changes)
 
-								yield return WorldClock.WaitForRTSeconds (0.025f);
+								double waitUntil = WorldClock.RealTime + 0.025f;
+								while (WorldClock.RealTime < waitUntil) {
+										yield return null;
+								}
 
 								//---Check to see if anything has changed
 								//try {
@@ -1052,7 +1089,7 @@ namespace Frontiers
 
 								//---this part is relatively safe so don't bother with exception handling
 								if (mChangingAqi) {
-										Debug.Log ("----Changing quickslot AQI...");
+										Debug.Log("----Changing quickslot AQI...");
 										//if it has changed and we're supposed to announce the change do so now
 										//this action should ONLY originate from here
 										Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemAQIChange, WorldClock.AdjustedRealTime);
@@ -1137,6 +1174,7 @@ namespace Frontiers
 																announceChange = false;
 														}//otherwise just set & announce it at the end normally
 												} else {
+														//Debug.Log ("is quickslots stack group null? " + (aqiQuickslotStack.Group == null).ToString());
 														//if it's not a world item then we need to turn it into one
 														Stacks.Convert.TopItemToWorldItem(aqiQuickslotStack, out newAQI);
 														newAQI.SetMode(WIMode.Equipped);

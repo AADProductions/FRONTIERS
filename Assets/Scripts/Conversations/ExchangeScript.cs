@@ -10,14 +10,6 @@ using System.Xml.Serialization;
 
 namespace Frontiers.Story.Conversations
 {
-		public enum ExchangeAction
-		{
-				Choose,
-				Conclude,
-				Both,
-				None,
-		}
-
 		[Serializable]
 		//this is GARBAGE - i had no idea what i was getting into with this XmlInclude nonsense
 		//i will be replacing this system with something similar to WIScript, where the type is stored as a key
@@ -51,6 +43,8 @@ namespace Frontiers.Story.Conversations
 		[XmlInclude(typeof(GiveMoneyToPlayer))]
 		[XmlInclude(typeof(GivePotionToPlayer))]
 		[XmlInclude(typeof(GotoExchange))]
+		[XmlInclude(typeof(HouseOfHealingCalculateDonation))]
+		[XmlInclude(typeof(HouseOfHealingHealAll))]
 		[XmlInclude(typeof(IgnoreMissionObjective))]
 		[XmlInclude(typeof(IgnoreMission))]
 		[XmlInclude(typeof(InitiateTradeWithCharacter))]
@@ -101,6 +95,11 @@ namespace Frontiers.Story.Conversations
 		[XmlInclude(typeof(TriggerCutscene))]
 		public class ExchangeScript
 		{
+				public ExchangeScript () {
+						mScriptType = this.GetType();
+						mScriptName = mScriptType.FullName;
+				}
+
 				[XmlIgnore]
 				[NonSerialized]
 				public Exchange exchange;
@@ -122,6 +121,24 @@ namespace Frontiers.Story.Conversations
 				public string LastIncomingChoice = string.Empty;
 				public string LastOutgoingChoice = string.Empty;
 				public string DtsOnFailure = string.Empty;
+
+				public KeyValuePair <string,string> SaveState {
+						get {	//TODO update this when we move serialization to gamedata
+								return new KeyValuePair<string,string> (ScriptName, WIScript.XmlSerializeToString(this));
+						}
+				}
+
+				public Type ScriptType {
+						get {
+								return mScriptType;
+						}
+				}
+
+				public string ScriptName {
+						get {
+								return mScriptName;
+						}
+				}
 
 				public bool RequirementsMet {
 						get {
@@ -238,5 +255,8 @@ namespace Frontiers.Story.Conversations
 				{
 						//do stuff here
 				}
+
+				protected Type mScriptType;
+				protected string mScriptName;
 		}
 }

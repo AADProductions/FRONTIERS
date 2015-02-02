@@ -22,6 +22,7 @@ namespace Frontiers.GUI
 				public UICheckbox VideoPostFXGrain;
 				public UICheckbox VideoPostFXMBlur;
 				public UICheckbox VideoPostFXAA;
+				public UICheckbox VideoPostFXGlobalFog;
 				public UICheckbox VideoShadowObjects;
 				public UICheckbox VideoShadowTerrain;
 				public UICheckbox VideoShadowStructure;
@@ -53,7 +54,10 @@ namespace Frontiers.GUI
 				public UISlider MouseSensitivityInterface;
 				public UISlider MouseSensitivityFPSCamera;
 				public UICheckbox MouseInvertYAxis;
+				public UICheckbox ControllerCursorCheckbox;
+				public UICheckbox CustomDeadZonesCheckbox;
 				public UICheckbox OculusModeCheckbox;
+				public UISlider AccessibilityTextSpeed;
 				public float VideoFovMin = 60.0f;
 				public float VideoFovMax = 120.0f;
 				public int MaxMeshTreesMin = 16;
@@ -66,6 +70,8 @@ namespace Frontiers.GUI
 				public float TerrainDetailMin = 10f;
 				public float MouseSensitivityFPSMin	= 1.0f;
 				public float MouseSensitivityFPSMax	= 10.0f;
+				public float AccessibilityTextSpeedMin = 0.5f;
+				public float AccessibilityTextSpeedMax = 2f;
 				//public PlayerPreferences.VideoPrefs VideoPrefs = PlayerPreferences.VideoPrefs.Default;
 				public PlayerPreferences.VideoPrefs TempVideoPrefs;
 				public GUIUserActionBrowser ActionBrowser;
@@ -99,6 +105,7 @@ namespace Frontiers.GUI
 						SoundRefresh();
 						ImmersionRefresh();
 						ControlsRefresh();
+						AccessibilityRefresh();
 				}
 
 				#region widgets changing
@@ -137,7 +144,8 @@ namespace Frontiers.GUI
 						Profile.Get.CurrentPreferences.Controls.MouseSensitivityFPSCamera = (MouseSensitivityFPSMin + ((MouseSensitivityFPSMax - MouseSensitivityFPSMin) * MouseSensitivityFPSCamera.sliderValue));
 						//TempControlPrefs.MouseSensitivityInterface = MouseSensitivityInterface.sliderValue;
 						Profile.Get.CurrentPreferences.Controls.MouseInvertYAxis = MouseInvertYAxis.isChecked;
-
+						Profile.Get.CurrentPreferences.Controls.UseControllerMouse = ControllerCursorCheckbox.isChecked;
+						Profile.Get.CurrentPreferences.Controls.UseCustomDeadZoneSettings = CustomDeadZonesCheckbox.isChecked;
 						Profile.Get.CurrentPreferences.Controls.Apply();
 				}
 
@@ -157,6 +165,11 @@ namespace Frontiers.GUI
 						TempVideoPrefs.TerrainTreeDistance = VideoTerrainTreeDistance.sliderValue;
 
 						VideoRefresh(TempVideoPrefs);
+				}
+
+				public void OnClickCancelButton()
+				{
+						ActionCancel(WorldClock.RealTime);
 				}
 
 				public void OnClickVideoApply()
@@ -259,7 +272,8 @@ namespace Frontiers.GUI
 						TempVideoPrefs.PostFXMBlur = VideoPostFXMBlur.isChecked;
 						TempVideoPrefs.PostFXAA = VideoPostFXAA.isChecked;
 						TempVideoPrefs.Fullscreen = VideoFullScreen.isChecked;
-						TempVideoPrefs.HDR = VideoHDR.isChecked;
+						TempVideoPrefs.PostFXGlobalFog = VideoPostFXGlobalFog.isChecked;
+						//TempVideoPrefs.HDR = VideoHDR.isChecked;
 						TempVideoPrefs.ObjectShadows = VideoShadowObjects.isChecked;
 						TempVideoPrefs.TerrainShadows = VideoShadowTerrain.isChecked;
 						TempVideoPrefs.StructureShadows = VideoShadowStructure.isChecked;
@@ -274,7 +288,12 @@ namespace Frontiers.GUI
 
 						mMadeVideoChanges = true;
 
-						TempVideoPrefs.AmbientLightBooster = VideoLighting.sliderValue;
+						TempVideoPrefs.AdjustBrightness = Mathf.CeilToInt (VideoLighting.sliderValue * 100);
+						if (TempVideoPrefs.AdjustBrightness == 51 || VideoLighting.sliderValue == 49) {
+								//snap to middle
+								//that will disable the brightness adjustment
+								VideoLighting.sliderValue = 50;
+						}
 
 						VideoRefresh(TempVideoPrefs);
 				}
@@ -309,23 +328,33 @@ namespace Frontiers.GUI
 						Profile.Get.CurrentPreferences.Sound.SfxCreatures = SfxSoundCreaturs.sliderValue;
 				}
 
+				public void OnAccessibilitySettingsChange ( ) {
+						if (!Initialized || mRefreshingAccessibility || mFinished) {
+								return;
+						}
+
+						Profile.Get.CurrentPreferences.Accessibility.OnScreenTextSpeed = (AccessibilityTextSpeedMin + ((AccessibilityTextSpeedMax - AccessibilityTextSpeedMin) * AccessibilityTextSpeed.sliderValue));
+				}
+
 				#endregion
 
 				#region applying
 
 				public void VideoApply()
 				{
+						Debug.Log("Attempting to apply video...");
 						if (!Initialized || !mMadeVideoChanges || mFinished) {
+								Debug.Log("We haven't made any changes");
 								return;
 						}
-
+						Debug.Log("Copying from temporary preferences");
 						//set video prefs to be official
-						Profile.Get.CurrentPreferences.Video = TempVideoPrefs;
+						Profile.Get.CurrentPreferences.Video.CopyFrom(TempVideoPrefs);
 						Profile.Get.CurrentPreferences.Apply(true);
 						//then create new temp prefs to match recently set prefs
-						TempVideoPrefs = ObjectClone.Clone <PlayerPreferences.VideoPrefs>(Profile.Get.CurrentPreferences.Video);
 						mMadeVideoChanges = false;
-
+						Debug.Log("Refreshing from temporary preferences");
+						TempVideoPrefs.CopyFrom(Profile.Get.CurrentPreferences.Video);
 						VideoRefresh(TempVideoPrefs);
 				}
 
@@ -342,10 +371,11 @@ namespace Frontiers.GUI
 						mRefreshingVideo = true;
 
 						VideoFullScreen.isChecked = (videoPrefs.Fullscreen);
-						VideoHDR.isChecked = videoPrefs.HDR;
+						VideoHDR.isChecked = true;//videoPrefs.HDR;
+						VideoHDR.gameObject.SetActive(false);
 						VideoResolutionLabel.text = (videoPrefs.ResolutionWidth.ToString() + " x " + videoPrefs.ResolutionHeight.ToString());
 						VideoFOVLabel.text = videoPrefs.FieldOfView.ToString();
-						VideoLighting.sliderValue = videoPrefs.AmbientLightBooster;
+						VideoLighting.sliderValue = ((float)videoPrefs.AdjustBrightness) / 100;
 			
 						#region labels
 						string textureResolution = string.Empty;
@@ -447,6 +477,7 @@ namespace Frontiers.GUI
 						VideoPostFXGrain.isChecked = videoPrefs.PostFXGrain;
 						VideoPostFXMBlur.isChecked = videoPrefs.PostFXMBlur;
 						VideoPostFXAA.isChecked = videoPrefs.PostFXAA;
+						VideoPostFXGlobalFog.isChecked = videoPrefs.PostFXGlobalFog;
 						VideoShadowObjects.isChecked = videoPrefs.ObjectShadows;
 						VideoShadowStructure.isChecked = videoPrefs.StructureShadows;
 						VideoShadowTerrain.isChecked = videoPrefs.TerrainShadows;
@@ -463,6 +494,18 @@ namespace Frontiers.GUI
 						mRefreshingVideo = false;
 				}
 
+				public void AccessibilityRefresh () {
+						if (!Initialized || mRefreshingAccessibility || mFinished) {
+								return;
+						}
+
+						mRefreshingAccessibility = true;
+
+						AccessibilityTextSpeed.sliderValue = (Profile.Get.CurrentPreferences.Accessibility.OnScreenTextSpeed - AccessibilityTextSpeedMin) / (AccessibilityTextSpeedMax - AccessibilityTextSpeedMin);
+				
+						mRefreshingAccessibility = false;
+				}
+
 				public void ControlsRefresh()
 				{
 						if (!Initialized || mRefreshingControls || mFinished) {
@@ -475,6 +518,8 @@ namespace Frontiers.GUI
 			
 						MouseSensitivityFPSCamera.sliderValue = (Profile.Get.CurrentPreferences.Controls.MouseSensitivityFPSCamera - MouseSensitivityFPSMin) / (MouseSensitivityFPSMax - MouseSensitivityFPSMin);
 						MouseInvertYAxis.isChecked = Profile.Get.CurrentPreferences.Controls.MouseInvertYAxis;
+						ControllerCursorCheckbox.isChecked = Profile.Get.CurrentPreferences.Controls.UseControllerMouse;
+						CustomDeadZonesCheckbox.isChecked = Profile.Get.CurrentPreferences.Controls.UseCustomDeadZoneSettings;
 						mRefreshingControls = false;
 				}
 
@@ -524,6 +569,7 @@ namespace Frontiers.GUI
 				protected bool mRefreshingSound = false;
 				protected bool mRefreshingImmersion = false;
 				protected bool mRefreshingControls = false;
+				protected bool mRefreshingAccessibility = false;
 		}
 
 		public class StartMenuOptionsResult

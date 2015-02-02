@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.Data;
 using Frontiers.World;
-using Frontiers.World.Locations;
+
 using Frontiers.World.Gameplay;
 using Pathfinding;
 using ExtensionMethods;
@@ -68,7 +68,7 @@ public partial class GameWorld : Manager
 				Mods.Get.Editor.SaveMods <Region>(Regions, "Region");
 				Mods.Get.Editor.SaveMods <AudioProfile>(AudioProfiles, "AudioProfile");
 				Mods.Get.Editor.SaveMods <PlayerStartupPosition>(WorldStartupPositions, "PlayerStartupPosition");
-				Settings.Version = GameManager.Version;
+				Settings.Version = GameManager.VersionString;
 				GameData.IO.SaveWorldSettings(Settings);
 		}
 		#endif

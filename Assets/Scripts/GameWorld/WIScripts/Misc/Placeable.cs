@@ -1,10 +1,10 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using System;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Placeable : WIScript
 		{
@@ -22,14 +22,5 @@ namespace Frontiers.World
 						}
 						return isPermitted;
 				}
-		}
-
-		public enum PlacementOrientation
-		{
-				Surface,
-				InvertedSurface,
-				Gravity,
-				InvertedGravity,
-				Random
 		}
 }

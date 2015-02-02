@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -26,6 +26,7 @@ namespace Frontiers.World
 				public float BurnHeat = 1f;
 				public float WarmHeat = 0.1f;
 				public Transform tr;
+				public List <ParticleEmitter> ParticleEmitters = new List<ParticleEmitter>();
 
 				public bool IsBurning(Vector3 position)
 				{
@@ -105,7 +106,7 @@ namespace Frontiers.World
 
 				public void Burn()
 				{
-						float fuelBurned = (float)(Frontiers.WorldClock.ARTDeltaTime * FireBurnFuelRate);
+						float fuelBurned = (float)(Frontiers.WorldClock.ARTDeltaTime * Globals.FireBurnFuelRate);
 			
 						if (FuelSource == null) {
 								if (InternalFuel <= 0.0f) {
@@ -141,8 +142,10 @@ namespace Frontiers.World
 										FireObjectTemplate = FXManager.Get.SpawnFire(Type.ToString(), transform, Offset, Vector3.zero, FireScale, false);
 								}
 								FireObject = GameObject.Instantiate(FireObjectTemplate) as GameObject;
-								FireObject.transform.parent = transform;
+								FireObject.transform.parent = tr;
 								FireObject.transform.localPosition = Offset;
+								ParticleEmitters.AddRange(tr.GetComponentsInChildren <ParticleEmitter>());
+
 						}
 
 						if (FireLight == null) {
@@ -175,9 +178,15 @@ namespace Frontiers.World
 								 Globals.LayerSolidTerrain | Globals.LayerStructureTerrain)) {
 								if (mHitInfo.collider.gameObject != Player.Local.gameObject) {
 										FireLight.IsOff = true;
+										/*for (int i = 0; i < ParticleEmitters.Count; i++) {
+												ParticleEmitters[i].enabled = false;
+										}*/
 								}
 						} else {
 								FireLight.IsOff = false;
+								/*for (int i = 0; i < ParticleEmitters.Count; i++) {
+										ParticleEmitters[i].enabled = true;
+								}*/
 						}
 				}
 
@@ -185,16 +194,21 @@ namespace Frontiers.World
 				{
 						mNearbyWorldItems.Clear();
 						FireLight.Deactivate();
-						GameObject.Destroy(FireObject);
-						GameObject.Destroy(gameObject);
+						for (int i = 0; i < ParticleEmitters.Count; i++) {
+								ParticleEmitters[i].enabled = false;
+						}
+						GameObject.Destroy(FireObject, 0.5f);
+						GameObject.Destroy(gameObject, 0.5f);
 				}
 
 				public void OnDrawGizmos()
 				{
+						/*
 						Gizmos.color = Color.red;
 						Gizmos.DrawWireSphere(FireLight.Position, BurnScale);
 						Gizmos.color = Color.white;
 						Gizmos.DrawWireSphere(FireLight.Position, CookScale);
+						*/
 				}
 
 				protected void UpdateFireSize()
@@ -209,26 +223,18 @@ namespace Frontiers.World
 												FireScale = MinFireScale;
 												break;
 								}
-								FireObject.SendMessage("UpdateScaleViaScript", FireScale, SendMessageOptions.DontRequireReceiver);
+								if (!Mathf.Approximately(FireScale, mLastFireScale)) {
+										FireObject.SendMessage("UpdateScaleViaScript", FireScale, SendMessageOptions.DontRequireReceiver);
+								}
+								mLastFireScale = FireScale;
 						}
 				}
 
 				protected List <GameObject>	mNearbyWorldItems = new List <GameObject>();
 				protected float mUpdateTime = 0.0f;
+				protected float mLastFireScale = -1f;
 				public static float FireUpdateInterval = 1.0f;
 				public static float MaxFireScale = 0.175f;
 				public static float MinFireScale = 0.1f;
-				public static float FireBurnFuelRate = 1.0f;
-		}
-
-		public enum FireType
-		{
-				CampFire,
-				Candle,
-				Fire,
-				OilFire,
-				OilFireWindy,
-				OilLeak,
-				Fireplace,
 		}
 }

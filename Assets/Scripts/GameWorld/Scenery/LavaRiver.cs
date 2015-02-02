@@ -42,8 +42,8 @@ public class LavaRiver : MonoBehaviour
 						DistortionMaterial.SetTextureOffset("_BumpMap", DistortionScrollSpeed * (float)(WorldClock.AdjustedRealTime * FlowTime));
 				}
 
-				if (WorldClock.Time > mNextSpoutTime) {
-						mNextSpoutTime = (float)(WorldClock.Time + WorldClock.RTSecondsToGameSeconds(UnityEngine.Random.Range(SpoutRTIntervalMin, SpoutRTIntervalMax)));
+				if (WorldClock.AdjustedRealTime > mNextSpoutTime) {
+						mNextSpoutTime = (float)(WorldClock.AdjustedRealTime + UnityEngine.Random.Range(SpoutRTIntervalMin, SpoutRTIntervalMax));
 						CurrentSpoutIndex = LavaSpouts.NextIndex(CurrentSpoutIndex);
 						FXManager.Get.SpawnFX(LavaSpouts[CurrentSpoutIndex].position, LavaSpoutFXName);
 				}

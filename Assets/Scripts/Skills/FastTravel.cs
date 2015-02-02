@@ -3,9 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Locations;
-using Frontiers.World.Gameplay;
-using System.Text.RegularExpressions;
+using Frontiers.GUI;
 
 namespace Frontiers.World.Gameplay
 {
@@ -22,7 +20,7 @@ namespace Frontiers.World.Gameplay
 						if (!GameManager.Is(FGameState.InGame | FGameState.GamePaused))
 								return true;
 
-						if (TravelManager.Get.State == TravelManager.FastTravelState.Traveling) {
+						if (TravelManager.Get.State == FastTravelState.Traveling) {
 								//check the last encountered obstructions and see if they're close enough to cause a ruckus
 								float checkDistance = 0f;
 								foreach (WorldItem obstruction in Player.Local.EncountererObject.LastItemsEncountered) {

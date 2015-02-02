@@ -50,10 +50,15 @@ namespace Frontiers
 										statusKeeper.Initialize();
 										mStatusKeeperLookup.Add(statusKeeper.Name, statusKeeper);
 										StatusKeepers.Add(statusKeeper);
-										if (statusKeeper.Name.Contains("Reputation") || statusKeeper.Name.Contains ("Temperature")) {
+										if (statusKeeper.Name.Contains("Reputation")) {
 												statusKeeper.DefaultState.UseNeutralUrgency = true;
 												foreach (StatusKeeperState state in statusKeeper.AlternateStates) {
 														state.UseNeutralUrgency = true;
+												}
+										} else if (statusKeeper.Name.Contains("Temperature")) {
+												statusKeeper.DefaultState.UseNeutralUrgency = false;
+												foreach (StatusKeeperState state in statusKeeper.AlternateStates) {
+														state.UseNeutralUrgency = false;
 												}
 										}
 								}
@@ -93,7 +98,7 @@ namespace Frontiers
 						player.Surroundings.OnHeatDecrease += OnHeatDecrease;
 						player.Surroundings.OnHeatIncrease += OnHeatIncrease;
 
-						GUIPlayerStatusInterface.Get.Initialize(StatusKeepers);
+						GUIPlayerStatusInterface.Get.Initialize();
 
 						enabled = true;
 				}
@@ -322,11 +327,13 @@ namespace Frontiers
 				#region conditions and status
 
 				public void AddCondition(string conditionName)
-				{	//first see if the condition is already present
+				{
+						bool conditionAdded = false;
+						//first see if the condition is already present
 						//if it is, don't clone the condition, stack it instead of creating a new one
 						for (int i = 0; i < State.ActiveConditions.Count; i++) {
 								Condition activeCondition = State.ActiveConditions[i];
-								if (string.Equals(activeCondition.Name, conditionName) && !activeCondition.HasExpired) {	//double its duration so it'll last twice as long
+								if (string.Equals(activeCondition.Name, conditionName) && !activeCondition.HasExpired) {//double its duration so it'll last twice as long
 										activeCondition.IncreaseDuration(activeCondition.Duration * Globals.StatusKeeperTimecale);
 										return;
 								}
@@ -339,19 +346,29 @@ namespace Frontiers
 								for (int i = 0; i < StatusKeepers.Count; i++) {
 										StatusKeeper statusKeeper = StatusKeepers[i];
 										if (condition.HasSymptomFor(statusKeeper.Name)) {
+												conditionAdded = true;
 												statusKeeper.ReceiveCondition(condition);
 										}
 								}
+						}
+
+						if (conditionAdded) {
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalConditionAdd, WorldClock.RealTime);
 						}
 				}
 
 				public void RemoveCondition(string conditionName)
 				{
+						bool conditionRemoved = false;
 						for (int i = State.ActiveConditions.LastIndex(); i >= 0; i--) {
 								if (State.ActiveConditions[i].Name.Equals(conditionName)) {
 										State.ActiveConditions[i].Cancel();//it will be removed on the next check
 										State.ActiveConditions.RemoveAt(i);
+										conditionRemoved = true;
 								}
+						}
+						if (conditionRemoved) {
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalConditionRemove, WorldClock.RealTime);
 						}
 				}
 
@@ -431,6 +448,7 @@ namespace Frontiers
 												    ActiveStateList)) {	//it's toast, remove it
 												Debug.Log("Condition " + State.ActiveConditions[i].Name + " is expired, removing");
 												State.ActiveConditions.RemoveAt(i);
+												Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalConditionRemove, WorldClock.RealTime);
 										}
 										yield return null;//TODO check if this is wise?
 								}

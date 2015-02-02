@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using Frontiers;
+using System;
 
 namespace Frontiers.GUI
 {
@@ -15,6 +16,15 @@ namespace Frontiers.GUI
 				public float ButtonAlpha = 0.0f;
 
 				public void EnableButton(bool enabled)
+				{
+						if (enabled) {
+								SetEnabled();
+						} else {
+								SetDisabled();
+						}
+				}
+
+				public void RefreshColors()
 				{
 						if (enabled) {
 								SetEnabled();
@@ -63,7 +73,12 @@ namespace Frontiers.GUI
 										Vector3.one,
 										0.1f);
 								SetMessage(mMessage, false);
-								SetButton(mButton, false);
+								SetButton(mButton, false,
+										mTweenTarget,
+										Colors.Get.GeneralHighlightColor,
+										Colors.Alpha(Colors.Get.MenuButtonBackgroundColorDefault, ButtonAlpha),
+										//Colors.Darken (Colors.Get.GeneralHighlightColor, ButtonAlpha),
+										0.1f);
 						}
 						mStartupSet = true;
 						mDisabled = true;
@@ -79,7 +94,7 @@ namespace Frontiers.GUI
 								SetLabel(mLabel, Colors.Get.MenuButtonTextColorDefault,
 										Colors.Get.MenuButtonTextOutlineColor,
 										UILabel.Effect.Shadow);//UILabel.Effect.Outline);
-				
+												
 								SetScale(mScale, true,
 										Vector3.one * 1.035f,
 										Vector3.one,
@@ -93,7 +108,7 @@ namespace Frontiers.GUI
 										0.1f);
 						}
 						mStartupSet = true;
-						mDisabled	= false;
+						mDisabled = false;
 				}
 
 				public void Awake()
@@ -103,23 +118,24 @@ namespace Frontiers.GUI
 						} else {
 								mBackground = gameObject.GetComponent <UISprite>();
 						}
-			
+
 						if (!string.IsNullOrEmpty(OverlayName)) {
 								mOverlay = transform.FindChild(OverlayName).GetComponent <UISprite>();
 						}
-			
+
 						if (!string.IsNullOrEmpty(SelectionName)) {
 								mSelection = transform.FindChild(SelectionName).GetComponent <UISprite>();
 						}
-			
+
 						if (!string.IsNullOrEmpty(LabelName)) {
 								mLabel = transform.FindChild(LabelName).GetComponent <UILabel>();
+								mLabel.transform.localScale = Vector3.one * (Mathf.Max(mLabel.transform.localScale.x, 24f));
 						}
-			
+
 						mButton = gameObject.GetComponent <UIButton>();
 						mMessage = gameObject.GetComponent <UIButtonMessage>();
 						mScale = gameObject.GetComponent <UIButtonScale>();
-			
+
 						if (mSelection != null) {
 								mTweenTarget = mSelection.gameObject;
 						} else if (mBackground != null) {

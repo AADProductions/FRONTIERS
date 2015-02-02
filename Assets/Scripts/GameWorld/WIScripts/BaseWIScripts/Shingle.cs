@@ -9,7 +9,8 @@ using System;
 namespace Frontiers.World.BaseWIScripts
 {
 		public class Shingle : WIScript
-		{		//helps with buying / selling structures
+		{
+				//helps with buying / selling structures
 				//shows when structures are available to buy
 				public GameObject ForSaleSignPrefab;
 				public Structure ParentStructure;
@@ -73,7 +74,7 @@ namespace Frontiers.World.BaseWIScripts
 										//if we're owned by the player
 										//let the player know
 										//if they already know this does nothing
-										Player.Local.Inventory.AquireStructure(State.ParentStructure, State.AnnounceOwnership);
+										Player.Local.Inventory.AcquireStructure(State.ParentStructure, State.AnnounceOwnership);
 										break;
 
 								default:
@@ -130,6 +131,8 @@ namespace Frontiers.World.BaseWIScripts
 
 				public override void PopulateExamineList(List<WIExamineInfo> examine)
 				{
+						State.PriceInMarks = CalculatePriceInMarks(ParentStructure);
+
 						switch (State.PropertyStatus) {
 								case PropertyStatusType.Abandoned:
 								default:
@@ -137,7 +140,10 @@ namespace Frontiers.World.BaseWIScripts
 										break;
 
 								case PropertyStatusType.Destroyed:
-										mDestroyedExamineInfo.StaticExamineMessage = "This property has been destroyed and can be restored for $" + State.PriceInMarks.ToString() + " Marks";
+										mDestroyedExamineInfo.StaticExamineMessage = 
+						"This property has been destroyed and can be restored for "
+										+ (State.PriceInMarks / 2).ToString()
+												+ " Marks (" + Currency.ConvertToBaseCurrency(State.PriceInMarks / 2, WICurrencyType.D_Luminite) + " grains)";
 										break;
 
 								case PropertyStatusType.DestroyedForever:
@@ -145,7 +151,10 @@ namespace Frontiers.World.BaseWIScripts
 										break;
 
 								case PropertyStatusType.ForSale:
-										mBuyExamineInfo.StaticExamineMessage = "This property can be bought for $" + State.PriceInMarks.ToString() + " marks";
+										mBuyExamineInfo.StaticExamineMessage = 
+						"This property can be purchased for "
+										+ State.PriceInMarks.ToString()
+												+ " marks (" + Currency.ConvertToBaseCurrency(State.PriceInMarks, WICurrencyType.D_Luminite) + " grains)";
 										examine.Add(mBuyExamineInfo);
 										break;
 
@@ -167,15 +176,17 @@ namespace Frontiers.World.BaseWIScripts
 
 				public override void PopulateOptionsList(List <WIListOption> options, List <string> message)
 				{
+						State.PriceInMarks = CalculatePriceInMarks(ParentStructure);
+
 						switch (State.PropertyStatus) {
 								case PropertyStatusType.Abandoned:
 										options.Add(mClaimOption);
 										break;
 
 								case PropertyStatusType.ForSale:
-										mForSaleOption.OptionText = "Buy for $" + State.PriceInMarks.ToString() + " Marks";
-										if (!Player.Local.Inventory.InventoryBank.HasExactChange(State.PriceInMarks, WICurrencyType.D_Luminite)) {
-												mForSaleOption.Disabled = true;
+										mForSaleOption.OptionText = "Buy for " + State.PriceInMarks.ToString() + " marks";
+										if (Player.Local.Inventory.InventoryBank.CanAfford(Currency.ConvertToBaseCurrency(State.PriceInMarks, WICurrencyType.D_Luminite))) {
+												mForSaleOption.Disabled = false;
 										} else {
 												mForSaleOption.Disabled = false;
 										}
@@ -187,7 +198,7 @@ namespace Frontiers.World.BaseWIScripts
 										break;
 
 								case PropertyStatusType.Destroyed:
-										mRestoreOption.OptionText = "Restore for $" + State.PriceInMarks.ToString() + " Marks";
+										mRestoreOption.OptionText = "Restore for " + (State.PriceInMarks / 2).ToString() + " marks";
 										if (!Player.Local.Inventory.InventoryBank.HasExactChange(State.PriceInMarks, WICurrencyType.D_Luminite)) {
 												mForSaleOption.Disabled = true;
 										} else {
@@ -211,7 +222,11 @@ namespace Frontiers.World.BaseWIScripts
 										break;
 
 								case "Buy":
-										PlayerBuyStructure(ParentStructure);
+										if (PlayerBuyStructure(ParentStructure, Currency.ConvertToBaseCurrency(State.PriceInMarks, WICurrencyType.D_Luminite))) {
+												if (ForSaleSign != null) {
+														ForSaleSign.SetActive(false);
+												}
+										}
 										break;
 
 								case "Restore":
@@ -225,6 +240,21 @@ namespace Frontiers.World.BaseWIScripts
 								default:
 										break;
 						}
+				}
+
+				public static int CalculatePriceInMarks(Structure structure)
+				{
+						//figure out which region we're in
+						Region region = GameWorld.Get.CurrentRegion;
+						Debug.Log("Structure region is: " + region.Name);
+						//use the economic value as a basline
+						//the value is 1 2 4 8, so just multiply it for the value
+						int templateSize = Mods.Get.ModSizeInBytes("Structure", structure.State.TemplateName);
+						Debug.Log("Structure template size is: " + templateSize.ToString());
+						int valueInMarks = Mathf.Max(1, Mathf.FloorToInt(Globals.StructureBaseValueInMarks * region.ResidentFlags.Wealth * (templateSize * Globals.StructureValueTemplateMultiplier)));
+						//then use the size of the template file to very roughly determine how much stuff is in it
+						Debug.Log("Value in marks: " + valueInMarks.ToString());
+						return valueInMarks;
 				}
 
 				protected static void PlayerRenameStructure(Structure structure)
@@ -243,9 +273,13 @@ namespace Frontiers.World.BaseWIScripts
 
 				}
 
-				protected static void PlayerBuyStructure(Structure structure)
+				protected static bool PlayerBuyStructure(Structure structure, int baseCurrencyValue)
 				{
-
+						if (Player.Local.Inventory.InventoryBank.TryToRemove(baseCurrencyValue)) {
+								Player.Local.Inventory.AcquireStructure(structure.worlditem.StaticReference, true);
+								return true;
+						}
+						return false;
 				}
 
 				protected static WIExamineInfo mAbandonedExamineInfo;
@@ -276,7 +310,8 @@ namespace Frontiers.World.BaseWIScripts
 														if (State.PropertyStatus != PropertyStatusType.OwnedByPlayer) {
 																Residence residence = gameObject.GetComponent <Residence>();
 																if (residence == null || string.IsNullOrEmpty(residence.State.OwnerCharacterName)) {
-																		State.PropertyStatus = PropertyStatusType.ForSale;
+																		//disabling this for now, structures are now for sale randomly
+																		//State.PropertyStatus = PropertyStatusType.ForSale;
 																}
 														}
 												}

@@ -35,14 +35,14 @@ namespace Frontiers
 				{
 						//wait a frame
 						yield return null;
-						Debug.Log("Filling wearables from category " + categoryName);
+						//Debug.Log("Filling wearables from category " + categoryName);
 						WICategory category = null;
 						STransform tr = new STransform();
 						if (WorldItems.Get.Category(categoryName, out category)) {
-								Debug.Log("Got category, filling now");
+								//Debug.Log("Got category, filling now");
 								for (int i = 0; i < category.GenericWorldItems.Count; i++) {
 										//get an instance of the item and try to wear it
-										Debug.Log("Adding wearable " + category.GenericWorldItems[i].DisplayName);
+										//Debug.Log("Adding wearable " + category.GenericWorldItems[i].DisplayName);
 										for (int j = 0; j < category.GenericWorldItems[i].InstanceWeight; j++) {
 												WorldItem newWorldItem = null;
 												if (WorldItems.CloneWorldItem(category.GenericWorldItems[i], tr, false, WIGroups.Get.Player, out newWorldItem)) {
@@ -52,13 +52,13 @@ namespace Frontiers
 																//if we can't wear it for some reason, drop it in front of the player
 																player.ItemPlacement.ItemDropAtFeet(newWorldItem);
 														} else {
-																Debug.Log("Player has been equipped with " + newWorldItem.DisplayName);
+																//Debug.Log("Player has been equipped with " + newWorldItem.DisplayName);
 														}
 												}
 										}
 								}
 						} else {
-								Debug.Log("Couldn't find category " + categoryName);
+								//Debug.Log("Couldn't find category " + categoryName);
 						}
 						yield break;
 				}
@@ -310,7 +310,7 @@ namespace Frontiers
 								mCheckStack = State.UpperBodyContainer.StackList[i];
 								if (mCheckStack.HasTopItem) {
 										mCheckItem = mCheckStack.TopItem;
-										//Debug.Log("Container has top item " + mCheckItem.FileName);
+										////Debug.Log("Container has top item " + mCheckItem.FileName);
 										if (WorldItems.Get.PackPrefab(mCheckItem.PackName, mCheckItem.PrefabName, out mCheckWearableWorldItem)) {
 												if (mCheckWearableWorldItem.Is <Wearable>(out mCheckWearable)) {
 														ColdProtection += mCheckWearable.ColdProtection;
@@ -331,7 +331,7 @@ namespace Frontiers
 								mCheckStack = State.LowerBodyContainer.StackList[i];
 								if (mCheckStack.HasTopItem) {
 										mCheckItem = mCheckStack.TopItem;
-										//Debug.Log("Container has top item " + mCheckItem.FileName);
+										////Debug.Log("Container has top item " + mCheckItem.FileName);
 										if (WorldItems.Get.PackPrefab(mCheckItem.PackName, mCheckItem.PrefabName, out mCheckWearableWorldItem)) {
 												if (mCheckWearableWorldItem.Is <Wearable>(out mCheckWearable)) {
 														ColdProtection += mCheckWearable.ColdProtection;

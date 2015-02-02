@@ -254,6 +254,24 @@ namespace Frontiers
 						return BlendThree(GenericHighValue, neutralColor, GenericLowValue, normalizedRepDifference);
 				}
 
+				public Color HairColor(CharacterHairColor hairColor)
+				{
+						switch (hairColor) {
+								case CharacterHairColor.Black:
+								default:
+										return HairColorBlack;
+
+								case CharacterHairColor.Blonde:
+										return HairColorBlonde;
+
+								case CharacterHairColor.Brown:
+										return HairColorBrown;
+
+								case CharacterHairColor.Red:
+										return HairColorRed;
+						}
+				}
+
 				public List <ColorKey> ColorKeys = new List <ColorKey>();
 
 				public List <ColorKey> InterfaceColorKeys()
@@ -395,6 +413,10 @@ namespace Frontiers
 				public Color BookColorLore = Color.white;
 				[InterfaceColorAttribute]
 				public Color BookColorSkill = Color.white;
+				public Color HairColorBlack = Color.white;
+				public Color HairColorBrown = Color.white;
+				public Color HairColorBlonde = Color.white;
+				public Color HairColorRed = Color.white;
 
 				public Color ByName(string colorName)
 				{
@@ -630,16 +652,16 @@ namespace Frontiers
 
 				public static Color HexToColor(string hex, Color failSafe)
 				{
-						hex = hex.ToLower();
-						//Debug.Log ("Converting hex " + hex);
 						byte r = 0;
-						byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
 						byte g = 0;
-						byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
 						byte b = 0;
-						byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
 
 						try {
+								hex = hex.ToLower();
+								//Debug.Log ("Converting hex " + hex);
+								//byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+								//byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+								//byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
 								r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
 								g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
 								b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
@@ -705,6 +727,14 @@ namespace Frontiers
 						color.h = (color.h + hueShift) % 1f;
 						color.s = saturation;
 						return color.ToColor();
+				}
+
+				public static Color InvertColor(Color color)
+				{
+						color.r = 1f - color.r;
+						color.g = 1f - color.g;
+						color.b = 1f - color.b;
+						return color;
 				}
 
 				public float MenuButtonOverlayAlpha = 0.25f;

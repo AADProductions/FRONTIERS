@@ -168,8 +168,7 @@ namespace Frontiers
 
 				public override void OnGameStart()
 				{
-						if (GameManager.Get.TestingEnvironment)
-								return;
+						UpdateMusicState();
 
 						AmbientAudio.ChunkSettings = CurrentAudioSettings;
 						StartCoroutine(UpdateAmbientStateOverTime());
@@ -178,11 +177,6 @@ namespace Frontiers
 						AmbientAudio.IsInsideStructure = false;
 						AmbientAudio.IsUnderground = Player.Local.Surroundings.IsUnderground;
 						AmbientAudio.UpdateStackVolumes(Player.Local.Surroundings.TerrainType);
-				}
-
-				public override void OnLocalPlayerSpawn()
-				{
-						UpdateMusicState();
 				}
 
 				public override void OnCutsceneStart()
@@ -215,7 +209,6 @@ namespace Frontiers
 						}
 						yield break;
 				}
-
 				//this is used to manage audio listeners and ensure that only one is active at any time
 				public static void ActivateAudioListener(AudioListener newAudioListener)
 				{
@@ -430,9 +423,9 @@ namespace Frontiers
 						}
 
 						if (!Mathf.Approximately(mCurrentTerrainType.a, mLastTerrainType.a) ||
-						 !Mathf.Approximately(mCurrentTerrainType.r, mLastTerrainType.r) ||
-						 !Mathf.Approximately(mCurrentTerrainType.g, mLastTerrainType.g) ||
-						 !Mathf.Approximately(mCurrentTerrainType.b, mLastTerrainType.b)) {
+						    !Mathf.Approximately(mCurrentTerrainType.r, mLastTerrainType.r) ||
+						    !Mathf.Approximately(mCurrentTerrainType.g, mLastTerrainType.g) ||
+						    !Mathf.Approximately(mCurrentTerrainType.b, mLastTerrainType.b)) {
 								AmbientAudio.UpdateStackVolumes(mCurrentTerrainType);
 								mLastTerrainType = mCurrentTerrainType;
 						}

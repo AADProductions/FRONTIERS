@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -115,6 +115,22 @@ namespace Frontiers
 		/// </summary>
 		/// <param name="bounds">The bounds.</param>
 		/// <returns>An enumerable list of nodes.</returns>
+				public void FindNodesIntersecting (Bounds bounds, List <QuadNode<TContent>> content)
+				{
+						if (!Boundaries.Intersects (bounds)) {
+								return;
+						}
+
+						if (Children != null) {
+								for (int i = 0; i < Children.Length; i++) {
+										Children[i].FindNodesIntersecting(bounds, content);
+								}
+						} else {
+								content.Add(this);
+						}
+				}
+
+
 		public IEnumerable<QuadNode<TContent>> FindNodesIntersecting (Bounds bounds)
 		{
 			if (!Boundaries.Intersects (bounds))

@@ -909,7 +909,7 @@ namespace Frontiers.World.BaseWIScripts
 								SpawnCharacters(interiorGroup.GetActionNodes(), State.InteriorCharacters, interiorGroup, State.IntResidentFlags);
 								State.InteriorCharactersSpawned.Add(interiorVariant);
 						} else {
-								Debug.Log ("Couldn't find interior variant " + interiorVariant.ToString () + " when spawning structures");
+								Debug.Log ("Couldn't find interior variant " + interiorVariant.ToString () + " when spawning structure " + name);
 						}
 				}
 

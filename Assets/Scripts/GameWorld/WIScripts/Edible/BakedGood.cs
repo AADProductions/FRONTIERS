@@ -16,15 +16,4 @@ namespace Frontiers.World
 				public BakedGoodStyle Stlye = BakedGoodStyle.LoafOfBread;
 				public SColor ToppingColor = Color.white;
 		}
-
-		public enum BakedGoodStyle
-		{
-				LoafOfBread,
-				FrostedCake,
-				Cheesecake,
-				Cookie,
-				Pie,
-				FrostedCakeWithToppings,
-				CheesecakeWithToppings,
-		}
 }

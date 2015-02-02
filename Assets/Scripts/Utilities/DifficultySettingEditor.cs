@@ -60,6 +60,11 @@ namespace Frontiers
 
 				public void Update()
 				{
+						if (Application.isPlaying) {
+								enabled = false;
+								return;
+						}
+
 						if (Setting == null) {
 								LoadSetting();
 						} else if (Setting.Name != DifficultySettingName) {

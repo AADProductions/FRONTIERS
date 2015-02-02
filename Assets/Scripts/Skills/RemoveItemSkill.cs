@@ -1,11 +1,15 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using Frontiers;
 using Frontiers.World;
-using System;
+using Frontiers.World.BaseWIScripts;
+using Frontiers.GUI;
+using System.Collections.Generic;
 
 namespace Frontiers.World.Gameplay
-{		//used as base class for steal, clean animal, barter, etc.
+{
+		//used as base class for steal, clean animal, barter, etc.
 		//intercepts the request to remove a thing
 		//and forces you to pass some kind of skill test before it delivers
 		public class RemoveItemSkill : Skill
@@ -81,97 +85,119 @@ namespace Frontiers.World.Gameplay
 								scriptToAttach = Extensions.AttachScriptOnUseUnmastered;
 						}
 
-						WIStackError error = WIStackError.None;
-						if (LastSkillResult) {
-								attachScript = Extensions.AttachScriptOnSuccess;
-								//we either add it based on inventory or else stacks
+						//if we only target certain scripts for failure and this one doesn't have at least one of those scripts, treat it as a win
+						if (Extensions.FailureTargetScripts.Count > 0) {
 								if (MoveItemToInventory) {
-										//Debug.Log("Adding to inventory, we were successful");
-										//convert it to a stack item BEFORE pushing it so we know we'll have the actual copy
-										finalItem = LastItemToMove.GetStackItem(WIMode.Unloaded);
-										StartCoroutine(LastInventory.AddItem(finalItem));
-										removedItem = true;
-								} else {
-										finalItem = LastFromStack.TopItem;
-										removedItem = (Stacks.Pop.AndPush(LastFromStack, LastToStack, ref error));
-								}
-
-								if (State.HasBeenMastered) {
-										GUIManager.PostSuccess(Extensions.GUIMessageOnSuccessMastered);
-								} else {
-										GUIManager.PostSuccess(Extensions.GUIMessageOnSuccessUnmastered);
-								}
-						} else {
-								attachScript = Extensions.AttachScriptOnFail;
-								if (MoveItemToInventory) {
-										//we're moving things into our inventory
-										if (Extensions.DestroyItemOnFail) {
-												//Debug.Log("Destroying item on failure");
-												LastItemToMove.RemoveFromGame();
-												removedItem = true;
-												//don't attach a script because there's nothing to attach it to
-										} else if (Extensions.SubstituteItemOnFail) {
-												//Debug.Log("Adding substitution instead");
-												LastItemToMove.RemoveFromGame();
-												finalItem = Extensions.Substitution.ToStackItem();
-												StartCoroutine(LastInventory.AddItem(finalItem));
-												removedItem = true;
-										} else if (Extensions.MoveItemOnFail) {
-												//Debug.Log("Failed, but still moving item - item null? " + (LastItemToMove == null).ToString());
-												finalItem = LastItemToMove.GetStackItem(WIMode.Unloaded);
-												StartCoroutine(LastInventory.AddItem(finalItem));
-												removedItem = true;
+										if (!LastItemToMove.HasAtLeastOne(Extensions.FailureTargetScripts)) {
+												LastSkillResult = true;
 										}
 								} else {
-										//we're moving things from stack to stack
-										if (Extensions.DestroyItemOnFail) {
-												//just get rid of it
-												Stacks.Pop.AndToss(LastFromStack);
-												removedItem = true;
-										} else if (Extensions.SubstituteItemOnFail) {
-												//just get rid of it
-												Stacks.Pop.AndToss(LastFromStack);
-												removedItem = true;
-												//then put substitute item in other stack
-												//only attach a script if we actually push the item
-												finalItem = Extensions.Substitution.ToStackItem();
-												removedItem = Stacks.Push.Item(LastToStack, finalItem, ref error);
-										} else if (Extensions.MoveItemOnFail) {
-												finalItem = LastFromStack.TopItem;
-												removedItem = Stacks.Pop.AndPush(LastFromStack, LastToStack, ref error);
+										if (!LastFromStack.TopItem.HasAtLeastOne(Extensions.FailureTargetScripts)) {
+												LastSkillResult = true;
 										}
 								}
 
-								if (Extensions.UnskilledRepPenaltyOnFail > 0 || Extensions.SkilledRepPenaltyOnFail > 0) {
-										//only do this if we CAN suffer a rep loss
-										int globalRepLoss = 0;
-										int ownerRepLoss = 0;
-										if (State.HasBeenMastered) {
-												globalRepLoss = Mathf.Max(1, Mathf.FloorToInt(
-														(finalItem.BaseCurrencyValue * Globals.BaseCurrencyToReputationMultiplier) *
-														Mathf.Lerp(Extensions.UnskilledRepPenaltyOnFail, Extensions.SkilledRepPenaltyOnFail, State.NormalizedMasteryLevel) *
-														Extensions.MasterRepPenaltyOnFail));
-												ownerRepLoss = Mathf.Max(1, Mathf.FloorToInt(
-														(finalItem.BaseCurrencyValue * Globals.BaseCurrencyToReputationMultiplier) *
-														Mathf.Lerp(Extensions.UnskilledOwnerRepPenaltyOnFail, Extensions.SkilledOwnerRepPenaltyOnFail, State.NormalizedMasteryLevel) *
-														Extensions.MasterOwnerRepPenaltyOnFail));
-												GUIManager.PostDanger(Extensions.GUIMessageOnFailureMastered);
-										} else {
-												globalRepLoss = Mathf.Max(1, Mathf.FloorToInt(
-														(finalItem.BaseCurrencyValue * Globals.BaseCurrencyToReputationMultiplier) *
-														Mathf.Lerp(Extensions.UnskilledRepPenaltyOnFail, Extensions.SkilledRepPenaltyOnFail, State.NormalizedMasteryLevel)));
-												ownerRepLoss = Mathf.Max(1, Mathf.FloorToInt(
-														(finalItem.BaseCurrencyValue * Globals.BaseCurrencyToReputationMultiplier) *
-														Mathf.Lerp(Extensions.UnskilledOwnerRepPenaltyOnFail, Extensions.SkilledOwnerRepPenaltyOnFail, State.NormalizedMasteryLevel)));
-												GUIManager.PostDanger(Extensions.GUIMessageOnFailureUnmastered);
-										}
-										Profile.Get.CurrentGame.Character.Rep.LoseGlobalReputation(globalRepLoss);
-										//see if we've just stolen from a character
-										Character character = null;
-										if (LastSkillTarget != null && LastSkillTarget.IOIType == ItemOfInterestType.WorldItem && LastSkillTarget.worlditem.Is <Character>(out character)) {
-												Profile.Get.CurrentGame.Character.Rep.LosePersonalReputation(character.worlditem.FileName, character.worlditem.DisplayName, ownerRepLoss);
-										}
-								}
+						}
+
+						try {
+							WIStackError error = WIStackError.None;
+							if (LastSkillResult) {
+									attachScript = Extensions.AttachScriptOnSuccess;
+									//we either add it based on inventory or else stacks
+									if (MoveItemToInventory) {
+											Debug.Log("Adding to inventory, we were successful");
+											//convert it to a stack item BEFORE pushing it so we know we'll have the actual copy
+											finalItem = LastItemToMove.GetStackItem(WIMode.Unloaded);
+											StartCoroutine(LastInventory.AddItem(finalItem));
+											removedItem = true;
+									} else {
+											finalItem = LastFromStack.TopItem;
+											removedItem = (Stacks.Pop.AndPush(LastFromStack, LastToStack, ref error));
+									}
+
+									if (State.HasBeenMastered) {
+											GUIManager.PostSuccess(Extensions.GUIMessageOnSuccessMastered);
+									} else {
+											GUIManager.PostSuccess(Extensions.GUIMessageOnSuccessUnmastered);
+									}
+							} else {
+									attachScript = Extensions.AttachScriptOnFail;
+									if (MoveItemToInventory) {
+											//we're moving things into our inventory
+											if (Extensions.DestroyItemOnFail) {
+													//Debug.Log("Destroying item on failure");
+													LastItemToMove.RemoveFromGame();
+													removedItem = true;
+													//don't attach a script because there's nothing to attach it to
+											} else if (Extensions.SubstituteItemOnFail) {
+													//Debug.Log("Adding substitution instead");
+													LastItemToMove.RemoveFromGame();
+													finalItem = Extensions.Substitution.ToStackItem();
+													StartCoroutine(LastInventory.AddItem(finalItem));
+													removedItem = true;
+											} else if (Extensions.MoveItemOnFail) {
+													Debug.Log("Failed, but still moving item - item null? " + (LastItemToMove == null).ToString());
+													finalItem = LastItemToMove.GetStackItem(WIMode.Unloaded);
+													StartCoroutine(LastInventory.AddItem(finalItem));
+													removedItem = true;
+											}
+									} else {
+											//we're moving things from stack to stack
+											if (Extensions.DestroyItemOnFail) {
+													//just get rid of it
+													Stacks.Pop.AndToss(LastFromStack);
+													removedItem = true;
+											} else if (Extensions.SubstituteItemOnFail) {
+													//just get rid of it
+													Stacks.Pop.AndToss(LastFromStack);
+													removedItem = true;
+													//then put substitute item in other stack
+													//only attach a script if we actually push the item
+													finalItem = Extensions.Substitution.ToStackItem();
+													removedItem = Stacks.Push.Item(LastToStack, finalItem, ref error);
+											} else if (Extensions.MoveItemOnFail) {
+													finalItem = LastFromStack.TopItem;
+													removedItem = Stacks.Pop.AndPush(LastFromStack, LastToStack, ref error);
+											}
+									}
+
+									if (finalItem == null) {
+											Debug.Log("Final item was null in remove item skill, not applying extensions");
+									} else {
+											if (Extensions.UnskilledRepPenaltyOnFail > 0 || Extensions.SkilledRepPenaltyOnFail > 0) {
+													//only do this if we CAN suffer a rep loss
+													int globalRepLoss = 0;
+													int ownerRepLoss = 0;
+													if (State.HasBeenMastered) {
+															globalRepLoss = Mathf.Max(1, Mathf.FloorToInt(
+																	(finalItem.BaseCurrencyValue * Globals.BaseCurrencyToReputationMultiplier) *
+																	Mathf.Lerp(Extensions.UnskilledRepPenaltyOnFail, Extensions.SkilledRepPenaltyOnFail, State.NormalizedMasteryLevel) *
+																	Extensions.MasterRepPenaltyOnFail));
+															ownerRepLoss = Mathf.Max(1, Mathf.FloorToInt(
+																	(finalItem.BaseCurrencyValue * Globals.BaseCurrencyToReputationMultiplier) *
+																	Mathf.Lerp(Extensions.UnskilledOwnerRepPenaltyOnFail, Extensions.SkilledOwnerRepPenaltyOnFail, State.NormalizedMasteryLevel) *
+																	Extensions.MasterOwnerRepPenaltyOnFail));
+															GUIManager.PostDanger(Extensions.GUIMessageOnFailureMastered);
+													} else {
+															globalRepLoss = Mathf.Max(1, Mathf.FloorToInt(
+																	(finalItem.BaseCurrencyValue * Globals.BaseCurrencyToReputationMultiplier) *
+																	Mathf.Lerp(Extensions.UnskilledRepPenaltyOnFail, Extensions.SkilledRepPenaltyOnFail, State.NormalizedMasteryLevel)));
+															ownerRepLoss = Mathf.Max(1, Mathf.FloorToInt(
+																	(finalItem.BaseCurrencyValue * Globals.BaseCurrencyToReputationMultiplier) *
+																	Mathf.Lerp(Extensions.UnskilledOwnerRepPenaltyOnFail, Extensions.SkilledOwnerRepPenaltyOnFail, State.NormalizedMasteryLevel)));
+															GUIManager.PostDanger(Extensions.GUIMessageOnFailureUnmastered);
+													}
+													Profile.Get.CurrentGame.Character.Rep.LoseGlobalReputation(globalRepLoss);
+													//see if we've just stolen from a character
+													Character character = null;
+													if (LastSkillTarget != null && LastSkillTarget.IOIType == ItemOfInterestType.WorldItem && LastSkillTarget.worlditem.Is <Character>(out character)) {
+															Profile.Get.CurrentGame.Character.Rep.LosePersonalReputation(character.worlditem.FileName, character.worlditem.DisplayName, ownerRepLoss);
+													}
+											}
+									}
+							}
+						} catch (Exception e){
+								Debug.LogWarning("Couldn't move item because: " + e.ToString());
 						}
 
 						if (attachScript && finalItem != null && !string.IsNullOrEmpty(scriptToAttach)) {
@@ -216,6 +242,7 @@ namespace Frontiers.World.Gameplay
 				public bool MoveItemOnFail = false;
 				public bool AttachScriptOnFail = false;
 				public bool AttachScriptOnSuccess = false;
+				public List <string> FailureTargetScripts = new List <string>();
 				public GenericWorldItem Substitution = new GenericWorldItem();
 		}
 }

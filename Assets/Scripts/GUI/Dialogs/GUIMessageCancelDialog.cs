@@ -29,7 +29,7 @@ namespace Frontiers.GUI
 
 				public void OnClickCancelButton()
 				{
-						ActionCancel(WorldClock.Time);
+						ActionCancel(WorldClock.AdjustedRealTime);
 				}
 		}
 

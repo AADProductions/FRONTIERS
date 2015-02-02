@@ -11,6 +11,7 @@ namespace Frontiers.World
 				public Collider OuterTriggerCollider;
 				public PassThroughTriggerPair InnerTrigger;
 				public PassThroughTriggerPair OuterTrigger;
+				public PassThroughTrigger ParentTrigger;
 
 				public override void OnInitialized()
 				{
@@ -30,15 +31,23 @@ namespace Frontiers.World
 						OuterTrigger = outerTriggerColliderGameObject.GetOrAdd <PassThroughTriggerPair>();
 						OuterTrigger.TriggerType = PassThroughTriggerType.Outer;
 
-						InnerTrigger.Sibling = OuterTrigger;
-						OuterTrigger.Sibling = InnerTrigger;
-						InnerTrigger.TargetObject = gameObject;
-						OuterTrigger.TargetObject = gameObject;
+						//InnerTrigger.Sibling = OuterTrigger;
+						//OuterTrigger.Sibling = InnerTrigger;
+						//InnerTrigger.TargetObject = gameObject;
+						//OuterTrigger.TargetObject = gameObject;
 
+						ParentTrigger = gameObject.GetOrAdd <PassThroughTrigger>();
+						ParentTrigger.TargetObject = gameObject;
+						ParentTrigger.OuterTrigger = OuterTrigger;
+						ParentTrigger.InnerTrigger = InnerTrigger;
+						ParentTrigger.PassThroughFunctionName = "OnPassThroughTrigger";
+
+						/*
 						InnerTrigger.EnterFunctionName = "OnPassThroughTrigger";
 						InnerTrigger.ExitFunctionName = "OnPassThroughTrigger";
 						OuterTrigger.EnterFunctionName = "OnPassThroughTrigger";
 						OuterTrigger.ExitFunctionName = "OnPassThroughTrigger";
+						*/
 				}
 				#if UNITY_EDITOR
 				public override void OnEditorRefresh()
@@ -59,15 +68,23 @@ namespace Frontiers.World
 						OuterTrigger = outerTriggerColliderGameObject.GetOrAdd <PassThroughTriggerPair>();
 						OuterTrigger.TriggerType = PassThroughTriggerType.Outer;
 
-						InnerTrigger.Sibling = OuterTrigger;
-						OuterTrigger.Sibling = InnerTrigger;
-						InnerTrigger.TargetObject = gameObject;
-						OuterTrigger.TargetObject = gameObject;
+						//InnerTrigger.Sibling = OuterTrigger;
+						//OuterTrigger.Sibling = InnerTrigger;
+						//InnerTrigger.TargetObject = gameObject;
+						//OuterTrigger.TargetObject = gameObject;
 
+						/*
 						InnerTrigger.EnterFunctionName = "OnPassThroughTrigger";
 						InnerTrigger.ExitFunctionName = "OnPassThroughTrigger";
 						OuterTrigger.EnterFunctionName = "OnPassThroughTrigger";
 						OuterTrigger.ExitFunctionName = "OnPassThroughTrigger";
+						*/
+
+						ParentTrigger = gameObject.GetOrAdd <PassThroughTrigger>();
+						ParentTrigger.TargetObject = gameObject;
+						ParentTrigger.OuterTrigger = OuterTrigger;
+						ParentTrigger.InnerTrigger = InnerTrigger;
+						ParentTrigger.PassThroughFunctionName = "OnPassThroughTrigger";
 
 						CrucialColliderGizmo ccgInner = InnerTriggerCollider.gameObject.GetOrAdd <CrucialColliderGizmo>();
 						CrucialColliderGizmo ccgOuter = OuterTriggerCollider.gameObject.GetOrAdd <CrucialColliderGizmo>();

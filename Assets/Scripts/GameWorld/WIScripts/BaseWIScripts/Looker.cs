@@ -125,6 +125,9 @@ namespace Frontiers.World
 
 				public void OnDrawGizmos()
 				{
+						if (worlditem == null || worlditem.tr == null)
+								return;
+
 						SawPlayerGizmo = Mathf.Lerp(SawPlayerGizmo, 0.15f, (float)WorldClock.ARTDeltaTime);
 
 						Gizmos.color = Colors.Alpha(Color.green, SawPlayerGizmo);

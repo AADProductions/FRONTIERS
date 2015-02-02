@@ -42,7 +42,7 @@ namespace Frontiers.World
 								FoodStuff foodStuff = null;
 								if (Player.Local.Tool.IsEquipped && Player.Local.Tool.worlditem.Is <FoodStuff>(out foodStuff)) {
 										//player has something tasty equipped, what is it?
-										if (Stacks.Can.Stack(foodStuff.StackName, creature.Template.Props.FavoriteFood.StackName)) {
+										if (Stacks.Can.Stack(foodStuff.worlditem, creature.Template.Props.FavoriteFood)) {
 												//player has our favorite food, we're going to watch the player
 												//if it's the same as our favorite food
 												//vote twice to stay put
@@ -60,7 +60,7 @@ namespace Frontiers.World
 								//it consumes whatever edibles are in the player's hand
 								FoodStuff foodStuff = null;
 								if (Player.Local.Tool.IsEquipped && Player.Local.Tool.worlditem.Is <FoodStuff>(out foodStuff)) {
-										if (Stacks.Can.Stack(foodStuff.StackName, creature.Template.Props.FavoriteFood.StackName)) {
+										if (Stacks.Can.Stack(foodStuff.worlditem, creature.Template.Props.FavoriteFood)) {
 												Debug.Log("Player has the food we like equipped");
 												creature.Eat(foodStuff);
 												Tamed tamed = worlditem.GetOrAdd <Tamed>();

@@ -16,12 +16,13 @@ namespace Frontiers.World
 						ItemBounds.center = Vector3.zero;
 						doppleganger.transform.parent = null;
 						doppleganger.transform.ResetLocal();
-						PreparedFoods.InitializePreparedFoodGameObject(doppleganger, subcat, ref ItemBounds);
+						PreparedFoods.InitializePreparedFoodGameObject(doppleganger, subcat, true, ref ItemBounds);
 						doppleganger.transform.parent = dopplegangerParent;
 						if (Flags.Check((uint)mode, (uint)(WIMode.Stacked | WIMode.Selected | WIMode.Crafting | WIMode.Wear), Flags.CheckType.MatchAny)) {
 								WorldItems.AutoScaleDoppleganger(dopplegangerParent, doppleganger, ItemBounds, ref scaleMultiplier, ref offset);
 						}
 						WorldItems.ApplyDopplegangerMode(item, doppleganger, mode, scaleMultiplier, offset);
+						WorldItems.ApplyDopplegangerMaterials(doppleganger, mode);
 						return doppleganger;
 				}
 		}

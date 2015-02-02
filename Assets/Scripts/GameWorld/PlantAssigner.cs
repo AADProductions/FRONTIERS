@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers
 {
@@ -21,27 +22,35 @@ namespace Frontiers
 		/// <param name="world">The world which is searched.</param>
 		/// <returns>The closest tree instance to the player, or null if no tree was found within the radius.</returns>
 
-		public static List <QuadTree <PlantInstanceTemplate>> chunkQuads = new List<QuadTree<PlantInstanceTemplate>> ( );
-		public static List <QuadNode <PlantInstanceTemplate>> quadTreeCells = new List<QuadNode<PlantInstanceTemplate>> ( );
-		public static List <PlantInstanceTemplate> plantList = new List<PlantInstanceTemplate> ( );
+		public static List <QuadTree <PlantInstanceTemplate>> chunkQuads = new List<QuadTree<PlantInstanceTemplate>>();
+		public static List <QuadNode <PlantInstanceTemplate>> quadTreeCells = new List<QuadNode<PlantInstanceTemplate>>();
+		public static List <PlantInstanceTemplate> plantList = new List<PlantInstanceTemplate>();
 
-		public static PlantInstanceTemplate FindClosestPlantRequiringInstance (LocalPlayer player, GameWorld world)
+		public static PlantInstanceTemplate FindClosestPlantRequiringInstance(LocalPlayer player, GameWorld world)
 		{
-			chunkQuads.Clear ();
-			quadTreeCells.Clear ();
-			plantList.Clear ();
+			chunkQuads.Clear();
+			quadTreeCells.Clear();
+			plantList.Clear();
 
 			for (int i = 0; i < GameWorld.Get.ImmediateChunks.Count; i++) {
-				chunkQuads.Add (GameWorld.Get.ImmediateChunks [i].PlantInstanceQuad);
+				chunkQuads.Add(GameWorld.Get.ImmediateChunks[i].PlantInstanceQuad);
 			}
+
 			// Find all individual quad tree cells which may be relevant
-			quadTreeCells.AddRange (chunkQuads.SelectMany (cq => cq.FindNodesIntersecting (player.ColliderBounds)));
+			for (int i = 0; i < chunkQuads.Count; i++) {
+				quadTreeCells.AddRange(chunkQuads[i].FindNodesIntersecting(player.ColliderBounds));
+			}
 
 			// Retrieve the trees from the relevant cells.
-			plantList.AddRange (quadTreeCells.SelectMany (c => c.Content ?? Enumerable.Empty<PlantInstanceTemplate> ()));
+			for (int i = 0; i < quadTreeCells.Count; i++) {
+				List <PlantInstanceTemplate> content = quadTreeCells[i].Content;
+				if (content != null) {
+					plantList.AddRange(content);
+				}
+			}
 
 			// From here, the approach is just regular brute force on the reduced list.
-			return FindClosestPlantRequiringInstance (player, plantList);
+			return FindClosestPlantRequiringInstance(player, plantList);
 
 //			Bounds radiusBounds = new Bounds (player.Position, new Vector3 (player.ColliderRadius, player.ColliderRadius, player.ColliderRadius) * 2);
 //
@@ -72,10 +81,10 @@ namespace Frontiers
 		/// <param name="player">The player, defining the center and radius of the search operation.</param>
 		/// <param name="world">The world which is searched.</param>
 		/// <returns>The closest tree instance to the player, or null if no tree was found within the radius.</returns>
-		public static PlantInstanceTemplate FindClosestPlantRequiringInstanceReallyBruteForce (LocalPlayer player, GameWorld world)
+		public static PlantInstanceTemplate FindClosestPlantRequiringInstanceReallyBruteForce(LocalPlayer player, GameWorld world)
 		{
-			var relevantChunks = world.WorldChunks.Where (wc => wc.CurrentMode == ChunkMode.Immediate);
-			return FindClosestPlantRequiringInstance (player, relevantChunks.SelectMany (c => c.PlantInstances));
+			var relevantChunks = world.WorldChunks.Where(wc => wc.CurrentMode == ChunkMode.Immediate);
+			return FindClosestPlantRequiringInstance(player, relevantChunks.SelectMany(c => c.PlantInstances));
 		}
 
 		/// <summary>
@@ -84,19 +93,19 @@ namespace Frontiers
 		/// <param name="player">The player, defining the center and radius of the search operation.</param>
 		/// <param name="world">The world which is searched.</param>
 		/// <returns>The closest tree instance to the player, or null if no tree was found within the radius.</returns>
-		public static PlantInstanceTemplate FindClosestPlantRequiringInstanceBruteForce (LocalPlayer player, GameWorld world)
+		public static PlantInstanceTemplate FindClosestPlantRequiringInstanceBruteForce(LocalPlayer player, GameWorld world)
 		{
-			Bounds radiusBounds = new Bounds (player.Position, new Vector3 (player.ColliderRadius, player.ColliderRadius, player.ColliderRadius) * 2);
+			Bounds radiusBounds = new Bounds(player.Position, new Vector3(player.ColliderRadius, player.ColliderRadius, player.ColliderRadius) * 2);
 
 			// Sort out all irrelevant chunks, i.e. all which cannot contain a tree within collider radius.
 			// Relevant are all where a) the player currently is in or b) the collider radius intersects with the chunk bounds.
 			float squaredRadius = player.ColliderRadius * player.ColliderRadius;
-			var relevantChunks = world.WorldChunks.Where (wc =>
+			var relevantChunks = world.WorldChunks.Where(wc =>
                 				wc.CurrentMode == ChunkMode.Immediate &&
-						wc.ChunkBounds.Contains (player.Position) || wc.ChunkBounds.Intersects (radiusBounds)
-			                     );
+			                        wc.ChunkBounds.Contains(player.Position) || wc.ChunkBounds.Intersects(radiusBounds)
+			                        );
 
-			return FindClosestPlantRequiringInstance (player, relevantChunks.SelectMany (c => c.PlantInstances));
+			return FindClosestPlantRequiringInstance(player, relevantChunks.SelectMany(c => c.PlantInstances));
 		}
 
 		/// <summary>
@@ -105,12 +114,12 @@ namespace Frontiers
 		/// <param name="player">The player object, which defines the center and radius of the search.</param>
 		/// <param name="world">The world with the colliders.</param>
 		/// <returns>An enumerable list of Plant colliders which can be reassigned.</returns>
-		public static IEnumerable <WorldPlant> FindIrrelevantInstances (LocalPlayer player, Plants plants)
+		public static IEnumerable <WorldPlant> FindIrrelevantInstances(LocalPlayer player, Plants plants)
 		{
 			//float squaredRadius = player.ColliderRadius * player.ColliderRadius;
 			for (int i = 0; i < plants.ActivePlants.Count; i++) {
-				if (!player.ColliderBounds.Contains (plants.ActivePlants [i].Position)) {
-					yield return plants.ActivePlants [i];
+				if (!player.ColliderBounds.Contains(plants.ActivePlants[i].Position)) {
+					yield return plants.ActivePlants[i];
 				}
 				//Vector3 dst = collider.Position - player.Position;
 				//float distanceSquared = dst.x * dst.x + dst.y * dst.y + dst.z * dst.z;
@@ -152,12 +161,15 @@ namespace Frontiers
 		/// <param name="player">The player, defining the center and radius of the search operation.</param>
 		/// <param name="Plants">An enumerable list of Plants which is searched.</param>
 		/// <returns>The closest Plant instance to the player, or null if no Plant was found within the radius.</returns>
-		protected static PlantInstanceTemplate FindClosestPlantRequiringInstance (LocalPlayer player, IEnumerable <PlantInstanceTemplate> plants)
+		protected static PlantInstanceTemplate FindClosestPlantRequiringInstance(LocalPlayer player, IEnumerable <PlantInstanceTemplate> plants)
 		{
 			PlantInstanceTemplate result = PlantInstanceTemplate.Empty;
 			float minDistance = float.MaxValue;
 
-			foreach (var plant in plants) {
+			var enumerator = plants.GetEnumerator();
+			while (enumerator.MoveNext()) {
+				//foreach (var plant in plants) {
+				var plant = enumerator.Current;
 				if (!plant.HasInstance && plant.ReadyToBePlanted) {
 					Vector3 dst = plant.Position - player.Position;
 					float distanceSquared = dst.x * dst.x + dst.y * dst.y + dst.z * dst.z;

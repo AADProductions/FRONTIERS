@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Frontiers.GUI;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 	public class ReceptaclePivot : MonoBehaviour
 	{
@@ -203,7 +203,7 @@ namespace Frontiers.World
 			foreach (Skill removeItemSkill in mRemoveSkillList) {
 				optionsList.AddOption (removeItemSkill.GetListOption (mSkillUseTarget.worlditem));
 			}
-			optionsList.AddOption (new GUIListOption ("Cancel"));
+			optionsList.AddOption (new WIListOption ("Cancel"));
 			optionsList.ShowDoppleganger = false;
 			GUIOptionListDialog dialog = null;
 			if (optionsList.TryToSpawn (true, out dialog)) {
@@ -215,7 +215,7 @@ namespace Frontiers.World
 		{
 			UsingSkillList = false;
 
-			OptionsListDialogResult dialogResult = result as OptionsListDialogResult;
+			WIListResult dialogResult = result as WIListResult;
 			RemoveItemSkill skillToUse = null;
 			foreach (Skill removeSkill in mRemoveSkillList) {
 				if (removeSkill.name == dialogResult.Result) {

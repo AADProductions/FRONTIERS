@@ -18,7 +18,7 @@ namespace Frontiers.World.Gameplay
 						SkillSphere = skillSphere.AddComponent(Extensions.EffectSphereScriptName) as EffectSphere;
 
 						SkillSphere.TargetRadius = EffectRadius;
-						SkillSphere.StartTime = WorldClock.Time;
+						SkillSphere.StartTime = WorldClock.AdjustedRealTime;
 						SkillSphere.RTDuration = EffectTime;
 						SkillSphere.RTCooldownTime = Usage.CooldownInterval;
 						SkillSphere.RTExpansionTime = 1.0f;

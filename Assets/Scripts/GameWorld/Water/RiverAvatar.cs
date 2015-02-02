@@ -21,6 +21,7 @@ namespace Frontiers.World
 				public WaterSubmergeObjects WaterSubmerge;
 				public Vector3 FlowForce;
 				public List <IItemOfInterest> SubmergedItems = new List <IItemOfInterest>();
+				public Transform tr;
 
 				public float TargetWaterLevel {
 						get {
@@ -33,6 +34,7 @@ namespace Frontiers.World
 
 				public void Start()
 				{
+						tr = transform;
 						WaterSubmerge.OnItemOfInterestEnterWater += OnItemOfInterestEnterWater;
 						WaterSubmerge.OnItemOfInterestExitWater += OnItemOfInterestExitWater;
 				}
@@ -72,8 +74,9 @@ namespace Frontiers.World
 						rigidBody = gameObject.GetOrAdd <Rigidbody>();
 						rigidBody.isKinematic = true;
 
+						WorldItem RiverFlowCollider = null;
 						GameObject flowColliderObject = gameObject.FindOrCreateChild("FlowCollider").gameObject;
-						flowColliderObject.layer = Globals.LayerNumTrigger;
+						flowColliderObject.layer = Globals.LayerNumFluidTerrain;
 						FlowCollider = flowColliderObject.GetOrAdd <BoxCollider>();
 						FlowCollider.size = new Vector3(Props.Width, Props.Width, Props.Width);
 						FlowCollider.center = new Vector3(0f, (Props.Width / 2) * -1, 0f);
@@ -100,10 +103,19 @@ namespace Frontiers.World
 
 				public void Update()
 				{
+						if (!ParentChunk.Is(ChunkMode.Immediate | ChunkMode.Primary | ChunkMode.Adjascent)) {
+								MasterSpline.enabled = false;
+								MasterSplineMesh.enabled = false;
+								return;
+						} else {
+								MasterSpline.enabled = true;
+								MasterSplineMesh.enabled = true;
+						}
+
 						if (!Mathf.Approximately(Props.TargetWaterLevel, Props.CurrentWaterLevel)) {
 								Props.CurrentWaterLevel = Mathf.Lerp(Props.CurrentWaterLevel, Props.TargetWaterLevel, (float)(WorldClock.ARTDeltaTime * Props.WaterLevelChangeSpeed));
 								mWaterLevelPosition.y = Props.BaseHeight + Props.CurrentWaterLevel;
-								transform.localPosition = mWaterLevelPosition;
+								tr.localPosition = mWaterLevelPosition;
 						}
 				}
 
@@ -114,7 +126,12 @@ namespace Frontiers.World
 
 				public void FixedUpdate()
 				{
+						if (!MasterSpline.enabled) {
+								return;
+						}
+
 						if (GameManager.Is(FGameState.InGame)) {
+
 								mColliderPositionUpdate++;
 								mColorUpdate++;
 								mSubmergedUpdate++;
@@ -154,14 +171,20 @@ namespace Frontiers.World
 						if (MasterSpline != null) {
 								//update the position of our river collider
 								param = MasterSpline.GetClosestPointParam(Player.Local.Position, 1, 0f, 1f, 0.05f);
-								positionAlongSpline = MasterSpline.GetPositionOnSpline(param);
-								forwardPositionAlongSpline = MasterSpline.GetPositionOnSpline(param + ((Props.FlowDirection == PathDirection.Forward) ? 0.01f : -0.01f));
-								FlowCollider.transform.position = positionAlongSpline;
-								FlowForce = (positionAlongSpline - forwardPositionAlongSpline).normalized * Mathf.Max(Props.FlowSpeed.x, Props.FlowSpeed.y) * Globals.RiverFlowForceMultiplier;
-								//randomize the flow force a bit
-								FlowForce.x += UnityEngine.Random.Range(-0.005f, 0.005f);
-								FlowForce.z += UnityEngine.Random.Range(-0.005f, 0.005f);
-								FlowForce.y = 0f;
+								if (param > 0.99f || param < 0.01f) {
+										//don't submerge the player past the end
+										FlowCollider.enabled = false;
+								} else {
+										FlowCollider.enabled = true;
+										positionAlongSpline = MasterSpline.GetPositionOnSpline(param);
+										forwardPositionAlongSpline = MasterSpline.GetPositionOnSpline(param + ((Props.FlowDirection == PathDirection.Forward) ? 0.01f : -0.01f));
+										FlowCollider.transform.position = positionAlongSpline;
+										FlowForce = (positionAlongSpline - forwardPositionAlongSpline).normalized * Mathf.Max(Props.FlowSpeed.x, Props.FlowSpeed.y) * Globals.RiverFlowForceMultiplier;
+										//randomize the flow force a bit
+										FlowForce.x += UnityEngine.Random.Range(-0.005f, 0.005f);
+										FlowForce.z += UnityEngine.Random.Range(-0.005f, 0.005f);
+										FlowForce.y = 0f;
+								}
 						}
 				}
 
@@ -186,7 +209,11 @@ namespace Frontiers.World
 								Props.Nodes.Add(new SVector3(node.transform.localPosition));
 						}
 
-						Props.BaseHeight = transform.localPosition.y;
+						if (tr == null) {
+								tr = transform;
+						}
+
+						Props.BaseHeight = tr.localPosition.y;
 						Props.SegmentCount = MasterSplineMesh.segmentCount;
 						Props.MeshScale = MasterSplineMesh.xyScale;
 						Props.UVScale = MasterSplineMesh.uvScale;

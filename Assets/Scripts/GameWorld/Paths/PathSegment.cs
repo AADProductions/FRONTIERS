@@ -7,7 +7,7 @@ using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
-using Frontiers.World.Locations;
+
 
 [Serializable]
 public class PathSegment
@@ -120,13 +120,4 @@ public class PathSegment
 		}
 
 		protected int mSegmentNumber = -1;
-
-		public enum DisplayMode
-		{
-				None,
-				InPath,
-				InPathCurrent,
-				Available,
-				Highlight,
-		}
 }

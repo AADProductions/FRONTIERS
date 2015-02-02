@@ -12,6 +12,17 @@ namespace Frontiers.GUI
 				public GUITabPage Page;
 				public UIButtonScale ButtonScale;
 				public UIButton Button;
+				public bool Disabled {
+						get {
+								return mDisabled;
+						}
+						set {
+								if (mDisabled != value) {
+										mDisabled = value;
+										Refresh();
+								}
+						}
+				}
 
 				public bool Initialized {
 						get {
@@ -84,11 +95,30 @@ namespace Frontiers.GUI
 
 				public void OnClickButton()
 				{
+						if (Disabled) {
+								return;
+						}
+
 						TabParent.OnClickButton(this);
 				}
 
 				protected override void OnRefresh()
 				{
+						if (mDisabled) {
+								TabSprite.enabled = false;
+								TabNameLabel.enabled = false;
+								if (Button != null) {
+										Button.enabled = false;
+								}
+								return;
+						} else {
+								TabSprite.enabled = true;
+								TabNameLabel.enabled = true;
+								if (Button != null) {
+										Button.enabled = true;
+								}
+						}
+
 						TabSprite.transform.localRotation = Quaternion.identity;
 						if (mSelected) {
 								//TODO make it possible to swap out sprites

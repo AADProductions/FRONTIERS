@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World.Gameplay
 {

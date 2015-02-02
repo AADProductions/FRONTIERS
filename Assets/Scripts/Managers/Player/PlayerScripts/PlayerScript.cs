@@ -121,7 +121,7 @@ namespace Frontiers
 
 				public void LoadState(string playerState)
 				{
-						//Debug.Log ("Calling update player state in player script");
+						Debug.Log ("Calling update player state in player script");
 						if (mHasPlayerStateField && !string.IsNullOrEmpty(playerState)) {
 								object playerStateValue = null;
 								try {
@@ -147,6 +147,11 @@ namespace Frontiers
 				}
 
 				public virtual void OnGameLoadFinish()
+				{
+
+				}
+
+				public virtual void OnGameSaveStart()
 				{
 
 				}
@@ -221,13 +226,13 @@ namespace Frontiers
 				protected static string XmlSerializeToString(object objectInstance)
 				{
 						try {
-						var serializer = new XmlSerializer(objectInstance.GetType());
-						var sb = new StringBuilder();
+								var serializer = new XmlSerializer(objectInstance.GetType());
+								var sb = new StringBuilder();
 		
-						using (TextWriter writer = new StringWriter(sb)) {
-								serializer.Serialize(writer, objectInstance);
-						}		
-						return sb.ToString();
+								using (TextWriter writer = new StringWriter(sb)) {
+										serializer.Serialize(writer, objectInstance);
+								}		
+								return sb.ToString();
 						} catch (Exception e) {
 								Debug.LogError("Error when serializing in player script: " + e.ToString());
 						}
@@ -248,15 +253,15 @@ namespace Frontiers
 				{
 						deserializedObject	= null;
 						try {
-						var serializer = new XmlSerializer(type);
+								var serializer = new XmlSerializer(type);
 		
-						using (TextReader reader = new StringReader(objectData)) {
-								deserializedObject = serializer.Deserialize(reader);
-						}		
+								using (TextReader reader = new StringReader(objectData)) {
+										deserializedObject = serializer.Deserialize(reader);
+								}		
 			
-						if (deserializedObject != null) {
-								return true;
-						}
+								if (deserializedObject != null) {
+										return true;
+								}
 						} catch (Exception e) {
 								Debug.LogError("Error when deserializing in player script: " + e.ToString());
 						}
@@ -267,11 +272,10 @@ namespace Frontiers
 				public static object XmlDeserializeFromString(string objectData, string typeName)
 				{
 						try {
-						object deserializedObject = null;
-						XmlDeserializeFromString(objectData, Type.GetType(typeName), out deserializedObject);
-						return deserializedObject;
-						}
-						catch (Exception e) {
+								object deserializedObject = null;
+								XmlDeserializeFromString(objectData, Type.GetType(typeName), out deserializedObject);
+								return deserializedObject;
+						} catch (Exception e) {
 								Debug.LogError("Error when serializing in player script: " + e.ToString());
 						}
 						return null;

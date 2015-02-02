@@ -2,10 +2,10 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers.World.Locations;
+
 using Frontiers.GUI;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Bed : WIScript
 		{
@@ -79,7 +79,7 @@ namespace Frontiers.World
 						}
 				}
 
-				public override void PopulateOptionsList(List <GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(List <WIListOption> options, List <string> message)
 				{
 						mSleptManually = false;
 
@@ -110,28 +110,28 @@ namespace Frontiers.World
 								}
 						}
 
-						GUIListOption dawn = new GUIListOption("Sleep Until Dawn", "Dawn");
+						WIListOption dawn = new WIListOption("Sleep 'til Dawn", "Dawn");
 						if (WorldClock.IsTimeOfDay(TimeOfDay.ad_TimeDawn)
 						 || RequiresPayment && !Player.Local.Inventory.InventoryBank.CanAfford(CostOfUse)) {
 								dawn.Disabled = true;
 						}
 						options.Add(dawn);
 
-						GUIListOption noon = new GUIListOption("Sleep Until Noon", "Noon");
+						WIListOption noon = new WIListOption("Sleep 'til Noon", "Noon");
 						if (WorldClock.IsTimeOfDay(TimeOfDay.ag_TimeNoon)
 						 || RequiresPayment && !Player.Local.Inventory.InventoryBank.CanAfford(CostOfUse)) {
 								noon.Disabled = true;
 						}
 						options.Add(noon);
 
-						GUIListOption dusk = new GUIListOption("Sleep Until Dusk", "Dusk");
+						WIListOption dusk = new WIListOption("Sleep 'til Dusk", "Dusk");
 						if (WorldClock.IsTimeOfDay(TimeOfDay.aj_TimeDusk)
 						 || RequiresPayment && !Player.Local.Inventory.InventoryBank.CanAfford(CostOfUse)) {
 								dusk.Disabled = true;
 						}
 						options.Add(dusk);
 
-						GUIListOption midnight = new GUIListOption("Sleep Until Midnight", "Midnight");
+						WIListOption midnight = new WIListOption("Sleep 'til Midnight", "Midnight");
 						if (WorldClock.IsTimeOfDay(TimeOfDay.aa_TimeMidnight)
 						 || RequiresPayment && !Player.Local.Inventory.InventoryBank.CanAfford(CostOfUse)) {
 								midnight.Disabled = true;
@@ -145,7 +145,7 @@ namespace Frontiers.World
 
 				public void OnPlayerUseWorldItemSecondary(object dialogResult)
 				{
-						OptionsListDialogResult result = (OptionsListDialogResult)dialogResult;
+						WIListResult result = (WIListResult)dialogResult;
 						bool takeMoney = RequiresPayment;
 
 						switch (result.SecondaryResult) {
@@ -172,8 +172,8 @@ namespace Frontiers.World
 
 						if (takeMoney) {
 								int numRemoved = 0;
-								ParentInkeeper.State.TimeLastPaid = WorldClock.Time;
-								Player.Local.Inventory.InventoryBank.TryToRemove(CostOfUse, ref numRemoved, WICurrencyType.A_Bronze);
+								ParentInkeeper.State.TimeLastPaid = WorldClock.AdjustedRealTime;
+								Player.Local.Inventory.InventoryBank.TryToRemove(CostOfUse, WICurrencyType.A_Bronze);
 						}
 
 						mSleptManually = true;

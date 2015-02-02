@@ -20,7 +20,7 @@ namespace Frontiers.World.Gameplay
 
 				public void Start()
 				{
-						StartTime = WorldClock.Time;
+						StartTime = WorldClock.AdjustedRealTime;
 						StartCoroutine(UpdateSkillEffectsOverTime());
 						FXOnUpdate = ParentSkill.Effects.FXOnSuccess;
 				}
@@ -38,10 +38,10 @@ namespace Frontiers.World.Gameplay
 				public IEnumerator UpdateSkillEffectsOverTime()
 				{
 						OnEffectStart();
-						while (WorldClock.Time < (StartTime + WorldClock.RTSecondsToGameSeconds(RTEffectTime))) {
+						while (WorldClock.AdjustedRealTime < (StartTime + RTEffectTime)) {
 								FXManager.Get.SpawnFX(TargetFXObject, FXOnUpdate);
 								UpdateEffects();
-								yield return new WaitForSeconds((float)RTUpdateInterval);
+								yield return WorldClock.WaitForSeconds(RTUpdateInterval);
 						}
 						Finish();
 						yield break;

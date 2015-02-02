@@ -24,7 +24,7 @@ public class WaterSubmergeObjects : MonoBehaviour
 								AudioManager.MakeWorldSound(ioi, MasterAudio.SoundType.JumpLandWater, "Land");
 								LastSubmergedItemOfInterest = ioi;
 								if (ioi.IOIType == ItemOfInterestType.Player) {
-										Player.Get.AvatarActions.ReceiveAction(AvatarAction.MoveEnterWater, WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction(AvatarAction.MoveEnterWater, WorldClock.AdjustedRealTime);
 								}
 								OnItemOfInterestEnterWater.SafeInvoke();
 								if (LastExitedItemOfInterest == ioi) {
@@ -44,7 +44,7 @@ public class WaterSubmergeObjects : MonoBehaviour
 						if (LastExitedItemOfInterest != ioi) {
 								LastExitedItemOfInterest = ioi;
 								if (ioi.IOIType == ItemOfInterestType.Player) {
-										Player.Get.AvatarActions.ReceiveAction(AvatarAction.MoveExitWater, WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction(AvatarAction.MoveExitWater, WorldClock.AdjustedRealTime);
 								}
 								OnItemOfInterestExitWater.SafeInvoke();
 								if (LastSubmergedItemOfInterest == ioi) {

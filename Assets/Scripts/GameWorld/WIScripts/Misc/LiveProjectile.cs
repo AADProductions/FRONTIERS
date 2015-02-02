@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using Frontiers;
+using Frontiers.World.BaseWIScripts;
 using ExtensionMethods;
 
 namespace Frontiers.World

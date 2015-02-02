@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 using Frontiers.Story;
-using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -280,7 +280,7 @@ namespace Frontiers.World
 						if (triggered) {
 								mBaseState.NumTimesTriggered++;
 								ParentChunk.SaveTriggers();
-								Player.Get.AvatarActions.ReceiveAction(AvatarAction.TriggerWorldTrigger, WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.TriggerWorldTrigger, WorldClock.AdjustedRealTime);
 						}
 				}
 
@@ -671,41 +671,5 @@ namespace Frontiers.World
 				public string QuestItemRequirement = string.Empty;
 				[XmlIgnore]
 				public WorldTrigger trigger;
-		}
-
-		public enum TriggerRequireType
-		{
-				None,
-				RequireTriggered,
-				RequireNotTriggered,
-		}
-
-		public enum MissionRequireType
-		{
-				None,
-				RequireDormant,
-				RequireActive,
-				RequireActiveAndNotFailed,
-				RequireCompleted,
-				RequireNotCompleted,
-		}
-
-		[Flags]
-		public enum WorldTriggerTarget
-		{
-				None = 0,
-				Player = 1,
-				Character = 2,
-				Creature = 4,
-				QuestItem = 8,
-				WorldItem = 16,
-		}
-
-		[Serializable]
-		public enum AvailabilityBehavior
-		{
-				Always,
-				Once,
-				Max
 		}
 }

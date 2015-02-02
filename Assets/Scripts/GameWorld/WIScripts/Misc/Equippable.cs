@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Equippable : WIScript
 		{
@@ -55,6 +55,11 @@ namespace Frontiers.World
 								StartCoroutine(CheckEquippedStatus());
 						}
 						//do this next frame
+						mRefreshColliders = true;
+				}
+
+				public void RefreshColliders ()
+				{
 						mRefreshColliders = true;
 				}
 
@@ -141,6 +146,7 @@ namespace Frontiers.World
 								//this will put us back in our group where we belong
 								worlditem.UnlockTransform();
 								//the tool will lock our transform on equip
+								mRefreshColliders = true;
 						}
 				}
 
@@ -150,15 +156,18 @@ namespace Frontiers.World
 						//if we're not, send on unequipped
 						//this should cover being destroyed
 						while (worlditem.Is(WIMode.Equipped)) {
-								if (mRefreshColliders) {
+								//this is turning out to be necessary more often than i thought
+								//so i'm just doing it every frame
+								//it's a cheap process so whatever
+								//if (mRefreshColliders) {
 										for (int i = 0; i < worlditem.Colliders.Count; i++) {
-												if (worlditem.Colliders[i].enabled && worlditem.Colliders[i].gameObject.activeSelf) {
+												if (worlditem.Colliders[i].enabled && worlditem.Colliders[i].gameObject.activeSelf && Player.Local.Controller.enabled) {
 														//this will get reset the next time they're disabled
 														Physics.IgnoreCollision(worlditem.Colliders[i], Player.Local.Controller);
 												}
 										}
-										mRefreshColliders = false;
-								}
+								//mRefreshColliders = false;
+								//}
 								yield return null;
 						}
 						mCheckingEquippedStatus = false;
@@ -228,14 +237,5 @@ namespace Frontiers.World
 
 				public List <string> SoundsUseSuccessfully	= new List <string>();
 				public List <string> SoundsUseUnsuccessfully	= new List <string>();
-		}
-
-		public interface IEquippableAction
-		{
-				bool IsCycling { get; }
-
-				bool CanCycle { get; }
-
-				bool IsActive { get; }
 		}
 }

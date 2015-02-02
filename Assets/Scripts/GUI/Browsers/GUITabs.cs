@@ -24,6 +24,12 @@ namespace Frontiers.GUI
 				public List <GUITabPage> Pages = new List <GUITabPage>();
 				public List <GUITabs> SubTabs = new List<GUITabs>();
 
+				public void SetTabsDisabled (bool disabled){
+						for (int i = 0; i < Buttons.Count; i++) {
+								Buttons[i].Disabled = disabled;
+						}
+				}
+
 				public string SelectedTab {
 						get {
 								if (string.IsNullOrEmpty(mLastPage)) {

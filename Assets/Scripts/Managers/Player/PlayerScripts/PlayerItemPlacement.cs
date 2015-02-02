@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
-
 using Frontiers.GUI;
 using Frontiers.World.BaseWIScripts;
 
@@ -34,7 +33,8 @@ namespace Frontiers
 				public Vector3 PlacementPreferredPointSmooth = Vector3.zero;
 				public IItemOfInterest PlacementPreferredObject = null;
 				public float ThrowForce = 8.0f;
-				public GameObject LastItemDropped;//TODO put this in globals
+				public GameObject LastItemDropped;
+				//TODO put this in globals
 				public GameObject LastItemCarried;
 				public GameObject LastItemPlaced;
 				public Vector3 GrabberIdealPosition	= new Vector3(0.5f, -0.15f, 2.5f);
@@ -44,8 +44,8 @@ namespace Frontiers
 				public double CarryCoolDown;
 				public double DropCoolDown;
 				public double PlaceCoolDown;
-				public double CooldownInterval = 0.25f;
-				public double CarryInterval = 0.25f;
+				protected double CooldownInterval = 0.1f;
+				protected double CarryInterval = 0.1f;
 				public double CarrySoFar = 0.0f;
 				public double ItemPlaceMinTime = 0.5f;
 				public double ItemPlaceStartTime = 0.0f;
@@ -170,7 +170,7 @@ namespace Frontiers
 								//GET THE DOPPLEGANGER
 								//put the doppleganger in player base so it doesn't rotate as we move
 								if (PlacementDoppleganger == null) {
-										PlacementDoppleganger = WorldItems.GetDoppleganger(ItemToPlace.PackName, ItemToPlace.PrefabName, Player.Get.transform, PlacementDoppleganger, WIMode.Placing);
+										PlacementDoppleganger = WorldItems.GetDoppleganger(ItemToPlace, Player.Get.transform, PlacementDoppleganger, WIMode.Placing, 1f);
 										//dopplegangers will be placed at the item's regular pivot
 										//this is ok for interfaces but we need to move the doppleganger so it's not intersecting with anything
 										//because we use the doppleganger's position when placing it in the world
@@ -235,8 +235,6 @@ namespace Frontiers
 														Debug.Log("We've gotten stuck");
 														mRigidBodyStuck = true;
 														mRigidBodyStuckStartTime = WorldClock.RealTime;
-												} else {
-														Debug.Log("We're closer this way so it's OK");
 												}
 										}
 								}
@@ -305,11 +303,12 @@ namespace Frontiers
 						return true;
 				}
 
-				public bool ToggleInterface (double timeStamp) {
-					Debug.Log("Setting item cooldown");
-					//this is to prevent accidentally spamming the ItemUse key
-					UseCoolDown = WorldClock.RealTime + CooldownInterval;
-					return true;
+				public bool ToggleInterface(double timeStamp)
+				{
+						//Debug.Log("Setting item cooldown");
+						//this is to prevent accidentally spamming the ItemUse key
+						UseCoolDown = WorldClock.RealTime + CooldownInterval;
+						return true;
 				}
 
 				public bool ItemAQIChange(double timeStamp)
@@ -325,14 +324,14 @@ namespace Frontiers
 						WorldItemUsable usable = null;
 						if (Player.Local.Surroundings.IsWorldItemInRange) {
 								worldItemInRange = Player.Local.Surroundings.WorldItemFocus.worlditem;
-								usable = worldItemInRange.gameObject.GetOrAdd<WorldItemUsable> ();
+								usable = worldItemInRange.gameObject.GetOrAdd<WorldItemUsable>();
 								usable.RequirePlayerFocus = true;
 								usable.ShowDoppleganger = true;
 
 						} else if (Player.Local.Surroundings.IsTerrainInRange &&
 						        Player.Local.Surroundings.TerrainFocus.IOIType == ItemOfInterestType.WorldItem) {
 								worldItemInRange = Player.Local.Surroundings.TerrainFocus.worlditem;
-								usable = worldItemInRange.gameObject.GetOrAdd<WorldItemUsable> ();
+								usable = worldItemInRange.gameObject.GetOrAdd<WorldItemUsable>();
 								usable.RequirePlayerFocus = false;
 								usable.ShowDoppleganger = false;
 								//there might be a body of water we want to drink from
@@ -347,8 +346,8 @@ namespace Frontiers
 				public bool ItemUse(double timeStamp)
 				{
 						if (WorldClock.RealTime < UseCoolDown) {
-							Debug.Log("Item use called - cooldown in effect");
-							return true;
+								Debug.Log("Item use called - cooldown in effect");
+								return true;
 						}
 
 						Debug.Log("Item use called in item placement");
@@ -364,6 +363,7 @@ namespace Frontiers
 						LastItemUsed = Player.Local.Surroundings.WorldItemFocus;//even if it's null that's fine
 
 						if (PlacementModeEnabled) {
+								Debug.Log("Item use placement");
 								if (Player.Local.Surroundings.IsReceptacleInPlayerFocus) {
 										//recepticles handle their own business
 										Player.Local.Surroundings.ReceptacleInPlayerFocus.worlditem.OnPlayerUse.SafeInvoke();
@@ -509,16 +509,25 @@ namespace Frontiers
 						if (item.CanEnterInventory) {//quest items are automatically fine
 								//Debug.Log ("It can enter inventory...");
 								if (!item.Is <QuestItem>() && !item.Is <OwnedByPlayer>() && item.UseRemoveItemSkill(mRemoveItemSkillNames, ref mSkillUseTarget)) {
-										//Debug.Log ("World item uses remove item skill");
+										//Debug.Log("World item uses remove item skill");
 										UseSkillsToPickUpItem(item);
 										return true;
 								} else if (Player.Local.Inventory.CanItemFit(item)) {
 										if (Player.Local.Inventory.AddItems(item, ref error)) {
-												//Debug.Log ("Adding item to inventory");
+												//Debug.Log("Adding item to inventory");
 												return true;
+										} else if (item.CanBeCarried) {
+												//Debug.Log("Couldn't add to inventory, force-carry");
+												//try to carry it
+												return ItemForceCarry(item);
+
 										}
+								} else if (item.CanBeCarried) {
+										//Debug.Log("Couldn't fit, but could be carried");
+										//try to carry it
+										return ItemForceCarry(item);
 								} else {
-										GUIManager.PostWarning(item.DisplayName + " won't fit in your inventory");
+										//Debug.Log("Couldn't be carried, couldn't fit");
 								}
 						}
 						return false;
@@ -691,7 +700,8 @@ namespace Frontiers
 						return true;
 				}
 
-				public void ItemDropAtFeet (IWIBase item) {
+				public void ItemDropAtFeet(IWIBase item)
+				{
 						WorldItem worlditem = null;
 						if (item.IsWorldItem) {
 								worlditem = item.worlditem;

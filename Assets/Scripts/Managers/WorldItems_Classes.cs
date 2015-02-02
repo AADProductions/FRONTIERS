@@ -308,6 +308,7 @@ namespace Frontiers.World
 				public WIMode PreviousMode = WIMode.World;
 				public bool FreezeOnStartup = true;
 				public bool FreezeOnSleep = true;
+				public bool CraftedByPlayer = false;
 				public float FreezeTimeout = 10.0f;
 				public STransform Transform = STransform.zero;
 				public SVector3 ChunkPosition = SVector3.zero;

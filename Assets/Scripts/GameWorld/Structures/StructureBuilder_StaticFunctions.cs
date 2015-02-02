@@ -84,7 +84,6 @@ namespace Frontiers.World
 						List <MeshCollider> mcList = null;
 
 						for (int i = 0; i < structureColliders.Count; i++) {
-
 								colliderLayer = structureColliders[i];
 
 								if (colliderLayer.DestroyedBehavior == StructureDestroyedBehavior.Destroy) {
@@ -123,7 +122,7 @@ namespace Frontiers.World
 																}
 														}
 												} else {
-														Debug.Log("Couldn't get mesh collider " + colliderLayer.PrefabName);
+														//Debug.Log("Couldn't get mesh collider " + colliderLayer.PrefabName);
 												}
 												break;
 
@@ -149,7 +148,7 @@ namespace Frontiers.World
 												break;
 
 										default:
-												Debug.Log("Couldn't identify collider pack name " + childPiece.PackName);
+												//Debug.Log("Couldn't identify collider pack name " + childPiece.PackName);
 												break;
 								}
 								//yield return null;
@@ -292,19 +291,18 @@ namespace Frontiers.World
 								//vertexCount += staticLayer.NumVertices;
 								//if this return true then it means we actually sent stuff
 								bool sendChildPieces = false;
-
+								//Debug.Log ("Sending " + staticLayer.NumInstances.ToString () + " pieces to combiner for layer " + staticLayer.PackName + ", " + staticLayer.PrefabName);
 								try {
 										sendChildPieces = SendChildPieceToMeshCombiner(staticLayer, combiner, lodCombiner, destroyedCombiner, destroyedLodCombiner, builder.MaterialLookup, builder.StructurePiece);
 								} catch (Exception e) {
-										Debug.LogError(e);
+										Debug.LogError("Exception when sending child pieces to mesh combiner: " + e.ToString());
 										sendChildPieces = false;
 								}
 
 								if (sendChildPieces) {
-										//wait for it to call back
 										yield return null;
 								} else {
-										Debug.Log("DIDN'T SEND CHILD PIECES TO MESH COMBINER");
+										//Debug.Log("DIDN'T SEND CHILD PIECES TO MESH COMBINER");
 										//yiked clear everything out
 										builder.State = BuilderState.Error;
 										combiner.ClearMeshes();
@@ -393,11 +391,14 @@ namespace Frontiers.World
 						}
 						//the mesh results should have been sent to our public props
 						//take them and put them in the right place now
-						if (builder.StructurePiece == null) {
+						if (builder.StructurePiece == null || builder.StructureBase == null) {
 								builder.State = Builder.BuilderState.Error;
 								//something happened while we were away
 								//cancel operation
-								Debug.Log("STRUCTURE BUILDER: STRUCTURE PIECE WAS NULL, NOT BUILDING!!! " + builder.Mode.ToString());
+								/*Debug.Log("STRUCTURE BUILDER: STRUCTURE PIECE OR BASE WAS NULL, NOT BUILDING!!! "
+										+ builder.Mode.ToString()
+										+ ", StructurePiece:" + (builder.StructurePiece == null).ToString()
+										+ ", StructureBase:" + (builder.StructureBase == null).ToString());*/
 						} else {
 								// Make our meshes in Unity
 								for (int j = 0; j < result.MeshOutputs.Length; j++) {
@@ -420,6 +421,8 @@ namespace Frontiers.World
 										subMeshGo.tag = staticLayer.Tag;
 										MeshFilter meshFilter = subMeshGo.GetOrAdd <MeshFilter>();
 										Renderer meshRenderer = subMeshGo.GetOrAdd <MeshRenderer>();
+										//make sure we don't see it zipping around
+										meshRenderer.enabled = interior;
 										//meshRenderer.enabled = false;
 										meshFilter.sharedMesh = newMesh.Mesh;
 										meshRenderer.sharedMaterials = newMesh.Materials;
@@ -448,6 +451,7 @@ namespace Frontiers.World
 												subMeshGo.tag = staticLayer.Tag;
 												MeshFilter meshFilter = subMeshGo.GetOrAdd <MeshFilter>();
 												Renderer meshRenderer = subMeshGo.GetOrAdd <MeshRenderer>();
+												meshRenderer.enabled = true;
 												//MeshCollider meshCollider = subMeshGo.GetOrAdd <MeshCollider> ();
 												meshFilter.sharedMesh = newMesh.Mesh;
 												meshRenderer.sharedMaterials = newMesh.Materials;
@@ -479,13 +483,12 @@ namespace Frontiers.World
 												subMeshGo.tag = staticLayer.Tag;
 												MeshFilter meshFilter = subMeshGo.GetOrAdd <MeshFilter>();
 												Renderer meshRenderer = subMeshGo.GetOrAdd <MeshRenderer>();
-												//meshRenderer.enabled = false;
+												meshRenderer.enabled = false;
 												//MeshCollider meshCollider = subMeshGo.GetOrAdd <MeshCollider> ();
 												meshFilter.sharedMesh = newMesh.Mesh;
 												meshRenderer.sharedMaterials = newMesh.Materials;
 												meshRenderer.gameObject.isStatic = true;
 												meshes.Add(meshFilter);
-												meshRenderer.enabled = false;
 												lodRenderers.Add(meshRenderer);
 										}
 
@@ -508,6 +511,7 @@ namespace Frontiers.World
 														subMeshGo.tag = staticLayer.Tag;
 														MeshFilter meshFilter = subMeshGo.GetOrAdd <MeshFilter>();
 														Renderer meshRenderer = subMeshGo.GetOrAdd <MeshRenderer>();
+														meshRenderer.enabled = false;
 														//meshRenderer.enabled = false;
 														//MeshCollider meshCollider = subMeshGo.GetOrAdd <MeshCollider> ();
 														meshFilter.sharedMesh = newMesh.Mesh;
@@ -545,6 +549,7 @@ namespace Frontiers.World
 
 						if (builder.State != Builder.BuilderState.Error) {
 								//once that's done put the structure piece in the right place
+
 								builder.StructurePiece.parent = builder.StructureBase.transform;
 
 								if (builder.Mode == Builder.BuilderMode.Minor) {
@@ -569,22 +574,40 @@ namespace Frontiers.World
 								//if we've already added everything to the group once
 								//then all we have to do this time is load the group
 								//and all that stuff will be in there again
-								//Debug.Log ("Already spawned exterior once, not adding items again");
+								//Debug.LogError ("Already spawned exterior once, not adding items again");
 								yield break;
 						}
 
 						//structurePiece.parent = parentStructure.StructureGroup.transform;
 						structurePiece.ResetLocal();
 						//now that the structure is built add all the bits and pieces over time
-						yield return group.StartCoroutine(AddGenericDoorsToStructure(structureGroup.GenericDoors, structurePiece, true, group, parentStructure));
-						yield return group.StartCoroutine(AddGenericWindowsToStructure(structureGroup.GenericWindows, structurePiece, true, group, parentStructure));
-						yield return group.StartCoroutine(AddGenericDynamicToStructure(structureGroup.GenericDynamic, structurePiece, true, group, parentStructure));
-						yield return group.StartCoroutine(AddGenericWorldItemsToStructure(structureGroup.GenericWItems, structurePiece, true, group));
-						yield return group.StartCoroutine(AddUniqueDynamicToStructure(structureGroup.UniqueDynamic, structurePiece, true, group, parentStructure));
-						yield return group.StartCoroutine(AddFXPiecesToStructure(structureGroup.GenericLights, structurePiece, true, group));
-						yield return group.StartCoroutine(AddUniqueWorldItemsToStructure(structureGroup.UniqueWorlditems, structurePiece, true, group));
-						yield return group.StartCoroutine(AddCatItemsToStructure(structureGroup.CategoryWorldItems, structurePiece, true, group, parentStructure));
-						yield return group.StartCoroutine(AddTriggersToStructure(structureGroup.Triggers, structurePiece, true, group));
+						var nextTask = AddGenericDoorsToStructure(structureGroup.GenericDoors, structurePiece, true, group, parentStructure);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddGenericWindowsToStructure(structureGroup.GenericWindows, structurePiece, true, group, parentStructure);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddGenericDynamicToStructure(structureGroup.GenericDynamic, structurePiece, true, group, parentStructure);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddGenericWorldItemsToStructure(structureGroup.GenericWItems, structurePiece, true, group);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddUniqueDynamicToStructure(structureGroup.UniqueDynamic, structurePiece, true, group, parentStructure);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddFXPiecesToStructure(structureGroup.GenericLights, structurePiece, true, group);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddUniqueWorldItemsToStructure(structureGroup.UniqueWorlditems, structurePiece, true, group);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddCatItemsToStructure(structureGroup.CategoryWorldItems, structurePiece, true, group, parentStructure);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddTriggersToStructure(structureGroup.Triggers, structurePiece, true, group);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
 						WorldChunk chunk = parentStructure.worlditem.Group.GetParentChunk();
 						//Debug.Log ("Adding nodes to group " + structureGroup.ActionNodes.Count.ToString ());
 						chunk.AddNodesToGroup(structureGroup.ActionNodes, group, structurePiece);
@@ -601,15 +624,33 @@ namespace Frontiers.World
 						//structurePiece.parent = group.transform;
 						structurePiece.ResetLocal();
 						//now that the structure is built add all the bits and pieces over time
-						yield return group.StartCoroutine(AddGenericDoorsToStructure(structureGroup.GenericDoors, structurePiece, false, group, parentStructure));
-						yield return group.StartCoroutine(AddGenericWindowsToStructure(structureGroup.GenericWindows, structurePiece, false, group, parentStructure));
-						yield return group.StartCoroutine(AddGenericDynamicToStructure(structureGroup.GenericDynamic, structurePiece, true, group, parentStructure));
-						yield return group.StartCoroutine(AddGenericWorldItemsToStructure(structureGroup.GenericWItems, structurePiece, false, group));
-						yield return group.StartCoroutine(AddUniqueDynamicToStructure(structureGroup.UniqueDynamic, structurePiece, true, group, parentStructure));
-						yield return group.StartCoroutine(AddFXPiecesToStructure(structureGroup.GenericLights, structurePiece, false, group));
-						yield return group.StartCoroutine(AddUniqueWorldItemsToStructure(structureGroup.UniqueWorlditems, structurePiece, false, group));
-						yield return group.StartCoroutine(AddCatItemsToStructure(structureGroup.CategoryWorldItems, structurePiece, false, group, parentStructure));
-						yield return group.StartCoroutine(AddTriggersToStructure(structureGroup.Triggers, structurePiece, false, group));
+						var nextTask = AddGenericDoorsToStructure(structureGroup.GenericDoors, structurePiece, false, group, parentStructure);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddGenericWindowsToStructure(structureGroup.GenericWindows, structurePiece, false, group, parentStructure);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddGenericDynamicToStructure(structureGroup.GenericDynamic, structurePiece, true, group, parentStructure);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddGenericWorldItemsToStructure(structureGroup.GenericWItems, structurePiece, false, group);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddUniqueDynamicToStructure(structureGroup.UniqueDynamic, structurePiece, true, group, parentStructure);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddFXPiecesToStructure(structureGroup.GenericLights, structurePiece, false, group);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddUniqueWorldItemsToStructure(structureGroup.UniqueWorlditems, structurePiece, false, group);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddCatItemsToStructure(structureGroup.CategoryWorldItems, structurePiece, false, group, parentStructure);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
+						nextTask = AddTriggersToStructure(structureGroup.Triggers, structurePiece, false, group);
+						while (nextTask.MoveNext()) { yield return nextTask.Current; }
+
 						List <ActionNodeState> interiorActionNodes = null;
 						//Debug.Log ("Adding " + structureGroup.ActionNodes.Count.ToString ( ) + " interior action nodes for variant " + interiorVariant.ToString ());
 						WorldChunk chunk = parentStructure.worlditem.Group.GetParentChunk();
@@ -688,7 +729,7 @@ namespace Frontiers.World
 										try {
 												matHash = Hydrogen.Material.GetDataHashCode(gMaterialsList[i]);
 										} catch (Exception e) {
-												Debug.Log("Exception when getting mat hash for " + staticLayer.PackName + ", " + staticLayer.PrefabName + ": " + e.ToString());
+												//Debug.Log("Exception when getting mat hash for " + staticLayer.PackName + ", " + staticLayer.PrefabName + ": " + e.ToString());
 										}
 										matHashes[i] = matHash;
 										if (!materialLookup.ContainsKey(matHash)) {
@@ -739,7 +780,7 @@ namespace Frontiers.World
 								childPieces = null;
 								return true;
 						} else {
-								Debug.Log("Didn't find prefab " + staticLayer.PackName + ", " + staticLayer.PrefabName);
+								Debug.LogError("Didn't find prefab " + staticLayer.PackName + ", " + staticLayer.PrefabName);
 						}
 						return false;
 				}
@@ -1056,7 +1097,7 @@ namespace Frontiers.World
 
 				public static IEnumerator UnloadStructureMeshes(Builder builder, Structure structure)
 				{
-						Debug.Log("Unloading structure meshes for " + structure.name);
+						//Debug.Log("Unloading structure meshes for " + structure.name);
 						if (builder.Mode == Builder.BuilderMode.Exterior) {
 								structureMeshes = structure.ExteriorMeshes;
 								renderers = structure.ExteriorRenderers;

@@ -155,6 +155,7 @@ namespace Frontiers.World.BaseWIScripts
 										mHit.feetPosition = mProps.Position;
 										mHit.overhangHeight = 4.0f;
 										mHit.groundedHeight = 5.0f;
+										mHit.ignoreWorldItems = true;//we want path markers to appear below people / signs / etc
 										mHit.feetPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mHit);
 										worlditem.tr.position = mHit.feetPosition;
 										worlditem.tr.rotation = Quaternion.Euler(0f, mProps.Rotation.y, 0f);

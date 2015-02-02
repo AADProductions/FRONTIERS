@@ -41,11 +41,6 @@ namespace Frontiers.GUI
 						get {
 								return mBlueprint;
 						}set {
-								if (value == null) {
-										//Debug.Log ("Setting blueprint to NULL");
-								} else {
-										//Debug.Log ("Setting blueprint to " + value.Name);
-								}
 								mBlueprint = value;
 						}
 				}
@@ -156,27 +151,44 @@ namespace Frontiers.GUI
 				public void Start()
 				{
 						CraftingContainer = Stacks.Create.StackContainer(this, WIGroups.Get.Player);
-						CraftingContainer.RefreshAction += Refresh;
-						ResultSquare.RefreshAction += Refresh;
+						CraftingContainer.RefreshAction += RefreshRequest;
+						ResultSquare.RefreshAction += RefreshRequest;
 
 						//temporarily display gather supplies button
-						GatherSuppliesButton.gameObject.SetActive(false);
+						GatherSuppliesButton.gameObject.SetActive (false);
 
 						CraftingSquaresRow0[0].SetStack(CraftingContainer.StackList[0]);
+						CraftingSquaresRow0[0].BlueprintPotentiallyChanged += OnBlueprintPotentiallyChanged;
 						CraftingSquaresRow0[1].SetStack(CraftingContainer.StackList[1]);
+						CraftingSquaresRow0[1].BlueprintPotentiallyChanged += OnBlueprintPotentiallyChanged;
 						CraftingSquaresRow0[2].SetStack(CraftingContainer.StackList[2]);
+						CraftingSquaresRow0[2].BlueprintPotentiallyChanged += OnBlueprintPotentiallyChanged;
 
 						CraftingSquaresRow1[0].SetStack(CraftingContainer.StackList[3]);
+						CraftingSquaresRow1[0].BlueprintPotentiallyChanged += OnBlueprintPotentiallyChanged;
 						CraftingSquaresRow1[1].SetStack(CraftingContainer.StackList[4]);
+						CraftingSquaresRow1[1].BlueprintPotentiallyChanged += OnBlueprintPotentiallyChanged;
 						CraftingSquaresRow1[2].SetStack(CraftingContainer.StackList[5]);
+						CraftingSquaresRow1[2].BlueprintPotentiallyChanged += OnBlueprintPotentiallyChanged;
 
 						CraftingSquaresRow2[0].SetStack(CraftingContainer.StackList[6]);
+						CraftingSquaresRow2[0].BlueprintPotentiallyChanged += OnBlueprintPotentiallyChanged;
 						CraftingSquaresRow2[1].SetStack(CraftingContainer.StackList[7]);
+						CraftingSquaresRow2[1].BlueprintPotentiallyChanged += OnBlueprintPotentiallyChanged;
 						CraftingSquaresRow2[2].SetStack(CraftingContainer.StackList[8]);
+						CraftingSquaresRow2[2].BlueprintPotentiallyChanged += OnBlueprintPotentiallyChanged;
 
 						Rows.Add(CraftingSquaresRow0);
 						Rows.Add(CraftingSquaresRow1);
 						Rows.Add(CraftingSquaresRow2);
+
+						//make sure to add these in the right order
+						//left to right, top to down
+						//otherwise the patterns we generate won't match
+						//TODO do we really need all these different lists
+						mPatternSquares.AddRange(CraftingSquaresRow0);
+						mPatternSquares.AddRange(CraftingSquaresRow1);
+						mPatternSquares.AddRange(CraftingSquaresRow2);
 
 						Squares.Add(CraftingSquaresRow0[0]);
 						Squares.Add(CraftingSquaresRow0[1]);
@@ -210,7 +222,7 @@ namespace Frontiers.GUI
 				protected override void OnRefresh()
 				{
 						if (!GameManager.Is(FGameState.InGame | FGameState.GamePaused)) {
-								////Debug.Log ("Not in game or paused, so not refreshing");
+								//Debug.Log ("Not in game or paused, so not refreshing");
 								return;
 						}
 
@@ -222,12 +234,12 @@ namespace Frontiers.GUI
 
 						//Debug.Log ("Refreshing crafting interface");
 						Skill skillLookup = null;
-
+						/*
+						bool resultRequirementsMet = false;
+						int resultNumItemsPossible = 0;
+						int resultNumCraftableItems = 0;
+						*/
 						if (!InventoryInterface.IsCrafting) {
-								ResultSquare.RequirementsMet = false;
-								ResultSquare.NumItemsPossible = 0;
-								NumCraftableItems = 0;
-
 								if (!HasCraftingItem) {
 										FindCraftingItemInFocus();//just in case
 								}
@@ -319,7 +331,9 @@ namespace Frontiers.GUI
 										//Debug.Log ("We have no blueprint. Blueprint null? " + (Blueprint == null).ToString ());
 										//we have no blueprint at this stage
 										Blueprint = null;
-										ResultSquare.CraftedItemTemplate = null;
+										//don't clear the crafted item template
+										//we may still have to pick it up
+										//ResultSquare.CraftedItemTemplate = null;
 										ResultSquare.RequirementsMet = false;
 										ResultSquare.NumItemsPossible = 0;
 										ContentsListLabel.text = "(No blueprint selected)";
@@ -328,6 +342,7 @@ namespace Frontiers.GUI
 										SetCraftAllButton(false);
 								}
 						}
+
 
 						UpdateRowDisplay(CraftingSquaresRow0);
 						UpdateRowDisplay(CraftingSquaresRow1);
@@ -342,9 +357,6 @@ namespace Frontiers.GUI
 
 				public bool FindCraftingItemInFocus()
 				{
-						if (!GameManager.Is(FGameState.InGame))
-								return false;
-
 						if (Player.Local.Surroundings.IsWorldItemInPlayerFocus) {
 								CraftingItem newCraftingItem = null;
 								if (Player.Local.Surroundings.WorldItemFocus.worlditem.Is <CraftingItem>(out newCraftingItem)) {
@@ -365,6 +377,63 @@ namespace Frontiers.GUI
 				{
 						if (!mRequiredSkill.IsInUse) {
 								StartCoroutine(CraftOverTime(NumCraftableItems));
+						}
+				}
+
+				public void OnBlueprintPotentiallyChanged ( ) {
+						Debug.Log("Blueprint potentially changed");
+						//set blueprint to null in case we don't find a new one 
+						Blueprint = null;
+						//generate a pattern based on the arrangement of items
+						//use that pattern to look up potential matches
+						//use the blueprints skill to find a real match
+						int pattern = 0;
+						for (int i = 0; i < mPatternSquares.Count; i++) {
+								if (mPatternSquares[i].Stack.HasTopItem) {
+										pattern |= 1 << i;
+								}
+						}
+						mPotentialMatches.Clear();
+						int numCraftableItems = 0;
+						if (Blueprints.Get.BlueprintsByPattern(pattern, mPotentialMatches)) {
+								Blueprint = null;
+								//we've found some potential matches
+								//see if any actually match
+								for (int i = 0; i < mPotentialMatches.Count; i++) {
+										WIBlueprint potentialMatch = mPotentialMatches[i];
+										bool matches = true;
+										Debug.Log("Checking potential match " + potentialMatch.Name);
+										//check each square
+										for (int s = 0; s < mPatternSquares.Count; s++) {
+												//we only have to check squares that aren't null
+												//if they're null the pattern has ruled them out already
+												if (mPatternSquares[s].HasStack && mPatternSquares[s].Stack.HasTopItem) {
+														//here we perform an actual strictness check
+														//if we blow it, it doesn't match
+														//just pass '1' to the requirements
+														if (!CraftSkill.AreRequirementsMet(
+																    mPatternSquares[s].Stack.TopItem,
+																    potentialMatch.Rows[s],
+																    potentialMatch.Strictness,
+																    mPatternSquares[s].Stack.NumItems,
+																    out numCraftableItems)) {
+																matches = false;
+																break;
+														}
+												}
+										}
+
+										if (matches) {
+												Debug.Log("MATCH! setting blueprint to " + potentialMatch.Name);
+												//hooray, we're done
+												OnSelectBlueprint(potentialMatch);
+												break;
+										}
+								}
+						} else {
+								//if we didn't find ANY blueprints that match
+								//just clear the blueprint
+								RefreshRequest();
 						}
 				}
 
@@ -439,6 +508,7 @@ namespace Frontiers.GUI
 								InventorySquareCrafting square = row[i];
 								if (!InventoryInterface.IsCrafting) {
 										if (!HasBlueprint) {
+												square.HasBlueprint = false;
 												square.DisableForBlueprint();
 										}
 								}
@@ -461,8 +531,10 @@ namespace Frontiers.GUI
 										}
 								}
 						} else {
-								CraftingWorldItem = newCraftingItem;
-								RefreshRequest();
+								if (CraftingWorldItem != newCraftingItem) {
+										CraftingWorldItem = newCraftingItem;
+										RefreshRequest();
+								}
 						}
 				}
 
@@ -470,9 +542,11 @@ namespace Frontiers.GUI
 				{
 						//Debug.Log ("Clearing crafting");
 						SendItemsBackToInventory();
-						CraftingWorldItem = null;
-						Blueprint = null;
-						RefreshRequest();
+						if (CraftingWorldItem != null) {
+								CraftingWorldItem = null;
+								Blueprint = null;
+								RefreshRequest();
+						}
 				}
 
 				protected IEnumerator CraftOverTime(int numToCraft)
@@ -537,6 +611,8 @@ namespace Frontiers.GUI
 						HasCraftedArrow.color = Color.Lerp(HasCraftedArrow.color, Colors.Alpha(HasCraftedArrowColorTarget, Mathf.Lerp(HasCraftedArrow.alpha, HasCraftedArrowAlphaTarget, 0.125f)), 0.125f);
 				}
 
+				protected List <WIBlueprint> mPotentialMatches = new List<WIBlueprint> ();
+				protected List <InventorySquareCrafting> mPatternSquares = new List<InventorySquareCrafting>();
 				protected bool mRefreshing = false;
 				protected CraftSkill mRequiredSkill = null;
 				protected bool mHasBeenInitialized = false;

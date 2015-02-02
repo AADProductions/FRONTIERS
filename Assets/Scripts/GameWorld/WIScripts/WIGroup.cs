@@ -18,6 +18,7 @@ namespace Frontiers.World
 				public List <WIGroup> ChildGroups;
 				public List <WorldItem> ChildItems;
 				public Transform tr;
+				public bool AttemptedToUnload = false;
 				//convenience
 				public string Path {
 						get {
@@ -102,7 +103,7 @@ namespace Frontiers.World
 				{
 						mDestroyed = true;
 						if (!mSavedState) {
-								Debug.Log ("WIGROUP " + name + " WAS DESTROYED WITHOUT SAVING STATE");
+							//Debug.Log("WIGROUP " + name + " WAS DESTROYED WITHOUT SAVING STATE");
 						}
 				}
 
@@ -130,6 +131,21 @@ namespace Frontiers.World
 						//if we've gotten this far without a true result
 						//then that means the group didn't exist or wasn't loaded
 						return result;
+				}
+
+				public bool IsParentOf(WIGroup group)
+				{
+						if (group == null) {
+								return false;
+						}
+						//the group's depth is greater than ours
+						//AND it contains our path
+						//then they're definitely a child group
+						//even if they're not an immediate child group
+						if (group.Depth > Depth && group.Path.Contains(Path)) {
+								return true;
+						}
+						return false;
 				}
 
 				public bool IsRoot {
@@ -250,6 +266,7 @@ namespace Frontiers.World
 				public void Initialize()
 				{
 						if (!Is(WIGroupLoadState.Uninitialized)) {
+								Debug.Log("Group " + Path + " isn't uninitialized");
 								return;
 						}
 
@@ -305,7 +322,8 @@ namespace Frontiers.World
 						if (mDestroyed)
 								return false;
 
-						if (!Is(WIGroupLoadState.Loading | WIGroupLoadState.Loaded | WIGroupLoadState.PreparingToLoad)) {
+						if (Is(WIGroupLoadState.PreparingToUnload | WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
+								Debug.Log("Trying to add child item " + childItem.Name + " to group while it's unloading / unloaded");
 								return false;
 						}
 
@@ -321,16 +339,23 @@ namespace Frontiers.World
 						if (mDestroyed)
 								return false;
 
-						if (!Is(WIGroupLoadState.Loading | WIGroupLoadState.Loaded | WIGroupLoadState.PreparingToLoad)) {
+						if (Is(WIGroupLoadState.PreparingToUnload | WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
+								Debug.Log("Trying to add child item " + childItem.FileName + " to group while it's unloading / unloaded");
 								return false;
 						}
-						//first we have to remove it from its existing group
-						if (childItem.Group != null && childItem.Group != this) {
-								if (!childItem.Group.RemoveChildItemFromGroup(childItem)) {
+						//does it already have a group?
+						if (childItem.Group != null) {
+								//if it has a group and it's not this group
+								//first we have to remove it from its existing group
+								if (childItem.Group != this && !childItem.Group.RemoveChildItemFromGroup(childItem)) {
+										//we can't proceed if the other group won't let it go
 										return false;
 								}
+						} else {
+								//it should really be set already
+								//but just in case, set it here
+								childItem.Group = this;
 						}
-
 
 						bool result = ChildItems.SafeAdd(childItem);
 						bool broadcast = result;
@@ -400,10 +425,10 @@ namespace Frontiers.World
 						if (mDestroyed)
 								return false;
 
-						if (!Is(WIGroupLoadState.Loading | WIGroupLoadState.Loaded | WIGroupLoadState.PreparingToLoad)) {
+						if (Is(WIGroupLoadState.PreparingToUnload | WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
+								Debug.Log("Trying to add child group " + childGroup.Path + " to group while it's unloading / unloaded");
 								return false;
 						}
-
 						//we assume that group ownership check and the like have been
 						//resolved by the time this function is called
 						if (childGroup != this && !ChildGroups.Contains(childGroup)) {
@@ -446,7 +471,7 @@ namespace Frontiers.World
 								//remove from lookup
 								string fileName = childItem.FileName;
 								mChildItemLookup.Remove(fileName);
-								if (!childItem.Is(WIMode.RemovedFromGame)) {
+								if (!childItem.Is(WIMode.RemovedFromGame) && childItem.SaveItemOnUnloaded) {
 										//add it to the unloaded child item list
 										Props.UnloadedChildItems.Add(fileName);
 								}
@@ -590,7 +615,7 @@ namespace Frontiers.World
 						if (WorldItems.Get.Category(categoryName, out category)) {
 								for (int i = 0; i < category.GenericWorldItems.Count; i++) {
 										for (int j = 0; j < ChildItems.Count; j++) {
-												if (Stacks.Can.Stack(ChildItems[j].PrefabName, category.GenericWorldItems[i].PrefabName)) {
+												if (Stacks.Can.Stack(ChildItems[j], category.GenericWorldItems[i])) {
 														numChildItems++;
 														if (numChildItems >= maxNeeded) {
 																break;
@@ -611,9 +636,11 @@ namespace Frontiers.World
 						if (Is(WIGroupLoadState.PreparingToLoad | WIGroupLoadState.Loading)) {
 								return true;
 						}
-						if (!Is(WIGroupLoadState.Initialized | WIGroupLoadState.Unloaded) | (HasParentGroup && ParentGroup.Is(WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded))) {
+
+						if (!Is(WIGroupLoadState.Initialized | WIGroupLoadState.Unloaded)) {
 								return false;
 						}
+
 						LoadState = WIGroupLoadState.PreparingToLoad;
 						return true;
 				}
@@ -634,10 +661,14 @@ namespace Frontiers.World
 						StartCoroutine(LoadChildItemsOverTime());
 				}
 
-				public void CancelLoad()
+				public bool TryToCancelLoad()
 				{
 						//mStackItemsToLoad.Clear();
-						LoadState = WIGroupLoadState.Unloaded;
+						if (Is(WIGroupLoadState.PreparingToLoad)) {
+								LoadState = WIGroupLoadState.Unloaded;
+								return true;
+						}
+						return false;
 				}
 
 				public bool FinishedLoading {
@@ -661,7 +692,8 @@ namespace Frontiers.World
 
 				public bool PrepareToUnload()
 				{
-						if (Is(WIGroupLoadState.PreparingToUnload)) {
+						if (Is(WIGroupLoadState.PreparingToUnload | WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
+								//this is true for any step down the line
 								return true;
 						} else if (Is(WIGroupLoadState.Loaded)) {
 								//call prepare to unload on each child object
@@ -694,6 +726,9 @@ namespace Frontiers.World
 												readyToUnload &= ChildItems[i].ReadyToUnload;
 										}
 										return readyToUnload;
+								} else if (Is(WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
+										//true for any step down theline
+										return true;
 								}
 								return false;
 						}
@@ -706,22 +741,24 @@ namespace Frontiers.World
 								LoadState = WIGroupLoadState.Unloading;
 								StartCoroutine(UnloadOverTime());
 								/*
-								for (int i = 0; i < ChildItems.Count; i++) {
-										ChildItems[i].BeginUnload();
-								}
-								*/
+				for (int i = 0; i < ChildItems.Count; i++) {
+						ChildItems[i].BeginUnload();
+				}
+				*/
 						}
 				}
 
-				protected IEnumerator UnloadOverTime ( ) {
+				protected IEnumerator UnloadOverTime()
+				{
 						//Debug.Log("Unloading over time in " + name);
 						//start by telling the worlditems to begin unloading
 						for (int i = ChildItems.LastIndex(); i >= 0; i--) {
 								if (ChildItems[i] == null) {
 										ChildItems.RemoveAt(i);
 								} else {
-										ChildItems[i].BeginUnload ( );
+										ChildItems[i].BeginUnload();
 								}
+								yield return null;
 						}
 						yield return null;
 						while (ChildItems.Count > 0) {
@@ -731,6 +768,8 @@ namespace Frontiers.World
 										if (ChildItems[0].FinishedUnloading) {
 												//wait a moment so we don't get overloaded
 												yield return null;
+										} else {
+												//Debug.Log("Child item " + ChildItems[0].FileName + " was NOT finished unloading");
 										}
 								} else {
 										ChildItems.RemoveAt(0);
@@ -753,24 +792,27 @@ namespace Frontiers.World
 						yield break;
 				}
 
-				public void CancelUnload()
+				public bool TryToCancelUnload()
 				{
-						if (Is(WIGroupLoadState.Unloading)) {
+						/*
+						if (WIGroups.TryToCancelUnload(this)) {
+
 								for (int i = 0; i < ChildItems.Count; i++) {
-										ChildItems[i].CancelUnload();
+										ChildItems[i].TryToCancelUnload();
 								}
+								return true;
 						}
+						*/
+						//we're going to try an experiment
+						//and fail cancel unload requests across the board
+						return false;
 				}
 
 				public bool FinishedUnloading {
 						get {
 								if (Is(WIGroupLoadState.Unloaded)) {
-										if (!mSavedState) {
-												Debug.Log ("WIGROUP: " + name + " was UNLOADED before saving state, this should never happen!");
-										}
 										return true;
 								}
-								//Debug.Log("NOT finished unloading in " + name);
 								return false;
 						}
 				}
@@ -860,7 +902,7 @@ namespace Frontiers.World
 														worlditem.Initialize();
 														//mStackItemsToLoad.Enqueue(stackItem);
 														//if (GameManager.Is(FGameState.InGame)) {
-																yield return null;
+														yield return null;
 														//}
 												}
 										}
@@ -1116,7 +1158,6 @@ namespace Frontiers.World
 								return WorldClock.RealTime - mTimeLastLoaded;
 						}
 				}
-
 				#if UNITY_EDITOR
 				public bool EditorLoaded = false;
 
@@ -1340,7 +1381,7 @@ namespace Frontiers.World
 						GUILayout.Button(LoadState.ToString());
 						if (Application.isPlaying) {
 								WIGroupUnloader unloader = null;
-								if (WIGroups.UnloaderMappings.TryGetValue(this, out unloader)) {
+								if (WIGroups.UnloaderMappings.TryGetValue(Path, out unloader)) {
 										UnityEngine.GUI.color = Color.red;
 										GUILayout.Button("HAS UNLOADER");
 								} else if (HasUnloadingParent) {
@@ -1369,7 +1410,6 @@ namespace Frontiers.World
 
 				protected bool mSavingEditorOverTime = false;
 				#endif
-
 				protected double mTimeLastUnloaded = 0.0f;
 				protected double mTimeLastLoaded = 0.0f;
 				protected bool mRefreshingChildGroups = false;

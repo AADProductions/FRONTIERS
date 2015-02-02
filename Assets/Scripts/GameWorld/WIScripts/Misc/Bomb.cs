@@ -1,16 +1,17 @@
 using UnityEngine;
 using System;
 using System.Collections;
-using Frontiers;
 using System.Collections.Generic;
+using Frontiers;
 using Frontiers.GUI;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
 		public class Bomb : WIScript
 		{
 				public DamagePackage DamageOnExplode = new DamagePackage();
-				public FXManager.ExplosionType ExplosionType = FXManager.ExplosionType.Base;
+				public ExplosionType ExplosionType = ExplosionType.Base;
 				public MasterAudio.SoundType ExplosionSoundType = MasterAudio.SoundType.Explosions;
 				//TODO look into moving these into the bomb's state
 				public string ExplosionSound;
@@ -21,19 +22,19 @@ namespace Frontiers.World
 				public bool CanUseFuse = true;
 				public Vector3 FuseOffset;
 
-				public override void PopulateOptionsList(List <GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(List <WIListOption> options, List <string> message)
 				{
 						if (CanUseFuse && !worlditem.Is <Fuse>()) {
 								Fuse fuse = null;
 								if (Player.Local.Tool.IsEquipped && Player.Local.Tool.worlditem.Is <Fuse>(out fuse)) {
-										options.Add(new GUIListOption("Attach Fuse", "Fuse"));
+										options.Add(new WIListOption("Attach Fuse", "Fuse"));
 								}
 						}
 				}
 
 				public void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;			
+						WIListResult dialogResult = secondaryResult as WIListResult;			
 						switch (dialogResult.SecondaryResult) {
 								case "Fuse":
 										Fuse existingFuse = null;
@@ -99,7 +100,7 @@ namespace Frontiers.World
 				protected IEnumerator CountdownOverTime()
 				{
 						while (mIsCountingDown) {
-								//yield return new WaitForSeconds (1.0f);
+								//yield return WorldClock.WaitForSeconds (1.0f);
 								yield return null;
 						}
 						mIsCountingDown = false;

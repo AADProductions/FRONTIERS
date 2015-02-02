@@ -1,11 +1,12 @@
 using UnityEngine;
 using System;
-using System.Runtime.Serialization;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using Frontiers;
-using Frontiers.World.Gameplay;
 using Frontiers.World;
+using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 using ExtensionMethods;
 
 namespace Frontiers {

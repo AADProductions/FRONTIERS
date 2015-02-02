@@ -24,6 +24,11 @@ namespace Frontiers
 
 				public virtual void Update()
 				{
+						/*
+						if (mActionList.Count == 0) {
+								return;
+						}
+
 						mUpdating = true;
 						var enumerator = mActionList.GetEnumerator();
 						while (enumerator.MoveNext()) {
@@ -37,14 +42,17 @@ namespace Frontiers
 						mUpdating = false;
 						mActionList.Clear();
 
-						enumerator = mActionListDuringUpdate.GetEnumerator();
-						while (enumerator.MoveNext()) {
-								//foreach (KeyValuePair<T,float> updateAction in mActionListDuringUpdate) {
-								updateAction = enumerator.Current;
-								mActionList.Add(updateAction);
-						}
 
-						mActionListDuringUpdate.Clear();
+						if (mActionListDuringUpdate.Count > 0) {
+								enumerator = mActionListDuringUpdate.GetEnumerator();
+								while (enumerator.MoveNext()) {
+										//foreach (KeyValuePair<T,float> updateAction in mActionListDuringUpdate) {
+										updateAction = enumerator.Current;
+										mActionList.Add(updateAction);
+								}
+
+								mActionListDuringUpdate.Clear();
+						}*/
 				}
 
 				protected KeyValuePair<T,float> updateAction;
@@ -94,7 +102,7 @@ namespace Frontiers
 										break;
 				
 								case PassThroughBehavior.InterceptAll:
-				//this applies to exceptions!!!
+										//this applies to exceptions!!!
 										passThrough = false;
 										break;
 						}
@@ -153,7 +161,7 @@ namespace Frontiers
 				protected HashSet <KeyValuePair <T,float>> mActionListDuringUpdate = new HashSet <KeyValuePair <T,float>>();
 				protected bool mUpdating = false;
 				protected bool mSubscribersSet = false;
-				protected Dictionary <T, List <ActionListener>>	mListeners = new Dictionary <T, List <ActionListener>>();
+				protected Dictionary <T, List <ActionListener>>	mListeners;// = new Dictionary <T, List <ActionListener>>();
 				protected Queue <T> mQueuedSubscriptions = new Queue <T>();
 		}
 }

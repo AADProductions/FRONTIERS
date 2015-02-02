@@ -105,7 +105,7 @@ namespace Frontiers.World
 
 				public virtual void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{	//this is where we handle skills
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;
+						WIListResult dialogResult = secondaryResult as WIListResult;
 						for (int i = 0; i < mLastAssociatedSkillList.Count; i++) {
 								Skill skill = mLastAssociatedSkillList[i];
 								if (skill.name == dialogResult.SecondaryResult) {

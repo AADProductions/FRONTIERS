@@ -6,7 +6,7 @@ using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Weapon : WIScript, IMeleeWeapon
 		{
@@ -89,11 +89,11 @@ namespace Frontiers.World
 				{
 						WeaponSkillModifier wsm = null;
 						if (worlditem.Has <WeaponSkillModifier>(out wsm)) {
-								GUIManager.PostDanger("This weapon is already modified with " + wsm.ParentSkill.DisplayName);
+								GUI.GUIManager.PostDanger("This weapon is already modified with " + wsm.ParentSkill.DisplayName);
 								return false;
 						} else {
 								wsm = worlditem.GetOrAdd <WeaponSkillModifier>();
-								wsm.State.TimeApplied = WorldClock.Time;
+								wsm.State.TimeApplied = WorldClock.AdjustedRealTime;
 								wsm.State.Duration = skill.EffectTime;
 								wsm.ParentSkill = skill as RangedSkill;
 						}
@@ -123,6 +123,7 @@ namespace Frontiers.World
 						State.Damage.DamageSent = DamagePerHit(this);
 						State.Damage.ForceSent = ForcePerHit(this);
 						State.Damage.Target = target;
+						State.Damage.Source = worlditem;
 
 						return State.Damage;
 				}
@@ -199,31 +200,6 @@ namespace Frontiers.World
 				
 						return false;
 				}
-		}
-
-		public interface IMeleeWeapon
-		{
-				float ImpactTime { get; }
-
-				float UseSpeed { get; }
-
-				float SwingDelay { get; }
-
-				float WindupDelay { get; }
-
-				float SwingRate { get; }
-
-				float SwingDuration { get; }
-
-				float SwingImpactForce { get; }
-
-				float StrengthDrain { get; }
-
-				float RecoilIntensity { get; }
-
-				bool RandomSwingDirection { get; }
-
-				string AttackState { get; }
 		}
 
 		[Serializable]

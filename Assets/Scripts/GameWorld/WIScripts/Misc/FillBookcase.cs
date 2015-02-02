@@ -1,7 +1,8 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -11,6 +12,10 @@ namespace Frontiers.World
 
 				public override void OnInitialized()
 				{
+						if (worlditem.Props.Local.CraftedByPlayer) {
+								Finish();
+								return;
+						}
 						StartCoroutine(TryToFillBookcase());
 				}
 
@@ -32,7 +37,10 @@ namespace Frontiers.World
 						switch (State.FillMethod) {
 								case ContainerFillMethod.AllRandomItemsFromCategory:
 								default:
-										yield return StartCoroutine(Books.Get.BookStackItemsByFlagsAndOwner(stackContainer.NumStacks, State.Flags, State.ManualSkillLevel, worlditem, true, avatarStackItems));
+										var getStackItemsByBookAndOwner = Books.Get.BookStackItemsByFlagsAndOwner(stackContainer.NumStacks, State.Flags, State.ManualSkillLevel, worlditem, true, avatarStackItems);
+										while (getStackItemsByBookAndOwner.MoveNext()) {
+												yield return getStackItemsByBookAndOwner.Current;
+										}
 										break;
 
 								case ContainerFillMethod.SpecificItems:

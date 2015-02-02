@@ -28,9 +28,11 @@ namespace Frontiers.World
 				public void OnAddedToGroup()
 				{
 						if (HasPowerSource) {
-								PowerAudio.Play();
+								if (PowerAudio != null) {
+										PowerAudio.Play();
+								}
 								PowerSourceDoppleganger = WorldItems.GetDoppleganger(PowerSourceDopplegangerProps, PowerSourceDopplegangerParent, PowerSourceDoppleganger, WIMode.World);
-						} else {
+						} else if (PowerAudio != null) {
 								PowerAudio.Stop();
 						}
 				}
@@ -60,7 +62,9 @@ namespace Frontiers.World
 										if (!value) {
 												State.HasPower = false;
 												FXManager.Get.SpawnFX(worlditem.tr, FXOnLosePower);
-												PowerAudio.Stop();
+												if (PowerAudio != null) {
+														PowerAudio.Stop();
+												}
 												OnLosePower.SafeInvoke();
 												return;
 										}
@@ -68,7 +72,9 @@ namespace Frontiers.World
 										if (value) {
 												State.HasPower = true;
 												FXManager.Get.SpawnFX(worlditem.tr, FXOnRestorePower);
-												PowerAudio.Play();
+												if (PowerAudio != null) {
+														PowerAudio.Play();
+												}
 												OnRestorePower.SafeInvoke();
 												return;
 										}
@@ -80,20 +86,20 @@ namespace Frontiers.World
 				public Action OnRestorePower;
 				public Action OnPowerSourceRemoved;
 
-				public override void PopulateOptionsList(List <GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(List <WIListOption> options, List <string> message)
 				{
 						if (CanRemoveSource) {
 								if (State.HasPowerSource) {
-										options.Add(new GUIListOption("Remove " + PowerSourceDopplegangerProps.DisplayName, "RemovePowerSource"));
+										options.Add(new WIListOption("Remove " + PowerSourceDopplegangerProps.DisplayName, "RemovePowerSource"));
 								} else if (Player.Local.Tool.IsEquipped && Stacks.Can.Stack(Player.Local.Tool.worlditem, PowerSourceDopplegangerProps)) {
-										options.Add(new GUIListOption("Add " + PowerSourceDopplegangerProps.DisplayName, "AddPowerSource"));
+										options.Add(new WIListOption("Add " + PowerSourceDopplegangerProps.DisplayName, "AddPowerSource"));
 								}
 						}
 				}
 
 				public void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;			
+						WIListResult dialogResult = secondaryResult as WIListResult;			
 						switch (dialogResult.SecondaryResult) {
 								case "RemovePowerSource":
 										WIStackError error = WIStackError.None;

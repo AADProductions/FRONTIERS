@@ -27,7 +27,7 @@ namespace Frontiers.World.BaseWIScripts
 
 				public override string FileNamer(int increment)
 				{
-						if (Props != null) {
+						if (HasPlantProps) {
 								return Props.Name + "-" + increment.ToString();
 						} else {
 								return "WorldPlant-" + increment.ToString();
@@ -36,6 +36,12 @@ namespace Frontiers.World.BaseWIScripts
 
 				public override void PopulateExamineList(List<WIExamineInfo> examine)
 				{
+						if (!HasPlantProps) {
+								if (!Plants.Get.PlantProps(State.PlantName, ref Props)) {
+										Debug.LogError("Couldn't get plant props " + State.PlantName);
+										return;
+								}
+						}
 						Props.Revealed = true;
 						Props.NumTimesEncountered++;
 						Props.EncounteredTimesOfYear |= WorldClock.SeasonCurrent;
@@ -106,7 +112,11 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void RefreshPlantProps()
 				{
-						worlditem.Props.Local.Subcategory = State.PlantName;
+						if (string.IsNullOrEmpty(State.PlantName)) {
+								State.PlantName = worlditem.Props.Local.Subcategory;
+						} else {
+								worlditem.Props.Local.Subcategory = State.PlantName;
+						}
 						if (State.Season == TimeOfYear.None || !HasBeenPicked) {
 								State.Season = WorldClock.SeasonCurrent;
 						}
@@ -216,10 +226,10 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void OnCollisionEnter(Collision other)
 				{
-						if (other.gameObject.collider.isTrigger)
+						if (other.collider == null || other.collider.isTrigger)
 								return;
 
-						if (Props.HasThorns) {
+						if (HasPlantProps && Props.HasThorns) {
 								if (WorldItems.GetIOIFromCollider(other.collider, out Plants.Get.ThornDamage.Target)) {
 										DamageManager.Get.SendDamage(Plants.Get.ThornDamage);
 								}

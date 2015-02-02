@@ -17,7 +17,6 @@ namespace Frontiers.World
 
 				public bool Refine(Skill skill, float refineryMinimumSkill)
 				{
-
 						bool successfullyRefined = false;
 
 						if (skill.LastSkillRoll == SkillRollType.Success) {
@@ -26,16 +25,23 @@ namespace Frontiers.World
 										case RefineResultType.SetState:
 										default:
 												if (skill.LastSkillValue >= refineryMinimumSkill) {
+														Debug.Log("Refined skill value within range, setting to state refined");
 														worlditem.State = RefinedStateName;
 												} else {
+														Debug.Log("Refined skill value NOT within range, setting to state broken");
+														GUI.GUIManager.PostWarning("Your lack of skill broke the item.");
 														worlditem.State = BrokenStateName;
 												}
 												break;
 
 										case RefineResultType.Replace:
 												if (skill.LastSkillValue >= refineryMinimumSkill) {
+														Debug.Log("Refined skill value NOT within range, replacing worlditem");
+														Debug.Log("Refined skill value within range");
 														WorldItems.ReplaceWorldItem(worlditem, RefinedReplacement);
 												} else {
+														Debug.Log("Refined skill value NOT within range, replacing with broken replacement");
+														GUI.GUIManager.PostWarning("Your lack of skill broke the item.");
 														WorldItems.ReplaceWorldItem(worlditem, BrokenReplacement);
 												}
 												break;
@@ -45,11 +51,5 @@ namespace Frontiers.World
 						}
 						return successfullyRefined;
 				}
-		}
-
-		public enum RefineResultType
-		{
-				SetState,
-				Replace
 		}
 }

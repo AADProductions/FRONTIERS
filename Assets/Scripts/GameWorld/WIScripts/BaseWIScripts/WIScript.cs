@@ -193,10 +193,11 @@ namespace Frontiers.World
 				{
 
 				}
-
-				public virtual void CancelUnload()
+				//this request must not halt any process that's necessary to unload the worlditem
+				//its purpose is to veto the worlditem's attempt to cancel unload
+				public virtual bool TryToCancelUnload()
 				{
-
+						return true;
 				}
 
 				public virtual bool FinishedUnloading {

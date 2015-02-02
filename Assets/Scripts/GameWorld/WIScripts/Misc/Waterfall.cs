@@ -126,7 +126,7 @@ namespace Frontiers.World
 										}
 								}
 								//Debug.Log ("Waiting for top / bottom: " + waitForTop.ToString () + " / " + waitForBottom.ToString ());
-								yield return new WaitForSeconds(0.5f);
+								yield return WorldClock.WaitForSeconds(0.5);
 						}
 						enabled = true;
 						yield break;
@@ -178,6 +178,7 @@ namespace Frontiers.World
 				#if UNITY_EDITOR
 				public override void OnEditorRefresh()
 				{
+						try {
 						WaterfallTop.localPosition = Vector3.zero;
 						WaterfallTop.localRotation = Quaternion.identity;
 
@@ -217,6 +218,10 @@ namespace Frontiers.World
 						}
 						if (BottomTargetLevelRiver != null) {
 								State.BottomRiverName = BottomTargetLevelRiver.Props.Name;
+						}
+						}
+						catch (Exception e){
+								Debug.Log("Error when saving waterfall: " + e.ToString());
 						}
 				}
 				#endif

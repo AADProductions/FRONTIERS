@@ -1,11 +1,11 @@
 using UnityEngine;
 using System;
 using System.Collections;
-using Frontiers;
 using System.Collections.Generic;
+using Frontiers;
 using Frontiers.GUI;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Flammable : WIScript
 		{
@@ -126,8 +126,42 @@ namespace Frontiers.World
 
 				public override void OnInitialized()
 				{
+						worlditem.OnGainPlayerFocus += OnGainPlayerFocus;
+						worlditem.OnLosePlayerFocus += OnLosePlayerFocus;
+
 						if (State.IgniteOnStartup) {
 								Ignite("Default");
+						}
+				}
+
+				public void OnGainPlayerFocus()
+				{
+						if (mDestroyed)
+								return;
+
+						enabled = true;
+				}
+
+				public void OnLosePlayerFocus()
+				{
+						if (mDestroyed)
+								return;
+
+						enabled = false;
+				}
+
+				public void Update()
+				{
+						if (mDestroyed)
+								return;
+
+						if (!worlditem.HasPlayerFocus) {
+								enabled = false;
+								return;
+						}
+
+						if (IsOnFire) {
+								GUIHud.Get.ShowProgressBar(Colors.Get.GenericNeutralValue, Colors.Darken(Colors.Get.GenericNeutralValue), NormalizedFuelRemaining);
 						}
 				}
 
@@ -222,19 +256,24 @@ namespace Frontiers.World
 								if (!string.IsNullOrEmpty(IgnitedState)) {
 										worlditem.State = IgnitedState;
 								}
-								if (OnIgnite != null) {
-										OnIgnite();
+								OnIgnite.SafeInvoke();
+								if (!State.HasCausedReputationPenalty) {
+										if (WorldItems.IsOwnedBySomeoneOtherThanPlayer(worlditem, out mCheckOwner)) {
+												//TODO tie reputation loss to item value
+												Profile.Get.CurrentGame.Character.Rep.LosePersonalReputation(mCheckOwner.worlditem.FileName, mCheckOwner.worlditem.DisplayName, 1);
+												State.HasCausedReputationPenalty = true;
+										}
 								}
 						} else {
 								//destroy the fire object
 								if (FireObject != null) {
 										FireObject.Extinguish();
-										if (OnExtinguish != null && OnExtinguish.Target != null) {
-												OnExtinguish();
-										}
+										OnExtinguish.SafeInvoke();
 								}
 						}
 				}
+
+				protected static Character mCheckOwner;
 
 				public void OnAbsorbWorldItem(WorldItem worlditem)
 				{
@@ -244,28 +283,28 @@ namespace Frontiers.World
 						}
 				}
 
-				public override void PopulateOptionsList(List <GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(List <WIListOption> options, List <string> message)
 				{
 						Flammable flammable = null;
 						if (CanAcceptFuel
-						 && worlditem.Is(WIMode.World | WIMode.Frozen | WIMode.Placed)
-						 && Player.Local.Tool.HasWorldItem
-						 && Player.Local.Tool.worlditem.Is <Flammable>(out flammable)) {
-								options.Add(new GUIListOption("Add " + flammable.worlditem.DisplayName + " to " + worlditem.DisplayName, "AddFuel"));
+						    && worlditem.Is(WIMode.World | WIMode.Frozen | WIMode.Placed)
+						    && Player.Local.Tool.HasWorldItem
+						    && Player.Local.Tool.worlditem.Is <Flammable>(out flammable)) {
+								options.Add(new WIListOption("Add " + flammable.worlditem.DisplayName + " to " + worlditem.DisplayName, "AddFuel"));
 						}
 				}
 
 				public void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;			
+						WIListResult dialogResult = secondaryResult as WIListResult;			
 						switch (dialogResult.SecondaryResult) {
 								case "AddFuel":
-				//perform the same check
+										//perform the same check
 										Flammable flammable = null;
 										if (CanAcceptFuel
-										&& worlditem.Is(WIMode.World | WIMode.Frozen | WIMode.Placed)
-										&& Player.Local.Tool.HasWorldItem
-										&& Player.Local.Tool.worlditem.Is <Flammable>(out flammable)) {
+										    && worlditem.Is(WIMode.World | WIMode.Frozen | WIMode.Placed)
+										    && Player.Local.Tool.HasWorldItem
+										    && Player.Local.Tool.worlditem.Is <Flammable>(out flammable)) {
 												AddFuel(flammable);//it will take care of the rest
 										}
 										break;
@@ -318,14 +357,6 @@ namespace Frontiers.World
 				public bool IgniteOnStartup = false;
 				public bool InfiniteUntilPickedUp = false;
 				public bool IsOnFire = false;
-		}
-
-		public enum IgnitionProbability
-		{
-				Impossible,
-				Low,
-				Moderate,
-				High,
-				Extreme,
+				public bool HasCausedReputationPenalty = false;
 		}
 }

@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
 using Frontiers.World.Gameplay;
 using Frontiers.Data;
 using System.Xml.Serialization;
@@ -84,9 +85,12 @@ namespace Frontiers.Story.Conversations
 
 				protected override void  Action()
 				{
+
 						if (AddOverride) {
+								Debug.Log("Adding DTS override");
 								Frontiers.Conversations.Get.AddDTSOverride(ConversationName, DTSConversationName, CharacterName);
 						} else {
+								Debug.Log("Removing DTS override");
 								Frontiers.Conversations.Get.RemoveDTSOverride(ConversationName, DTSConversationName, CharacterName);
 						}
 				}
@@ -169,7 +173,7 @@ namespace Frontiers.Story.Conversations
 				protected override void Action()
 				{
 						if (SetToCurrentWorldTime) {
-								conversation.SetVariableValue(VariableName, Mathf.FloorToInt((float)WorldClock.Time));
+								conversation.SetVariableValue(VariableName, Mathf.FloorToInt((float)WorldClock.AdjustedRealTime));
 						} else {
 								switch (ChangeType) {
 										case ChangeVariableType.Increment:
@@ -211,7 +215,7 @@ namespace Frontiers.Story.Conversations
 						}
 
 						if (SetToCurrentWorldTime) {
-								Missions.Get.SetVariableValue(MissionName, VariableName, Mathf.FloorToInt((float)WorldClock.Time));
+								Missions.Get.SetVariableValue(MissionName, VariableName, Mathf.FloorToInt((float)WorldClock.AdjustedRealTime));
 						} else {
 								switch (ChangeType) {
 										case ChangeVariableType.Increment:
@@ -243,8 +247,8 @@ namespace Frontiers.Story.Conversations
 				{
 						NewDescription = NewDescription.Replace("_", " ");
 
-						MissionState state = Missions.Get.MissionStateByName(MissionName);
-						if (state != null) {	//if only when active and it's NOT active...
+						MissionState state = null;
+						if (Missions.Get.MissionStateByName(MissionName, out state)) {	//if only when active and it's NOT active...
 								if (OnlyWhenActive && !Flags.Check((uint)state.Status, (uint)MissionStatus.Active, Flags.CheckType.MatchAny)) {	//we're done
 										return;
 								} else if (OnlyFirstTime && exchange.NumTimesChosen > 0) {//if only first time and it's not first time
@@ -269,22 +273,24 @@ namespace Frontiers.Story.Conversations
 				{
 						NewDescription = NewDescription.Replace("_", " ");
 
-						MissionState state = Missions.Get.MissionStateByName(MissionName);
-						ObjectiveState objState = state.GetObjective(ObjectiveName);
-						if (OnlyWhenActive && !Flags.Check((uint)objState.Status, (uint)MissionStatus.Active, Flags.CheckType.MatchAny)) {	//we're done
-								return;
-						} else if (OnlyFirstTime && exchange.NumTimesChosen > 0) {//if only first time and it's not first time
-								return;
+						MissionState state = null;
+						if (Missions.Get.MissionStateByName(MissionName, out state)) {
+								ObjectiveState objState = state.GetObjective(ObjectiveName);
+								if (OnlyWhenActive && !Flags.Check((uint)objState.Status, (uint)MissionStatus.Active, Flags.CheckType.MatchAny)) {	//we're done
+										return;
+								} else if (OnlyFirstTime && exchange.NumTimesChosen > 0) {//if only first time and it's not first time
+										return;
+								}
+								//otherwise we're good to go
+								objState.Description = NewDescription;
 						}
-						//otherwise we're good to go
-						objState.Description = NewDescription;
 				}
 		}
 
 		[Serializable]
 		public class ChangeRepuation : ExchangeScript
 		{
-				public string CharacterName = "[Global]";
+				public string CharacterName = string.Empty;
 				public int ReputationAmount = 1;
 				public WISize ReputationChangeSize = WISize.NoLimit;
 				public ChangeVariableType ChangeType = ChangeVariableType.Increment;
@@ -294,6 +300,7 @@ namespace Frontiers.Story.Conversations
 						if (string.IsNullOrEmpty(CharacterName)) {
 								CharacterName = conversation.SpeakingCharacter.worlditem.FileName;
 						}
+
 						int reputationAmount = ReputationAmount;
 						switch (ReputationChangeSize) {
 								case WISize.NoLimit:
@@ -328,15 +335,16 @@ namespace Frontiers.Story.Conversations
 
 						switch (ChangeType) {
 								case ChangeVariableType.Increment:
-										Profile.Get.CurrentGame.Character.Rep.GainPersonalReputation(CharacterName, characterDisplayName, ReputationAmount);
+										Profile.Get.CurrentGame.Character.Rep.GainPersonalReputation(CharacterName, characterDisplayName, reputationAmount);
 										break;
 
 								case ChangeVariableType.Decrement:
-										Profile.Get.CurrentGame.Character.Rep.LosePersonalReputation(CharacterName, characterDisplayName, ReputationAmount);
+										Profile.Get.CurrentGame.Character.Rep.LosePersonalReputation(CharacterName, characterDisplayName, reputationAmount);
 										break;
 
 								case ChangeVariableType.SetValue:
-										Profile.Get.CurrentGame.Character.Rep.SetPersonalReputation(CharacterName, characterDisplayName, ReputationAmount);
+								default:
+										Profile.Get.CurrentGame.Character.Rep.SetPersonalReputation(CharacterName, characterDisplayName, reputationAmount);
 										break;
 						}
 				}
@@ -557,6 +565,25 @@ namespace Frontiers.Story.Conversations
 						if (gotoResult) {
 								conversation.GotoExchange(ExchangeName);
 						}
+				}
+		}
+
+		[Serializable]
+		public class HouseOfHealingCalculateDonation : ExchangeScript {
+
+				protected override void Action()
+				{
+						exchange.ParentConversation.SetVariableValue("Donation", HouseOfHealing.CalculateHealDonation());
+				}
+		}
+
+		[Serializable]
+		public class HouseOfHealingHealAll : ExchangeScript { 
+				public bool CanAfford = true;
+
+				protected override void Action()
+				{
+						HouseOfHealing.HealAll(CanAfford);
 				}
 		}
 
@@ -867,6 +894,7 @@ namespace Frontiers.Story.Conversations
 				{		
 						int currentValue = 0;
 						if (Missions.Get.MissionVariable(MissionName, VariableName, ref currentValue)) {
+								Debug.Log("Found mission variable " + VariableName);
 								return GameData.CheckVariable(CheckType, VariableValue, currentValue);
 						}
 						return false;
@@ -1148,7 +1176,7 @@ namespace Frontiers.Story.Conversations
 								InGameHours = GameData.Evaluate(InGameHoursEval, conversation);
 						}
 						if (Missions.Get.MissionVariable(MissionName, VariableName, ref worldTimeWhenSet)) {
-								bool hasElapsed = (WorldClock.Time >= (worldTimeWhenSet + WorldClock.HoursToSeconds(InGameHours)));
+								bool hasElapsed = (WorldClock.AdjustedRealTime >= (worldTimeWhenSet + WorldClock.HoursToSeconds(InGameHours)));
 								if (RequireElapsed) {
 										return hasElapsed;
 								} else {
@@ -1507,7 +1535,7 @@ namespace Frontiers.Story.Conversations
 								CurrencyValue = GameData.Evaluate(CurrencyValueEval, conversation);
 						}
 						int numRemoved = 0;
-						Player.Local.Inventory.InventoryBank.TryToRemove(CurrencyValue, ref numRemoved, CurrencyType);
+						Player.Local.Inventory.InventoryBank.TryToRemove(CurrencyValue, CurrencyType);
 				}
 		}
 
@@ -1564,14 +1592,5 @@ namespace Frontiers.Story.Conversations
 								}
 						}
 				}
-		}
-
-		public enum LiveTargetType
-		{
-				None,
-				Player,
-				Character,
-				Mission,
-				Conversation,
 		}
 }

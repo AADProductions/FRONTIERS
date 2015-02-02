@@ -234,12 +234,4 @@ namespace Frontiers.World
 				public string ExistingState;
 				public bool RemoveFromGame = false;
 		}
-
-		public enum MissionStatusOperator
-		{
-				None,
-				And,
-				Or,
-				Not,
-		}
 }

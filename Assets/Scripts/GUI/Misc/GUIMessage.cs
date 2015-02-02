@@ -112,7 +112,7 @@ namespace Frontiers.GUI
 
 				public void UpdateFadeAndPosition()
 				{
-						if (WorldClock.RealTime > (TimeSent + HoldInterval)) {
+						if (WorldClock.RealTime > (TimeSent + (HoldInterval * Profile.Get.CurrentPreferences.Accessibility.OnScreenTextSpeed))) {
 								FadeCurrent = Mathf.Lerp(FadeCurrent, 0f, 0.25f);
 						}
 						Message.alpha = FadeCurrent;

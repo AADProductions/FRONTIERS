@@ -1,4 +1,3 @@
-#pragma warning disable 0219
 using UnityEngine;
 using System;
 using System.Runtime;
@@ -9,9 +8,8 @@ using System.Text.RegularExpressions;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
-using Frontiers.GUI;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class BookAvatar : WIScript
 		{
@@ -33,18 +31,12 @@ namespace Frontiers.World
 						RefreshAppearance();
 				}
 
-				public override void PopulateOptionsList(List <GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(List <WIListOption> options, List <string> message)
 				{
-						if (Barter.IsBartering) {
-								return;//this is kind of a kludge
-						}
-
 						bool canRead = false;
-						IStackOwner owner = null;
-						if (worlditem.UseRemoveItemSkill(mRemoveItemSkillCheck, ref owner) && owner == Player.Local) {
+						if (WorldItems.IsOwnedByPlayer(worlditem)) {
 								canRead = true;
 						} else {
-								//see if this kind of book can be read without owning it
 								BookTemplate template = null;
 								if (Books.Get.BookTemplateByName(State.TemplateName, out template)) {
 										if (template.CanBeReadWithoutAquiring) {
@@ -53,7 +45,7 @@ namespace Frontiers.World
 								}
 						}
 						if (canRead) {
-								options.Add(new GUIListOption("Read"));
+								options.Add(new WIListOption("Read"));
 						}
 				}
 
@@ -74,7 +66,7 @@ namespace Frontiers.World
 
 				public void OnPlayerUseWorldItemSecondary(object result)
 				{
-						OptionsListDialogResult dialogResult = result as OptionsListDialogResult;
+						WIListResult dialogResult = result as WIListResult;
 						switch (dialogResult.SecondaryResult) {
 								case "Read":
 										Books.ReadBook(State.BookName, null);

@@ -1,7 +1,8 @@
 using UnityEngine;
-using System.Collections;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -76,7 +77,7 @@ namespace Frontiers.World
 				{
 						if (IsMobile) {
 								//move the thermal
-								Pivot.position = Vector3.MoveTowards(Pivot.position, mCurrentTarget, (float)(WorldClock.DeltaTime * (State.MovementSpeed * gThermalSpeedMultiplier)));
+								Pivot.position = Vector3.MoveTowards(Pivot.position, mCurrentTarget, (float)(WorldClock.ARTDeltaTime * (State.MovementSpeed * gThermalSpeedMultiplier)));
 						}
 				}
 
@@ -104,7 +105,7 @@ namespace Frontiers.World
 										mSmoothForce = Mathf.Lerp(mSmoothForce, strength, (float)(WorldClock.ARTDeltaTime * gThermalSmoothForceMultiplier)) * gThermalForceMultiplier;
 										Player.Local.FPSController.AddForce(Vector3.up * (mSmoothForce));
 										Player.Local.FPSController.FallSpeed = 0f;
-										Biomes.Get.AddTemperatureOverride(Biomes.ClampTemperature(State.Temperature, mount.MinTemperature, mount.MaxTemperature), 1.0f);
+										GameWorld.Get.AddTemperatureOverride(GameWorld.ClampTemperature(State.Temperature, mount.MinTemperature, mount.MaxTemperature), 1.0f);
 
 										Audio.localPosition = Vector3.zero;
 										Vector3 audioPosition = Audio.position;

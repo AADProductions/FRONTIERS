@@ -39,7 +39,7 @@ namespace Frontiers.World
 				public void StopClimbing(bool addJumpForce)
 				{
 						if (Climbing) {
-								Player.Local.RestoreControl(false);
+								Player.Local.RestoreControl(true);
 								Player.Local.Position = endPoint.position - endPoint.forward;//bump us up a bit to match the gizmo pisition
 								Player.Local.Rotation = endPoint.rotation;
 								Climbing = false;

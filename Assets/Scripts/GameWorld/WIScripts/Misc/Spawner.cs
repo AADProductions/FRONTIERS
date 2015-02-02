@@ -2,12 +2,10 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers.World.Locations;
-using Frontiers.World.Gameplay;
-using Frontiers.Data;
 using System.Xml.Serialization;
+using Frontiers.Data;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Spawner : WIScript
 		{
@@ -50,7 +48,7 @@ namespace Frontiers.World
 
 						while (!Player.Local.HasSpawned || location.LocationGroup == null || !location.LocationGroup.Is(WIGroupLoadState.Loaded)) {
 								yield return null;
-								if (worlditem.Is(WIActiveState.Invisible)) {
+								if (worlditem.Is(WIActiveState.Invisible) || !worlditem.Is (WILoadState.Initialized)) {
 										//Debug.Log ("We went invisible before we could spawn in " + name);
 										mIsSpawning = false;
 										yield break;
@@ -65,14 +63,24 @@ namespace Frontiers.World
 										var enumerator = GetSpawnPoints(setting, location, spawnGroup, Player.Local, random).GetEnumerator();
 										//foreach (SpawnPoint spawnPoint in GetSpawnPoints (setting, location, spawnGroup, Player.Local)) {
 										while (enumerator.MoveNext()) {
+												if (!spawnGroup.Is(WIGroupLoadState.Initialized | WIGroupLoadState.Loading | WIGroupLoadState.Loaded)) {
+														//whoops, it unloaded
+														yield break;
+												}
 												SpawnPoint spawnPoint = enumerator.Current;
 												if (spawnPoint != SpawnPoint.Empty) {
-														yield return StartCoroutine(Spawn(spawnPoint, setting, location, spawnGroup, random));
+														var spawn = Spawn(spawnPoint, setting, location, spawnGroup, random);
+														while (spawn.MoveNext()) {
+																yield return spawn.Current;
+														}
 												}
-												yield return new WaitForSeconds(Globals.SpawnerRTYieldInterval);
+												double waitUntil = WorldClock.RealTime + Globals.SpawnerRTYieldInterval;
+												while (WorldClock.RealTime < waitUntil) {
+														yield return null;
+												}
 										}
 										int gameHoursToNextSpawnTime = random.Next(setting.MinHoursBetweenSpawns, setting.MaxHoursBetweenSpawns);
-										setting.NextSpawnTime = WorldClock.Time + WorldClock.HoursToSeconds(gameHoursToNextSpawnTime);
+										setting.NextSpawnTime = WorldClock.AdjustedRealTime + WorldClock.HoursToSeconds(gameHoursToNextSpawnTime);
 								}
 								yield return null;
 						}
@@ -418,28 +426,6 @@ namespace Frontiers.World
 				protected static SpawnPoint gEmpty = new SpawnPoint();
 		}
 
-		public enum SpawnerPlacementMethod
-		{
-				TopDown,
-				SherePoint,
-				SpawnPoint,
-		}
-
-		public enum SpawnerType
-		{
-				WorldItems,
-				Creatures,
-				Critters,
-				Characters,
-		}
-
-		public enum SpawnerAvailability
-		{
-				Always,
-				Once,
-				Max
-		}
-
 		[Serializable]
 		public class SpawnerStateSetting
 		{
@@ -459,7 +445,7 @@ namespace Frontiers.World
 												canSpawn = NumTimesSpawned < 1;
 												break;
 								}
-								return canSpawn && (WorldClock.Time >= NextSpawnTime);
+								return canSpawn && (WorldClock.AdjustedRealTime >= NextSpawnTime);
 						}
 				}
 

@@ -8,7 +8,7 @@ using Frontiers.World;
 
 namespace Frontiers.GUI
 {
-		public class GUIOptionListDialog : GUIEditor <OptionsListDialogResult>
+		public class GUIOptionListDialog : GUIEditor <WIListResult>
 		{
 				public Transform ScreenTarget;
 				public Camera ScreenTargetCamera;
@@ -61,16 +61,16 @@ namespace Frontiers.GUI
 						transform.localPosition = mEditObject.PositionTarget;
 
 						if (numButtonsCreated == 0) {
-								CreateButton(new GUIListOption("(No options available)", "Cancel"), -1, buttonPosition, "OnClickOptionButton");
+								CreateButton(new WIListOption("(No options available)", "Cancel"), -1, buttonPosition, "OnClickOptionButton");
 						}
 
 						RefreshDoppleganger();
 				}
 
-				protected int CreateButtons(List <GUIListOption> options, ref float buttonPosition, string functionName)
+				protected int CreateButtons(List <WIListOption> options, ref float buttonPosition, string functionName)
 				{
 						int numButtonsCreated = 0;
-						foreach (GUIListOption option in options) {
+						foreach (WIListOption option in options) {
 								////Debug.Log ("Creating buttons");
 								if (option.HasFlavors) {
 										for (int flavorIndex = 0; flavorIndex < option.Flavors.Count; flavorIndex++) {
@@ -87,7 +87,7 @@ namespace Frontiers.GUI
 						return numButtonsCreated;
 				}
 
-				protected bool CreateButton(GUIListOption option, int flavorIndex, float buttonPosition, string functionName)
+				protected bool CreateButton(WIListOption option, int flavorIndex, float buttonPosition, string functionName)
 				{
 						if (option.IsValid) {
 								UIButton randomPrototype = ButtonPrototypes[UnityEngine.Random.Range(0, ButtonPrototypes.Count)];
@@ -234,189 +234,5 @@ namespace Frontiers.GUI
 								transform.position = worldpoint;
 						}
 				}
-		}
-
-		public class GUIListOption
-		{
-
-				#region constructors
-
-				public static GUIListOption Empty {
-						get {
-								if (mEmpty == null) {
-										mEmpty = new GUIListOption();
-										mEmpty.IsValid = false;
-								}
-								return mEmpty;
-						}
-				}
-
-				protected static GUIListOption mEmpty;
-
-				public GUIListOption()
-				{
-						Divider = false;
-						CredentialsIconName = string.Empty;
-						IconName = string.Empty;
-						OptionText = "Option";
-						TextColor = Color.white;
-						BackgroundColor = Color.white;
-						Result = "Result";
-				}
-
-				public GUIListOption(string optionText)
-				{
-						Divider = false;
-						IconName = string.Empty;
-						CredentialsIconName = string.Empty;
-						OptionText = optionText;
-						TextColor = Colors.Get.MenuButtonTextColorDefault;
-						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
-						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
-						Result = optionText;
-				}
-
-				public GUIListOption(bool divider, string dividerText, Color textColor)
-				{
-						Divider = true;
-						OptionText = dividerText;
-						CredentialsIconName = string.Empty;
-						TextColor = textColor;
-						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
-						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
-				}
-
-				public GUIListOption(string iconName, string optionText, Color textColor, Color backgroundColor, string result)
-				{
-						Divider = false;
-						IconName = iconName;
-						CredentialsIconName = string.Empty;
-						OptionText = optionText;
-						TextColor = textColor;
-						BackgroundColor = backgroundColor;
-						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
-						Result = result;
-				}
-
-				public GUIListOption(string iconName, string optionText, Color textColor, string result)
-				{
-						Divider = false;
-						IconName = iconName;
-						CredentialsIconName = string.Empty;
-						OptionText = optionText;
-						TextColor = textColor;
-						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
-						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
-						Result = result;
-				}
-
-				public GUIListOption(string optionText, Color textColor, Color backgroundColor, string result)
-				{
-						Divider = false;
-						IconName = string.Empty;
-						CredentialsIconName = string.Empty;
-						OptionText = optionText;
-						TextColor = textColor;
-						BackgroundColor = backgroundColor;
-						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
-						Result = result;
-				}
-
-				public GUIListOption(string optionText, Color textColor, string result)
-				{
-						Divider = false;
-						IconName = string.Empty;
-						CredentialsIconName = string.Empty;
-						OptionText = optionText;
-						TextColor = textColor;
-						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
-						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
-						Result = result;
-				}
-
-				public GUIListOption(string iconName, string optionText, string result)
-				{
-						Divider = false;
-						IconName = iconName;
-						CredentialsIconName = string.Empty;
-						OptionText = optionText;
-						TextColor = Colors.Get.MenuButtonTextColorDefault;
-						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
-						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
-						Result = result;
-				}
-
-				public GUIListOption(string optionText, string result)
-				{
-						Divider = false;
-						IconName = string.Empty;
-						CredentialsIconName = string.Empty;
-						OptionText = optionText;
-						TextColor = Colors.Get.MenuButtonTextColorDefault;
-						BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
-						OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
-						Result = result;
-				}
-
-				#endregion
-
-				public bool IsValid {
-						get {
-								if (Divider) {
-										return true;
-								}
-
-								if (!mIsValid) {
-										return false;
-								}
-
-								if (string.IsNullOrEmpty(Result) || string.IsNullOrEmpty(OptionText)) {
-										return false;
-								}
-
-								return true;
-						}
-						set {
-								mIsValid = value;
-						}
-				}
-
-				public bool HasFlavors {
-						get {
-								return (Flavors.Count > 0);
-						}
-				}
-
-				public bool Divider = false;
-				public bool Disabled = false;
-				public string IconName = string.Empty;
-				public string CredentialsIconName	= string.Empty;
-				public string OptionText = string.Empty;
-				public Color TextColor = Colors.Get.MenuButtonTextColorDefault;
-				public Color BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
-				public Color OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;
-				public Color IconColor = Color.white;
-				public bool NegateIcon = false;
-				public string Result = "Result";
-				public List <string> Flavors = new List <string>();
-				protected bool mIsValid = true;
-
-				public static bool IsNullOrInvalid(GUIListOption option)
-				{
-						return (option == null || !option.IsValid);
-				}
-		}
-
-		public class OptionsListDialogResult
-		{
-				public string MessageType = "Question";
-				public string Message = "Dialog Question";
-				public bool ForceChoice = false;
-				public List <GUIListOption> Options = new List <GUIListOption>();
-				public List <GUIListOption> SecondaryOptions = new List <GUIListOption>();
-				public string Result = string.Empty;
-				public string SecondaryResult = string.Empty;
-				public int SecondaryResultFlavor = -1;
-				public Vector3 PositionTarget = Vector3.zero;
 		}
 }

@@ -2,13 +2,13 @@ using System;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers;
-using Frontiers.World;
-using Frontiers.Data;
-using Frontiers.Story;
-using Frontiers.World.Locations;
 using System.Xml;
 using System.Xml.Serialization;
+using Frontiers;
+using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
+using Frontiers.Data;
+using Frontiers.Story;
 
 namespace Frontiers.World.Gameplay
 {
@@ -154,7 +154,7 @@ namespace Frontiers.World.Gameplay
 				{
 						int worldTimeWhenSet = 0;
 						if (Missions.Get.MissionVariable(MissionName, VariableName, ref worldTimeWhenSet)) {
-								bool hasElapsed = (WorldClock.Time >= (worldTimeWhenSet + WorldClock.HoursToSeconds(InGameHours)));
+								bool hasElapsed = (WorldClock.AdjustedRealTime >= (worldTimeWhenSet + WorldClock.HoursToSeconds(InGameHours)));
 								if (RequireElapsed) {
 										HasCompleted = hasElapsed;
 								} else {

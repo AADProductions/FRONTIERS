@@ -12,16 +12,16 @@ namespace Frontiers.World
 				public MasterAudio.SoundType RubbingSoundType = MasterAudio.SoundType.PlayerInterface;
 				public string RubbingSound = "Writing";
 
-				public override void PopulateOptionsList(List <GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(List <WIListOption> options, List <string> message)
 				{
 						if (!State.HasTakenRubbing) {
-								options.Add(new GUIListOption("Take Rubbing", "Rubbing"));
+								options.Add(new WIListOption("Take Rubbing", "Rubbing"));
 						}
 				}
 
 				public void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;			
+						WIListResult dialogResult = secondaryResult as WIListResult;			
 						switch (dialogResult.SecondaryResult) {
 								case "Rubbing":
 										MasterAudio.PlaySound(RubbingSoundType, worlditem.tr, RubbingSound);

@@ -1,8 +1,9 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using System;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -33,7 +34,7 @@ namespace Frontiers.World
 						//explosion makes them go blind
 						CameraFX.Get.SetBlind(true);
 						CameraFX.Get.AddDamageOverlay(1f);
-						yield return new WaitForSeconds(State.CharacterDTSDelay);
+						yield return WorldClock.WaitForSeconds(State.CharacterDTSDelay);
 						//robert says some DTS
 						Frontiers.GUI.NGUIScreenDialog.AddSpeech(State.CharacterDTSText, State.CharacterDTSName, State.CharacterDTSDuration);
 						Player.Local.Audio.Cough();
@@ -48,11 +49,11 @@ namespace Frontiers.World
 								}
 						}
 						//wait for a bit while that settles in
-						yield return new WaitForSeconds(State.CharacterDTSDuration);
+						yield return WorldClock.WaitForSeconds(State.CharacterDTSDuration);
 						//player is moved to temple entrance
 						GameWorld.Get.ShowAboveGround(true);
 						Player.Local.Surroundings.ExitUnderground();
-						yield return new WaitForSeconds(0.1f);//give gameworld a sec to catch up
+						yield return WorldClock.WaitForSeconds(0.1);//give gameworld a sec to catch up
 						//lock the player's position for a moment
 						Player.Local.Position = State.PlayerWakeUpPosition;
 						//blindness goes away
@@ -95,7 +96,7 @@ namespace Frontiers.World
 		public class TriggerPiecesWarlockTempleTransitionState : WorldTriggerState
 		{
 				public SVector3 ExplosionPosition = new SVector3();
-				public Frontiers.FXManager.ExplosionType ExplosionFXType;
+				public ExplosionType ExplosionFXType;
 				public string ExplosionSound;
 				public MasterAudio.SoundType ExplosionSoundType;
 				public float CharacterDTSDelay = 5;

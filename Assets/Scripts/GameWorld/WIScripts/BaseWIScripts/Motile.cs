@@ -188,7 +188,7 @@ namespace Frontiers.World.BaseWIScripts
 								mPosition = mTr.position;
 								AdjustedYPosition = mPosition.y;
 								//make sure we have something to do
-								GoalObject.position = mTr.position + (mTr.forward * 0.5f);
+								GoalObject.position = mPosition + (mTr.forward * 0.5f);
 
 								terrainHit.overhangHeight = Globals.DefaultCharacterHeight;
 								terrainHit.groundedHeight = Mathf.Max(Globals.DefaultCharacterGroundedHeight, State.MotileProps.GroundedHeight) * 2f;
@@ -333,7 +333,7 @@ namespace Frontiers.World.BaseWIScripts
 				public bool PushMotileAction(MotileAction newAction, MotileActionPriority priority)
 				{
 						if (newAction.State != MotileActionState.NotStarted) {
-								Debug.Log("State wasn't 'not started'");
+								//Debug.Log("State wasn't 'not started'");
 								//interesting...
 								return false;
 						}
@@ -351,13 +351,13 @@ namespace Frontiers.World.BaseWIScripts
 						}
 
 						if (State.Actions.Contains(newAction)) {
-								Debug.Log("Already contains action, not adding");
+								//Debug.Log("Already contains action, not adding");
 								return false;
 						} else {
 								var newActionsEnum = mNewActions.GetEnumerator();
 								while (newActionsEnum.MoveNext()) {
 										if (newActionsEnum.Current.Value == newAction) {
-												Debug.Log("New actions aready contains action, not adding");
+												//Debug.Log("New actions aready contains action, not adding");
 												return false;
 										}
 								}
@@ -373,7 +373,7 @@ namespace Frontiers.World.BaseWIScripts
 								mNewActions.Enqueue(new KeyValuePair <MotileActionPriority, MotileAction>(priority, newAction));
 						} else {
 								if (newAction == State.BaseAction) {
-										Debug.Log("Already base action, not adding");
+										//Debug.Log("Already base action, not adding");
 										//we can't add our own base action, dimwit
 										return false;
 								} else if (State.Actions.Count > 0) {//check and see if any of these actions are 'duplicate'
@@ -395,7 +395,7 @@ namespace Frontiers.World.BaseWIScripts
 												//}
 										}
 								}
-								Debug.Log("Enqueued!");
+								//Debug.Log("Enqueued!");
 								mNewActions.Enqueue(new KeyValuePair <MotileActionPriority, MotileAction>(priority, newAction));
 						}
 						return true;
@@ -580,6 +580,10 @@ namespace Frontiers.World.BaseWIScripts
 						//set the feet position for our Y update
 						mPosition = mTr.position;
 						terrainHit.feetPosition = mPosition;
+						if (State.MotileProps.Hovers) {
+								//ignore worlditems so we don't zoom into the sky
+								terrainHit.ignoreWorldItems = true;
+						}
 
 						if (IsImmobilized) {
 								IsGrounded = true;
@@ -779,7 +783,7 @@ namespace Frontiers.World.BaseWIScripts
 				{
 						//give the world time to catch up with us
 						while (!Initialized) {
-								Debug.Log("Not initialized, returning");
+								//Debug.Log("Not initialized, returning");
 								yield return null;
 						}
 
@@ -793,7 +797,7 @@ namespace Frontiers.World.BaseWIScripts
 										MotileActionPriority priority = mNextNewAction.Key;
 										MotileAction action = mNextNewAction.Value;
 										if (action != null) {
-												Debug.Log("Got new action " + action.Name + " with num actions: " + State.Actions.Count.ToString());		
+												//Debug.Log("Got new action " + action.Name + " with num actions: " + State.Actions.Count.ToString());		
 												//check the priority of the top action
 												if (!topAction.BaseAction) {
 														//if we have actions that AREN'T the base action
@@ -878,7 +882,7 @@ namespace Frontiers.World.BaseWIScripts
 																		break;
 														}
 												}
-												Debug.Log("Num actions is now: " + State.Actions.Count.ToString());
+												//Debug.Log("Num actions is now: " + State.Actions.Count.ToString());
 										}
 										yield return null;
 								}
@@ -891,7 +895,7 @@ namespace Frontiers.World.BaseWIScripts
 										if (checkAction == null
 										    || checkAction.State == MotileActionState.Finished
 										    || checkAction.State == MotileActionState.Error) {	//get rid of it
-												Debug.Log(checkAction.Name + " action is finished or error, removing");
+												//Debug.Log(checkAction.Name + " action is finished or error, removing");
 												mActions.RemoveAt(i);
 										}
 								}
@@ -948,17 +952,17 @@ namespace Frontiers.World.BaseWIScripts
 
 				protected bool StartAction(MotileAction action)
 				{
-						Debug.Log("trying to start action");
+						//Debug.Log("trying to start action");
 						//open up the door for mod-supplied delegtates
 						//do some general cleanup - if we're starting an action, we want to start from scratch
 						if (GoalObject == null) {
-								Debug.Log("Action was cancelled");
+								//Debug.Log("Action was cancelled");
 								action.Cancel();
 								return true;
 						}
 
 						if (!GetUpdateCoroutine(action)) {
-								Debug.Log("Couldn't get coroutine");
+								//Debug.Log("Couldn't get coroutine");
 								action.Cancel();
 								return true;
 						}
@@ -1045,7 +1049,7 @@ namespace Frontiers.World.BaseWIScripts
 
 				protected bool FinishAction(MotileAction action)
 				{
-						Debug.Log("Finishing action " + action.Name);
+						//Debug.Log("Finishing action " + action.Name);
 						if (action.BaseAction) {
 								return false;
 						}
@@ -1347,7 +1351,7 @@ namespace Frontiers.World.BaseWIScripts
 
 				protected IEnumerator UpdateFocusOnTarget(MotileAction action)
 				{
-						Debug.Log("Focusing on target in " + action.Name);
+						//Debug.Log("Focusing on target in " + action.Name);
 						if (action.HasLiveTarget) {	//move the focus object to the live target's position
 								GoalObject.position = action.LiveTarget.Position;
 						}

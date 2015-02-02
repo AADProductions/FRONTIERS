@@ -48,9 +48,10 @@ namespace Frontiers.World
 								InteriorVariants.Add(ParentStructure.State.BaseInteriorVariant);
 								InteriorVariants.AddRange(ParentStructure.State.AdditionalInteriorVariants);
 						} catch (Exception e) {
-								Debug.LogException(e);
+								Debug.LogError("Error in structure builder, proceeding normally:" + e.ToString());
 								State = BuilderState.Error;
 						}
+
 						yield break;
 				}
 
@@ -421,8 +422,8 @@ namespace Frontiers.World
 																                              mCurrentTemplateGroup.StaticStructureColliders,
 																                              true,//interior
 																                              this);
-														while (generateCustomColliders.MoveNext()) {
-																yield return generateCustomColliders.Current;
+														while (generateStaticColliders.MoveNext()) {
+																yield return generateStaticColliders.Current;
 														}
 														yield return null;
 														//Debug.Log ("Done generating interior variant " + interiorVariant.ToString () + ", state is " + State.ToString ());
@@ -513,6 +514,7 @@ namespace Frontiers.World
 
 				public IEnumerator GenerateStructureItems()
 				{
+						yield return null;
 						Transform structureItems = null;
 						WIGroup group = null;
 						State = BuilderState.BuildingItems;
@@ -534,8 +536,13 @@ namespace Frontiers.World
 								case BuilderMode.Interior:
 										for (int i = 0; i < InteriorVariants.Count; i++) {
 												int interiorVariant = InteriorVariants[i];
-												group = ParentStructure.StructureGroupInteriors[interiorVariant];
-												structureItems = group.gameObject.FindOrCreateChild("_ITEMS_INT_" + interiorVariant.ToString());
+												try {
+													group = ParentStructure.StructureGroupInteriors[interiorVariant];
+													structureItems = group.gameObject.FindOrCreateChild("_ITEMS_INT_" + interiorVariant.ToString());
+												} catch (Exception e) {
+													Debug.LogError(e.ToString());
+													continue;
+												}
 												//Debug.Log ("Generating items for interior variant " + interiorVariant.ToString ());
 												if (!ParentStructure.State.InteriorsLoadedOnce.Contains(interiorVariant) && interiorVariant < Template.InteriorVariants.Count) {
 														var generateIntItems = StructureBuilder.GenerateInteriorItems(
@@ -548,6 +555,7 @@ namespace Frontiers.World
 																yield return generateIntItems.Current;
 														}
 												}
+
 												yield return null;
 										}
 										break;

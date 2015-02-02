@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Stackable : WIScript
 		{
@@ -14,7 +14,7 @@ namespace Frontiers.World
 
 				public int MaxItems {
 						get {
-								return MaxItemsFromSize(worlditem.Flags.Size);
+								return WorldItems.MaxItemsFromSize(worlditem.Flags.Size);
 						}
 				}
 
@@ -47,38 +47,6 @@ namespace Frontiers.World
 								transform.localPosition = new Vector3(-5000f, -5000f, -5000f);
 								worlditem.rigidbody.isKinematic	= true;
 						}
-				}
-
-				public static int MaxItemsFromSize(WISize size)
-				{
-						int maxItems = 1;
-
-						switch (size) {
-								case WISize.Tiny:
-										maxItems = Globals.MaxTinyItemsPerStack;
-										break;
-
-								case WISize.Small:
-										maxItems = Globals.MaxSmallItemsPerStack;
-										break;
-
-								case WISize.Medium:
-										maxItems = Globals.MaxMediumItemsPerStack;
-										break;
-
-								case WISize.Large:
-										maxItems = Globals.MaxLargeItemsPerStack;
-										break;
-
-								case WISize.Huge:
-										maxItems = Globals.MaxHugeItemsPerStack;
-										break;
-
-								default:
-										break;
-						}
-
-						return maxItems;
 				}
 		}
 }

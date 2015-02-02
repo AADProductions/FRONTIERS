@@ -31,7 +31,7 @@ namespace Frontiers.GUI
 
 				public void Show()
 				{
-						gameObject.SetLayerRecursively(Globals.LayerNumGUIRaycast);
+						gameObject.SetLayerRecursively(Globals.LayerNumGUIRaycast, Globals.TagIgnoreTab);
 						for (int i = 0; i < Panels.Count; i++) {
 								Panels[i].enabled = true;
 						}
@@ -45,7 +45,7 @@ namespace Frontiers.GUI
 
 				public void Hide()
 				{
-						gameObject.SetLayerRecursively(Globals.LayerNumGUIRaycastIgnore);
+						gameObject.SetLayerRecursively(Globals.LayerNumGUIRaycastIgnore, Globals.TagIgnoreTab);
 						for (int i = 0; i < Panels.Count; i++) {
 								Panels[i].enabled = false;
 						}

@@ -13,34 +13,65 @@ namespace Frontiers.World
 				public override void OnStartup()
 				{
 						if (gSitOption == null) {
-								gSitOption = new GUIListOption("Sit", "Sit");
+								gSitOption = new WIListOption("Sit", "Sit");
+								gWaitOption = new WIListOption("Wait", "Wait");
 						}
 				}
 
-				public override void PopulateOptionsList(List <GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(List <WIListOption> options, List <string> message)
 				{
 						if (!mSitting) {
 								options.Add(gSitOption);
+								options.Add(gWaitOption);
 						}
 				}
 
 				public void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;
+						WIListResult dialogResult = secondaryResult as WIListResult;
 
-						if (dialogResult.SecondaryResult == "Sit") {
-								if (Player.Local.Surroundings.IsInDanger) {
-										GUIManager.PostDanger("You cannot sit while you are in danger");
-								} else {
-										Player.Local.HijackControl();
-										Player.Local.State.HijackMode = PlayerHijackMode.LookAtTarget;
-										Player.Local.SetHijackTargets(SitCameraPosition, SitCameraPosition);
-										Player.Local.SetHijackCancel(FinishSitting);
-										Player.Local.Status.CustomStateList.Add("Sitting");
-										mSitting = true;
-										StartCoroutine(SitOverTime());
-								}
+						switch (dialogResult.SecondaryResult) {
+								case "Sit":
+										if (Player.Local.Surroundings.IsInDanger) {
+												GUIManager.PostDanger("You cannot sit while you are in danger");
+										} else {
+												Player.Local.HijackControl();
+												Player.Local.State.HijackMode = PlayerHijackMode.LookAtTarget;
+												Player.Local.SetHijackTargets(SitCameraPosition, SitCameraPosition);
+												Player.Local.SetHijackCancel(FinishSitting);
+												Player.Local.Status.CustomStateList.Add("Sitting");
+												mSitting = true;
+												StartCoroutine(SitOverTime());
+										}
+										break;
+
+								case "Wait":
+										if (Player.Local.Surroundings.IsInDanger) {
+												GUIManager.PostDanger("You cannot sit while you are in danger");
+										} else {
+												Player.Local.HijackControl();
+												Player.Local.State.HijackMode = PlayerHijackMode.LookAtTarget;
+												Player.Local.SetHijackTargets(SitCameraPosition, SitCameraPosition);
+												Player.Local.SetHijackCancel(FinishSitting);
+												Player.Local.Status.CustomStateList.Add("Sitting");
+												mSitting = true;
+												StartCoroutine(WaitOverTime());
+										}
+										break;
 						}
+				}
+
+				public IEnumerator WaitOverTime()
+				{
+						StatusKeeper keeper = null;
+						Player.Local.Status.GetStatusKeeper("Strength", out keeper);
+						WorldClock.Get.SetTargetSpeed(WorldClock.gTimeScaleSleep);
+						while (mSitting) {
+								Player.Local.Status.RestoreStatus(PlayerStatusRestore.F_Full, "Strength", (float)(ComfortLevel * Globals.RestStrengthRestoreSpeed));
+								keeper.Ping = true;
+								yield return WorldClock.WaitForRTSeconds(1.5f);
+						}
+						WorldClock.Get.SetTargetSpeed(1.0f);
 				}
 
 				public IEnumerator SitOverTime()
@@ -50,7 +81,7 @@ namespace Frontiers.World
 						while (mSitting) {
 								Player.Local.Status.RestoreStatus(PlayerStatusRestore.F_Full, "Strength", (float)(ComfortLevel * Globals.RestStrengthRestoreSpeed));
 								keeper.Ping = true;
-								yield return new WaitForSeconds(1.5f);
+								yield return WorldClock.WaitForRTSeconds(1f);
 						}
 				}
 
@@ -68,6 +99,7 @@ namespace Frontiers.World
 						DrawArrow.ForGizmo(SitCameraPosition.position, SitCameraPosition.forward, 0.25f, 20);
 				}
 
-				public static GUIListOption gSitOption = null;
+				public static WIListOption gSitOption = null;
+				public static WIListOption gWaitOption = null;
 		}
 }

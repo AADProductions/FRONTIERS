@@ -1,8 +1,9 @@
 using UnityEngine;
 using System.Collections;
-using Frontiers.World;
 using System.Collections.Generic;
+using Frontiers.World;
 using Frontiers.GUI;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {

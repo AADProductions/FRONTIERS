@@ -1,8 +1,9 @@
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 using System;
 using System.Xml.Serialization;
+using System.Collections;
+using System.Collections.Generic;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -32,14 +33,12 @@ namespace Frontiers.World
 				public override void OnInitialized()
 				{
 						Potions.InitializeAvatar(this);
-
 						//get our properties
 						if (Mods.Get.Runtime.LoadMod <Potion>(ref Props, "Potion", State.PotionName)) {
 
 								FoodStuff foodStuff = null;
 								if (worlditem.Is <FoodStuff>(out foodStuff)) {
 										foodStuff.SetProps(Props.EdibleProps);
-
 										foodStuff.OnEat += OnEat;
 								}
 						}

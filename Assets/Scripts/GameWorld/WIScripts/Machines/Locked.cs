@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -32,9 +33,9 @@ namespace Frontiers.World
 						if (State.CanBePicked) {
 								if (UnityEngine.Random.value <= State.LockpickDifficulty) {
 										State.HasBeenUnlocked = true;
-										GUIManager.PostSuccess("Picked lock");
+										GUI.GUIManager.PostSuccess("Picked lock");
 								} else {
-										GUIManager.PostWarning("Failed to pick lock");
+										GUI.GUIManager.PostWarning("Failed to pick lock");
 								}
 						}
 				}

@@ -199,6 +199,7 @@ namespace Frontiers
 
 						aSetting = ActionSetting.Button;
 						aSetting.Action = (int)UserActionType.ToolHolster;
+						aSetting.Controller = InputControlType.Menu;
 						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ToolHolster.ToString());
 						aSetting.Key = KeyCode.Q;
 						aSetting.AvailableControllerButtons = DefaultAvailableActions;

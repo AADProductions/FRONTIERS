@@ -2,10 +2,9 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World;
-using Frontiers.World.Gameplay;
-using Frontiers.World.Locations;
 using ExtensionMethods;
 using Frontiers;
+using Frontiers.GUI;
 
 namespace Frontiers.World.Gameplay
 {
@@ -90,7 +89,7 @@ namespace Frontiers.World.Gameplay
 				}
 				if (numLocationsRevealed > 0) {
 					GUIManager.PostSuccess(numLocationsRevealed.ToString() + " locations revealed on World Map");
-					Player.Get.AvatarActions.ReceiveAction(AvatarAction.LocationReveal, WorldClock.Time);
+					Player.Get.AvatarActions.ReceiveAction(AvatarAction.LocationReveal, WorldClock.AdjustedRealTime);
 				}
 				worlditem.OnExamine.SafeInvoke();
 				return true;

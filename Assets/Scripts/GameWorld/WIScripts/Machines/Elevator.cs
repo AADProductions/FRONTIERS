@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using Frontiers;
 using System.Collections.Generic;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -117,13 +118,5 @@ namespace Frontiers.World
 				public string SoundOnFail = string.Empty;
 				public string AnimationGoingUp = string.Empty;
 				public string AnimationGoingDown = string.Empty;
-		}
-
-		public enum PlatformState
-		{
-				Up,
-				GoingUp,
-				Down,
-				GoingDown,
 		}
 }

@@ -73,13 +73,13 @@ namespace Frontiers
 						if (GetConversationState(oldConversationName, ref state)) {
 								if (state.DTSOverrides.ContainsKey(characterName)) {
 										if (state.DTSOverrides[characterName] == dtsConversation) {
-												//Debug.Log("Removed DTS override " + dtsConversation + " for " + characterName);
+												Debug.Log("Removed DTS override " + dtsConversation + " for " + characterName);
 												state.DTSOverrides.Remove(characterName);
 										} else {
-												//Debug.Log("Current DTS didn't match " + dtsConversation + ", not removing");
+												Debug.Log("Current DTS didn't match " + dtsConversation + ", not removing");
 										}
 								} else {
-										//Debug.Log("No key found for character " + characterName);
+										Debug.Log("No key found for character " + characterName);
 								}
 								state.ListInAvailable = false;
 								state.Name = oldConversationName + "-State";
@@ -119,19 +119,19 @@ namespace Frontiers
 										if (state.DTSOverrides.ContainsKey(characterName)) {
 												DTSOverride = state.DTSOverrides[characterName];
 												//that's all we need - DTS overrides break all
-												//Debug.Log("We have a DTS override in conversation state " + state.Name);
+												Debug.Log("We have a DTS override in conversation state " + state.Name);
 												return false;
 										} else {
-												//Debug.Log("Found no DTS override for " + characterName);
+												Debug.Log("Found no DTS override for " + characterName);
 										}
 
 										if (state.Substitutions.ContainsKey(characterName)) {	//if the conversation state contains a substitution for this character
 												//set the conversation name to that substitution
 												conversationName = state.Substitutions[characterName];
-												//Debug.Log("We have a substitute in " + state.Name);
+												Debug.Log("We have a substitute in " + state.Name);
 												numSubstitutions++;
 										} else {//if it doesn't have a substitution then we're finished
-												//Debug.Log("Found conversation");
+												Debug.Log("Found conversation");
 												finishedSubstituting = true;
 												foundConversation = true;
 												LocalConversation = ConversationObject.AddComponent <Conversation>();
@@ -139,12 +139,12 @@ namespace Frontiers
 												conversation = LocalConversation;
 										}
 								} else {	//damn didn't find the substituted conversation
-										//Debug.Log("Didn't find substituted conversation");
+										Debug.Log("Didn't find substituted conversation");
 										finishedSubstituting = true;
 								}
 
 								if (numSubstitutions > maxSubstitutions) {	//if we're over our limit, bail
-										//Debug.Log("Max substitutions, bailing");
+										Debug.Log("Max substitutions, bailing");
 										finishedSubstituting = true;
 								}
 						}
@@ -217,8 +217,10 @@ namespace Frontiers
 						foreach (ConversationState state in mLoadedConversations.Values) {
 								Mods.Get.Runtime.SaveMod <ConversationState>(state, "Conversation", state.Name);
 						}
-						GameObject.Destroy(LocalConversation);
-						mLoadedConversations = null;
+						if (LocalConversation != null) {
+								GameObject.Destroy(LocalConversation);
+						}
+						mLoadedConversations.Clear();
 						mGameSaved = true;
 				}
 

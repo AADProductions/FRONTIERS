@@ -727,7 +727,9 @@ namespace Frontiers.World
 								UnityEngine.GUI.color = Color.Lerp(Color.white, Color.gray, 0.25f);
 								GUILayout.BeginHorizontal();
 								GUILayout.Label("EDITING: " + selectedCategory.Name);
-								selectedCategory.ForceGeneric = GUILayout.Toggle(selectedCategory.ForceGeneric, "Force Generic");
+								selectedCategory.StartupItemsCategory = GUILayout.Toggle(selectedCategory.StartupItemsCategory, "Startup items");
+								selectedCategory.StartupClothingCategory = GUILayout.Toggle(selectedCategory.StartupClothingCategory, "Startup clothing");
+								//selectedCategory.ForceGeneric = GUILayout.Toggle(selectedCategory.ForceGeneric, "Force Generic");
 								categoryRename = GUILayout.TextField(categoryRename);
 								bool canRename = true;
 								if (categoryRename == string.Empty) {

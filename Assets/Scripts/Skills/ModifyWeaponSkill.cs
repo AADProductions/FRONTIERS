@@ -13,7 +13,7 @@ namespace Frontiers.World.Gameplay
 				{
 						if (base.Use(targetObject, flavorIndex)) {
 								WeaponSkillModifier cursed = targetObject.gameObject.GetOrAdd <WeaponSkillModifier>();
-								cursed.TimeApplied = WorldClock.Time;
+								cursed.TimeApplied = WorldClock.AdjustedRealTime;
 								cursed.ParentSkillName = name;
 								return true;
 						}

@@ -10,10 +10,14 @@ namespace Frontiers.World
 				{
 						GameObject doppleganger = dopplegangerParent.gameObject.FindOrCreateChild(dopplegangerName).gameObject;
 						Vector3 offset = Vector3.zero;
+						//we have a lookup based on season so this has to be in season form
+						toy = WorldClock.TimeOfYearToSeason(toy);
 						Plants.Get.InitializeWorldPlantGameObject(doppleganger, subcat, toy);
 						if (Flags.Check((uint)mode, (uint)(WIMode.Stacked | WIMode.Selected | WIMode.Crafting | WIMode.Wear), Flags.CheckType.MatchAny)) {
 								WorldItems.AutoScaleDoppleganger(dopplegangerParent, doppleganger, item.BaseObjectBounds, ref scaleMultiplier, ref offset);
 						}
+						//TODO debug so this isn't necessary...
+						offset.y = 0f;
 						WorldItems.ApplyDopplegangerMode(item, doppleganger, mode, scaleMultiplier, offset);
 						return doppleganger;
 				}

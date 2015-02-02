@@ -16,11 +16,27 @@ namespace Frontiers.GUI
 				public UISprite StateIconSprite;
 				public UISprite IconBorder;
 				public int DisplayPosition;
+				public float PositionScale = 1f;
+				public GUIButtonHover ButtonHover;
+				public GameObject ActiveObjectsParent;
+				public Transform tr;
+				public GUIStatusKeeper Neighbor;
 
 				public Vector3 TargetPosition {
 						get {
-								float xVal = BasePosition.x + (MeterSize * TargetScale) * DisplayPosition;
-								return new Vector3(xVal, BasePosition.y, BasePosition.z);
+								if (Neighbor != null) {
+										BasePosition = Neighbor.tr.localPosition;
+										BasePosition.x = BasePosition.x + ((Neighbor.MeterSize * Neighbor.TargetScale) * PositionScale);
+								} else {
+										if (PositionScale < 0f) {
+												BasePosition.x = (MeterSize * TargetScale) * PositionScale;
+										} else {
+												BasePosition.x = 0f;
+										}
+								}
+								return BasePosition;
+								//float xVal = BasePosition.x + (MeterSize * TargetScale);// * DisplayPosition;
+								//return new Vector3(xVal, BasePosition.y, BasePosition.z);
 						}
 				}
 
@@ -29,6 +45,8 @@ namespace Frontiers.GUI
 				public float MeterSize;
 				public float FlowSize;
 				public float SymptomSize;
+				public float TargetScaleMin;
+				public float TargetScaleMax;
 				public float TargetScale;
 				public Color TargetColor;
 				public Color CurrentColor;
@@ -39,12 +57,13 @@ namespace Frontiers.GUI
 
 				public void OnClickStatusKeeper()
 				{
-						GUIManager.PostLongFormIntrospection(Keeper.CurrentDescription, true, true);
+						//GUIPlayerStatusInterface.Get.PostInfo(UICamera.hoveredObject, Keeper.CurrentDescription);
+						//GUIManager.PostLongFormIntrospection(Keeper.CurrentDescription, true, true);
 				}
 
 				public float StateIconOffset {
 						get {
-								return MeterSize * TargetScale;//just in case we need it later
+								return MeterSize;// * TargetScale;//just in case we need it later
 						}
 				}
 
@@ -63,22 +82,42 @@ namespace Frontiers.GUI
 				public void Awake()
 				{
 						Keeper = null;
+						ButtonHover = gameObject.GetOrAdd <GUIButtonHover>();
+						ButtonHover.OnButtonHover += OnButtonHover;
+						tr = transform;
 				}
 
-				public void Initialize(StatusKeeper newKeeper, int displayPosition, float iconScale)
+				public void OnButtonHover()
+				{
+						GUIPlayerStatusInterface.Get.PostInfo(UICamera.hoveredObject, Keeper.CurrentDescription);
+				}
+
+				public void Initialize(StatusKeeper newKeeper, GUIStatusKeeper neighbor, int displayPosition, float iconScale)
 				{
 						Keeper = newKeeper;
-						IconSprite.atlas = Mats.Get.ConditionIconsAtlas;//TODO implement atlas selection support
-						IconSprite.spriteName = newKeeper.IconName;
-						gameObject.name = newKeeper.Name;
+						Neighbor = neighbor;
 						DisplayPosition = displayPosition;
-						transform.localPosition = TargetPosition;
-						//TODO get colors from Colors
-						IconSpriteOverlay.alpha = 0.35f;
+						TargetScaleMin = iconScale;
+						TargetScaleMax = iconScale * 2f;
 						TargetScale = iconScale;
-						TargetColor = Colors.Alpha(Colors.BlendThree(Keeper.LowColorValue, Keeper.MidColorValue, Keeper.HighColorValue, Keeper.NormalizedValue), 1f);
-						CurrentColor = TargetColor;
-						IconBorder.color = CurrentColor;
+
+						if (!mInitialized) {
+								//if we've initialized before we can skip all this other stuff
+								//we're just getting reset because a status keeper was added or removed
+								mRecentChange = 0f;
+								Keeper.Ping = false;
+								IconSprite.atlas = Mats.Get.ConditionIconsAtlas;//TODO implement atlas selection support
+								IconSprite.spriteName = newKeeper.IconName;
+								gameObject.name = newKeeper.Name;
+								transform.localPosition = TargetPosition;
+								//TODO get colors from Colors
+								IconSpriteOverlay.alpha = 0.35f;
+								TargetColor = Colors.Alpha(Colors.BlendThree(Keeper.LowColorValue, Keeper.MidColorValue, Keeper.HighColorValue, Keeper.NormalizedValue), 1f);
+								CurrentColor = TargetColor;
+								IconBorder.color = CurrentColor;
+						}
+
+						mInitialized = true;
 				}
 
 				int mUpdatePing = 0;
@@ -90,8 +129,13 @@ namespace Frontiers.GUI
 						if (Keeper == null || !Keeper.Initialized)
 								return;
 
-						transform.localPosition = Vector3.Lerp(transform.localPosition, TargetPosition, 0.125f);
-						transform.localScale = Vector3.one * TargetScale;
+						//update the size based on the urgency
+						TargetScale = Mathf.Lerp(TargetScaleMin, TargetScaleMax, Keeper.NormalizedUrgency);
+
+						tr.localPosition = Vector3.Lerp(tr.localPosition, TargetPosition, 0.125f);
+						if (GUIManager.Get.ActiveButton != ButtonHover) {
+								tr.localScale = Vector3.Lerp(tr.localScale, Vector3.one * TargetScale, 0.25f);
+						}
 
 						mUpdatePing++;
 						mUpdateSymptoms++;
@@ -129,12 +173,17 @@ namespace Frontiers.GUI
 						} else {
 								PingSprite.color = Colors.Get.GenericHighValue;
 						}
-						mRecentChange = Mathf.Lerp(mRecentChange, 0f, 0.015f);
+						mRecentChange = Mathf.Lerp(mRecentChange, 0f, (float)WorldClock.RTDeltaTimeSmooth * 3.5f);
 						mRecentChange += Keeper.ChangeLastUpdate;
 						//if the keeper has been pinged
 						//set the recent change to 1
 						if (Keeper.Ping) {
-								mRecentChange = 3f;
+								if (Keeper.LastChangeType == StatusSeekType.Positive) {
+										PingSprite.color = Colors.Get.GenericLowValue;
+								} else {
+										PingSprite.color = Colors.Get.GenericHighValue;
+								}
+								mRecentChange = 1f;
 								Keeper.Ping = false;
 						}
 						PingSprite.alpha = mRecentChange;
@@ -167,7 +216,7 @@ namespace Frontiers.GUI
 												}
 										}
 										if (!alreadyExists) {
-												GameObject newConditionSymptomObject = NGUITools.AddChild(gameObject, ConditionSymptomPrefab);
+												GameObject newConditionSymptomObject = NGUITools.AddChild(ActiveObjectsParent, ConditionSymptomPrefab);
 												GUIStatusCondition newGUISymptom = newConditionSymptomObject.GetComponent <GUIStatusCondition>();
 												newGUISymptom.Initialize(Keeper.Conditions[i], Keeper.Name);
 												SymptomDisplays.Add(newGUISymptom);
@@ -202,8 +251,9 @@ namespace Frontiers.GUI
 												}					   
 										}
 										if (!alreadyExists) {
-												GameObject newGUIStatusFlowGameObject = NGUITools.AddChild(gameObject, StatusFlowPrefab);
+												GameObject newGUIStatusFlowGameObject = NGUITools.AddChild(ActiveObjectsParent, StatusFlowPrefab);
 												GUIStatusFlow newGUIStatusFlow = newGUIStatusFlowGameObject.GetComponent <GUIStatusFlow>();
+												newGUIStatusFlow.ParentStatusKeeper = this;
 												newGUIStatusFlow.Initialize(Keeper.StatusFlows[i]);
 												Flows.Add(newGUIStatusFlow);
 										}
@@ -249,5 +299,6 @@ namespace Frontiers.GUI
 
 				protected float mRecentChange = 0f;
 				protected string mLastUpdateState = string.Empty;
+				protected bool mInitialized = false;
 		}
 }

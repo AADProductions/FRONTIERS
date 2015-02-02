@@ -340,6 +340,20 @@ namespace Frontiers
 
 								#region load / save world and profile
 
+								public static bool GetFileSizeInBytes(string directoryName, string fileName, ref int fileSize, DataType type)
+								{
+										string dataPath = GetDataPath(type);
+										string directory = System.IO.Path.Combine(dataPath, directoryName);
+										string path = System.IO.Path.Combine(directory, (fileName + gDataExtension));
+
+										if (!File.Exists(path)) {
+												return false;
+										} else {
+												FileInfo f = new FileInfo(path);
+												fileSize = (int)f.Length;
+												return true;
+										}
+								}
 								//worlds, profiles, preferences & games exist 'outside' of mods so we have functions specifically for saving/loading them
 								public static bool SaveWorldSettings(WorldSettings settings)
 								{
@@ -463,7 +477,12 @@ namespace Frontiers
 										}
 										string path = System.IO.Path.Combine(gCurrentProfilePath, game.WorldName);
 										path = System.IO.Path.Combine(path, (GameData.IO.gLiveGameFolderName + gGameExtension));
+										Debug.Log("Saving game to " + path);
 										SerializeXMLToFile <PlayerGame>(game, path);
+								}
+
+								public static void DeleteLiveGame() {
+
 								}
 
 								public static void DeleteGameData(string gameName)
@@ -500,6 +519,7 @@ namespace Frontiers
 								public static bool CopyGameData(string fromGame, string toGame)
 								{
 										if (fromGame == toGame) {
+												Debug.Log("Game data is the same, not copying " + fromGame + " to " + toGame);
 												return true;
 										}
 
@@ -517,6 +537,7 @@ namespace Frontiers
 										try {
 												if (Directory.Exists(toPath)) {
 														//this SHOULD be an atomic operation...
+														Debug.Log ("Deleting existing game data " + toPath);
 														Directory.Delete(toPath, true);
 												}
 
@@ -531,6 +552,7 @@ namespace Frontiers
 												if (File.Exists(fromGamePath)) {
 														//copy the actual save game too
 														if (File.Exists(toGamePath)) {
+																Debug.Log ("Deleting existing game file " + toGamePath);
 																File.Delete(toGamePath);
 														}					
 														File.Copy(fromGamePath, toGamePath);
@@ -627,62 +649,62 @@ namespace Frontiers
 
 								//these are the overloaded functions that MODS uses to save / load mod data
 								//data compression isn't implemented - may never be implemented outside of chunk terrain data - but i'm including it just in case
-								public static void SaveProfileData <T>(T dataObject, string fileName, DataCompression compression)
+								public static void SaveProfileData <T>(T dataObject, string fileName, DataCompression compression) where T : class
 								{
 										SaveData <T>(dataObject, fileName, DataType.Profile, compression);
 								}
 
-								public static void SaveProfileData <T>(T dataObject, string directoryName, string fileName, DataCompression compression)
+								public static void SaveProfileData <T>(T dataObject, string directoryName, string fileName, DataCompression compression) where T : class
 								{
 										SaveData <T>(dataObject, directoryName, fileName, DataType.Profile, compression);
 								}
 
-								public static bool LoadProfileData <T>(ref T dataObject, string fileName, DataType type, DataCompression compression)
+								public static bool LoadProfileData <T>(ref T dataObject, string fileName, DataType type, DataCompression compression) where T : class
 								{
 										return LoadData <T>(ref dataObject, fileName, type, compression);
 								}
 
-								public static bool LoadProfileData <T>(ref T dataObject, string directoryName, string fileName, DataCompression compression)
+								public static bool LoadProfileData <T>(ref T dataObject, string directoryName, string fileName, DataCompression compression) where T : class
 								{
 										return LoadData <T>(ref dataObject, directoryName, fileName, DataType.Profile, compression);
 								}
 
-								public static void SaveWorldData <T>(T dataObject, string fileName, DataCompression compression)
+								public static void SaveWorldData <T>(T dataObject, string fileName, DataCompression compression) where T : class
 								{
 										SaveData <T>(dataObject, fileName, DataType.World, compression);
 								}
 
-								public static void SaveWorldData <T>(T dataObject, string directoryName, string fileName, DataCompression compression)
+								public static void SaveWorldData <T>(T dataObject, string directoryName, string fileName, DataCompression compression) where T : class
 								{
 										SaveData <T>(dataObject, directoryName, fileName, DataType.World, compression);
 								}
 
-								public static bool LoadWorldData <T>(ref T dataObject, string fileName, DataCompression compression)
+								public static bool LoadWorldData <T>(ref T dataObject, string fileName, DataCompression compression) where T : class
 								{
 										return LoadData <T>(ref dataObject, fileName, DataType.World, compression);
 								}
 
-								public static bool LoadWorldData <T>(ref T dataObject, string directoryName, string fileName, DataCompression compression)
+								public static bool LoadWorldData <T>(ref T dataObject, string directoryName, string fileName, DataCompression compression) where T : class
 								{
 										return LoadData <T>(ref dataObject, directoryName, fileName, DataType.World, compression);
 								}
 
-								public static void SaveBaseData <T>(T dataObject, string fileName, DataCompression compression)
+								public static void SaveBaseData <T>(T dataObject, string fileName, DataCompression compression) where T : class
 								{
 										SaveData <T>(dataObject, fileName, DataType.Base, compression);
 								}
 
-								public static void SaveBaseData <T>(T dataObject, string directoryName, string fileName, DataCompression compression)
+								public static void SaveBaseData <T>(T dataObject, string directoryName, string fileName, DataCompression compression) where T : class
 								{
 										SaveData <T>(dataObject, directoryName, fileName, DataType.Base, compression);
 								}
 
-								public static bool LoadBaseData <T>(ref T dataObject, string fileName, DataCompression compression)
+								public static bool LoadBaseData <T>(ref T dataObject, string fileName, DataCompression compression) where T : class
 								{
 										return LoadData <T>(ref dataObject, fileName, DataType.Base, compression);
 								}
 
-								public static bool LoadBaseData <T>(ref T dataObject, string directoryName, string fileName, DataCompression compression)
+								public static bool LoadBaseData <T>(ref T dataObject, string directoryName, string fileName, DataCompression compression) where T : class
 								{
 										return LoadData <T>(ref dataObject, directoryName, fileName, DataType.Base, compression);
 								}
@@ -723,7 +745,7 @@ namespace Frontiers
 										System.IO.Directory.Move(fromPath, toPath);
 								}
 
-								public static void SaveData <T>(T dataObject, string fileName, DataType type, DataCompression compression)
+								public static void SaveData <T>(T dataObject, string fileName, DataType type, DataCompression compression) where T : class
 								{
 										string dataPath = GetDataPath(type);
 										string path = System.IO.Path.Combine(dataPath, (fileName + gDataExtension));
@@ -733,7 +755,7 @@ namespace Frontiers
 										SerializeXMLToFile <T>(dataObject, path);
 								}
 
-								public static void SaveData <T>(T dataObject, string directoryName, string fileName, DataType type, DataCompression compression)
+								public static void SaveData <T>(T dataObject, string directoryName, string fileName, DataType type, DataCompression compression) where T : class
 								{
 										string dataPath = GetDataPath(type);
 										string directory = System.IO.Path.Combine(dataPath, directoryName);
@@ -744,14 +766,14 @@ namespace Frontiers
 										SerializeXMLToFile <T>(dataObject, path);
 								}
 
-								public static bool LoadData <T>(ref T dataObject, string fileName, DataType type, DataCompression compression)
+								public static bool LoadData <T>(ref T dataObject, string fileName, DataType type, DataCompression compression) where T : class
 								{
 										string dataPath = GetDataPath(type);
 										string path = System.IO.Path.Combine(dataPath, (fileName + gDataExtension));
 										return DeserializeXMLFromFile <T>(ref dataObject, path);
 								}
 
-								public static bool LoadData <T>(ref T dataObject, string directoryName, string fileName, DataType type, DataCompression compression)
+								public static bool LoadData <T>(ref T dataObject, string directoryName, string fileName, DataType type, DataCompression compression) where T : class
 								{
 										string dataPath = GetDataPath(type);
 										string directory = System.IO.Path.Combine(dataPath, directoryName);
@@ -941,17 +963,17 @@ namespace Frontiers
 
 								#region serialization
 
-								public static bool DeserializeXmlFromArchive <T>(ref T dataObject, string path)
+								public static bool DeserializeXmlFromArchive <T>(ref T dataObject, string path) where T : class
 								{
 										return false;
 								}
 
-								public static bool SerializeXmlToArchive <T>(ref T dataObject, string path)
+								public static bool SerializeXmlToArchive <T>(ref T dataObject, string path) where T : class
 								{
 										return false;
 								}
 
-								public static bool DeserializeXMLFromFile <T>(ref T dataObject, string path)
+								public static bool DeserializeXMLFromFile <T>(ref T dataObject, string path) where T : class
 								{
 										bool result = false;
 										FileMode mode = FileMode.Open;
@@ -961,7 +983,7 @@ namespace Frontiers
 										if (File.Exists(path)) {
 												try {
 														XmlSerializer serializer = new XmlSerializer(typeof(T));
-														using (FileStream stream = new FileStream(path, mode, access, share)) {
+														using (FileStream stream = new FileStream (path, mode, access, share)) {
 																dataObject = (T)serializer.Deserialize(stream);
 																result = true;
 																stream.Close();
@@ -969,6 +991,8 @@ namespace Frontiers
 												} catch (Exception e) {
 														Debug.Log("Couldn't load file " + path + " bacuase " + e.ToString() + "\n" + e.StackTrace);
 												}
+										} else {
+												//Debug.Log("File " + path + " doesn't exist");
 										}
 										return result;
 								}
@@ -1188,9 +1212,6 @@ namespace Frontiers
 										}
 
 										if (!File.Exists(fullPath)) {
-												if (type == DataType.Base) {
-														Debug.Log("Couldn't load terrain map " + fullPath);
-												}
 												return false;
 										}
 

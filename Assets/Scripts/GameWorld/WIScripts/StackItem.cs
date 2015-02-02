@@ -54,9 +54,6 @@ namespace Frontiers.World
 
 				public string StackName {
 						get {
-								if (HasStates) {
-										return WIStates.StackName(Props.Name.StackName, SaveState.LastState);
-								}
 								return Props.Name.StackName;
 						}
 						set {

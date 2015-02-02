@@ -59,20 +59,30 @@ namespace Frontiers.World
 						Location location = worlditem.Get <Location>();
 						while (location.LocationGroup == null || !location.LocationGroup.Is(WIGroupLoadState.Loaded)) {
 								yield return WorldClock.WaitForSeconds(0.5);
-						}
-						while (Den.SpawnedCreatures.Count < State.NumOrbs) {
-								if (mDestroyed)
-										yield break;
-
-								//spawn an orb and immobilize it
-								Creature orb = null;
-								if (!Creatures.SpawnCreature(Den, location.LocationGroup, SpawnerParent.position, out orb)) {
+								if (worlditem.Is(WIActiveState.Invisible) || !worlditem.Is(WILoadState.Initialized)) {
 										yield break;
 								}
-								Motile motile = orb.worlditem.Get <Motile>();
-								motile.IsImmobilized = true;
-								//start the animation and move the orb along with the spawner parent object
-								//the body will follow it automatically
+						}
+						while (Den.SpawnedCreatures.Count < State.NumOrbs) {
+								if (worlditem.Is(WIActiveState.Invisible) || !worlditem.Is(WILoadState.Initialized)) {
+										yield break;
+								}
+								Creature orb = null;
+								Motile motile = null;
+								try {
+									//spawn an orb and immobilize it
+									if (!Creatures.SpawnCreature(Den, location.LocationGroup, SpawnerParent.position, out orb)) {
+											yield break;
+									}
+									motile = orb.worlditem.Get <Motile>();
+									motile.IsImmobilized = true;
+									//start the animation and move the orb along with the spawner parent object
+									//the body will follow it automatically
+								}
+								catch (Exception e) {
+										Debug.LogError(e.ToString());
+										yield break;
+								}
 								yield return null;
 
 								if (DispenseAnimator == null) {

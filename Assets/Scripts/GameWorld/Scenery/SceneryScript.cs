@@ -10,7 +10,8 @@ namespace Frontiers.World
 {
 		[Serializable]
 		public class SceneryScript : MonoBehaviour
-		{		//similar to WIScript & PlayerScript
+		{
+				//similar to WIScript & PlayerScript
 				//but for chunk scenery
 				public WorldChunk ParentChunk;
 				public ChunkPrefabObject cfo;
@@ -58,9 +59,6 @@ namespace Frontiers.World
 								string saveData = string.Empty;
 								if (mHasSceneryStateField) {
 										try {
-												if (mSceneryStateField == null) {
-														Debug.Log("Trigger state field is NULL");
-												}
 												saveData = XmlSerializeToString(mSceneryStateField.GetValue(this));
 										} catch (Exception e) {
 												Debug.LogError("triggerScript save data error, returning empty string! E:" + e.InnerException.ToString());
@@ -135,7 +133,6 @@ namespace Frontiers.World
 								mBaseState = mSceneryStateField.GetValue(this) as SceneryScriptState;
 						}
 				}
-
 				//TODO move this into GameData
 				protected static string XmlSerializeToString(object objectInstance)
 				{

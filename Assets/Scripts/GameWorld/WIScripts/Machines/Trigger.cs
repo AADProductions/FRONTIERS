@@ -3,10 +3,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.World.Locations;
 using Frontiers.GUI;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Trigger : WIScript
 		{		//used to activate dynamic objects
@@ -45,6 +44,12 @@ namespace Frontiers.World
 
 				public override string GenerateUniqueFileName(int increment)
 				{
+						#if UNITY_EDITOR
+						if (worlditem == null) {
+								mWorldItem = gameObject.GetComponent <WorldItem> ();
+						}
+						#endif
+
 						if (RemoteTrigger) {
 								return worlditem.Props.Name.FileName;
 						} else {

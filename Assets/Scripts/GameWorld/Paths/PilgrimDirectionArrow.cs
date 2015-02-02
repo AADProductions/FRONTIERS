@@ -51,12 +51,12 @@ public class PilgrimDirectionArrow : MonoBehaviour
 		{
 				if (Projections.ArrowInFocus == gameObject) {
 						TargetScale = Vector3.one * 2.0f;
-						yield return new WaitForSeconds(0.1f);
+						yield return Frontiers.WorldClock.WaitForSeconds(0.1);
 						TargetScale = Vector3.zero;
-						yield return new WaitForSeconds(1.0f);
+						yield return Frontiers.WorldClock.WaitForSeconds(1.0);
 				} else {
 						TargetScale = Vector3.zero;
-						yield return new WaitForSeconds(1.0f);
+						yield return Frontiers.WorldClock.WaitForSeconds(1.0);
 				}
 				GameObject.Destroy(gameObject, 0.01f);
 				yield break;

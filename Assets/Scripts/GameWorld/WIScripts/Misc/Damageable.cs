@@ -1,12 +1,11 @@
 using UnityEngine;
-using System.Collections;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.Magic;
 using Frontiers.World;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Damageable : WIScript, IDamageable
 		{		//what most WorldItems will use to take damage
@@ -102,6 +101,7 @@ namespace Frontiers.World
 						if (State.IsDead) {
 								actualDamage = 0.0f;
 								isDead = true;
+								worlditem.ApplyForce(attemptedForce, damagePoint);
 								return false;
 						}
 
@@ -119,6 +119,16 @@ namespace Frontiers.World
 						}
 			
 						if (actualDamage > State.MinimumDamageThreshold) {
+								//if we haven't taken a reputation penalty for damaging someone else's property
+								//check and see if we're owned by someone else
+								if (!State.HasCausedReputationPenalty) {
+										if (WorldItems.IsOwnedBySomeoneOtherThanPlayer(worlditem, out mCheckOwner)) {
+												//TODO tie reputation loss to item value
+												Profile.Get.CurrentGame.Character.Rep.LosePersonalReputation(mCheckOwner.worlditem.FileName, mCheckOwner.worlditem.DisplayName, 1);
+												State.HasCausedReputationPenalty = true;
+										}
+								}
+
 								State.LastDamagePoint = damagePoint;
 								State.LastDamageMaterial = materialType;
 								State.LastDamageSource = sourceName;
@@ -183,6 +193,8 @@ namespace Frontiers.World
 										break;
 						}
 				}
+		
+				protected static Character mCheckOwner;
 		}
 
 		[Serializable]
@@ -227,14 +239,6 @@ namespace Frontiers.World
 				public float MinimumDamageThreshold = 0.25f;
 				public string CauseOfDeath = string.Empty;
 				public string StateResult;
-		}
-
-		public enum DamageableResult
-		{
-				None,
-				Break,
-				Die,
-				State,
-				RemoveFromGame,
+				public bool HasCausedReputationPenalty = false;
 		}
 }

@@ -11,21 +11,25 @@ namespace Frontiers.GUI
 				public UISprite Icon;
 				public UISprite IconOverlay;
 				public UISprite PingSprite;
+				public GUIStatusKeeper ParentStatusKeeper;
+				public GUIButtonHover ButtonHover;
 				public Color IconColor;
 				public float DisplaySize;
 				public float DisplayOffset;
-
-				public int DisplayPosition {
-						set {
-								mTargetPosition = new Vector3(0f, (value * DisplaySize) + DisplayOffset, 0f);
-						}
-				}
+				public int DisplayPosition;
 
 				public void Awake()
 				{
 						Flow = null;
 						PingSprite.alpha = 0f;
+						ButtonHover = gameObject.GetOrAdd <GUIButtonHover>();
+						ButtonHover.OnButtonHover += OnButtonHover;
 						transform.localScale = Vector3.one * 0.001f;
+				}
+
+				public void OnButtonHover()
+				{
+						GUIPlayerStatusInterface.Get.PostInfo(UICamera.hoveredObject, Flow.Description);
 				}
 
 				public void Initialize(StatusFlow flow)
@@ -58,13 +62,16 @@ namespace Frontiers.GUI
 
 								mScale = Mathf.Lerp(mScale, 1f, 0.25f).Snap01(0.01f);
 								transform.localScale = Vector3.one * mScale;
+								mTargetPosition.x = 0f;
+								mTargetPosition.y = (DisplayPosition * DisplaySize) + DisplayOffset;
 								transform.localPosition = Vector3.Lerp(transform.localPosition, mTargetPosition, 0.25f);
 								yield return null;
 						}
 
 						while (Flow != null && Flow.HasEffect) {
 								UpdateColors();
-
+								mTargetPosition.x = 0f;
+								mTargetPosition.y = (DisplayPosition * DisplaySize) + DisplayOffset;
 								transform.localPosition = Vector3.Lerp(transform.localPosition, mTargetPosition, 0.25f);
 								PingSprite.color = IconColor;
 								PingSprite.alpha = Mathf.Lerp(Flow.FlowLastUpdate, PingSprite.alpha, 0.25f);
@@ -73,7 +80,8 @@ namespace Frontiers.GUI
 
 						while (mScale > 0f) {
 								UpdateColors();
-
+								mTargetPosition.x = 0f;
+								mTargetPosition.y = (DisplayPosition * DisplaySize) + DisplayOffset;
 								mScale = Mathf.Lerp(mScale, 0f, 0.25f).Snap01(0.01f);
 								transform.localScale = Vector3.one * mScale;
 								transform.localPosition = Vector3.Lerp(transform.localPosition, mTargetPosition, 0.25f);

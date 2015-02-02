@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World.Gameplay
 {
@@ -17,7 +17,7 @@ namespace Frontiers.World.Gameplay
 				{
 						if (Traps.SafeAdd(trap)) {
 								trap.SkillUpdating = true;
-								trap.TimeLastChecked = WorldClock.Time;
+								trap.TimeLastChecked = WorldClock.AdjustedRealTime;
 						}
 
 						if (!mUpdatingTraps) {
@@ -39,24 +39,24 @@ namespace Frontiers.World.Gameplay
 										} else {
 												//okay, the trap is set and it's not finished and it has intersecting dens
 												for (int j = trap.IntersectingDens.LastIndex(); j >= 0; j--) {
-														CreatureDen den = trap.IntersectingDens[j];
+														ICreatureDen den = trap.IntersectingDens[j];
 														if (den == null || den.IsFinished) {
 																trap.IntersectingDens.RemoveAt(j);
-														} else if (trap.CanCatch.Count > 0 && !trap.CanCatch.Contains(den.State.NameOfCreature)
-														  || trap.Exceptions.Count > 0 && trap.Exceptions.Contains(den.State.NameOfCreature)) {
+														} else if (trap.CanCatch.Count > 0 && !trap.CanCatch.Contains(den.NameOfCreature)
+														  || trap.Exceptions.Count > 0 && trap.Exceptions.Contains(den.NameOfCreature)) {
 																//make sure this trap can actually catch what's in it
 																trap.IntersectingDens.RemoveAt(j);
 														} else {
 																//is it time to check this trap yet? is the player nearby?
-																if ((WorldClock.Time - trap.TimeLastChecked) > WorldClock.RTSecondsToGameSeconds(Globals.TrappingMinimumRTCheckInterval)
+																if ((WorldClock.AdjustedRealTime - trap.TimeLastChecked) > Globals.TrappingMinimumRTCheckInterval
 																&& Vector3.Distance(Player.Local.Position, trap.Owner.tr.position) > Globals.TrappingMinimumCorpseSpawnDistance) {
-																		trap.TimeLastChecked = WorldClock.Time;
+																		trap.TimeLastChecked = WorldClock.AdjustedRealTime;
 																		//odds of catching something increases over time
 																		float oddsOfCatchingSomething = trap.SkillOnSet;
-																		double timeSinceSet = WorldClock.Time - trap.TimeSet;
+																		double timeSinceSet = WorldClock.AdjustedRealTime - trap.TimeSet;
 																		oddsOfCatchingSomething = Mathf.Clamp01((float)(oddsOfCatchingSomething + (Globals.TrappingOddsTimeMultiplier * timeSinceSet)));
 																		//okay, figure out how close to the den we are
-																		float distanceToCenterOfDen = Vector3.Distance(trap.Owner.tr.position, den.worlditem.tr.position);
+																		float distanceToCenterOfDen = Vector3.Distance(trap.Owner.tr.position, den.transform.position);
 																		float distanceToDen = distanceToCenterOfDen - den.Radius;
 																		float trapRadius = Skill.SkillEffectRadius(
 																				          Effects.UnskilledEffectRadius,
@@ -84,7 +84,7 @@ namespace Frontiers.World.Gameplay
 														}
 												}
 										}
-										yield return new WaitForSeconds(1.0f);
+										yield return WorldClock.WaitForSeconds(1.0);
 								}
 								yield return null;
 						}

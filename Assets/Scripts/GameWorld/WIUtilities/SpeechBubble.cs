@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.Story;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -105,14 +106,14 @@ namespace Frontiers.World
 				//this ensures that OnTriggerEnter will fire
 				protected IEnumerator NudgeBubbleCollider()
 				{	//weird I know, seems to be a physics limitation
-						yield return new WaitForSeconds(0.05f);
+						yield return WorldClock.WaitForSeconds(0.05);
 						transform.Translate(Vector3.zero);
 						yield break;
 				}
 
 				protected IEnumerator DestroyOverTime()
 				{
-						yield return new WaitForSeconds(0.15f);
+						yield return WorldClock.WaitForSeconds(0.15);
 						GameObject.Destroy(gameObject);
 						yield break;
 				}

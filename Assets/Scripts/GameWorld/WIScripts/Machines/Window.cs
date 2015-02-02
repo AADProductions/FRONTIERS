@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.GUI;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -67,7 +67,10 @@ namespace Frontiers.World
 				public IEnumerator ForceClose()
 				{
 						if (State.IsOpen) {
-								yield return StartCoroutine(ChangingWindowState(EntranceState.Closed));
+								var changeWindowState = ChangingWindowState(EntranceState.Closed);
+								while (changeWindowState.MoveNext()) {
+										yield return changeWindowState.Current;
+								}
 						}
 						yield break;
 				}
@@ -104,7 +107,10 @@ namespace Frontiers.World
 														MasterAudio.PlaySound(State.SoundType, transform, State.SoundOnClose);
 												}
 												if (State.TargetState == EntranceState.Open) {
-														yield return StartCoroutine(dynamic.ParentStructure.OnWindowOpen(this));
+														var onOpen = dynamic.ParentStructure.OnWindowOpen(this);
+														while (onOpen.MoveNext()) {
+																yield return onOpen.Current;
+														}
 														State.CurrentState = EntranceState.Opening;
 														PivotObject.animation.Play(State.AnimationOpening);
 														MasterAudio.PlaySound(State.SoundType, transform, State.SoundOnOpen);
@@ -139,7 +145,7 @@ namespace Frontiers.World
 						yield break;
 				}
 
-				public override void PopulateOptionsList(System.Collections.Generic.List<GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(System.Collections.Generic.List<WIListOption> options, List <string> message)
 				{
 						if (mChangingWindowState | mClimbingThroughWindow) {
 								return;
@@ -147,11 +153,11 @@ namespace Frontiers.World
 
 						if (State.CurrentState == EntranceState.Open) {
 								if (!State.IsBlocked) {
-										options.Add(new GUIListOption("Climb Through"));
+										options.Add(new WIListOption("Climb Through"));
 								}
-								options.Add(new GUIListOption("Close"));
+								options.Add(new WIListOption("Close"));
 						} else {
-								options.Add(new GUIListOption("Open"));
+								options.Add(new WIListOption("Open"));
 						}
 				}
 
@@ -203,7 +209,7 @@ namespace Frontiers.World
 
 				public void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{
-						OptionsListDialogResult dialogResult = secondaryResult as OptionsListDialogResult;
+						WIListResult dialogResult = secondaryResult as WIListResult;
 						switch (dialogResult.SecondaryResult) {
 
 								case "Open":

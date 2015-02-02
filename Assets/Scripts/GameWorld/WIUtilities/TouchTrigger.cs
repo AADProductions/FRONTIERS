@@ -1,11 +1,13 @@
 using UnityEngine;
 using System.Collections;
+using Frontiers.World.BaseWIScripts;
+using AnimationOrTween;
 
 namespace Frontiers.World
 {
 		public class TouchTrigger : MonoBehaviour
 		{
-				public Trigger trigger;
+				public Frontiers.World.BaseWIScripts.Trigger trigger;
 				public SphereCollider TouchCollider;
 				public Rigidbody rb;
 				[BitMaskAttribute(typeof(ItemOfInterestType))]

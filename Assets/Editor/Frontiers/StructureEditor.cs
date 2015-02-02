@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
 
 [CustomEditor(typeof(Structure))]
 public class StructureEditor : Editor

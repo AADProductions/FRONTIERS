@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.GUI;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Receptacle : WIScript, IGUIParentEditor <YesNoCancelDialogResult>
 		{
@@ -461,7 +461,7 @@ namespace Frontiers.World
 						}
 						if (settings.PermittedItems.Count > 0) {
 								foreach (string permittedItemName in settings.PermittedItems) {
-										if (!Stacks.Can.Stack(permittedItemName, potentialOccupant.StackName)) {
+										if (!Stacks.Can.Stack(potentialOccupant, permittedItemName)) {
 												return false;
 										}
 								}
@@ -638,13 +638,6 @@ namespace Frontiers.World
 
 				protected YesNoCancelDialogResult mResult;
 				public static List<Projector> gReceptacleProjectors = new List<Projector>();
-		}
-
-		public enum ReceptacleVisualStyle
-		{
-				Projector,
-				GeneralDoppleganger,
-				SpecificDoppleganger,
 		}
 
 		[Serializable]

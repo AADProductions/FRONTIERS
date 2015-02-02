@@ -12,10 +12,10 @@ namespace Frontiers.World
 		{
 				public LibraryCatalogueState State = new LibraryCatalogueState();
 
-				public override void PopulateOptionsList(List <GUIListOption> options, List <string> message)
+				public override void PopulateOptionsList(List <WIListOption> options, List <string> message)
 				{
 						if (mBrowseOption == null) {
-								mBrowseOption = new GUIListOption("Browse Catalogue", "Browse");
+								mBrowseOption = new WIListOption("Browse Catalogue", "Browse");
 						}
 
 						Library library = null;
@@ -39,7 +39,7 @@ namespace Frontiers.World
 
 				public void OnPlayerUseWorldItemSecondary(object result)
 				{
-						OptionsListDialogResult secondaryResult = result as OptionsListDialogResult;
+						WIListResult secondaryResult = result as WIListResult;
 						switch (secondaryResult.SecondaryResult) {
 								case "Browse":
 										GameObject browserGameObject = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog("NGUILibraryCatalogueBrowser"));
@@ -52,7 +52,7 @@ namespace Frontiers.World
 						}
 				}
 
-				protected GUIListOption mBrowseOption = null;
+				protected WIListOption mBrowseOption = null;
 		}
 
 		[Serializable]

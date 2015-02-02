@@ -3,6 +3,7 @@ using System.Collections;
 using System;
 using System.Collections.Generic;
 using Frontiers.World.Gameplay;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
@@ -174,7 +175,7 @@ namespace Frontiers.World
 				public IEnumerator CastSpell()
 				{
 						if (mSpellToCast == null) {
-								GUIManager.PostIntrospection("I need to choose which spell to use");
+								GUI.GUIManager.PostIntrospection("I need to choose which spell to use");
 								mCastingSpell = false;
 								yield break;
 						}

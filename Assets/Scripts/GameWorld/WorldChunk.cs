@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.Data;
-using Frontiers.World.Locations;
 using Frontiers.World.Gameplay;
 using ExtensionMethods;
 using System.Xml.Serialization;
@@ -22,7 +21,12 @@ namespace Frontiers.World
 
 				public string Name {
 						get {
-								return ChunkName(State);
+								#if UNITY_EDITOR
+								if (!Application.isPlaying) {
+										return ChunkName(State);
+								}
+								#endif
+								return mChunkName;
 						}
 				}
 
@@ -42,6 +46,11 @@ namespace Frontiers.World
 						get {
 								return mChunkBounds;
 						}
+				}
+
+				public bool Is (ChunkMode chunkMode)
+				{
+						return Flags.Check((int)chunkMode, (int)mCurrentMode, Flags.CheckType.MatchAny);
 				}
 
 				protected Vector3 mChunkScale;
@@ -131,6 +140,7 @@ namespace Frontiers.World
 				protected ChunkMode mTargetMode = ChunkMode.Unloaded;
 				protected ChunkMode mCurrentMode = ChunkMode.Unloaded;
 				protected bool mInitialized = false;
+				protected string mChunkName;
 				protected bool mHasLoadedChildren = false;
 
 				#endregion
@@ -151,7 +161,7 @@ namespace Frontiers.World
 						}
 				}
 
-				public PlantInstanceTemplate [] PlantInstances { 
+				public PlantInstanceTemplate [] PlantInstances {
 						get {
 								if (!mInitialized) {
 										if (gEmptyPlantInstances == null) {
@@ -197,11 +207,12 @@ namespace Frontiers.World
 						if (mInitialized)
 								return;
 
-						gameObject.name = Name;
-						string chunkDirectoryName = ChunkDataDirectory(name);
+						mChunkName = ChunkName(State);
+						gameObject.name = mChunkName;
+						string chunkDirectoryName = ChunkDataDirectory(mChunkName);
 						//initialize assumes that the chunk state has been loaded
 						transform.position = State.TileOffset;
-						ChunkGroup = WIGroups.GetOrAdd(gameObject, Name, WIGroups.Get.World, null);
+						ChunkGroup = WIGroups.GetOrAdd(gameObject, mChunkName, WIGroups.Get.World, null);
 						ChunkGroup.Props.IgnoreOnSave = true;
 
 						Mods.Get.Runtime.LoadMod <ChunkTriggerData>(ref TriggerData, chunkDirectoryName, "Triggers");
@@ -228,8 +239,8 @@ namespace Frontiers.World
 
 						//load tree data
 						if (Mods.Get.Runtime.LoadMod <ChunkTreeData>(ref TreeData, chunkDirectoryName, "Trees")) {
-//				//update our tree instances with our offset and create our quad tree
-//				//make sure not to use the TreeInstances convenience property
+								//update our tree instances with our offset and create our quad tree
+								//make sure not to use the TreeInstances convenience property
 								for (int i = 0; i < TreeData.TreeInstances.Length; i++) {
 										TreeInstanceTemplate tit = TreeData.TreeInstances[i];
 										tit.ParentChunk = this;
@@ -263,15 +274,9 @@ namespace Frontiers.World
 						for (int groundIndex = 0; groundIndex < TerrainData.TextureTemplates.Count; groundIndex++) {
 								TerrainTextureTemplate ttt = TerrainData.TextureTemplates[groundIndex];
 								Texture2D Diffuse = null;
-								////////Debug.Log ("Trying to get ground texture " + ttt.DiffuseName + " in " + Name);
-								if (Plants.Get.GetTerrainGroundTexture(ttt.DiffuseName, out Diffuse)) {
+								if (Mats.Get.GetTerrainGroundTexture(ttt.DiffuseName, out Diffuse)) {
 										ChunkDataMaps.Add("Ground" + groundIndex.ToString(), Diffuse);
-								} else {
-										//////Debug.LogError ("Failed to load ground texture " + ttt.DiffuseName);
 								}
-//				if (Mods.Get.Runtime.ChunkGroundTexture (ref Diffuse, ref Normal, ttt.DiffuseName, ttt.NormalName)) {
-//					matChunkMaps.Add ("Ground" + groundIndex.ToString (), Diffuse);
-//				}
 						}
 						Texture2D chunkMap = null;
 						//Debug.Log ("Getting terrain color overlay in " + Name);
@@ -363,18 +368,20 @@ namespace Frontiers.World
 						PrimaryMaterial = PrimaryTerrain.materialTemplate;
 						//PrimaryMaterial = PrimaryTerrain.GetComponent <Renderer> ().sharedMaterial;
 						PrimaryTerrain.Flush();
-
 						yield return null;
 						//give the terrain a second to breathe
 						LoadChunkTransforms(false);
-						yield return StartCoroutine(LoadChunkGroups());
-
+						var loadChunkGroups = LoadChunkGroups();
+						while (loadChunkGroups.MoveNext()) {
+								yield return loadChunkGroups.Current;
+						}
 						mHasGeneratedTerrain = true;
 						yield break;
 				}
 
 				public IEnumerator RefreshTerrainTextures()
 				{
+						//Debug.Log("Refreshing terrain textures");
 						PrimaryMaterial.name = Name + " Material";
 						TerrainData.MaterialSettings.ApplySettings(PrimaryMaterial);
 						TerrainData.MaterialSettings.ApplyMaps(PrimaryMaterial, Name, ChunkDataMaps);
@@ -382,7 +389,7 @@ namespace Frontiers.World
 				}
 
 				public IEnumerator RefreshTerrainObjects()
-				{	
+				{
 						if (PrimaryTerrain == null) {
 								//whoops, no big deal
 								yield break;
@@ -419,7 +426,7 @@ namespace Frontiers.World
 												}
 										} else {//just load a texture
 												Texture2D grassTexture = null;
-												if (Plants.Get.GetTerrainGrassTexture(tpt.AssetName, out grassTexture)) {
+												if (Mats.Get.GetTerrainGrassTexture(tpt.AssetName, out grassTexture)) {
 														detailPrototype.prototypeTexture = grassTexture;
 														detailPrototype.renderMode = DetailRenderMode.Grass;//never use billboard
 												}
@@ -753,7 +760,7 @@ namespace Frontiers.World
 
 				public void OnGameSave()
 				{
-						Debug.Log("Saving triggers, nodes and plants in chunk");
+						//Debug.Log("Saving triggers, nodes and plants in chunk");
 						SaveTriggers();
 						Mods.Get.Runtime.SaveMod <ChunkNodeData>(NodeData, ChunkDataDirectory(Name), "Nodes");
 						Mods.Get.Runtime.SaveMod <ChunkPlantData>(PlantData, ChunkDataDirectory(Name), "Plants");
@@ -768,7 +775,7 @@ namespace Frontiers.World
 										if (!TriggerData.TriggerStates.ContainsKey(Triggers[i].name)) {
 												TriggerData.TriggerStates.Add(Triggers[i].name, new KeyValuePair <string, string>(Triggers[i].ScriptName, triggerState));
 										} else {
-												Debug.LogError ("ERROR: Attempting to save the same trigger twice: " + Triggers [i].name);
+												Debug.LogError("ERROR: Attempting to save the same trigger twice: " + Triggers[i].name);
 										}
 								}
 						}
@@ -857,7 +864,7 @@ namespace Frontiers.World
 
 				public IEnumerator ClearTransforms()
 				{
-						/*												
+						/*
 						DestroyChildren (Transforms.AboveGroundStaticImmediate);
 						DestroyChildren (Transforms.AboveGroundGenerated);
 						DestroyChildren (Transforms.AboveGroundOcean);
@@ -930,7 +937,7 @@ namespace Frontiers.World
 						bool foundNode = false;
 						nodeState = null;
 						List <ActionNodeState> nodeStates = null;
-						if (GetNodesForLocation(groupPath, out nodeStates)) {	
+						if (GetNodesForLocation(groupPath, out nodeStates)) {
 								List <int> numbersTried = new List <int>();
 								//try random numbers until we have none left
 								while (numbersTried.Count <= nodeStates.Count) {
@@ -957,7 +964,7 @@ namespace Frontiers.World
 						bool foundNode = false;
 						nodeState = null;
 						List <ActionNodeState> nodeStates = null;
-						if (GetNodesForLocation(groupPath, out nodeStates)) {	
+						if (GetNodesForLocation(groupPath, out nodeStates)) {
 								List <int> numbersTried = new List <int>();
 								//try random numbers until we have none left
 								while (numbersTried.Count <= nodeStates.Count) {

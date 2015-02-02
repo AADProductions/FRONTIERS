@@ -68,7 +68,7 @@ namespace Frontiers.World.Gameplay
 								return false;
 						}
 
-						return (this == other || this.name == other.name);
+						return (this == other || this.Info.GivenName == other.Info.GivenName);
 				}
 
 				public bool Equals(Skill p)
@@ -77,7 +77,7 @@ namespace Frontiers.World.Gameplay
 								return false;
 						}
 
-						return (this == p || this.name == p.name);
+						return (this == p || this.Info.GivenName == p.Info.GivenName);
 				}
 
 				public int CompareTo(Skill other)
@@ -123,7 +123,7 @@ namespace Frontiers.World.Gameplay
 								case SkillKnowledgeState.Unknown:
 										State.KnowledgeState = SkillKnowledgeState.Known;
 										Profile.Get.CurrentGame.Character.Exp.AddExperience(Info.ExperienceValueDiscover, Info.ExperienceGainFlagset);
-										Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.SkillDiscover), WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction((AvatarAction.SkillDiscover), WorldClock.AdjustedRealTime);
 										State.GetPlayerAttention = true;
 										Save();
 										break;
@@ -149,7 +149,7 @@ namespace Frontiers.World.Gameplay
 										if (PrerequisiteRequirementsMet) {
 												////////Debug.Log ("Learned! Posting gained item");
 												Profile.Get.CurrentGame.Character.Exp.AddExperience(Info.ExperienceValueLearn, Info.ExperienceGainFlagset);
-												Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.SkillLearn), WorldClock.Time);
+												Player.Get.AvatarActions.ReceiveAction((AvatarAction.SkillLearn), WorldClock.AdjustedRealTime);
 												GUIManager.PostGainedItem(this);
 												State.GetPlayerAttention = true;
 												State.KnowledgeState = SkillKnowledgeState.Learned;
@@ -316,11 +316,11 @@ namespace Frontiers.World.Gameplay
 						LastSkillRoll = SkillRollType.Success;
 						LastSkillResult = RollDice(out LastSkillValue, out LastSkillRoll) || forceSuccess;
 						LastSkillUsed = this;
-						LastTimeSkillUsed = WorldClock.Time;
+						LastTimeSkillUsed = WorldClock.AdjustedRealTime;
 						if (Usage.RealTimeDuration) {
 								mUseStartTime = WorldClock.RealTime;
 						} else {
-								mUseStartTime = WorldClock.Time;
+								mUseStartTime = WorldClock.AdjustedRealTime;
 						}
 
 						mIsInUse = true;
@@ -332,7 +332,7 @@ namespace Frontiers.World.Gameplay
 						//broadcast on use start
 						TryToBroadcastSkillUseResult(SkillBroadcastResultTime.OnUseStart);
 						//broadcast the fact that a skill was used
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SkillUse, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SkillUse, WorldClock.AdjustedRealTime);
 						//if we suffer a reputation hit this is where it happens
 						Profile.Get.CurrentGame.Character.Rep.ChangeGlobalReputation(RepChange);
 
@@ -365,7 +365,7 @@ namespace Frontiers.World.Gameplay
 						//broadcast on use finish
 						TryToBroadcastSkillUseResult(SkillBroadcastResultTime.OnUseFinish);
 						//let the player know we've finished using a skill
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SkillUseFinish, WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SkillUseFinish, WorldClock.AdjustedRealTime);
 						//call OnUseFinish
 						OnUseFinish();
 						//reset everything
@@ -435,7 +435,7 @@ namespace Frontiers.World.Gameplay
 												yield return null;
 										}
 								} else {
-										yield return new WaitForSeconds(Usage.CooldownInterval);
+										yield return WorldClock.WaitForSeconds(Usage.CooldownInterval);
 								}
 						}
 						//broadcast on cooldown
@@ -540,7 +540,7 @@ namespace Frontiers.World.Gameplay
 						if (broadcastType == SkillBroadcastResultTime.OnUseFinish) {
 								//we do this regardless of our broadcast type
 								if (Usage.AvatarActionOnFinish != AvatarAction.NoAction) {
-										Player.Get.AvatarActions.ReceiveAction(Usage.AvatarActionOnFinish, WorldClock.Time);
+										Player.Get.AvatarActions.ReceiveAction(Usage.AvatarActionOnFinish, WorldClock.AdjustedRealTime);
 								}
 						}
 				}
@@ -563,14 +563,14 @@ namespace Frontiers.World.Gameplay
 						mProgressDialog = null;
 				}
 
-				public virtual GUIListOption GetListOption(IItemOfInterest targetObject)
+				public virtual WIListOption GetListOption(IItemOfInterest targetObject)
 				{
 						if (!Usage.AppearInContextMenus) {
-								return GUIListOption.Empty;
+								return WIListOption.Empty;
 						}
 
 						if (mListOption == null) {
-								mListOption = new GUIListOption(Info.IconName, DisplayName, name);
+								mListOption = new WIListOption(Info.IconName, DisplayName, name);
 						}
 
 						string listOptionName = DisplayName;
@@ -659,7 +659,7 @@ namespace Frontiers.World.Gameplay
 						}
 
 						if (Usage.AvatarActionOnUse != AvatarAction.NoAction) {
-								Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(Usage.AvatarActionOnUse), WorldClock.Time);
+								Player.Get.AvatarActions.ReceiveAction((Usage.AvatarActionOnUse), WorldClock.AdjustedRealTime);
 						}
 
 						if (RequiresWorldItems) {
@@ -804,7 +804,7 @@ namespace Frontiers.World.Gameplay
 												WorldItem equippedWorldItem = Player.Local.Tool.worlditem;
 												for (int i = 0; i < Requirements.RequiredEquippedWorldItems.Count; i++) {
 														if (!Stacks.Can.Stack(
-																equippedWorldItem.StackName,
+																equippedWorldItem,
 																Requirements.RequiredEquippedWorldItems[i])) {
 																result = false;
 																break;
@@ -894,7 +894,7 @@ namespace Frontiers.World.Gameplay
 						get {
 								if (RequiresPlayerFocusItem) {
 										if (Player.Local.Surroundings.IsWorldItemInPlayerFocus) {
-												if (!string.IsNullOrEmpty(Requirements.RequiredPlayerFocusItemName) && !Stacks.Can.Stack(Player.Local.Surroundings.WorldItemFocus.worlditem.StackName, Requirements.RequiredPlayerFocusItemName)) {
+												if (!string.IsNullOrEmpty(Requirements.RequiredPlayerFocusItemName) && !Stacks.Can.Stack(Player.Local.Surroundings.WorldItemFocus.worlditem, Requirements.RequiredPlayerFocusItemName)) {
 														return false;
 												} else {
 														for (int i = 0; i < Requirements.RequiredPlayerFocusWIScriptNames.Count; i++) {
@@ -971,6 +971,11 @@ namespace Frontiers.World.Gameplay
 				public bool HasBeenMastered {
 						get {
 								return State.HasBeenMastered;
+						}
+						set {
+								State.KnowledgeState = SkillKnowledgeState.Learned;
+								State.NumTimesAttempted = State.MasteryLevel + 1;
+								State.NumTimesSuccessful = State.MasteryLevel + 1;
 						}
 				}
 
@@ -1064,7 +1069,7 @@ namespace Frontiers.World.Gameplay
 														double timeLeft = 1.0 - ((WorldClock.RealTime - mUseStartTime) / effectTime);
 														return (float)timeLeft;
 												} else {
-														double timeLeft = 1.0 - ((WorldClock.Time - mUseStartTime) / WorldClock.RTSecondsToGameSeconds(effectTime)); 
+														double timeLeft = 1.0 - ((WorldClock.AdjustedRealTime - mUseStartTime) / effectTime); 
 														return (float)timeLeft;
 												}
 
@@ -1208,7 +1213,7 @@ namespace Frontiers.World.Gameplay
 
 				#endregion
 
-				protected GUIListOption mListOption;
+				protected WIListOption mListOption;
 				protected GUIProgressDialog mProgressDialog;
 				protected bool mProgressDialogFinished = false;
 				protected bool mIsInUse = false;
@@ -1389,7 +1394,7 @@ namespace Frontiers.World.Gameplay
 
 				public float NormalizedMasteryLevel {
 						get {
-								return Mathf.Max(NormalizedLearningBonus, ((float)NumTimesSuccessful / (float)MasteryLevel), Globals.SkillFailsafeMasteryLevel);
+								return Mathf.Max(Mathf.Max(NormalizedLearningBonus, ((float)NumTimesSuccessful / (float)MasteryLevel)), Globals.SkillFailsafeMasteryLevel);
 						}
 				}
 				//this returns a value from -1 to 1
@@ -1443,58 +1448,4 @@ namespace Frontiers.World.Gameplay
 				public SkillRequirements Requirements = new SkillRequirements();
 				public string ExtensionsState = null;
 		}
-		#region enums
-		public enum SkillBroadcastResultTime
-		{
-				OnUseStart,
-				OnUseFinish,
-				OnCooldownEnd,
-		}
-
-		public enum SkillUsageType
-		{
-				Once,
-				Duration,
-				Manual,
-		}
-
-		public enum SkillRollType
-		{
-				Success,
-				Failure,
-				CriticalFailure,
-				CriticalSuccess,
-		}
-
-		public enum SkillKnowledgeState
-		{
-				Unknown,
-				Known,
-				Learned,
-				Enabled,
-		}
-
-		public enum SkillUse
-		{
-				Automatic,
-				Situational,
-				Manual,
-		}
-
-		public enum SkillType
-		{
-				Guild,
-				Magic,
-				Crafting,
-				Survival,
-				Obex,
-		}
-
-		public enum SkillEffect
-		{
-				None,
-				Increase,
-				Decrease,
-		}
-		#endregion
 }

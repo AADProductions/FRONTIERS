@@ -3,9 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.Data;
-using Frontiers.World.Locations;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Dynamic : WIScript
 		{		//anything that's part of a structure that moves

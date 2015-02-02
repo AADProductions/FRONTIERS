@@ -43,10 +43,10 @@ namespace Frontiers
 										Manager.WakeUp <Mods>("__MODS");
 								}
 								Mods.Get.Editor.InitializeEditor();
-								Mods.Get.Editor.LoadAvailableMods <PreparedFood> (PreparedFoodList, "PreparedFood");
+								Mods.Get.Editor.LoadAvailableMods <PreparedFood>(PreparedFoodList, "PreparedFood");
 								foreach (PreparedFood pf in PreparedFoodList) {
 										if (!string.IsNullOrEmpty(pf.BaseTextureName) && pf.BaseTextureName.Length > 1) {
-												pf.BaseTextureName = pf.BaseTextureName.Substring (pf.BaseTextureName.Length - 1, 1);//only take the last character
+												pf.BaseTextureName = pf.BaseTextureName.Substring(pf.BaseTextureName.Length - 1, 1);//only take the last character
 												Mods.Get.Editor.SaveMod <PreparedFood>(pf, "PreparedFood", pf.Name);
 										}
 								}
@@ -147,34 +147,36 @@ namespace Frontiers
 						//set up the edible properties
 						FoodStuff foodStuff = preparedFoodAvatar.worlditem.Get <FoodStuff>();
 						foodStuff.State.ConsumeOnEat = true;
-						foodStuff.State.PotentialProps.Clear();
+						/*foodStuff.State.PotentialProps.Clear();
 						if (preparedFood.CanBeRaw) {
 								foodStuff.State.PotentialProps.Add(preparedFood.RawProps);
 						}
 						//set the cook time regardless since food can still be burned
+						*/
 						foodStuff.CookTimeRTSeconds = preparedFood.RTCookDuration;
-						foodStuff.State.PotentialProps.Add(preparedFood.CookedProps);
+						//foodStuff.State.PotentialProps.Add(preparedFood.CookedProps);
 						foodStuff.RefreshFoodStuffProps();
 						//the foodstuff will update itself based on whether the state is raw / cooked
 				}
 
-				public static bool InitializePreparedFoodGameObject(GameObject preparedFoodParentObject, string preparedFoodName, ref Bounds itemBounds)
+				public static bool InitializePreparedFoodGameObject(GameObject preparedFoodParentObject, string preparedFoodName, bool createCollider, ref Bounds itemBounds)
 				{
 						PreparedFood pf = null;
 						if (!mPreparedFoodLookup.TryGetValue(preparedFoodName, out pf)) {
-								//Debug.Log ("Couldn't find prepared food name " + preparedFoodName);
+								Debug.Log("Couldn't find prepared food name " + preparedFoodName);
 								return false;
 						}
 
-						CreateFoodStateChild(preparedFoodParentObject, "Raw", pf, ref itemBounds);
-						CreateFoodStateChild(preparedFoodParentObject, "Cooked", pf, ref itemBounds);
+						CreateFoodStateChild(preparedFoodParentObject, "Raw", pf, createCollider, ref itemBounds);
+						CreateFoodStateChild(preparedFoodParentObject, "Cooked", pf, createCollider, ref itemBounds);
 						return true;
 				}
 
-				protected static void CreateFoodStateChild(GameObject preparedFoodParentObject, string stateChildName, PreparedFood pf, ref Bounds itemBounds)
+				protected static void CreateFoodStateChild(GameObject preparedFoodParentObject, string stateChildName, PreparedFood pf, bool createCollider, ref Bounds itemBounds)
 				{
 						List <Renderer> renderers = new List <Renderer>();
 
+						preparedFoodParentObject.layer = Globals.LayerNumWorldItemActive;
 						GameObject preparedFoodGameObject = preparedFoodParentObject.FindOrCreateChild(stateChildName).gameObject;
 
 						switch (pf.FoodType) {
@@ -195,9 +197,9 @@ namespace Frontiers
 										switch (pf.FoodStyle) {
 												case PreparedFoodStyle.PlateIngredients:
 												case PreparedFoodStyle.BowlIngredients:
-					//if we haven't already looked up the ingredients
-					//based on the blueprint
-					//do that now before sending it over
+												//if we haven't already looked up the ingredients
+												//based on the blueprint
+												//do that now before sending it over
 														if (pf.Ingredients == null) {
 																Get.FindIngredients(pf);
 														}
@@ -240,11 +242,15 @@ namespace Frontiers
 										}
 										break;
 						}
-
+						preparedFoodGameObject.layer = Globals.LayerNumWorldItemActive;
 						itemBounds.center = preparedFoodGameObject.transform.position;
-						itemBounds.size = Vector3.one;
+						itemBounds.size = Vector3.zero;
 						for (int i = 0; i < renderers.Count; i++) {
 								itemBounds.Encapsulate(renderers[i].bounds);
+						}
+						if (createCollider) {
+								BoxCollider bc = preparedFoodGameObject.GetOrAdd <BoxCollider>();
+								bc.size = itemBounds.size;
 						}
 				}
 
@@ -329,6 +335,7 @@ namespace Frontiers
 						flatFoodGameobject.transform.localScale = foodPrefab.transform.localScale;
 						flatFoodGameobject.transform.localPosition = offset;
 						flatFoodGameobject.transform.localRotation = foodPrefab.transform.localRotation;
+						//add a box collider
 				}
 
 				protected GameObject CreateBakedGood(GameObject bakedGoodParent, int bakedGoodsIndex, List <Renderer> renderers)

@@ -14,6 +14,9 @@ namespace Frontiers.GUI
 				public GameObject TakeContainerButton = null;
 				public GameObject TakeAllButton = null;
 				public WIStackEnabler Enabler = null;
+				public UIButtonMessage ShowHideButton;
+				public UILabel ContainerName;
+				public bool Visible = false;
 
 				public bool HasEnabler {
 						get {
@@ -27,21 +30,35 @@ namespace Frontiers.GUI
 						ContainerDisplay.EnablerDisplayPrefab = GUIManager.Get.InventorySquareEnablerDisplay;
 						ContainerDisplay.UseVisualEnabler = true;
 						ContainerDisplay.SetEnabler(Enabler);
+						ContainerDisplay.Hide();
+
+						ShowHideButton.target = gameObject;
+						ShowHideButton.functionName = "OnClickShowHideButton";
+
+						ContainerName.text = "(No container opened)";
+				}
+
+				public void OnClickShowHideButton ( )
+				{
+						Visible = false;
 				}
 
 				public void OpenStackContainer(IWIBase containerItem)
 				{
+						Visible = true;
 						StartCoroutine(OpenStackContainerOverTime(containerItem));
 				}
 
 				public void Show()
 				{
+						Visible = true;
 						ContainerDisplay.Show();
 						RefreshRequest();
 				}
 
 				public void Hide()
 				{
+						Visible = false;
 						ClearContainer();
 						ContainerDisplay.Hide();
 				}
@@ -83,12 +100,16 @@ namespace Frontiers.GUI
 						bool enableTakeContainer = false;
 			
 						if (ContainerDisplay.HasEnabler && Enabler.HasEnablerContainer) {
+								ContainerName.text = "Contents of container:";
 								WIStackContainer container = Enabler.EnablerContainer;
 								IStackOwner owner = null;
 								if (container.HasOwner(out owner) && owner.IsWorldItem) {
 										//the owner will be the world item
 										WorldItem containerWorldItem = container.Owner.worlditem;
+										ContainerDisplay.EnablerDisplay.DopplegangerProps.CopyFrom(containerWorldItem);
+										ContainerDisplay.RefreshRequest();
 										//now check to see if that world item belongs to a non-player group
+										ContainerName.text = "Contents of: " + containerWorldItem.DisplayName;
 										if (containerWorldItem.Group.HasOwner(out owner) && owner == Player.Local) {
 												enableTakeAll = true;
 												if (containerWorldItem.CanEnterInventory) {
@@ -96,6 +117,8 @@ namespace Frontiers.GUI
 												}
 										}
 								}
+						} else {
+								ContainerName.text = "(No container opened)";
 						}
 			
 				}
@@ -103,6 +126,7 @@ namespace Frontiers.GUI
 				public void ClearContainer()
 				{
 						Stacks.Clear.Enabler(Enabler);
+						Visible = false;
 						RefreshRequest();
 				}
 
@@ -117,6 +141,19 @@ namespace Frontiers.GUI
 						Stacks.Clear.Enabler(Enabler);
 						Stacks.Display.ItemInEnabler(containerItem, Enabler);
 						RefreshRequest();
+						yield return null;//wait for the request to hit
+						//now see who owns this container
+						if (containerItem.Group == WIGroups.Get.Player) {
+								//turn OFF shift click
+								for (int i = 0; i < ContainerDisplay.InventorySquares.Count; i++)
+										ContainerDisplay.InventorySquares[i].AllowShiftClick = true;
+						}
+						else {
+								//allow shift-click if it's not our container
+								//it'll intercept 'remove item' requests
+								for (int i = 0; i < ContainerDisplay.InventorySquares.Count; i++)
+										ContainerDisplay.InventorySquares[i].AllowShiftClick = true;
+						}
 						mOpeningContainer = false;
 				}
 		}

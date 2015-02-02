@@ -3,6 +3,7 @@ using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
 
 [CustomEditor(typeof(BookAvatar))]
 public class BookAvatarEditor : Editor

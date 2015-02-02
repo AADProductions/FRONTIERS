@@ -20,6 +20,8 @@ namespace Frontiers.World
 				}
 
 				public bool ForceGeneric = false;
+				public bool StartupItemsCategory = false;
+				public bool StartupClothingCategory = false;
 				public List <GenericWorldItem> GenericWorldItems = new List <GenericWorldItem>();
 				public GenericWorldItem DefaultItem = null;
 

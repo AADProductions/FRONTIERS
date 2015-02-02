@@ -9,14 +9,15 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Gameplay;
 using Frontiers.Data;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.Story.Conversations
 {
 		[ExecuteInEditMode]
 		public class Conversation : MonoBehaviour
 		{
+				public string ConversationName;
 				public static bool ConversationInProgress = false;
 				[NonSerialized]
 				public static Conversation LastInitiatedConversation;
@@ -28,16 +29,21 @@ namespace Frontiers.Story.Conversations
 				public ConversationState State;
 				protected Dictionary <string, Exchange> mExchangeLookup;
 
+				public bool Initiating {
+						get {
+								return mInitiating;
+						}
+				}
+
 				public void Awake()
 				{
 						mExchangeLookup = new Dictionary<string, Exchange>();
 						mRunningOutgoingChoices = new HashSet <Exchange>();
 						DisplayVariables = new List <string>();
-						Props = new ConversationProps();
-						State = new ConversationState();
 						mExchanges = new List <Exchange>();
 						mAlwaysInclude = new HashSet <Exchange>();
 						mChangedNames = new Dictionary <string, string>();
+						mInitiating = false;
 				}
 
 				public bool IsActive {
@@ -87,6 +93,7 @@ namespace Frontiers.Story.Conversations
 				}
 
 				public Character SpeakingCharacter;
+				public Talkative SpeakingCharacterTalkative;
 				public List <string> DisplayVariables;
 				// = new List <string> ();
 				public bool DespawnCharacterAfterConversation = false;
@@ -127,38 +134,81 @@ namespace Frontiers.Story.Conversations
 						return dialog;
 				}
 
-				public virtual bool Initiate(Character speakingCharacter)
+				public void Initiate(Character speakingCharacter, Talkative talkative)
 				{
+						Debug.Log("Initiating conversation with " + speakingCharacter.FullName);
 						SpeakingCharacter = speakingCharacter;
-						Refresh();
-						if (OpeningExchange.IsAvailable) {
-								if (SpeakingCharacter.State.Emotion == EmotionalState.Angry) {
-										GUI.GUIManager.PostInfo(SpeakingCharacter.State.Name.FirstName + " doesn't want to speak to you.");
-										return false;
+						SpeakingCharacterTalkative = talkative;
+
+						if (SpeakingCharacter.State.Emotion == EmotionalState.Angry) {
+								GUI.GUIManager.PostInfo(SpeakingCharacter.State.Name.FirstName + " doesn't want to speak to you.");
+								return;
+						} else {
+								mInitiating = true;
+								StartCoroutine(InitiateoverTime());
+						}
+				}
+
+				protected IEnumerator InitiateoverTime ( ) {
+
+						//at this point the convo will have been loaded
+						mExchanges.Clear();
+						mExchangeLookup.Clear();
+						mAlwaysInclude.Clear();
+
+						//add all the exchanges to the lookup
+						mExchanges.Add(Props.DefaultOpeningExchange);
+						Exchange exchange = null;
+						for (int i = 0; i < Props.Exchanges.Count; i++) {
+								exchange = Props.Exchanges[i];
+								exchange.ParentConversation = this;
+								mExchanges.SafeAdd(exchange);
+						}
+						yield return null;
+						//refresh the lookup table
+						for (int i = 0; i < mExchanges.Count; i++) {
+								exchange = mExchanges[i];
+								mExchangeLookup.Add(exchange.Name, exchange);
+								if (exchange.AlwaysInclude) {
+										mAlwaysInclude.Add(exchange);
 								}
-								//possibly move this somewhere else
+						}
+						yield return null;
+						Exchange parentExchange = null;
+						//now that the lookup table is refreshed
+						//set the owners and refresh each exchange
+						for (int i = 0; i < mExchanges.Count; i++) {
+								exchange = mExchanges[i];
+								if (!string.IsNullOrEmpty(exchange.ParentExchangeName)) {
+										mExchangeLookup.TryGetValue(exchange.ParentExchangeName, out parentExchange);
+								}
+								exchange.SetOwners(this, parentExchange);
+								exchange.Refresh();
+						}
+						yield return null;
+						//alright everything's linked up, let's get this party started
+						if (OpeningExchange.IsAvailable) {
+								ConversationInProgress = true;
 								SpeakingCharacter.State.KnowsPlayer = true;
 								LastInitiatedConversation = this;
 								State.NumTimesInitiated++;
-
 								LatestExchange = null;
 								mRunningOutgoingChoices.Clear();
 								OpeningExchange.Refresh();
 								string dtsOnFailure = string.Empty;
 								MakeOutgoingChoice(OpeningExchange, out dtsOnFailure);
-								ConversationInProgress = true;
-								Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.NpcConverseStart), WorldClock.Time);
-								return true;
+
+								Player.Get.AvatarActions.ReceiveAction(AvatarAction.NpcConverseStart, WorldClock.AdjustedRealTime);
 						} else {
+								Debug.Log("Opening exchange is not available");
 								ConversationInProgress = false;
 								SpeakingCharacter.worlditem.RefreshHud();
 								if (!string.IsNullOrEmpty(OpeningExchange.DtsOnFailure)) {
-										Debug.Log("Whoops opening exchange had dts on failure");
-										Talkative talkative = SpeakingCharacter.worlditem.Get <Talkative>();
-										talkative.SayDTS(OpeningExchange.DtsOnFailure);
+										SpeakingCharacterTalkative.SayDTS(OpeningExchange.DtsOnFailure);
 								}
 						}
-						return false;
+						mInitiating = false;
+						yield break;
 				}
 
 				public void Clear()
@@ -184,7 +234,7 @@ namespace Frontiers.Story.Conversations
 						//save state
 						Save();
 						//broadcast conclusion
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.NpcConverseEnd), WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.NpcConverseEnd, WorldClock.AdjustedRealTime);
 						//destroy this a little bit
 						mConcluded = true;
 						SpeakingCharacter = null;
@@ -297,41 +347,6 @@ namespace Frontiers.Story.Conversations
 						return false;
 				}
 
-				public void Refresh()
-				{
-						mExchanges.Clear();
-						mExchangeLookup.Clear();
-						mAlwaysInclude.Clear();
-
-						//add all the exchanges to the lookup
-						mExchanges.Add(Props.DefaultOpeningExchange);
-						Exchange exchange = null;
-						for (int i = 0; i < Props.Exchanges.Count; i++) {
-								exchange = Props.Exchanges[i];
-								exchange.ParentConversation = this;
-								mExchanges.SafeAdd(exchange);
-						}
-
-						//refresh the lookup table
-						for (int i = 0; i < mExchanges.Count; i++) {
-								exchange = mExchanges[i];
-								mExchangeLookup.Add(exchange.Name, exchange);
-								if (exchange.AlwaysInclude) {
-										mAlwaysInclude.Add(exchange);
-								}
-						}
-						Exchange parentExchange = null;
-						//now that the lookup table is refreshed
-						//set the owners and refresh each exchange
-						for (int i = 0; i < mExchanges.Count; i++) {
-								exchange = mExchanges[i];
-								if (!string.IsNullOrEmpty(exchange.ParentExchangeName)) {
-										mExchangeLookup.TryGetValue(exchange.ParentExchangeName, out parentExchange);
-								}
-								exchange.SetOwners(this, parentExchange);
-								exchange.Refresh();
-						}
-				}
 				//TODO move this into GameData
 				protected string WrapBracketedDialogInColor(string dialog)
 				{
@@ -434,6 +449,9 @@ namespace Frontiers.Story.Conversations
 										break;
 
 								case ExchangeOutgoingStyle.ManualOnly:
+										//all existing options are cleared and only manual #on options are added
+										mRunningOutgoingChoices.Clear();
+										clearSiblngs = true;
 										break;
 
 								case ExchangeOutgoingStyle.Stop:
@@ -508,12 +526,13 @@ namespace Frontiers.Story.Conversations
 						numTimesChosen++;
 						State.CompletedExchanges[exchange.Name] = numTimesChosen;
 						//save before broadcasting so mission scripts etc. can access data
-						Save();
+						//Save();
 						//broadcast choice
-						Player.Get.AvatarActions.ReceiveAction(new PlayerAvatarAction(AvatarAction.NpcConverseExchange), WorldClock.Time);
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.NpcConverseExchange, WorldClock.AdjustedRealTime);
 
 						//now that we've concluded we call on choose for global scripts
-						foreach (ExchangeScript globalScript in State.GlobalScripts) {
+						for (int i = 0; i < State.GlobalScripts.Count; i++) {
+								ExchangeScript globalScript = State.GlobalScripts[i];
 								globalScript.OnChoose(lastIncomingChoice);
 						}
 
@@ -593,14 +612,14 @@ namespace Frontiers.Story.Conversations
 						return State.DisabledExchanges.Contains(exchangeName);
 				}
 
-				public void Load(ConversationState state)
+				public void Load(ConversationState state, string conversationName)
 				{
+						ConversationName = conversationName;
 						ConversationProps props = null;
-						if (Mods.Get.Runtime.LoadMod <ConversationProps>(ref props, "Conversation", Props.Name)) {
-								Props = props;
-								State = state;
+						if (Mods.Get.Runtime.LoadMod <ConversationProps>(ref props, "Conversation", ConversationName)) {
+							State = state;
+							Props = props;
 						}
-						Refresh();
 				}
 
 				public void Save()
@@ -609,6 +628,42 @@ namespace Frontiers.Story.Conversations
 						State.Name = Props.Name + "-State";
 						Mods.Get.Runtime.SaveMod <ConversationState>(State, "Conversation", State.Name);
 				}
+
+				public void RefreshImmediately () {
+						//at this point the convo will have been loaded
+						mExchanges.Clear();
+						mExchangeLookup.Clear();
+						mAlwaysInclude.Clear();
+
+						//add all the exchanges to the lookup
+						mExchanges.Add(Props.DefaultOpeningExchange);
+						Exchange exchange = null;
+						for (int i = 0; i < Props.Exchanges.Count; i++) {
+								exchange = Props.Exchanges[i];
+								exchange.ParentConversation = this;
+								mExchanges.SafeAdd(exchange);
+						}
+						//refresh the lookup table
+						for (int i = 0; i < mExchanges.Count; i++) {
+								exchange = mExchanges[i];
+								mExchangeLookup.Add(exchange.Name, exchange);
+								if (exchange.AlwaysInclude) {
+										mAlwaysInclude.Add(exchange);
+								}
+						}
+						Exchange parentExchange = null;
+						//now that the lookup table is refreshed
+						//set the owners and refresh each exchange
+						for (int i = 0; i < mExchanges.Count; i++) {
+								exchange = mExchanges[i];
+								if (!string.IsNullOrEmpty(exchange.ParentExchangeName)) {
+										mExchangeLookup.TryGetValue(exchange.ParentExchangeName, out parentExchange);
+								}
+								exchange.SetOwners(this, parentExchange);
+								exchange.Refresh();
+						}
+				}
+
 				#if UNITY_EDITOR
 				public void EditorSave()
 				{
@@ -628,7 +683,6 @@ namespace Frontiers.Story.Conversations
 								Props = props;
 								State = state;
 						}
-						Refresh();
 				}
 				#endif
 				protected bool mConcluded = false;
@@ -638,6 +692,7 @@ namespace Frontiers.Story.Conversations
 				protected HashSet <Exchange> mAlwaysInclude;
 				protected Dictionary <string, string> mChangedNames;
 				protected string mUniqueNameJoin = ".";
+				protected bool mInitiating = false;
 				public static string[] PageBreakStrings = new string [] { "{PageBreak}", "{pagebreak}", "{Pagebreak}" };
 				//TODO move this into GameData - do we even need it any more?
 				public static string WrapText(string the_string, int width)

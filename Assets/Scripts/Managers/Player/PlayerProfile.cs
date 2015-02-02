@@ -121,6 +121,8 @@ namespace Frontiers
 				public List <MobileReference> NewLocations;
 				public List <MobileReference> RevealedLocations;
 				public List <string> LocationTypesToDisplay;
+				public List <SkillStartupSetting> SkillStartupSettings;
+				public string CustomStartupPosition = string.Empty;
 				[XmlIgnore]
 				[NonSerialized]
 				public DifficultySetting Difficulty;
@@ -141,25 +143,27 @@ namespace Frontiers
 						PlayerCharacter defaultCharacter = new PlayerCharacter();
 						defaultCharacter.Age = 27;
 						defaultCharacter.FirstName = "Player";
-						defaultCharacter.BodyName = Globals.DefaultCharacterBodyName;
-						defaultCharacter.FaceTextureName = Globals.DefaultCharacterFaceTextureName;
-						defaultCharacter.BodyTextureName = Globals.DefaultCharacterBodyTextureName;
+						defaultCharacter.BodyName = Globals.DefaultMalePlayerBody;
+						defaultCharacter.FaceTextureName = Globals.DefaultMalePlayerFaceTexture;
+						defaultCharacter.BodyTextureName = Globals.DefaultMalePlayerBodyTexture;
 						defaultCharacter.Gender = CharacterGender.Male;
 						defaultCharacter.Ethnicity = CharacterEthnicity.Caucasian;
 						defaultCharacter.HairColor = CharacterHairColor.Brown;
-						defaultCharacter.EyeColor = CharacterEyeColor.Grey;
+						defaultCharacter.EyeColor = CharacterEyeColor.Blue;
 						defaultCharacter.HairLength = CharacterHairLength.Short;
 						defaultCharacter.OnCreated();
 
 						return defaultCharacter;
 				}
 
+				public bool CreatedManually = false;
 				public string FirstName = string.Empty;
 				public string NickName = string.Empty;
 				public int Age = -1;
 				public string Version = "0.0.0";
 				public string FaceTextureName;
 				public string BodyTextureName;
+				public string HairTextureName;
 				public string BodyName;
 				public CharacterGender Gender = CharacterGender.None;
 				public CharacterEthnicity Ethnicity = CharacterEthnicity.None;
@@ -169,18 +173,18 @@ namespace Frontiers
 				public PlayerExperience Exp = new PlayerExperience();
 				public PlayerReputation Rep = new PlayerReputation();
 
-				public void OnCreated()
-				{
-						//TODO move these defaults into globals
+				public void RefreshVisual () {
 						//chooses body + face / body textures
 						if (Gender == CharacterGender.Male) {
-								BodyName = "Body_C_U_2";
-								FaceTextureName = "Face_CC_Player_M_A";
-								BodyTextureName = "Body_Lrg_C_Settler_U_1";
+								BodyName = Globals.DefaultMalePlayerBody;
+								FaceTextureName = Globals.DefaultMalePlayerFaceTexture;
+								BodyTextureName = Globals.DefaultMalePlayerBodyTexture;
+								HairTextureName = Globals.DefaultMalePlayerHairTexture;
 						} else {
-								BodyName = "Body_C_F_5";
-								FaceTextureName = "Face_CC_Player_F_A";
-								BodyTextureName = "Body_Med_C_Settler_F_1";
+								BodyName = Globals.DefaultFemalePlayerBody;
+								FaceTextureName = Globals.DefaultFemalePlayerFaceTexture;
+								BodyTextureName = Globals.DefaultFemalePlayerBodyTexture;
+								HairTextureName = Globals.DefaultFemalePlayerHairTexture;
 						}
 
 						switch (Ethnicity) {
@@ -200,6 +204,11 @@ namespace Frontiers
 										FaceTextureName = FaceTextureName.Replace("_A", "_D");
 										break;
 						}
+				}
+
+				public void OnCreated()
+				{
+						RefreshVisual();
 				}
 		}
 
@@ -454,6 +463,7 @@ namespace Frontiers
 								PostFXGrain = copyFrom.PostFXGrain;
 								PostFXMBlur = copyFrom.PostFXMBlur;
 								PostFXAA = copyFrom.PostFXAA;
+								PostFXGlobalFog = copyFrom.PostFXGlobalFog;
 								HDR = true;// copyFrom.HDR;
 
 								ResolutionWidth = copyFrom.ResolutionWidth;
@@ -578,6 +588,7 @@ namespace Frontiers
 												SetOrDisablePostEffect(CameraFX.Get.Default.Grain, true, ref PostFXGrain);
 												//SetOrDisablePostEffect(CameraFX.Get.Default.MotionBlur, true, ref PostFXMBlur);
 												SetOrDisablePostEffect(CameraFX.Get.Default.AA, true, ref PostFXAA);
+												SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref PostFXGlobalFog);
 										}
 
 										QualitySettings.masterTextureLimit = TextureResolution;
@@ -631,6 +642,7 @@ namespace Frontiers
 						public bool PostFXMBlur = false;
 						public bool PostFXGrain = false;
 						public bool PostFXAA = false;
+						public bool PostFXGlobalFog = true;
 						public bool HDR = true;
 						public int ResolutionWidth = 1920;
 						public int ResolutionHeight = 1080;

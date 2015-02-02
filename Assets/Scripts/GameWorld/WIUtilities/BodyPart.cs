@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.Gameplay;
 using System;
 using System.Collections.Generic;
 
@@ -31,7 +30,7 @@ public class BodyPart : MonoBehaviour
 				}
 
 				GameObject ragdollRbObject = gameObject;//new GameObject (Type.ToString ());
-				gameObject.layer = Globals.LayerNumWorldItemActive;
+				gameObject.layer = Globals.LayerNumWorldItemActive;//make sure it collides with the ground
 
 				PartCollider.enabled = true;
 				RagdollRB = ragdollRbObject.GetOrAdd <Rigidbody>();
@@ -49,20 +48,22 @@ public class BodyPart : MonoBehaviour
 
 		public void LinkRagdollParts(WorldBody body)
 		{
-				if (Type != BodyPartType.Chest && ParentPart == null) {
-						if (!body.GetBodyPart(BodyPartType.Chest, out ParentPart)) {
-								if (Type != BodyPartType.Hip) {
-										body.GetBodyPart(BodyPartType.Hip, out ParentPart);
+				if (Type != BodyPartType.Chest) {
+						if (ParentPart == null) {
+								if (!body.GetBodyPart(BodyPartType.Chest, out ParentPart)) {
+										if (Type != BodyPartType.Hip) {
+												body.GetBodyPart(BodyPartType.Hip, out ParentPart);
+										}
 								}
 						}
-				}
 
-				if (ParentPart != null && ParentPart.RagdollRB != null) {
-						CharacterJoint joint = ParentPart.RagdollRB.gameObject.AddComponent <CharacterJoint>();
-						joint.connectedBody = RagdollRB;
-						joint.breakForce = Mathf.Infinity;
-				} else {
-						Debug.Log("Couldn't connect part " + Type.ToString() + " to parent part in ragdoll");
+						if (ParentPart != null && ParentPart.RagdollRB != null) {
+								CharacterJoint joint = ParentPart.RagdollRB.gameObject.AddComponent <CharacterJoint>();
+								joint.connectedBody = RagdollRB;
+								joint.breakForce = Mathf.Infinity;
+						} else {
+								Debug.Log("Couldn't connect part " + Type.ToString() + " to parent part in ragdoll");
+						}
 				}
 		}
 
@@ -74,10 +75,12 @@ public class BodyPart : MonoBehaviour
 
 				tr.localPosition = LocalPositionBeforeRagdoll;
 				tr.localRotation = LocalRotationBeforeRagdoll;
-				PartCollider.enabled = true;
 				if (Type == BodyPartType.Head) {
 						gameObject.layer = Globals.LayerNumAwarenessReceiver;//the head is what listens for sound
+				} else {
+						gameObject.layer = Globals.LayerNumBodyPart;
 				}
+				PartCollider.enabled = true;
 
 				enabled = false;
 		}
@@ -144,6 +147,8 @@ public class BodyPart : MonoBehaviour
 						gameObject.layer = Globals.LayerNumScenery;
 				} else if (Owner.IOIType == ItemOfInterestType.Player) {
 						gameObject.layer = Globals.LayerNumPlayer;
+				} else {
+						gameObject.layer = Globals.LayerNumBodyPart;
 				}
 		}
 

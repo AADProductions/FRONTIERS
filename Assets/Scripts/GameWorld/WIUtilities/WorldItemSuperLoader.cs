@@ -20,6 +20,7 @@ namespace Frontiers.World
 
 				public IEnumerator LoadGroupsOverTime()
 				{
+						Debug.Log("Superloading path " + GroupPath);
 						GroupsToLoad = WIGroup.SplitPath(GroupPath);
 						//pop the first - it will be the root
 						GroupsToLoad.Pop();
@@ -30,10 +31,10 @@ namespace Frontiers.World
 								//start at the root and then load the groups all the way down
 								//we'll keep loading groups until we've loaded everything in the stack
 								while (GroupsToLoad.Count > 0) {
-										//State = "Loading group";
+										State = "Loading group";
 										WIGroup nextGroup = null;
 										while (!LastGroupLoaded.Is(WIGroupLoadState.Loaded) || !LastGroupLoaded.GetChildGroup(out nextGroup, NextGroupToLoad)) {
-												//State = "Waiting for child group " + NextGroupToLoad;
+												State = "Waiting for child group " + NextGroupToLoad;
 												Ticks++;
 												yield return null;
 										}
@@ -52,7 +53,7 @@ namespace Frontiers.World
 								while (!LastGroupLoaded.FindChildItem(ChildItemFileName, out LoadedWorldItem)) {	
 										//LastGroupLoaded.State = WIGroupState.ForceLoad;
 										Ticks++;
-										//State = "Waiting for child item " + ChildItemFileName;
+										State = "Waiting for child item " + ChildItemFileName;
 										yield return null;
 								}
 						}

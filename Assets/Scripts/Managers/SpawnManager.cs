@@ -51,8 +51,13 @@ namespace Frontiers
 
 				public override void OnGameLoadFirstTime()
 				{
+						Debug.Log("Loading game for first time");
+						string startupPositionName = GameWorld.Get.Settings.FirstStartupPosition;
+						if (!string.IsNullOrEmpty(Profile.Get.CurrentGame.CustomStartupPosition)) {
+								startupPositionName = Profile.Get.CurrentGame.CustomStartupPosition;
+						}
 						for (int i = 0; i < GameWorld.Get.WorldStartupPositions.Count; i++) {
-								if (GameWorld.Get.WorldStartupPositions[i].Name == GameWorld.Get.Settings.FirstStartupPosition) {
+								if (GameWorld.Get.WorldStartupPositions[i].Name == startupPositionName) {
 										CurrentStartupPosition = GameWorld.Get.WorldStartupPositions[i];
 										break;
 								}
@@ -271,6 +276,7 @@ namespace Frontiers
 						//use the character's state as a startup position
 						if (startupPosition == null) {
 								//the player state should be not-null by now
+								Debug.Log("Using player startup position");
 								startupPosition = Player.Local.GetStartupPosition();
 						}
 
@@ -308,7 +314,19 @@ namespace Frontiers
 						GameWorld.Get.SuspendChunkLoading = false;
 						WorldItems.Get.SuspendWorldItemUpdates = false;
 						//set the primary chunk and let it load
-						GameWorld.Get.SetPrimaryChunk(startupPosition.ChunkID);
+						//put the player in the middle of the chunk to be loaded first
+						mLoadingInfo = "Waiting for chunks to load";
+						while (!GameWorld.Get.ChunksLoaded) {
+								yield return null;
+						}
+						if (!GameWorld.Get.SetPrimaryChunk(startupPosition.ChunkID)) {
+								mLoadingInfo = "Couldn't set primary chunk, halting load: " + startupPosition.ChunkID.ToString();
+								yield break;
+						}
+						//set the startup position so managers know where the player will end up
+						startupPosition.WorldPosition.Position = (GameWorld.Get.PrimaryChunk.ChunkOffset + startupPosition.ChunkPosition.Position);
+						startupPosition.WorldPosition.Rotation = startupPosition.ChunkPosition.Rotation;
+						//wait for the rest of the chunk to load
 						while (GameWorld.Get.PrimaryChunk.CurrentMode != ChunkMode.Primary) {
 								mLoadingInfo = "Waiting for primary chunk to load";
 								yield return null;
@@ -333,6 +351,28 @@ namespace Frontiers
 										startupPosition.ChunkPosition,
 										startChunk.ChunkOffset,
 										0.1f));
+
+								//since we're not inside a structure
+								//we could be standing on something
+								//either a minor structure or chunk prefab
+								if (startupPosition.RequiresMeshTerrain) {
+										//wait for something to show up below the player before letting them go
+										GameWorld.TerrainHeightSearch terrainHit = new GameWorld.TerrainHeightSearch();
+										terrainHit.feetPosition = startupPosition.WorldPosition.Position;
+										terrainHit.groundedHeight = Globals.DefaultCharacterGroundedHeight;
+										terrainHit.overhangHeight = Globals.DefaultCharacterHeight;
+										bool foundSomethingBelowPlayer = false;
+										double timeOut = WorldClock.RealTime + 30f;
+										mLoadingInfo = "Waiting for mesh below player's feet";
+										while (WorldClock.RealTime < timeOut) {
+												GameWorld.Get.TerrainHeightAtInGamePosition(ref terrainHit);
+												//see if we hit a mesh
+												if (terrainHit.hitTerrainMesh) {
+														break;
+												}
+												yield return null;
+										}
+								}
 						}
 
 						//immediately add the game offset
@@ -355,9 +395,6 @@ namespace Frontiers
 						GC.Collect();
 						Resources.UnloadUnusedAssets();
 						yield return null;
-
-						startupPosition.WorldPosition.Position = (GameWorld.Get.PrimaryChunk.ChunkOffset + startupPosition.ChunkPosition.Position);
-						startupPosition.WorldPosition.Rotation = startupPosition.ChunkPosition.Rotation;
 
 						if (GUILoading.IsLoading) {
 								StartCoroutine(GUILoading.LoadFinish());
@@ -386,7 +423,7 @@ namespace Frontiers
 						mStartupStructure.LoadPriority = StructureLoadPriority.SpawnPoint;
 						Structures.AddExteriorToLoad(mStartupStructure);
 
-						while (!mStartupStructure.Is(StructureLoadState.ExteriorLoaded)) {
+						while (!mStartupStructure.Is(StructureLoadState.ExteriorLoaded | StructureLoadState.InteriorLoading | StructureLoadState.InteriorLoaded)) {
 								mLoadingInfo = "Waiting for exterior to build";
 								if ((WorldClock.RealTime - startBuildTime) > 20f) {
 										mLoadingInfo = "Exterior build timeout!";
@@ -473,15 +510,15 @@ namespace Frontiers
 						mStartupStructure = mStartupStructureWorldItem.Get <Structure>();
 				}
 
-				public override void OnGameStart()
+				public override void OnLocalPlayerDie()
 				{
-						Debug.Log("Setting last spawn point to null");
 						CurrentStartupPosition = null;
 				}
 
 				public override void OnLocalPlayerSpawn()
 				{
 						if (UseStartupPosition) {
+
 								if (CurrentStartupPosition.ClearInventory) {
 										Player.Local.Inventory.ClearInventory(CurrentStartupPosition.DestroyClearedItems);
 								}
@@ -504,7 +541,6 @@ namespace Frontiers
 										Blueprints.ClearLog();
 								}
 						}
-						Debug.Log("On local player spawn in SpawnManager");
 				}
 
 				protected WorldItem mSpawnStructureWorldItem = null;

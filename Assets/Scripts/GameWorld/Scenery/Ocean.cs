@@ -95,12 +95,16 @@ namespace Frontiers.World
 										SubmergedObjects.RemoveAt(i);
 								} else {
 										subObj.Seeker = seeker;
-										if (subObj.HasExitedWater && (WorldClock.Time - subObj.TimeExitedWater) > interestInterval) {
+										if (subObj.HasExitedWater && (WorldClock.AdjustedRealTime - subObj.TimeExitedWater) > interestInterval) {
 												//just in case we're already targeting a submerged object
 												subObj.IsOfInterest = false;
 												SubmergedObjects.RemoveAt(i);
 										} else if (subObj.Target.IOIType == ItemOfInterestType.Player && subObj.Target.player.IsDead) {
 												subObj.IsOfInterest = false;
+												SubmergedObjects.RemoveAt(i);
+										} else if (subObj.Target.Position.y > Biomes.Get.TideWaterElevation) {
+												//if the target's position is higher than the water position then it can't be underwater
+												subObj.IsOfInterest = true;
 												SubmergedObjects.RemoveAt(i);
 										} else {
 												subObj.IsOfInterest = true;
@@ -126,7 +130,7 @@ namespace Frontiers.World
 										return;
 								}
 						}
-						SubmergedObjects.Add(new SubmergedObject(Leviathan, target, (float)WorldClock.Time));
+						SubmergedObjects.Add(new SubmergedObject(Leviathan, target, (float)WorldClock.AdjustedRealTime));
 				}
 
 				public void OnItemOfInterestExitWater()
@@ -134,7 +138,7 @@ namespace Frontiers.World
 						IItemOfInterest target = SubmergeTrigger.LastExitedItemOfInterest;
 						for (int i = SubmergedObjects.Count - 1; i >= 0; i--) {
 								if (SubmergedObjects[i].Target == target) {
-										SubmergedObjects[i].TimeExitedWater = (float)WorldClock.Time;
+										SubmergedObjects[i].TimeExitedWater = (float)WorldClock.AdjustedRealTime;
 										SubmergedObjects.RemoveAt(i);
 										break;
 								}
@@ -210,8 +214,8 @@ namespace Frontiers.World
 				public void LateUpdate()
 				{
 						if (GameManager.Is(FGameState.InGame) && !GameManager.Get.TestingEnvironment) {
-								Pivot.position = Player.Local.FPSController.SmoothPosition.WithY(GameWorld.Get.TideWaterElevation);
-								OverlayPivot.position = OverlayPivot.position.WithY(GameWorld.Get.TideWaterElevation);
+								Pivot.position = Player.Local.FPSController.SmoothPosition.WithY(Biomes.Get.TideWaterElevation);
+								OverlayPivot.position = OverlayPivot.position.WithY(Biomes.Get.TideWaterElevation);
 						}
 				}
 
@@ -261,13 +265,5 @@ namespace Frontiers.World
 								return TimeExitedWater > TimeEnteredWater;
 						}
 				}
-		}
-
-		public enum OceanMode
-		{
-				Default,
-				Full,
-				Partial,
-				Disabled,
 		}
 }

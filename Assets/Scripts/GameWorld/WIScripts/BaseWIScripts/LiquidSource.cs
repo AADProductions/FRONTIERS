@@ -11,6 +11,11 @@ namespace Frontiers.World.BaseWIScripts
 		{
 				public LiquidSourceState State = new LiquidSourceState();
 
+				public override void OnInitialized()
+		{
+						worlditem.OnPlayerUse += OnPlayerUse;
+		}
+
 				public override void PopulateOptionsList(System.Collections.Generic.List<WIListOption> options, List <string> message)
 				{
 						if (mGenericLiquid == null) {
@@ -28,18 +33,16 @@ namespace Frontiers.World.BaseWIScripts
 						options.Add(new WIListOption("Drink " + mGenericLiquid.DisplayName, "Drink"));
 				}
 
+				public void OnPlayerUse ( ) {
+						Drink();
+				}
+
 				public void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{
 						WIListResult dialogResult = secondaryResult as WIListResult;
 
 						if (dialogResult.SecondaryResult.Contains("Drink")) {
-								WorldItem worlditem = null;
-								if (WorldItems.Get.PackPrefab(mGenericLiquid.PackName, mGenericLiquid.PrefabName, out worlditem)) {
-										FoodStuff foodStuff = null;
-										if (worlditem.gameObject.HasComponent <FoodStuff>(out foodStuff)) {
-												FoodStuff.Drink(foodStuff);
-										}
-								}
+								Drink();
 						} else {
 								LiquidContainer liquidContainer = null;
 								if (Player.Local.Tool.IsEquipped && Player.Local.Tool.worlditem.Is <LiquidContainer>(out liquidContainer)) {
@@ -53,6 +56,22 @@ namespace Frontiers.World.BaseWIScripts
 								}
 						}
 						mOptionsListItems.Clear();
+				}
+
+				protected void Drink ( ) {
+						if (mGenericLiquid == null) {
+								if (!WorldItems.GetRandomGenericWorldItemFromCatgeory(State.LiquidCategory, out mGenericLiquid)) {
+										return;
+								}
+						}
+
+						WorldItem worlditem = null;
+						if (WorldItems.Get.PackPrefab(mGenericLiquid.PackName, mGenericLiquid.PrefabName, out worlditem)) {
+								FoodStuff foodStuff = null;
+								if (worlditem.gameObject.HasComponent <FoodStuff>(out foodStuff)) {
+										FoodStuff.Drink(foodStuff);
+								}
+						}
 				}
 
 				protected GenericWorldItem mGenericLiquid = null;

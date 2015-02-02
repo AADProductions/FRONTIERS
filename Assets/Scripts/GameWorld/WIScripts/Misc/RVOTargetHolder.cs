@@ -412,16 +412,3 @@ public class RVOTargetHolder : MonoBehaviour
 				}
 		}
 }
-
-public enum MapDirection
-{
-		A_North,
-		B_NorthEast,
-		C_East,
-		D_SEast,
-		E_South,
-		F_SouthWest,
-		G_West,
-		H_NorthWest,
-		I_None,
-}

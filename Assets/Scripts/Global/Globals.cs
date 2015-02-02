@@ -14,208 +14,214 @@ public static class Globals
 
 		#region difficulty
 
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Movement speed multiplier when player is in water")]
 		public static float DefaultWaterAccelerationPenalty = 0.15f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Jump height multiplier when player is in water")]
 		public static float DefaultWaterJumpPenalty = 0.15f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Amount of force rivers exert on the player")]
 		public static float RiverFlowForceMultiplier = 0.1f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "How quickly resting on a bench or chair restores player strength")]
 		public static float RestStrengthRestoreSpeed = 0.05f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0.1f, 5f, "The timescale of status keepers relative to the global timescale")]
 		public static double StatusKeeperTimecale = 1.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(-5f, 5f, "Multiplier applied to negative changes in status keepers (like losing health, losing strength etc.)")]
 		public static float StatusKeeperNegativeChangeMultiplier = 1f;
-		[DifficultySetting]
+		[EditableDifficultySetting(-5f, 5f, "Multiplier applied to positive changes in status keepers (like gaining health, gaining strength etc.)")]
 		public static float StatusKeeperPositiveChangeMultiplier = 1f;
-		[DifficultySetting]
+		[EditableDifficultySetting(-5f, 5f, "Multiplier applied to negative overflows in status keepers (like high thirst reducing health)")]
 		public static float StatusKeeperNegativeFlowMultiplier = 1f;
-		[DifficultySetting]
+		[EditableDifficultySetting(-5f, 5f, "Multiplier applied to positive overflows in status keepers (like low thirst increasing strength)")]
 		public static float StatusKeeperPositiveFlowMultiplier = 1f;
-		[DifficultySetting]
+		[EditableDifficultySetting]
 		public static double StatusKeeperNeutralChangeMultiplier = 1f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 5f, "How quickly the player's strength is drained per meter traveled in fast-travel mode")]
 		public static float FastTravelStrengthReducedPerMeterTraveled = 0.001f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 100, "These values are mostly used during conversations")]
 		public static int ReputationChangeTiny = 1;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 100, "These values are mostly used during conversations")]
 		public static int ReputationChangeSmall = 2;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 100, "These values are mostly used during conversations")]
 		public static int ReputationChangeMedium = 6;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 100, "These values are mostly used during conversations")]
 		public static int ReputationChangeLarge = 10;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 100, "These values are mostly used during conversations")]
 		public static int ReputationChangeHuge = 20;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 100, "The largest amount of reputation you can lose for any single action. Reserved for killing an innocent person.")]
 		public static int ReputationChangeMurderer = 80;
-		[DifficultySetting]
+		[EditableDifficultySetting(1f, 1000f, "The lowest amount of reputation you can have. Clamped at 1 to prevent some mission conversations from being inaccessible.")]
 		public static float MinReputation = 1;
-		[DifficultySetting]
+		[EditableDifficultySetting(1f, 1000f, "The max amount of reputation you can have. Values over 100 may produce odd behavior.")]
 		public static float MaxReputation = 100;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "How much reputation you lose per base currency of a stolen item's worth")]
 		public static float BaseCurrencyToReputationMultiplier = 0.1f;
-		[DifficultySetting]
+		[EditableDifficultySetting(1f, 500f, "The maximum distance at which a character or creature can hear an audible item")]
 		public static float MaxAudibleRange = 50f;
-		[DifficultySetting]
+		[EditableDifficultySetting(1f, 500f, "The maximum distance at which a character or creature can spot a visible item")]
 		public static float MaxAwarenessDistance = 50f;
-		[DifficultySetting]
+		[EditableDifficultySetting(10f, 360f, "The maximum field of view for characters & creatures")]
 		public static float MaxFieldOfView = 120f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0.1f, 100f, "Time in hours before a luminite crystal will re-grow after being mined")]
 		public static float LuminiteRegrowTime = 5f;
-		[DifficultySetting]
+		[EditableDifficultySetting(EditableDifficultySettingAttribute.SettingType.Bool, true, "Whether darkrot will spawn anywhere or just in forests (defined as g channel in chunk terrain type map)")]
 		public static bool DarkrotSpawnsOnlyInForests = true;
-		[DifficultySetting]
+		[EditableDifficultySetting(0.1f, 100f, "Duration of each darkrot 'step' towards the player")]
 		public static float DarkrotMoveInterval = 2.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0.1f, 100f, "Interval between each darkrot 'step' toward the player")]
 		public static float DarkrotWaitInterval = 2.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0.1f, 100f, "Duration of darkrot's 'warmpup' phase during which it can't attack the player")]
 		public static float DarkrotWarmupTime = 2f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0.1f, 1000f, "Minimum amount of absorbable darkrot is contained in each spawned darkrot node")]
 		public static float DarkrotMinAmount = 10;
-		[DifficultySetting]
+		[EditableDifficultySetting(0.1f, 1000f, "Maximum amount of absorbable darkrot is contained in each spawned darkrot node")]
 		public static float DarkrotMaxAmount = 100;
-		[DifficultySetting]
+		[EditableDifficultySetting(0.1f, 1000f, "Average amount of absorbable darkrot is contained in each spawned darkrot node")]
 		public static float DarkrotAvgAmount = 25;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "How likely darkrot is to emit a sound while taking a step towards the player")]
 		public static float DarkrotEmitSoundProbability = 0.1f;
-		[DifficultySetting]
+		[EditableDifficultySetting]
 		public static float DarkrotUpdateInterval = 0.125f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "How much light is required to disperse a darkrot node")]
 		public static float DarkrotMaxLightAndHeatExposure = 10f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Average spawn distance from the player")]
 		public static float DarkrotSpawnDistance = 10f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Number of seconds needed for darkrot to dissipate after being disperesed")]
 		public static float DarkrotDissipationTime = 2f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Overall probability of darkrot spawning")]
 		public static float DarkrotBaseSpawnProbability = 0.01f;
-		[DifficultySetting]
+		[EditableDifficultySetting]
 		public static float DarkrotPulseInterval = 2.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 1000, "Maximum number of active darkrot nodes")]
 		public static int DarkrotMaxNodes = 100;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Maximum speed at which darkrot moved towards player")]
 		public static float DarkrotMaxSpeed = 1f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1000f, "Time in seconds before a picked plant will re-grow a new plant")]
 		public static float PlantAutoRegrowInterval = 5;
-		[DifficultySetting]
+		[EditableDifficultySetting]
 		public static float PlantAutoReplantInterval = 100;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 10000f, "Base price in grains for the right to sleep at an inn")]
 		public static float InnBasePricePerNight = 12f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Maximum effect of reputation & skill modifiers on barter prices")]
 		public static float BarterMaximumPriceModifier = 0.25f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 100000, "Average net worth of a poor NPC")]
 		public static int WealthLevelPoorBaseCurrency = 100;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 100000, "Average net worth of a middle-class NPC")]
 		public static int WealthLevelMiddleClassBaseCurrency = 1000;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 100000, "Average net worth of a wealthy NPC")]
 		public static int WealthLevelWealthyBaseCurrency = 10000;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 100000, "Average net worth of a royal NPC")]
 		public static int WealthLevelAristocracyBaseCurrency = 100000;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100000f, "Average number of grains (bronze) in a purse")]
 		public static float AveragePurseBronzeCurrency = 1000;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100000f, "Average number of quarters (silver) in a purse")]
 		public static float AveragePurseSilverCurrency = 100;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100000f, "Average number of drams (gold) in a purse")]
 		public static float AveragePurseGoldCurrency = 10;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100000f, "Average number of marks (lumen) in a purse")]
 		public static float AveragePurseLumenCurrency = 2;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1000f, "Number of real-time seconds before live traps check to see if they've been triggered")]
 		public static float TrappingMinimumRTCheckInterval = 30f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Overall probability of an unwatched trap being triggered")]
 		public static float TrappingOddsTimeMultiplier = 0.001f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1000f, "Required distance between player and trap before the trap will spawn a corpse")]
 		public static float TrappingMinimumCorpseSpawnDistance = 50f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Proability modifier for distance from optimal trap position")]
 		public static float TrappingOddsDistanceMultiplier = 2.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 10f, "Damage multiplier for penalties")]
 		public static float DamageMaterialPenaltyMultiplier = 0.5f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 10f, "Damage multiplier for forces")]
 		public static float DamageSumForceMultiplier = 0.35f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 10f, "Damage multiplier for fall damage")]
 		public static float DamageFallDamageMultiplier = 1.25f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Minimum impact required before fall damage will take effect")]
 		public static float DamageMinimumFallImpactThreshold = 5f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 500f, "Maximum possible fall damage from any height")]
 		public static float DamageMaximumFallImpactThreshold = 50f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Damage multiplier for material bonuses")]
 		public static float DamageMaterialBonusMultiplier = 2.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1000f, "Damage caused by rolling stones during a rockslide")]
 		public static float DamageOnRockslideHit = 25f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1000f, "Speed of Leviathan when tracking a target")]
 		public static float LeviathanMoveSpeed = 0.25f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Minimum distance from target before a Leviathan can attack")]
 		public static float LeviathanMinimumAttackDistance = 1.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1000f, "Leviathan spawn distance from target when initially summoned")]
 		public static float LeviathanStartDistance = 50.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Minimum seconds a Leviathan must spend stalking before an attack is possible")]
 		public static float LeviathanRTMinimumStalkInterval = 1.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1000f, "Seconds before a Leviathan will lose interest in tracking a lost target")]
 		public static float LeviathanRTLoseInterestInterval = 5.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Multiplier for a fire's radius - anything inside this radius will burn")]
 		public static float FireBurnDistance = 0.5f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Multiplier for a fire's radius - anything inside this radius will cook")]
 		public static float FireCookDistance = 2.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Multiplier for a fire's radius - anything inside this radius will be warmed")]
 		public static float FireWarmDistance = 4.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Multiplier for a fire's radius - anything that is afraid of fires will be scared at this radius")]
 		public static float FireScareDistance = 8.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1000f, "Number of in-game hours of sleep required to get the Well Rested condition")]
 		public static float WellRestedHours = 8.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Value of stolen goods when bartering")]
 		public static float StolenGoodsValueMultiplier = 0.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Skill rolls below this value count as a critical failure")]
 		public static float SkillCriticalFailure = 0.975f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Skill rolls above this value count as a critical success")]
 		public static float SkillCriticalSuccess = 0.015f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "The player automatically has at least this much proficiency in any acquired skill")]
 		public static float SkillFailsafeMasteryLevel = 0.05f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Distance of player's encounter trigger. This affects creatures, characters and obstacles.")]
 		public static float PlayerEncounterRadius = 7.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting]
 		public static float PlayerControllerStepOffsetDefault = 0.3f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 180f, "The steepest slope in degrees that a character can walk without jumping")]
 		public static float PlayerControllerSlopeLimitDefault = 55f;
-		[DifficultySetting]
+		[EditableDifficultySetting(1, 10000, "Maximum number of 'huge' sized items that can be placed in a stack")]
 		public static int MaxHugeItemsPerStack = 1;
-		[DifficultySetting]
+		[EditableDifficultySetting(1, 10000, "Maximum number of 'large' sized items that can be placed in a stack")]
 		public static int MaxLargeItemsPerStack = 1;
-		[DifficultySetting]
+		[EditableDifficultySetting(1, 10000, "Maximum number of 'medium' sized items that can be placed in a stack")]
 		public static int MaxMediumItemsPerStack = 10;
-		[DifficultySetting]
+		[EditableDifficultySetting(1, 10000, "Maximum number of 'small' sized items that can be placed in a stack")]
 		public static int MaxSmallItemsPerStack = 100;
-		[DifficultySetting]
+		[EditableDifficultySetting(1, 10000, "Maximum number of 'tiny' sized items that can be placed in a stack")]
 		public static int MaxTinyItemsPerStack = 1000;
-		[DifficultySetting]
-		public static float RequiredFoodPerGameHour = 0.125f;
-		[DifficultySetting]
-		public static float RequiredWaterPerGameHour = 0.125f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100000f, "Average number of meters per hour during fast travel, before modifiers")]
 		public static float PlayerAverageMetersPerHour = 500.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1000f, "If the player is at least this far away from an active path they are straying from the path")]
 		public static float PathStrayDistanceInMeters = 6.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Number of seconds the player must be straying before they are warned that they are straying")]
 		public static float PathStrayMinTimeInSeconds = 2.5f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 100f, "Number of seconds the player must be straying before the are no longer following the active path")]
 		public static float PathStrayMaxTimeInSeconds = 15.0f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Multiplier for fast travel speed on an easy-level path")]
 		public static float PathEasyMetersPerHour = PlayerAverageMetersPerHour;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Multiplier for fast travel speed on an average-level path")]
 		public static float PathModerateMetersPerHour = PlayerAverageMetersPerHour * 0.75f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Multiplier for fast travel speed on an moderate-level path")]
 		public static float PathDifficultMetersPerHour = PlayerAverageMetersPerHour * 0.65f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Multiplier for fast travel speed on an difficult-level path")]
 		public static float PathDeadlyMetersPerHour = PlayerAverageMetersPerHour * 0.55f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Multiplier for fast travel speed on an impassible-level path")]
 		public static float PathImpassibleMetersPerHour = PlayerAverageMetersPerHour * 0.35f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 10000000f, "Base price in grains for a book in the guild library")]
 		public static float GuildLibraryBasePrice = 10000;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1000f, "Rate at which fires burn through their fuel")]
 		public static double FireBurnFuelRate = 5f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Multiplier for how much total currency a healer takes upon reviving a player")]
 		public static float HouseOfHealingRevivalCost = 0.5f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0f, 1f, "Multiplier for how much total currency a healer takes for healing the player")]
 		public static float HouseOfHealingHealCost = 0.05f;
-		[DifficultySetting]
+		[EditableDifficultySetting(0, 100000, "Base cost in grains per negative symptom healed")]
 		public static int HouseOfHealingCostPerNegativeSymptom = 150;
+		[EditableDifficultySetting(0, 1000, "Number of hours a character's welcome will last before you must knock again")]
+		public static int NpcRequiredKnockHours = 12;
+		[EditableDifficultySetting(0, 100000, "Base cost for a structure in marks")]
+		public static int StructureBaseValueInMarks = 5;
+		[EditableDifficultySetting(0f, 100f, "Used to calculate building value - number of additional marks per byte of structure template's file size")]
+		public static float StructureValueTemplateMultiplier = 0.01f;
+		[EditableDifficultySetting(0f, 1000f, "Total length of a rockslide in seconds")]
+		public static float RockslideInterval = 10f;
+		[EditableDifficultySetting(0f, 100000f, "Total number of rocks spawned during a rockslide")]
+		public static float RockslideNumRocksToSpawn = 10;
 
 		#endregion
 
@@ -486,6 +492,7 @@ public static class Globals
 		#endregion
 
 		public static int MaxGroupsLoadedPerUpdate = 5;
+		public static float GroupLoadRequestTimeout = 60f;
 		public static float ChunkTerrainDetailMin = 60f;
 		public static float ChunkTerrainDetailMax = 2f;
 		public static float ChunkTerrainGrassDistanceMin = 500f;
@@ -628,7 +635,6 @@ public static class Globals
 		public static string TagBrowserObject = "GuiBrowserObject";
 		public static string TagActiveObject = "GuiActiveObject";
 		public static string TagGuiInputObject = "GuiInputObject";
-
 		public static string TagColliderFluid = "ColliderFluid";
 		public static string TagBodyLeg = "BodyLeg";
 		public static string TagBodyArm = "BodyArm";
@@ -636,7 +642,8 @@ public static class Globals
 		public static string TagBodyTorso = "BodyTorso";
 		public static string TagBodyGeneral = "BodyGeneral";
 		public static string TagStateChild = "StateChild";
-
+		public static string TagNonInteractive = "NonInteractive";
+		public static string TagIgnoreTab = "IgnoreTab";
 		public static float ControllerDeadZoneSizeLStickLower = 0.0f;
 		public static float ControllerDeadZoneSizeLStickUpper = 1.0f;
 		public static float ControllerSensitivityLStick = 1.0f;
@@ -646,7 +653,6 @@ public static class Globals
 		public static float ControllerDeadZoneSizeDPadLower = 0.0f;
 		public static float ControllerDeadZoneSizeDPadUpper = 1.0f;
 		public static float ControllerSensitivityDPad = 1.0f;
-
 		public const int LayerPlayer = 1 << 8;
 		public const int LayerTrigger = 1 << 9;
 		public const int LayerBodyPart = 1 << 10;
@@ -670,24 +676,36 @@ public static class Globals
 		public const int LayerScenery = 1 << 30;
 		public const int LayerHidden = 1 << 31;
 		public const int LayersLightWorld = 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7
-		                                   | LayerPlayer | LayerTrigger | LayerBodyPart | LayerGUIRaycastFallThrough
-		                                   | LayerSolidTerrain | LayerObstacleTerrain
-		                                   | LayerGUIMap | LayerWorldItemActive
-		                                   | /*LayerWorldItemInventory |*/ LayerPlayerTool
+		                                    | LayerPlayer | LayerTrigger | LayerBodyPart | LayerGUIRaycastFallThrough
+		                                    | LayerSolidTerrain | LayerObstacleTerrain
+		                                    | LayerGUIMap | LayerWorldItemActive
+		                                    | /*LayerWorldItemInventory |*/ LayerPlayerTool
 																			/*| LayerGUIRaycastIgnore | LayerGUIRaycastCustom | LayerGUIRaycast*/
-		                                   | LayerGUIHUD | LayerScenery | LayerHidden;
+		                                    | LayerGUIHUD | LayerScenery | LayerHidden;
 		public const int LayersActive = LayerWorldItemActive | LayerSolidTerrain | LayerFluidTerrain | LayerStructureTerrain | LayerObstacleTerrain | LayerBodyPart;
 		public const int LayersItemOfInterest = LayersActive | LayersPlayerAndTools | LayerBodyPart;
 		public const int LayersInactiveAndHidden = LayerHidden;
 		public const int LayersInterface = LayerGUIRaycast | LayerGUIRaycastCustom | LayerGUIRaycastIgnore | LayerWorldItemInventory;
 		public const int LayersPlayerAndTools = LayerPlayer | LayerPlayerTool;
 		public const int LayersTerrain = LayerSolidTerrain | LayerFluidTerrain | LayerStructureTerrain | LayerObstacleTerrain;
+
+		public static string DefaultMalePlayerBody = "Body_C_M_1";
+		public static string DefaultMalePlayerBodyTexture = "Body_Lrg_C_Settler_U_1";
+		public static string DefaultMalePlayerFaceTexture = "Face_CC_Player_M_A";
+		public static string DefaultMalePlayerHairTexture = "Body_Lrg_C_Settler_U_1";
+		public static string DefaultFemalePlayerBody = "Body_C_F_5";
+		public static string DefaultFemalePlayerBodyTexture = "Body_Med_C_Settler_F_1";
+		public static string DefaultFemalePlayerFaceTexture = "Face_CC_Player_F_A";
+		public static string DefaultFemalePlayerHairTexture = "Body_Med_C_Settler_F_1";
+
 		public static Dictionary <string, FieldInfo> Fields {
 				get {
 						return mFields;
 				}
 		}
+
 		static Dictionary <string, FieldInfo> mFields;
+		static List <FieldInfo> mDifficultySettingFields;
 		static FieldInfo mFieldInfoCheck;
 		static System.Object mConvertedValue;
 
@@ -697,13 +715,14 @@ public static class Globals
 						System.Type type = typeof(Globals);
 						FieldInfo[] fields = type.GetFields();
 						foreach (FieldInfo f in fields) {
-								if (f.IsDefined(typeof(DifficultySettingAttribute), true)) {
+								if (f.IsDefined(typeof(EditableDifficultySettingAttribute), true)) {
 										mDifficultySettingFieldNames.Add(f.Name);
 								}
 						}
 				}
 				return mDifficultySettingFieldNames;
 		}
+
 		static List <string> mDifficultySettingFieldNames = new List<string>();
 
 		public static void LoadDifficultySettingData(List<KeyValuePair<string, string>> globalPairs)
@@ -715,7 +734,7 @@ public static class Globals
 
 				foreach (KeyValuePair <string,string> globalPair in globalPairs) {
 						FieldInfo field = type.GetField(globalPair.Key);
-						if (field.IsDefined(typeof(DifficultySettingAttribute), true)) {
+						if (field.IsDefined(typeof(EditableDifficultySettingAttribute), true)) {
 								try {
 										field.SetValue(null, Convert.ChangeType(globalPair.Value, field.FieldType));
 								} catch (Exception e) {
@@ -751,9 +770,8 @@ public static class Globals
 						if (!field.Value.IsLiteral) {
 								//don't save const values
 								try {
-									globalPairs.Add(new KeyValuePair <string, string>(field.Value.Name, field.Value.GetValue(null).ToString()));
-								}
-								catch (Exception e) {
+										globalPairs.Add(new KeyValuePair <string, string>(field.Value.Name, field.Value.GetValue(null).ToString()));
+								} catch (Exception e) {
 										Debug.LogError("Error when attempting to get field for " + field.Value.Name);
 										e = null;
 								}
@@ -791,21 +809,31 @@ public static class Globals
 		{
 				if (mFields == null) {
 						mFields = new Dictionary<string, FieldInfo>();
+						mDifficultySettingFields = new List <FieldInfo>();
 				} else {
 						mFields.Clear();
+						mDifficultySettingFields.Clear();
 				}
 				System.Type type = typeof(Globals);
 				FieldInfo[] fields = type.GetFields();
 				foreach (FieldInfo f in fields) {
 						Type fieldType = f.GetType();
 						mFields.Add(f.Name.ToLower(), f);
+						if (f.IsDefined(typeof(EditableDifficultySettingAttribute), true)) {
+								mDifficultySettingFields.Add(f);
+						}
 				}
+		}
+
+		public static IEnumerable<FieldInfo> GetDifficultySettings()
+		{
+				return mDifficultySettingFields;
 		}
 
 		public static void SetDifficultyVariable(string globalVariableName, string variableValue)
 		{
 				if (Fields.TryGetValue(globalVariableName, out mFieldInfoCheck)) {
-						if (!mFieldInfoCheck.IsDefined(typeof(DifficultySettingAttribute), true)) {
+						if (!mFieldInfoCheck.IsDefined(typeof(EditableDifficultySettingAttribute), true)) {
 								Debug.Log(globalVariableName + " is not a difficulty setting, not applying");
 								return;
 						}

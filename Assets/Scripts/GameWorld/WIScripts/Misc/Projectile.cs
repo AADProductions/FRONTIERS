@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Projectile : WIScript
 		{

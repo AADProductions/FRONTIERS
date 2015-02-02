@@ -66,10 +66,10 @@ namespace Frontiers
 								Y.text = "Y: " + position.y.ToString("0.###");
 								Z.text = "Z: " + position.z.ToString("0.###");
 
-								string timeInfo = WorldClock.Time.ToString("0.#") + " - Time of day: " + WorldClock.DayCycleCurrentNormalized.ToString("0.##");
+								string timeInfo = WorldClock.AdjustedRealTime.ToString("0.#") + " - Time of day: " + WorldClock.DayCycleCurrentNormalized.ToString("0.##");
 								timeInfo += (" - Timescale: " + WorldClock.Get.TimeScale.ToString("0.##") + "\n"
 								+ "IsDaylight: " + WorldClock.IsDay.ToString() + "\n"
-								+ "StatusTemp: " + Biomes.Get.StatusTemperature(Player.Local.Position).ToString());// + ", Meter Temp: " + Player.Local.Status.WarmthStatusKeeper.NormalizedValue.ToString ("0.###"));
+										+ "StatusTemp: " + GameWorld.Get.StatusTemperature(Player.Local.Position, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent).ToString());// + ", Meter Temp: " + Player.Local.Status.WarmthStatusKeeper.NormalizedValue.ToString ("0.###"));
 
 								TimeInfo.text = timeInfo;
 

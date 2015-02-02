@@ -3,10 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.World.Gameplay;
-using Frontiers.GUI;
 
-namespace Frontiers.World
+namespace Frontiers.World.BaseWIScripts
 {
 		public class Wearable : WIScript
 		{
@@ -39,11 +37,11 @@ namespace Frontiers.World
 				public int VisibilityChange = 0;
 				public int StrengthChange = 0;
 
-				public override void PopulateOptionsList(List<GUIListOption> options, List<string> message)
+				public override void PopulateOptionsList(List<WIListOption> options, List<string> message)
 				{
-						if (worlditem.Is(WIMode.Equipped | WIMode.Frozen | WIMode.World)) {
+						if (worlditem.Group == WIGroups.Get.Player && worlditem.Is(WIMode.Equipped | WIMode.Frozen | WIMode.World)) {
 								if (CanWear(Type, BodyPart, Orientation, worlditem)) {
-										GUIListOption listOption = new GUIListOption("Wear", "Wear");
+										WIListOption listOption = new WIListOption("Wear", "Wear");
 										if (Player.Local.Wearables.IsWearing(Type, BodyPart, Orientation)) {
 												listOption.Disabled = true;
 										}
@@ -54,7 +52,7 @@ namespace Frontiers.World
 
 				public void OnPlayerUseWorldItemSecondary(object dialogResult)
 				{
-						OptionsListDialogResult result = (OptionsListDialogResult)dialogResult;
+						WIListResult result = (WIListResult)dialogResult;
 
 						switch (result.SecondaryResult) {
 								case "Wear":
@@ -90,7 +88,7 @@ namespace Frontiers.World
 								bool matchesOrientation = (wearable.Orientation == BodyOrientation.None && orientation == BodyOrientation.None)
 								                      || Flags.Check((uint)wearable.Orientation, (uint)orientation, Flags.CheckType.MatchAny);
 								bool matchesBodyPart = wearable.BodyPart == bodyPart;
-								Debug.Log("Matches type? " + matchesType.ToString() + " matches orientation? " + matchesOrientation.ToString() + " matchesBodyPart? " + matchesBodyPart.ToString());
+								//Debug.Log("Matches type? " + matchesType.ToString() + " matches orientation? " + matchesOrientation.ToString() + " matchesBodyPart? " + matchesBodyPart.ToString());
 								result = matchesType & matchesOrientation & matchesBodyPart;
 
 						} else {
@@ -127,39 +125,17 @@ namespace Frontiers.World
 				#if UNITY_EDITOR
 				public override void OnEditorRefresh()
 				{
+						try {
 						worlditem.Props.Local.Subcategory = BodyPart.ToString();
+						}
+						catch (Exception e) {
+								Debug.LogError(e.ToString ());
+						}
 				}
 				#endif
 				public static string StateName(Wearable wearable)
 				{
 						return wearable.State.CurrentOrientation.ToString() + "_" + wearable.State.CurrentStyle.ToString();
 				}
-		}
-
-		public enum WearableStyle
-		{
-				A,
-				B,
-				C,
-				D,
-				E,
-				F,
-				G,
-				H
-		}
-
-		public enum WearableType
-		{
-				Armor = 1,
-				Clothing = 2,
-				Container = 4,
-				Jewelry = 8,
-		}
-
-		public enum WearableMethod
-		{
-				Rigid,
-				Skinned,
-				Invisible,
 		}
 }

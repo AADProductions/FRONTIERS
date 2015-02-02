@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
 using Frontiers.GUI;
 
 namespace Frontiers.World.Gameplay
@@ -45,7 +46,7 @@ namespace Frontiers.World.Gameplay
 						return true;
 				}
 
-				public override GUIListOption GetListOption(IItemOfInterest targetObject)
+				public override WIListOption GetListOption(IItemOfInterest targetObject)
 				{
 						base.GetListOption(targetObject);
 

@@ -156,6 +156,17 @@ namespace Frontiers
 						return new List <string>(fileNames);
 				}
 
+				public int ModSizeInBytes(string modType, string modName)
+				{
+						int modSize = 0;
+						if (!GameData.IO.GetFileSizeInBytes(modType, modName, ref modSize, DataType.Profile)) {
+								if (!GameData.IO.GetFileSizeInBytes(modType, modName, ref modSize, DataType.World)) {
+										GameData.IO.GetFileSizeInBytes(modType, modName, ref modSize, DataType.Base);
+								}
+						}
+						return modSize;
+				}
+
 				#endregion
 
 				public bool LoadPrefab(ref GameObject prefab, string prefabType, string prefabName)
@@ -300,8 +311,8 @@ namespace Frontiers
 								//loads the pixels from the mod data into the existing texture
 								//check to see if a local copy exists
 								if (GameData.IO.LoadProfileTexture(texture, dataType, dataName)
-								|| GameData.IO.LoadWorldTexture(texture, dataType, dataName)
-								|| GameData.IO.LoadBaseTexture(texture, dataType, dataName)) {
+								    || GameData.IO.LoadWorldTexture(texture, dataType, dataName)
+								    || GameData.IO.LoadBaseTexture(texture, dataType, dataName)) {
 										//always set this just in case
 										texture.name = dataName;
 										return true;
@@ -594,10 +605,11 @@ namespace Frontiers
 								//check to see if a local copy exists
 								bool result = GameData.IO.LoadProfileData <T>(ref data, dataType, dataName, DataCompression.None);
 								//hooray it exists
-								if (result && data.IgnoreProfileDataIfOutdated) {
-										//but are we supposed to use it?
-										//see if the version is below the current game version
-										if (new Version(data.Version) < GameManager.Version) {
+								if (result) {
+										if (data.IgnoreProfileDataIfOutdated && new Version(data.Version) < GameManager.Version) {
+												//but are we supposed to use it?
+												//see if the version is below the current game version
+												Debug.Log(dataName + " is outdated, loading older version");
 												//if it is, get it from the base data
 												result = GameData.IO.LoadWorldData <T>(ref data, dataType, dataName, DataCompression.None);
 												if (!result) {

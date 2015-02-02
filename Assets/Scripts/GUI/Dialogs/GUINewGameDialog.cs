@@ -9,9 +9,19 @@ namespace Frontiers.GUI
 {
 		public class GUINewGameDialog : GUIEditor <NewGameDialogResult>
 		{
-				public UIButton CreateGameButton;
-				public UILabel DifficultyLabel;
-				public UILabel DifficultyDescription;
+				[HideInInspector]
+				[NonSerialized]
+				public WorldSettings CurrentWorld = null;
+				public bool CurrentWorldConfirmed = false;
+				public bool CurrentGameConfirmed = false;
+
+				public UIButtonMessage OKWorldButton;
+				public UIButtonMessage OKNameButton;
+				public UIButtonMessage StartGameButton;
+				public UIButtonMessage CancelButton;
+				public GameObject SelectWorldParent;
+				public GameObject SelectNameParent;
+				public UILabel CustomizeLabel;
 				public UILabel WorldLabel;
 				public UILabel WorldDescription;
 				public UILabel GameNameLabel;
@@ -19,14 +29,14 @@ namespace Frontiers.GUI
 				public UISprite LockedOverlay;
 				public UILabel LockedLabel;
 				public int SelectedWorldIndex = -1;
-				public int SelectedDifficultyIndex = -1;
 				public List <string> AvailableWorlds = new List <string>();
-				public List <string> AvailableDifficulties = new List <string>();
-				[HideInInspector]
-				[NonSerialized]
-				public WorldSettings CurrentWorld = null;
+				public double InGameMinutesPerRealTimeSecond = Globals.DefaultInGameMinutesPerRealTimeSecond;
 				public bool CurrentWorldLocked = false;
 				public Texture2D WorldTexture;
+				public GameObject WorldTexturePlane;
+				public GUITabs Tabs;
+				public GUITabPage ControllingTabPage;
+				public UISlider DayNightCycleSlider;
 
 				public bool HasCurrentWorld {
 						get {
@@ -37,6 +47,36 @@ namespace Frontiers.GUI
 				public override void WakeUp()
 				{
 						SelectedWorldIndex = -1;
+						DayNightCycleSlider.sliderValue = 0.5f;//default
+						Tabs.Initialize(this);
+						ControllingTabPage.OnSelected += ShowNewGamePage;
+						ControllingTabPage.OnDeselected += HideNewGamePage;
+
+						OKWorldButton.target = gameObject;
+						OKWorldButton.functionName = "OnClickOKWorldButton";
+						OKNameButton.target = gameObject;
+						OKNameButton.functionName = "OnClickOKNameButton";
+						StartGameButton.target = gameObject;
+						StartGameButton.functionName = "OnClickStartGameButton";
+						CancelButton.target = gameObject;
+						CancelButton.functionName = "OnClickCancelButton";
+
+						CurrentWorld = null;
+						CurrentGameConfirmed = false;
+						CurrentWorldConfirmed = false;
+				}
+
+				public void ShowNewGamePage()
+				{
+						//this is the only bit of UI that isn't managed by NGUI
+						//so we have to turn it on / off ourselves
+						WorldTexturePlane.gameObject.SetActive(true);
+						Refresh();
+				}
+
+				public void HideNewGamePage()
+				{
+						WorldTexturePlane.gameObject.SetActive(false);
 				}
 
 				public override bool ActionCancel(double timeStamp)
@@ -52,30 +92,36 @@ namespace Frontiers.GUI
 
 				public void Refresh()
 				{
-						AvailableWorlds.Clear();
-						AvailableDifficulties.Clear();
-						AvailableWorlds.AddRange(Mods.Get.Available("World", DataType.Base));
-						AvailableDifficulties.AddRange(Mods.Get.Available("DifficultySetting", DataType.Base));
+						if (!CurrentWorldConfirmed) {
+								SelectWorldParent.gameObject.SetActive(true);
+								SelectNameParent.gameObject.SetActive(false);
+								Tabs.SetTabsDisabled(true);
+								CustomizeLabel.enabled = false;
 
-						if (SelectedWorldIndex < 0) {
-								RefreshWorld();
-						}
-			
-						if (AvailableDifficulties.Count > 0) {
-								//startup
-								if (SelectedDifficultyIndex < 0) {
-										foreach (string availableDifficulty in AvailableDifficulties) {
-												if (availableDifficulty == Globals.DefaultDifficultyName) {
-														break;
-												}
-												SelectedDifficultyIndex++;
-										}
+								AvailableWorlds.Clear();
+								AvailableWorlds.AddRange(Mods.Get.Available("World", DataType.Base));
+								if (SelectedWorldIndex < 0) {
+										RefreshWorld();
 								}
-								DifficultyLabel.text = AvailableDifficulties[SelectedDifficultyIndex];
-						}
+								RefreshDescriptions();
 
-						RefreshDescriptions();
-						RefreshGameName();
+								StartGameButton.gameObject.SendMessage("SetDisabled");
+						} else if (!CurrentGameConfirmed) {
+								SelectWorldParent.gameObject.SetActive(false);
+								SelectNameParent.gameObject.SetActive(true);
+								Tabs.SetTabsDisabled(true);
+								CustomizeLabel.enabled = false;
+
+								RefreshGameName();
+
+								StartGameButton.gameObject.SendMessage("SetDisabled");
+						} else {
+								SelectWorldParent.gameObject.SetActive(false);
+								SelectNameParent.gameObject.SetActive(false);
+								Tabs.SetTabsDisabled(false);
+								CustomizeLabel.enabled = true;
+								StartGameButton.gameObject.SendMessage("SetEnabled");
+						}
 				}
 
 				public void RefreshGameName()
@@ -89,9 +135,9 @@ namespace Frontiers.GUI
 						string error = string.Empty;
 						string cleanAlternative = string.Empty;
 						if (!CurrentWorldLocked && Profile.Get.ValidateNewGameName(AvailableWorlds[SelectedWorldIndex], GameNameInput.text, out cleanAlternative, out error)) {
-								CreateGameButton.SendMessage("SetEnabled");
+								OKNameButton.SendMessage("SetEnabled");
 						} else {
-								CreateGameButton.SendMessage("SetDisabled");
+								OKNameButton.SendMessage("SetDisabled");
 						}
 						GameNameLabel.text = error;
 						GameNameInput.text = cleanAlternative;
@@ -99,48 +145,62 @@ namespace Frontiers.GUI
 						mRefreshingGameName = false;
 				}
 
-				public void OnClickLowerDifficulty()
+				public void OnDayNightCycleSliderChange(float value)
 				{
-						SelectedDifficultyIndex--;
-						if (SelectedDifficultyIndex < 0) {
-								SelectedDifficultyIndex = AvailableDifficulties.LastIndex();
+						float normalizedValue = (DayNightCycleSlider.sliderValue * 2) - 1f;
+						if (Mathf.Approximately(normalizedValue, 0f)) {
+								//the middle is normal
+								InGameMinutesPerRealTimeSecond = Globals.DefaultInGameMinutesPerRealTimeSecond;
+						} else {
+								if (normalizedValue < 0f) {
+										InGameMinutesPerRealTimeSecond = Mathf.Lerp(Globals.DefaultInGameMinutesPerRealTimeSecond, Globals.MaxInGameMinutesPerRealtimeSecond, Mathf.Abs(normalizedValue));
+								} else {
+										//the abs of the value will be from 0 to max
+										InGameMinutesPerRealTimeSecond = Mathf.Lerp(Globals.DefaultInGameMinutesPerRealTimeSecond, Globals.MinInGameMinutesPerRealtimeSecond, normalizedValue);
+								}
 						}
-						Refresh();
-						OnSelectDifficulty();
 				}
 
-				public void OnClickHigherDifficulty()
-				{
-						SelectedDifficultyIndex++;
-						if (SelectedDifficultyIndex > AvailableDifficulties.LastIndex()) {
-								SelectedDifficultyIndex = 0;
-						}
-						Refresh();
-						OnSelectDifficulty();
-				}
+				protected bool mUpdatingCycleSlider = false;
 
 				public void RefreshDescriptions()
 				{
 						WorldDescription.text = Mods.Get.WorldDescription(AvailableWorlds[SelectedWorldIndex]);
-						if (AvailableDifficulties.Count > 0) {
-								DifficultyDescription.text = Mods.Get.Description <DifficultySetting>("DifficultySetting", AvailableDifficulties[SelectedDifficultyIndex]);
-						}
 				}
 
-				public void OnSelectDifficulty()
+				public void OnClickOKWorldButton()
 				{
-						if (AvailableDifficulties.Count > 0) {
-								Profile.Get.SetDifficulty(AvailableDifficulties[SelectedDifficultyIndex]);
-								RefreshDescriptions();
-						}
+						CurrentWorldConfirmed = true;
+						Refresh();
 				}
 
-				public void OnClickCreateButton()
+				public void OnClickOKNameButton()
+				{		//we want to save the game, then load it into the live game temporarily
+						if (Profile.Get.SetWorldAndGame(AvailableWorlds[SelectedWorldIndex], GameNameInput.text, true, true)) {
+								//delete LiveGame
+								//it may have junk in it
+								CurrentGameConfirmed = true;
+						}
+						Refresh();
+				}
+
+				public void OnClickStartGameButton()
 				{
 						//we assume everything is valid at this point
-						if (Profile.Get.SetWorldAndGame(AvailableWorlds[SelectedWorldIndex], GameNameInput.text, true)) {
+						//we don't want to load the game again because we'll be wiping out LiveGame
+						if (Profile.Get.SetWorldAndGame(AvailableWorlds[SelectedWorldIndex], GameNameInput.text, true, false)) {
+								//load the new world settings into the new world
+								CancelButton.gameObject.SendMessage("SetDisabled");
+								Profile.Get.CurrentGame.InGameMinutesPerRealtimeSecond = InGameMinutesPerRealTimeSecond;
+								//save the game to a fresh game file once we're loaded
+								Mods.Get.SaveLiveGame(GameNameInput.text);
 								Finish();
 						}
+				}
+
+				public void OnClickCancelButton()
+				{
+						ActionCancel(WorldClock.RealTime);
 				}
 
 				public void OnChangeGameName()
@@ -206,9 +266,11 @@ namespace Frontiers.GUI
 						if (CurrentWorldLocked) {
 								LockedLabel.alpha = 1f;
 								LockedOverlay.alpha = 1f;
+								OKWorldButton.gameObject.SendMessage("SetDisabled");
 						} else {
 								LockedLabel.alpha = 0f;
 								LockedOverlay.alpha = 0f;
+								OKWorldButton.gameObject.SendMessage("SetEnabled");
 						}
 				}
 
@@ -220,7 +282,6 @@ namespace Frontiers.GUI
 								SelectedWorldIndex = AvailableWorlds.LastIndex();
 						}
 						RefreshWorld();
-						RefreshGameName();
 				}
 
 				public void OnClickNextWorld()
@@ -231,7 +292,6 @@ namespace Frontiers.GUI
 								SelectedWorldIndex = 0;
 						}
 						RefreshWorld();
-						RefreshGameName();
 				}
 
 				public override void PushEditObjectToNGUIObject()

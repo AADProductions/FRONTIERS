@@ -8,8 +8,6 @@ namespace Frontiers.World
 		public class Rockslide : SceneryScript
 		{
 				public RockslideState State = new RockslideState();
-				public float RockslideInterval = 10f;
-				public int NumRocksToSpawn = 10;
 				public Queue <GameObject> ActiveRocks = new Queue <GameObject>();
 
 				protected override void OnInitialized()
@@ -30,7 +28,7 @@ namespace Frontiers.World
 								State.LastRandomCheck = random.Next(0, 100);
 								if (State.LastRandomCheck > State.ChanceOfRockslide) {
 										mRockslideInProgress = true;
-										StartCoroutine(RockslideOverTime(WorldClock.AdjustedRealTime + RockslideInterval, random));
+										StartCoroutine(RockslideOverTime(WorldClock.AdjustedRealTime + Globals.RockslideInterval, random));
 								}
 						}
 				}
@@ -44,7 +42,7 @@ namespace Frontiers.World
 				protected IEnumerator RockslideOverTime(double rockslideEndTime, System.Random random)
 				{
 						Player.Local.DoEarthquake(0.5f);
-						float timeBetweenRocks = RockslideInterval / NumRocksToSpawn;
+						float timeBetweenRocks = Globals.RockslideInterval / Globals.RockslideNumRocksToSpawn;
 						GameObject rock = null;
 						MasterAudio.PlaySound(MasterAudio.SoundType.Explosions, Player.Local.tr, "Rockslide");
 						mVertices = cfo.PrimaryCollider.sharedMesh.vertices;
@@ -55,7 +53,10 @@ namespace Frontiers.World
 								rock = GameObject.Instantiate(FXManager.Get.RockslideRockPrefab, mTerrainHit.feetPosition, Quaternion.identity) as GameObject;
 								//rock.transform.localScale = Vector3.one * ((float)random.Next(50, 100) / 100);//make it anywhere from .5 to 1 size
 								ActiveRocks.Enqueue(rock);
-								yield return new WaitForSeconds(timeBetweenRocks);//wait for ART seconds, not RT seconds
+								double waitUntil = WorldClock.AdjustedRealTime + timeBetweenRocks;
+								while (WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 						}
 						yield return null;//now we'll destroy any rocks that haven't been broken already
 						while (ActiveRocks.Count > 0) {
@@ -64,7 +65,10 @@ namespace Frontiers.World
 										FXManager.Get.SpawnFX(tr.position, "DustExplosion");
 										GameObject.Destroy(rock);
 								}
-								yield return new WaitForSeconds(timeBetweenRocks);
+								double waitUntil = WorldClock.AdjustedRealTime + timeBetweenRocks;
+								while (WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 						}
 						Array.Clear(mVertices, 0, mVertices.Length);
 						mVertices = null;

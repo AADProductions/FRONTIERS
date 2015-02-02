@@ -108,7 +108,7 @@ namespace Frontiers
 						enabled = false;
 				}
 
-				public override void OnModsLoadFinish()
+				public override void OnModsLoadStart()
 				{
 						State.SetDefaults();
 						Scripts.Initialize();
@@ -116,6 +116,8 @@ namespace Frontiers
 						if (Mods.Get.Runtime.LoadMod <PlayerState>(ref state, "PlayerState", ID.ToString())) {
 								State = state;
 								Scripts.LoadState(State.ScriptStates);
+						} else {
+								Debug.Log("Couldn't load player state " + ID.ToString());
 						}
 						//if the player state doesn't exist it's no big deal
 						mInitialized = true;
@@ -194,6 +196,11 @@ namespace Frontiers
 						PauseControls(false);
 				}
 
+				public override void OnGameSaveStart()
+				{
+						Scripts.OnGameSaveStart();
+				}
+
 				public override void OnGameSave()
 				{
 						SaveState();
@@ -229,12 +236,13 @@ namespace Frontiers
 								psp.StructureName = Surroundings.State.LastStructureEntered.FileName;
 						} else {
 								psp.Interior = false;
+								psp.RequiresMeshTerrain = Surroundings.State.IsOnTopOfMeshTerrain;
 						}
 						psp.ChunkID = Surroundings.State.LastChunkID;
 						WorldChunk chunk = null;
 						if (GameWorld.Get.ChunkByID(psp.ChunkID, out chunk)) {
-								psp.WorldPosition = new STransform(Surroundings.State.LastPosition);
-								psp.ChunkPosition = new STransform(psp.WorldPosition.Position - chunk.ChunkOffset, psp.WorldPosition.Rotation);
+								psp.WorldPosition = Surroundings.State.LastPosition;
+								psp.ChunkPosition = new STransform((psp.WorldPosition.Position - chunk.ChunkOffset), psp.WorldPosition.Rotation);
 						}
 						return psp;
 				}
@@ -921,7 +929,7 @@ namespace Frontiers
 
 						public void LoadState(SDictionary <string, string> scriptStates)
 						{
-								foreach (PlayerScript script in mScripts) {	//////Debug.Log ("Loading script state in " + script.ScriptName);
+								foreach (PlayerScript script in mScripts) {
 										string playerState = string.Empty;
 										if (scriptStates.TryGetValue(script.ScriptName, out playerState)) {	//if we have a script state, call UpdatePlayerState
 												script.LoadState(playerState);
@@ -1006,6 +1014,14 @@ namespace Frontiers
 								foreach (PlayerScript script in mScripts) {	//call this whether we had a script state or not
 										//do it after all the script states are loaded
 										script.OnRemotePlayerDie();
+								}
+						}
+
+						public void OnGameSaveStart()
+						{
+								foreach (PlayerScript script in mScripts) {	//call this whether we had a script state or not
+										//do it after all the script states are loaded
+										script.OnGameSaveStart();
 								}
 						}
 				}
