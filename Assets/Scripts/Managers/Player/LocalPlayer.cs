@@ -45,10 +45,9 @@ namespace Frontiers
 				public Transform GrabberTargetObject;
 				public Transform HijackedPosition;
 				public Transform HijackedLookTarget;
-				public float HijackedFOV;
 				public GameObject ToolOffset;
 				public GameObject CarryOffset;
-				public Light Illumination;
+				public Light PlayerLight;
 				public PlayerGrabber Grabber;
 				public PlayerEncounterer EncountererObject;
 				public PlayerGroundPath GroundPath;
@@ -67,6 +66,7 @@ namespace Frontiers
 				public PlayerItemPlacement ItemPlacement;
 				public PlayerProjections Projections;
 				public PlayerCharacterSpawner CharacterSpawner;
+				public PlayerIllumination Illumination;
 				public float HijackLookSpeed = 1f;
 
 				public override Vector3 HeadPosition {
@@ -370,13 +370,17 @@ namespace Frontiers
 						yield break;
 				}
 
-				public void HijackControl(float hijackedFOV, float hijackedLookSpeed)
+				public void ZoomCamera(float zoomFOV, float cameraSensitivity)
 				{
-						State.HijackMode = PlayerHijackMode.Zoom;
-						State.IsHijacked = true;
-						hijackedLookSpeed = hijackedLookSpeed;
-						HijackedFOV = hijackedFOV;
-						Controller.enabled = false;
+						mZoomedIn = true;
+						mZoomedInCameraSensitivity = cameraSensitivity;
+						mZoomFOV = zoomFOV;
+				}
+
+				public void UnzoomCamera( ) {
+						mZoomedIn = false;
+						mZoomedInCameraSensitivity = 1f;
+						mZoomFOV = 0f;
 				}
 
 				public void HijackControl()
@@ -595,7 +599,7 @@ namespace Frontiers
 						carryObject.name = "Carrier";
 						Carrier = carryObject.GetComponent <PlayerCarrier>();
 
-						Illumination = gameObject.CreateChild("Illumination").gameObject.AddComponent <Light>();
+						PlayerLight = gameObject.CreateChild("Illumination").gameObject.AddComponent <Light>();
 						FocusObject = FPSCameraSeat.gameObject.CreateChild("FocusObject");
 						GrabberTargetObject = FPSCameraSeat.gameObject.CreateChild("GrabberTarget");
 
@@ -624,6 +628,7 @@ namespace Frontiers
 						ItemPlacement = gameObject.GetOrAdd <PlayerItemPlacement>();
 						Projections = gameObject.GetOrAdd <PlayerProjections>();
 						CharacterSpawner = gameObject.GetOrAdd <PlayerCharacterSpawner>();
+			Illumination = gameObject.GetOrAdd <PlayerIllumination>();
 
 						Audio.OnLocalPlayerCreated();
 						WeatherEffects.OnLocalPlayerCreated();
@@ -665,14 +670,14 @@ namespace Frontiers
 						State.FPSCameraSeatPosition.ApplyTo(FPSCameraSeat);
 						State.GrabberPosition.ApplyTo(Grabber.transform);
 						State.GrabberTargetPosition.ApplyTo(GrabberTargetObject.transform);
-						State.IlluminationPosition.ApplyTo(Illumination.transform);
+						State.IlluminationPosition.ApplyTo(PlayerLight.transform);
 						State.ToolOffsetPosition.ApplyTo(ToolOffset.transform);
 						State.CarryOffsetPosition.ApplyTo(CarryOffset.transform);
 
-						Illumination.intensity = State.IlluminationIntensity;
-						Illumination.range = State.IlluminationRange;
-						Illumination.color = Colors.Get.ByName("PlayerIlluminationColor");
-						Illumination.cullingMask = Int32.MaxValue & ~Globals.LayerFluidTerrain;
+						PlayerLight.intensity = State.IlluminationIntensity;
+						PlayerLight.range = State.IlluminationRange;
+						PlayerLight.color = Colors.Get.ByName("PlayerIlluminationColor");
+						PlayerLight.cullingMask = Int32.MaxValue & ~Globals.LayerFluidTerrain;
 				}
 
 				#endregion
@@ -709,6 +714,20 @@ namespace Frontiers
 				public override bool IsSprinting { get { return FPSController.IsSprinting; } }
 
 				public override bool IsOnFoot { get { return IsGrounded && !FPSController.IsMounted && !FPSController.IsClimbingLadder; } }
+
+				#endregion
+
+				#region zooming
+
+				public float CameraSensitivity {
+						get {
+								return mZoomedInCameraSensitivity;
+						}
+				}
+
+				protected float mZoomFOV = 0f;
+				protected bool mZoomedIn = false;
+				protected float mZoomedInCameraSensitivity = 1f;
 
 				#endregion
 
@@ -855,12 +874,6 @@ namespace Frontiers
 										default:
 												HijackedLookTarget.rotation = HijackedPosition.rotation;
 												break;
-
-										case PlayerHijackMode.Zoom://used for stuff like Spyglass
-												HijackedPosition.LookAt(HijackedLookTarget);
-												HijackedLookTarget.rotation = HijackedPosition.rotation;
-												GameManager.Get.GameCamera.fieldOfView = HijackedFOV;
-												break;
 								}
 								//set these to lerp - stuff like tools will lag a bit behind but that's OK
 								GameManager.Get.GameCamera.transform.rotation = Quaternion.Lerp(GameManager.Get.GameCamera.transform.rotation, HijackedPosition.transform.rotation, HijackLookSpeed);
@@ -871,6 +884,12 @@ namespace Frontiers
 						} else {
 								GroundPath.Follower.target = tr;
 								Controller.enabled = true;
+								if (mZoomedIn) {
+										GameManager.Get.GameCamera.fieldOfView = mZoomFOV;
+								} else {
+										GameManager.Get.GameCamera.fieldOfView = Profile.Get.CurrentPreferences.Video.FieldOfView;
+										mZoomedInCameraSensitivity = 1f;
+								}
 						}
 				}
 

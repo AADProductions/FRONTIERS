@@ -611,6 +611,7 @@ namespace Frontiers
 						Reference = reference;
 						Radius = radius;
 						Name = name;
+						mLowerName = Name.ToLower();
 						ProperName = properName;
 						AlternateName = alternateName;
 						Visited = visited;
@@ -660,9 +661,19 @@ namespace Frontiers
 						//LabelPosition = Vector3.up * IconScale;
 				}
 
-				public void UpdateType(List <string> typesToDisplay)
-				{
+				public void UpdateType(List <string> typesToDisplay) {
 						Display = (LabelStyle == MapLabelStyle.Descriptive && typesToDisplay.Contains("Descriptive")) || typesToDisplay.Contains(IconName);
+						SearchHit = false;
+				}
+
+				public void UpdateType(List <string> typesToDisplay, string searchFilter)
+				{
+						if (mLowerName.Contains(searchFilter)) {
+								SearchHit = true;
+								Display = (LabelStyle == MapLabelStyle.Descriptive && typesToDisplay.Contains("Descriptive")) || typesToDisplay.Contains(IconName);
+						} else {
+								Display = false;
+						}
 				}
 
 				public void UpdateLabel(float scale, float labelScale, float alpha)
@@ -671,30 +682,34 @@ namespace Frontiers
 						if (Label != null) {
 								Label.color = Colors.Alpha(LabelColor, Label.alpha);
 								if (Display) {
-										switch (LabelStyle) {
-												case MapLabelStyle.MouseOver:
-														if (mouseOver || IsMarked) {
+										if (SearchHit) {
+												Label.alpha = Mathf.Lerp(Label.alpha, alpha, 0.25f);
+										} else {
+												switch (LabelStyle) {
+														case MapLabelStyle.MouseOver:
+																if (mouseOver || IsMarked) {
+																		Label.alpha = Mathf.Lerp(Label.alpha, alpha, 0.25f);
+																} else {
+																		Label.alpha = Mathf.Lerp(Label.alpha, 0f, 0.25f);
+																}
+																break;
+
+														case MapLabelStyle.Descriptive:
 																Label.alpha = Mathf.Lerp(Label.alpha, alpha, 0.25f);
-														} else {
-																Label.alpha = Mathf.Lerp(Label.alpha, 0f, 0.25f);
-														}
-														break;
+																break;
 
-												case MapLabelStyle.Descriptive:
-														Label.alpha = Mathf.Lerp(Label.alpha, alpha, 0.25f);
-														break;
+														case MapLabelStyle.AlwaysVisible:
+																if (mouseOver || IsMarked) {
+																		Label.alpha = Mathf.Lerp(Label.alpha, alpha, 0.25f);
+																} else {
+																		Label.alpha = Mathf.Lerp(Label.alpha, alpha / 2f, 0.25f);
+																}
+																break;
 
-												case MapLabelStyle.AlwaysVisible:
-														if (mouseOver || IsMarked) {
+														default:
 																Label.alpha = Mathf.Lerp(Label.alpha, alpha, 0.25f);
-														} else {
-																Label.alpha = Mathf.Lerp(Label.alpha, alpha / 2f, 0.25f);
-														}
-														break;
-
-												default:
-														Label.alpha = Mathf.Lerp(Label.alpha, alpha, 0.25f);
-														break;
+																break;
+												}
 										}
 								} else {
 										Label.alpha = Mathf.Lerp(Label.alpha, 0f, 0.25f);
@@ -760,7 +775,9 @@ namespace Frontiers
 				public float IconScale;
 				public float IconAlpha;
 				public bool Display;
+				public bool SearchHit;
 				public bool IsNew;
 				public bool IsMarked;
+				protected string mLowerName;
 		}
 }

@@ -181,7 +181,7 @@ namespace Frontiers
 						aSetting = ActionSetting.Button;
 						aSetting.Action = (int)UserActionType.ToolCyclePrev;
 						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ToolCyclePrev.ToString());
-						aSetting.Controller = InputControlType.LeftTrigger;
+						aSetting.Controller = InputControlType.LeftBumper;
 						aSetting.Key = KeyCode.R;
 						aSetting.AvailableControllerButtons = DefaultAvailableActions;
 						aSetting.AvailableKeys = DefaultAvailableKeys;
@@ -191,6 +191,7 @@ namespace Frontiers
 						aSetting = ActionSetting.Button;
 						aSetting.Action = (int)UserActionType.ToolCycleNext;
 						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(UserActionType.ToolCycleNext.ToString());
+						aSetting.Controller = InputControlType.Button10;
 						aSetting.Key = KeyCode.T;
 						aSetting.AvailableControllerButtons = DefaultAvailableActions;
 						aSetting.AvailableKeys = DefaultAvailableKeys;

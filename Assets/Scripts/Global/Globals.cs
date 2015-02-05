@@ -222,6 +222,8 @@ public static class Globals
 		public static float RockslideInterval = 10f;
 		[EditableDifficultySetting(0f, 100000f, "Total number of rocks spawned during a rockslide")]
 		public static float RockslideNumRocksToSpawn = 10;
+		[EditableDifficultySetting(0.1f, 20f, "Multiplier for skill radius of spyglass. Used for placing markers on terrain.")]
+		public static float RaycastSpyGlassDistanceMultiplier = 3f;
 
 		#endregion
 
@@ -653,6 +655,7 @@ public static class Globals
 		public static float ControllerDeadZoneSizeDPadLower = 0.0f;
 		public static float ControllerDeadZoneSizeDPadUpper = 1.0f;
 		public static float ControllerSensitivityDPad = 1.0f;
+		public static string ControllerDefaultActionSpriteSuffix = "XBox";
 		public const int LayerPlayer = 1 << 8;
 		public const int LayerTrigger = 1 << 9;
 		public const int LayerBodyPart = 1 << 10;

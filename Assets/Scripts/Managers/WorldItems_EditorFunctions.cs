@@ -593,7 +593,7 @@ namespace Frontiers.World
 										foreach (GameObject prefab in pack.Prefabs) {
 												WorldItem wi = prefab.GetComponent <WorldItem>();
 												WITemplate template = new WITemplate(wi);
-												//Debug.Log ("Saving template " + wi.name);
+												Debug.Log ("Saving template " + wi.name);
 												Mods.Get.Editor.SaveMod <WITemplate>(
 														template,
 														System.IO.Path.Combine("WorldItem", wi.Props.Name.PackName),

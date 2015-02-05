@@ -108,10 +108,6 @@ namespace Frontiers.World
 
 				public void PopulateOptionsList(List <WIListOption> options, List <string> message, bool includeInteract)
 				{
-						if (HasStates) {
-								States.PopulateOptionsList(options, message);
-						}
-
 						if (CanBeCarried && !CanEnterInventory && Is(WIMode.Placed | WIMode.Frozen | WIMode.World)) {
 								if (gCarryOption == null) {
 										gCarryOption = new WIListOption("Carry", "Carry");
@@ -130,6 +126,10 @@ namespace Frontiers.World
 						while (enumerator.MoveNext ()) {
 								//foreach (WIScript script in mScripts.Values) {
 								enumerator.Current.PopulateOptionsList(options, message);
+						}
+
+						if (HasStates) {
+								States.PopulateOptionsList(options, message);
 						}
 				}
 

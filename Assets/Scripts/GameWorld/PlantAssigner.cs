@@ -114,7 +114,7 @@ namespace Frontiers
 		/// <param name="player">The player object, which defines the center and radius of the search.</param>
 		/// <param name="world">The world with the colliders.</param>
 		/// <returns>An enumerable list of Plant colliders which can be reassigned.</returns>
-		public static IEnumerable <WorldPlant> FindIrrelevantInstances(LocalPlayer player, Plants plants)
+		public static IEnumerator <WorldPlant> FindIrrelevantInstances(LocalPlayer player, Plants plants)
 		{
 			//float squaredRadius = player.ColliderRadius * player.ColliderRadius;
 			for (int i = 0; i < plants.ActivePlants.Count; i++) {

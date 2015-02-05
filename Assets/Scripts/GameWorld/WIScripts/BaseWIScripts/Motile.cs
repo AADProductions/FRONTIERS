@@ -425,7 +425,7 @@ namespace Frontiers.World.BaseWIScripts
 
 				#region interaction / state changes
 
-				public override void OnRefreshHud(WIHud hud)
+				/*public override int OnRefreshHud(int lastHudPriority)
 				{
 						//if (!TopAction.HudIcon.IsEmpty) {
 						//GUIHudElement element = hud.GetOrAddElement (HudElementType.Icon, "MotileIcon");
@@ -439,7 +439,7 @@ namespace Frontiers.World.BaseWIScripts
 						//} else {
 						//	hud.GetPlayerAttention = false;
 						//}
-				}
+				}*/
 
 				public void OnLosePlayerAttention()
 				{
@@ -1766,6 +1766,7 @@ namespace Frontiers.World.BaseWIScripts
 				public MotileActionType Type = MotileActionType.GoToActionNode;
 				public MobileReference Target = new MobileReference();
 				public MotileFollowType FollowType = MotileFollowType.Follower;
+				[XmlIgnore]
 				public MapDirection FollowDirection = MapDirection.I_None;
 				public MotileGoToMethod Method = MotileGoToMethod.Pathfinding;
 				public MotileExpiration Expiration = MotileExpiration.Duration;

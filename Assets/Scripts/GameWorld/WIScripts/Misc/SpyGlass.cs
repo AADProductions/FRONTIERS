@@ -11,15 +11,21 @@ namespace Frontiers.World
 {
 		public class Spyglass : WIScript
 		{
-				public float FieldOfView = 20f;
-				public float HijackSpeed = 0.25f;
-				public float LookSpeed = 1f;
+				public static bool IsInUse = false;
+				protected float mFieldOfView = 15f;
+				public float ExtendedCameraSensitivity = 0.25f;
 				public Skill SpyglassSkill;
 				public Transform LookerRoot;
 				public Transform LookerTransform;
 				public bool CanPlaceMarker = false;
 				public List <string> ItemsOfInterest = new List<string>() { "Revealable", "Location" };
 				public Vector3 MapMarkerLocation;
+
+				public override bool UnloadWhenStacked {
+						get {
+								return false;
+						}
+				}
 
 				public override void OnInitialized()
 				{
@@ -30,6 +36,8 @@ namespace Frontiers.World
 
 				public bool LookThroughSpyglass()
 				{
+						IsInUse = true;
+
 						if (LookerRoot == null) {
 								LookerRoot = new GameObject("SpyglassLookerRoot").transform;
 								LookerTransform = LookerRoot.gameObject.CreateChild("LookerTransform").transform;
@@ -40,19 +48,17 @@ namespace Frontiers.World
 						LookerTransform.localPosition = Player.Local.ForwardVector * SpyglassSkill.EffectRadius;
 						//set the looker to the player's head position & rotation
 						worlditem.tr.LookAt(LookerTransform);
-						//from now on we'll control where the player looks
-						Player.Local.HijackControl(FieldOfView, HijackSpeed);
-						Player.Local.SetHijackTargets(LookerTransform);
-
-						CameraFX.Get.SetSpyglass(true);
 
 						GameObject childEditor = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog("NGUIMessageActionDialog"));
 						mChildEditor = childEditor.GetComponent <GUIMessageActionDialog>();
 						MessageActionDialogResult editObject = new MessageActionDialogResult();
-						editObject.Action = UserActionType.MoveJump;
-						editObject.CloseOnAction = false;
-						editObject.Message = "Press SPACE to set marker\nUnequip to exit";
-						mChildEditor.OnDidAction += OnDidAction;
+						editObject.Message = "Spyglass (unequip to exit)";
+						editObject.CloseOnAction1 = false;
+						editObject.CloseOnAction2 = false;
+						editObject.Prompt1 = new GUIHud.HudPrompt(UserActionType.MoveJump, "Place Marker");
+						editObject.Prompt2 = new GUIHud.HudPrompt(UserActionType.ToolCycleNext, "Mode");
+						mChildEditor.OnDidAction1 += OnPlacedMarker;
+						mChildEditor.OnDidAction2 += OnCycleMode;
 						GUIManager.SendEditObjectToChildEditor <MessageActionDialogResult>(new ChildEditorCallback <MessageActionDialogResult>(ReceiveFromChildEditor), mChildEditor.gameObject, editObject);
 
 						enabled = true;
@@ -61,22 +67,16 @@ namespace Frontiers.World
 
 				public void Update()
 				{
-						//we want to move the hijacked position based on the player's mouse movements
-						//move the looker appropriately
-						//get the mouse raw input and use it to rotate the looker base
-						mRotation.x += UserActionManager.RawMouseAxisY * LookSpeed;
-						mRotation.y += UserActionManager.RawMouseAxisX * LookSpeed;
-						mRotation.z = 0f;
-
-						if (Profile.Get.HasCurrentProfile && Profile.Get.CurrentPreferences.Controls.MouseInvertYAxis) {
-								mRotation.y = -mRotation.y;
+						CameraFX.Get.SetSpyglass(true);
+						//from now on we'll control where the player looks
+						if (worlditem.State == "Extended") {
+								Player.Local.ZoomCamera(mFieldOfView, ExtendedCameraSensitivity);
+						} else {
+								Player.Local.UnzoomCamera();
 						}
 
-						LookerRoot.localEulerAngles = mRotation;
-						Player.Local.SetHijackTargets(LookerTransform);
-
 						CanPlaceMarker = false;
-						RaycastHit[] hits = Physics.RaycastAll(Player.Local.HeadPosition, GameManager.Get.GameCamera.transform.forward, SpyglassSkill.EffectRadius, Globals.LayersActive);
+						RaycastHit[] hits = Physics.RaycastAll(Player.Local.HeadPosition, Player.Local.FocusVector, SpyglassSkill.EffectRadius * Globals.RaycastSpyGlassDistanceMultiplier, Globals.LayersActive);
 						bool hitSomething = false;
 						float closestDistanceSoFar = Mathf.Infinity;
 						float currentDistance;
@@ -90,7 +90,9 @@ namespace Frontiers.World
 								}
 								//now see if we reveal anything
 								if (WorldItems.GetIOIFromCollider(hits[i].collider, out ioi) && ioi.IOIType == ItemOfInterestType.WorldItem) {
-										if (ioi.worlditem.Is <Revealable>(out revealable)) {
+										if (ioi.worlditem.Is <Revealable>(out revealable) && !revealable.State.HasBeenRevealed) {
+												MasterAudio.PlaySound(MasterAudio.SoundType.Notifications, "PathMarkerReveal");
+												GUIManager.PostInfo("Revealed location");
 												revealable.Reveal(LocationRevealMethod.ByTool);
 										}
 										if (ioi.worlditem.Is <Location>(out location)) {
@@ -107,7 +109,20 @@ namespace Frontiers.World
 				protected Location location;
 				protected Vector3 mRotation;
 
-				public void OnDidAction()
+				public void OnCycleMode()
+				{
+						if (mFinished)
+								return;
+
+						Debug.Log("Cycling mode");
+						if (worlditem.State == "Extended") {
+								worlditem.State = "Collapsed";
+						} else {
+								worlditem.State = "Extended";
+						}
+				}
+
+				public void OnPlacedMarker()
 				{
 						if (mFinished)
 								return;
@@ -115,6 +130,7 @@ namespace Frontiers.World
 						if (!CanPlaceMarker) {
 								GUIManager.PostWarning("Terrain is out of range");
 						} else {
+								MasterAudio.PlaySound(MasterAudio.SoundType.Notifications, "PathMarkerReveal");
 								Player.Local.Surroundings.AddMapMarker(MapMarkerLocation);
 						}
 				}
@@ -131,7 +147,6 @@ namespace Frontiers.World
 				public void OnUnequip()
 				{
 						if (LookerRoot != null) {
-								Player.Local.RestoreControl(true);
 								GameObject.Destroy(LookerRoot.gameObject);
 								GameObject.Destroy(LookerTransform.gameObject);
 						}
@@ -139,14 +154,12 @@ namespace Frontiers.World
 								mChildEditor.Finish();
 								mChildEditor = null;
 						}
-						CameraFX.Get.SetSpyglass(false);
 						enabled = false;
 				}
 
 				public override void OnFinish()
 				{
 						if (LookerRoot != null) {
-								Player.Local.RestoreControl(true);
 								GameObject.Destroy(LookerRoot.gameObject);
 								GameObject.Destroy(LookerTransform.gameObject);
 						}
@@ -154,7 +167,14 @@ namespace Frontiers.World
 								mChildEditor.Finish();
 								mChildEditor = null;
 						}
+						enabled = false;
+				}
+
+				public void OnDisable () {
 						CameraFX.Get.SetSpyglass(false);
+						Player.Local.UnzoomCamera();
+						IsInUse = false;
+						return;
 				}
 
 				protected GUIMessageActionDialog mChildEditor;

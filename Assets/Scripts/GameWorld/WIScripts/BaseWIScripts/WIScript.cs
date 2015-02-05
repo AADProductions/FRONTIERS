@@ -236,9 +236,9 @@ namespace Frontiers.World
 						return transform;
 				}
 
-				public virtual void OnRefreshHud(WIHud hud)
+				public virtual int OnRefreshHud(int lastHudPriority)
 				{
-						return;
+						return lastHudPriority;
 				}
 
 				public virtual bool UsesHud {

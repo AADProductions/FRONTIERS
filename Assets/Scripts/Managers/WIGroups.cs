@@ -73,6 +73,8 @@ namespace Frontiers
 						Special.Owner = null;
 						Rivers.Owner = null;
 
+						Plants.SaveOnUnload = false;
+
 						Root.Initialize();
 						World.Initialize();
 						Paths.Initialize();

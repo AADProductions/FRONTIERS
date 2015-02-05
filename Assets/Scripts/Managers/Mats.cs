@@ -13,7 +13,7 @@ namespace Frontiers
 				public SetupAdvancedFoliageShader AFS;
 				public Cubemap FoliageShaderDiffuseMap;
 				public Cubemap FoliageShaderSpecMap;
-				public Vector3 DefaultLabelFontSize = new Vector3 (30f, 30f, 1f);
+				public Vector3 DefaultLabelFontSize = new Vector3(30f, 30f, 1f);
 				//set on startup
 				public UIFont DefaultLabelFont;
 				public List <Texture2D> TerrainGrassTextures = new List<Texture2D>();
@@ -199,9 +199,24 @@ namespace Frontiers
 
 								WindowsMaterial.SetColor("_ReflectColor", Color.Lerp(Color.black, RenderSettings.ambientLight, 0.5f));
 								//WaterWavesMaterial.SetFloat("_AnimSpeed", (float)WorldClock.Get.TimeScale);
+
+								//luminite stencil materials are only bright at night
+								if (WorldClock.IsDay) {
+										mLuminiteStencilColor = Color.Lerp(mLuminiteStencilColor, Colors.Get.LuminiteStencilColorDay, 0.05f);
+								} else {
+										if (Skills.Get.IsSkillInUse("Spyglass")) {
+												mLuminiteStencilColor = Color.Lerp(mLuminiteStencilColor, Colors.Get.LuminiteStencilColorNightSpyglass, 0.15f);
+										} else {
+												mLuminiteStencilColor = Color.Lerp(mLuminiteStencilColor, Colors.Get.LuminiteStencilColorNight, 0.05f);
+										}
+								}
+								LuminiteStencilMaterial.color = mLuminiteStencilColor;
 						}
 				}
 
+				protected Color mLuminiteStencilColor;
+				public Material LightProjectorMaterial;
+				public Material LuminiteStencilMaterial;
 				public Material BodyOfWaterMaterial;
 				public Material RiverMaterial;
 				public List <Material> TimedGlowMaterials = new List<Material>();

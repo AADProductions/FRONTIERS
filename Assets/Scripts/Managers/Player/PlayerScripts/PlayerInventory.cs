@@ -196,6 +196,11 @@ namespace Frontiers
 
 						State.PlayerBank.RefreshAction += OnBankChange;
 						GUIInventoryInterface.Get.CurrencyInterface.SetBank(State.PlayerBank);
+
+						if (State.ActiveQuickslot < 0) {
+								State.ActiveQuickslot = 0;
+						}
+						GUIInventoryInterface.Get.SetActiveQuickslots(State.ActiveQuickslot);
 				}
 
 				public override void OnLocalPlayerDespawn()

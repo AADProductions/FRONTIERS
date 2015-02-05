@@ -34,6 +34,24 @@ namespace Frontiers.World
 						//GameWorld.Get.AddGraphNode (new TerrainNode (transform.position));
 				}
 
+				public override int OnRefreshHud(int lastHudPriority)
+				{
+						lastHudPriority++;
+						switch (State.CurrentState) {
+								case EntranceState.Closed:
+										GUI.GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Open", worlditem.HudTarget, GameManager.Get.GameCamera);
+										break;
+
+								case EntranceState.Open:
+										GUI.GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Close", worlditem.HudTarget, GameManager.Get.GameCamera);
+										break;
+
+								default:
+										break;
+						}
+						return lastHudPriority;
+				}
+
 				public void OnTriggersLoaded()
 				{
 						bool lockTriggers = false;

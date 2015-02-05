@@ -252,10 +252,17 @@ namespace Frontiers
 												mFogDistance = mFogDistance * 0.5f;
 										}
 								}
+
+								//if the player has a boost for night-time ambient light apply it now
+								if (isUnderground || WorldClock.IsNight) {
+										mAmbientLightIntensity += Profile.Get.CurrentPreferences.Video.NightAmbientLightBooster * Globals.MaxAmbientLightBoost;
+								}
+
 								//mAmbientLightIntensity = Mathf.Lerp (mAmbientLightIntensity, 1.0f * primaryChunk.BiomeData.AmbientLightMultiplier, terrainType.b);
 								mSmoothAmbientLightIntensity = Mathf.Lerp(mSmoothAmbientLightIntensity, mAmbientLightIntensity, (float)(WorldClock.RTDeltaTime * ambientIntensityLerpTime));
 								mSmoothSunlightIntensity = Mathf.Lerp(mSmoothSunlightIntensity, mSunlightIntensity, (float)(WorldClock.RTDeltaTime * lightIntensityLerpTime));
 								mSmoothShadowStrengthBooster = Mathf.Lerp(mSmoothShadowStrengthBooster, mShadowStrengthBooster, (float)WorldClock.RTDeltaTime);
+
 								mAmbientColor = Color.Lerp(Color.black, mAmbientColor, mSmoothAmbientLightIntensity);
 								mAmbientColor = Color.Lerp(GameWorld.Get.Sky.AmbientColor, mAmbientColor, 0.5f);
 								mAmbientColorSmooth = Color.Lerp(mAmbientColorSmooth, mAmbientColor, (float)WorldClock.ARTDeltaTime);

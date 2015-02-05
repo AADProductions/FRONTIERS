@@ -10,6 +10,7 @@ namespace Frontiers.World
 {
 		public class Ladder : WIScript
 		{
+				public static Transform LadderLookPoint;
 				public LadderState State = new LadderState();
 				public Transform MountPoint;
 				public Transform DismountPoint;
@@ -23,6 +24,20 @@ namespace Frontiers.World
 						State.MountPoint.ApplyTo(MountPoint, false);
 						State.DismountPoint.ApplyTo(DismountPoint, false);
 				}
+
+				public override int OnRefreshHud(int lastHudPriority)
+				{
+						if (LadderLookPoint == null) {
+								LadderLookPoint = new GameObject("Ladder Look Point").transform;
+						}
+
+						LadderLookPoint.position = Player.Local.Surroundings.ClosestObjectFocusHitInfo.point;
+
+						lastHudPriority++;
+						GUI.GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Climb", LadderLookPoint, GameManager.Get.GameCamera);
+						return lastHudPriority;
+				}
+
 				#if UNITY_EDITOR
 				public override void OnEditorRefresh()
 				{

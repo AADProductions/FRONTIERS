@@ -96,6 +96,7 @@ namespace Frontiers.GUI
 				public UIRoot NGUIBaseRoot;
 				public UIAnchor NGUIBaseCenterAnchor;
 				public UIAnchor NGUITrash;
+				public Camera NGUIHudCamera;
 				public GUICrosshair Crosshair;
 				public UILabel TitleCardLabel;
 				//Editors
@@ -892,11 +893,18 @@ namespace Frontiers.GUI
 
 				public static void PostGainedItem(Frontiers.World.PurseState purseState)
 				{
+						InterfaceActionType a = InterfaceActionType.ToggleInventory;
+						InControl.InputControlType c = InterfaceActionManager.Get.GetActionBinding((int)InterfaceActionType.ToggleInventory);
+						if (Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+								a = InterfaceActionType.ToggleInterfaceNext;
+						}
 						Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage(
 								"Added " + purseState.TotalValue.ToString() + " to bank",
 								0.0,
 								"Currency",
-								GainedSomethingType.Currency);
+								GainedSomethingType.Currency,
+								a,
+								"Inventory");
 				}
 
 				public static void PostGainedItem(MobileReference structure)
@@ -905,48 +913,78 @@ namespace Frontiers.GUI
 								"You have aquired a structure",
 								0.0,
 								structure.FullPath,
-								GainedSomethingType.Structure);
+								GainedSomethingType.Structure,
+								InterfaceActionType.NoAction,
+								string.Empty);
 				}
 
 				public static void PostGainedItem(Frontiers.World.Book book)
 				{
+						//we can get to the log by cycling interface or by selecting it manually
+						//see which one we're using here
+						InterfaceActionType a = InterfaceActionType.ToggleLog;
+						InControl.InputControlType c = InterfaceActionManager.Get.GetActionBinding((int)InterfaceActionType.ToggleLog);
+						if (Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+								a = InterfaceActionType.ToggleInterfaceNext;
+						}
 						Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage(
-								book.CleanTitle + " added to Log (L)",
+								book.CleanTitle + " added to Log",
 								0.0,
 								book.Name,
-								GainedSomethingType.Book);
+								GainedSomethingType.Book,
+								a,
+								"View Log");
 				}
 
 				public static void PostGainedItem(Skill skill)
 				{
+						InterfaceActionType a = InterfaceActionType.ToggleLog;
+						InControl.InputControlType c = InterfaceActionManager.Get.GetActionBinding((int)InterfaceActionType.ToggleLog);
+						if (Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+								a = InterfaceActionType.ToggleInterfaceNext;
+						}
 						Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage(
-								"Learned skill: " + skill.DisplayName + "\n(Press 'L' to view)",
+								"Learned skill: " + skill.DisplayName + "\n",
 								0.0,
 								skill.name,
-								GainedSomethingType.Skill);
+								GainedSomethingType.Skill,
+								a,
+								"View Log");
 				}
 
 				public static void PostGainedItem(int currency, WICurrencyType type)
 				{
+						InterfaceActionType a = InterfaceActionType.ToggleInventory;
+						InControl.InputControlType c = InterfaceActionManager.Get.GetActionBinding((int)InterfaceActionType.ToggleInventory);
+						if (Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+								a = InterfaceActionType.ToggleInterfaceNext;
+						}
 						Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage(
-								"Added " + currency.ToString() + Frontiers.World.Currency.TypeToString(type) + " to Currency (TAB)",
+								"Added " + currency.ToString() + Frontiers.World.Currency.TypeToString(type) + " to Currency",
 								0.0,
 								"Currency",
-								GainedSomethingType.Currency);
+								GainedSomethingType.Currency,
+								a,
+								"Inventory");
 				}
 
 				public static void PostGainedItem(int credentials, string credentialsFlagset)
 				{
-						Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage(
+						/*Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage(
 								"Gained credentials: " + credentialsFlagset,
 								0.0,
 								credentialsFlagset,
-								GainedSomethingType.Credential);
+								GainedSomethingType.Credential);*/
 				}
 
 				public static void PostGainedItem(Mission mission)
 				{
-						string message = "New mission: " + mission.State.Title + "\n(Press 'L' to view)";
+						InterfaceActionType a = InterfaceActionType.ToggleLog;
+						InControl.InputControlType c = InterfaceActionManager.Get.GetActionBinding((int)InterfaceActionType.ToggleLog);
+						if (Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+								a = InterfaceActionType.ToggleInterfaceNext;
+						}
+						string message = "New mission: " + mission.State.Title + "\n";
 						if (mission.State.ObjectivesCompleted) {
 								message = "Completed " + mission.State.Title;
 						}
@@ -954,16 +992,25 @@ namespace Frontiers.GUI
 								message,
 								0.0,
 								mission.State.Name,
-								GainedSomethingType.Mission);
+								GainedSomethingType.Mission,
+								a,
+								"View Log");
 				}
 
 				public static void PostGainedItem(WIBlueprint blueprint)
 				{
+						InterfaceActionType a = InterfaceActionType.ToggleLog;
+						InControl.InputControlType c = InterfaceActionManager.Get.GetActionBinding((int)InterfaceActionType.ToggleLog);
+						if (Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+								a = InterfaceActionType.ToggleInterfaceNext;
+						}
 						Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage(
 								"Acquired blueprint: " + blueprint.CleanName,
 								0.0,
 								blueprint.Name,
-								GainedSomethingType.Blueprint);
+								GainedSomethingType.Blueprint,
+								a,
+								"View Log");
 				}
 
 				public static void PostTutorialMessage(string message)

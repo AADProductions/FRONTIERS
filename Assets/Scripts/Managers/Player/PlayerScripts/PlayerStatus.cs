@@ -506,7 +506,7 @@ namespace Frontiers
 								traveling = State.IsTraveling;
 								if (!traveling) {	//we can rule a few things out if we're not travling...
 										sleeping = State.IsSleeping;
-										insideStructure	= player.Surroundings.IsInsideStructure;
+										insideStructure	= player.Surroundings.IsInsideStructure || (sleeping && mLastBed.IsEnclosed);
 										inCivilization	= player.Surroundings.IsInCivilization;
 										inSafeLocation	= player.Surroundings.IsInSafeLocation;
 										isUnderground = player.Surroundings.IsUnderground;

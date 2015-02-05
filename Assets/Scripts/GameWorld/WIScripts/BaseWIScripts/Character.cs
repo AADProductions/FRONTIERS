@@ -63,6 +63,19 @@ namespace Frontiers.World.BaseWIScripts
 						}
 				}
 
+				public override int OnRefreshHud(int lastHudPriority)
+				{
+						if (IsDead || IsStunned || IsSleeping) {
+								return lastHudPriority;
+						}
+						Talkative talkative = null;
+						if (worlditem.Is <Talkative>(out talkative)) {
+								lastHudPriority++;
+								GUI.GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Talk", worlditem.HudTarget, GameManager.Get.GameCamera);
+						}
+						return lastHudPriority;
+				}
+
 				public override Transform HudTargeter()
 				{
 						return Body.Transforms.HeadTop;

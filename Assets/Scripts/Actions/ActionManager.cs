@@ -739,6 +739,18 @@ namespace Frontiers
 
 				#region binding search for creating device profile
 
+				public InputControlType GetActionBinding (int action) {
+						InputControlType control = InputControlType.None;
+						for (int i = 0; i < CurrentActionSettings.Count; i++) {
+								ActionSetting a = CurrentActionSettings[i];
+								if (a.Action == action) {
+										control = a.Controller;
+										break;
+								}
+						}
+						return control;
+				}
+
 				public bool GetMouseBinding(InputControlType controllerAction, ref ActionSetting.MouseAction mouseBinding)
 				{
 						mouseBinding = ActionSetting.MouseAction.None;

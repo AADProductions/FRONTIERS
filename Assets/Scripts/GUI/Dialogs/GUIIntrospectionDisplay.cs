@@ -15,6 +15,7 @@ namespace Frontiers.GUI
 				public UISprite BorderSprite;
 				public UIPanel ClipPanel;
 				public UILabel MessageLabel;
+				public GUIHudMiniAction MiniAction;
 
 				public Vector4 ClipTarget {
 						get {
@@ -151,74 +152,98 @@ namespace Frontiers.GUI
 										GainedSomethingIconPanelTarget = GainedSomethingIconPanelVisible;
 
 										if (!mCurrentMessage.UpdatedIcon) {
-												//UUUUGH this is fucking disgusting
-												switch (mCurrentMessage.Type) {
-														case GainedSomethingType.Currency:
-																IconSprite.atlas = Mats.Get.IconsAtlas;
-																IconSprite.color = Colors.Get.MessageInfoColor;
-																IconBackground.color = Colors.Get.SuccessHighlightColor;
-																IconSprite.spriteName = "SkillIconGuildSellMap";
-																break;
+												//if we haven't updated the icon we haven't parsed scripts either
+												mCurrentMessage.Message = Data.GameData.InterpretScripts(mCurrentMessage.Message, Profile.Get.CurrentGame.Character, null);
 
-														case GainedSomethingType.Mission:
-																IconSprite.atlas = Mats.Get.IconsAtlas;
-																MissionState missionState = null;
-																if (Missions.Get.MissionStateByName(mCurrentMessage.GainedSomethingName, out missionState) && missionState.ObjectivesCompleted) {
-																		IconSprite.color = Colors.Get.MessageSuccessColor;
-																		IconBackground.color = Colors.Get.SuccessHighlightColor;
+												//first update the prompt under the icon
+												if (mCurrentMessage.Control != InControl.InputControlType.None) {
+														if (!Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+																//key takes priority over mouse
+																if (mCurrentMessage.Key != KeyCode.None) {
+																		MiniAction.SetKey(mCurrentMessage.Key, mCurrentMessage.ActionDescription);
 																} else {
-																		IconSprite.color = Colors.Get.MessageInfoColor;
-																		IconBackground.color = Colors.Get.SuccessHighlightColor;
+																		//mouse
+																		MiniAction.SetMouse(mCurrentMessage.Mouse, mCurrentMessage.ActionDescription);
 																}
-																IconSprite.spriteName = missionState.IconName;
-																break;
-
-														case GainedSomethingType.Book:
-																IconSprite.atlas = Mats.Get.IconsAtlas;
-																IconSprite.color = Colors.Get.MessageInfoColor;
-																IconBackground.color = Colors.Get.SuccessHighlightColor;
-																IconSprite.spriteName = "SkillIconGuildLibrary";
-																break;
-
-														case GainedSomethingType.Skill:
-																IconSprite.atlas = Mats.Get.IconsAtlas;
-																Skill skill = null;
-																if (Skills.Get.SkillByName(mCurrentMessage.GainedSomethingName, out skill)) {
-																		IconSprite.color = skill.SkillIconColor;
-																		IconBackground.color = skill.SkillBorderColor;
-																}
-																IconSprite.spriteName = skill.Info.IconName;
-																break;
-
-														case GainedSomethingType.Structure:
-																IconSprite.atlas = Mats.Get.MapIconsAtlas;
-																IconSprite.color = Colors.Get.MessageSuccessColor;
-																IconBackground.color = Colors.Get.SuccessHighlightColor;
-																IconSprite.spriteName = "MapIconStructure";
-																break;
-
-														case GainedSomethingType.Blueprint:
-																IconSprite.atlas = Mats.Get.IconsAtlas;
-																WIBlueprint bp = null;
-																if (Blueprints.Get.Blueprint(mCurrentMessage.GainedSomethingName, out bp)) {
-																		Skill bpSkill = null;
-																		if (Skills.Get.SkillByName(bp.RequiredSkill, out bpSkill)) {
-																				IconSprite.spriteName = bpSkill.Info.IconName;
-																				IconSprite.color = bpSkill.SkillIconColor;
-																				IconBackground.color = bpSkill.SkillBorderColor;
-																		}
-																}
-																IconSprite.spriteName = "SkillIconCraftCreateBlueprint";
-																break;
-
-														default:
-																break;
+														} else {
+																MiniAction.SetControl(mCurrentMessage.Control, mCurrentMessage.ActionDescription, InterfaceActionManager.ActionSpriteSuffix);
+														}
+												} else {
+														//if there is no prompt, reset the prompt
+														MiniAction.Reset();
 												}
 
-												mCurrentMessage.UpdatedIcon = true;
+
+										//UUUUGH this is fucking disgusting
+										switch (mCurrentMessage.Type) {
+												case GainedSomethingType.Currency:
+														IconSprite.atlas = Mats.Get.IconsAtlas;
+														IconSprite.color = Colors.Get.MessageInfoColor;
+														IconBackground.color = Colors.Get.SuccessHighlightColor;
+														IconSprite.spriteName = "SkillIconGuildSellMap";
+														break;
+
+												case GainedSomethingType.Mission:
+														IconSprite.atlas = Mats.Get.IconsAtlas;
+														MissionState missionState = null;
+														if (Missions.Get.MissionStateByName(mCurrentMessage.GainedSomethingName, out missionState) && missionState.ObjectivesCompleted) {
+																IconSprite.color = Colors.Get.MessageSuccessColor;
+																IconBackground.color = Colors.Get.SuccessHighlightColor;
+														} else {
+																IconSprite.color = Colors.Get.MessageInfoColor;
+																IconBackground.color = Colors.Get.SuccessHighlightColor;
+														}
+														IconSprite.spriteName = missionState.IconName;
+														break;
+
+												case GainedSomethingType.Book:
+														IconSprite.atlas = Mats.Get.IconsAtlas;
+														IconSprite.color = Colors.Get.MessageInfoColor;
+														IconBackground.color = Colors.Get.SuccessHighlightColor;
+														IconSprite.spriteName = "SkillIconGuildLibrary";
+														break;
+
+												case GainedSomethingType.Skill:
+														IconSprite.atlas = Mats.Get.IconsAtlas;
+														Skill skill = null;
+														if (Skills.Get.SkillByName(mCurrentMessage.GainedSomethingName, out skill)) {
+																IconSprite.color = skill.SkillIconColor;
+																IconBackground.color = skill.SkillBorderColor;
+														}
+														IconSprite.spriteName = skill.Info.IconName;
+														break;
+
+												case GainedSomethingType.Structure:
+														IconSprite.atlas = Mats.Get.MapIconsAtlas;
+														IconSprite.color = Colors.Get.MessageSuccessColor;
+														IconBackground.color = Colors.Get.SuccessHighlightColor;
+														IconSprite.spriteName = "MapIconStructure";
+														break;
+
+												case GainedSomethingType.Blueprint:
+														IconSprite.atlas = Mats.Get.IconsAtlas;
+														WIBlueprint bp = null;
+														if (Blueprints.Get.Blueprint(mCurrentMessage.GainedSomethingName, out bp)) {
+																Skill bpSkill = null;
+																if (Skills.Get.SkillByName(bp.RequiredSkill, out bpSkill)) {
+																		IconSprite.spriteName = bpSkill.Info.IconName;
+																		IconSprite.color = bpSkill.SkillIconColor;
+																		IconBackground.color = bpSkill.SkillBorderColor;
+																}
+														}
+														IconSprite.spriteName = "SkillIconCraftCreateBlueprint";
+														break;
+
+												default:
+														break;
 										}
 
+										mCurrentMessage.UpdatedIcon = true;
+								}
+
 								} else {
+										//update the visibility of the mini thing
+
 										GainedSomethingIconPanelTarget = GainedSomethingIconInvisible;
 										if (mCurrentMessage.CenterText) {
 												if (mCurrentMessage.LongForm) {
@@ -274,6 +299,7 @@ namespace Frontiers.GUI
 						} else {
 								MessageLabel.alpha = 1.0f;
 						}
+						MiniAction.SetAlpha(MessageLabel.alpha);
 				}
 
 				public void AddMessage(string newMessage, double delay, Frontiers.World.IItemOfInterest focusItem, bool longForm, bool force, bool skipOnLoseFocus)
@@ -377,7 +403,7 @@ namespace Frontiers.GUI
 						mQueuedMessages.Enqueue(new IntrospectionMessage(true, 0f, newMessage, string.Empty, centerText));
 				}
 
-				public void AddGainedSomethingMessage(string newMessage, double delay, string gainedSomethingName, GainedSomethingType gainedSomethingType)
+				public void AddGainedSomethingMessage(string newMessage, double delay, string gainedSomethingName, GainedSomethingType gainedSomethingType, InterfaceActionType action, string actionDescription)
 				{
 
 						IntrospectionMessage newGainedSomethingMessage = new IntrospectionMessage();
@@ -392,6 +418,14 @@ namespace Frontiers.GUI
 								MessageLabel.text = string.Empty;
 						}
 
+						if (action != InterfaceActionType.NoAction) {
+								newGainedSomethingMessage.ActionDescription = actionDescription;
+								newGainedSomethingMessage.Control = InterfaceActionManager.Get.GetActionBinding((int)action);
+								if (newGainedSomethingMessage.Control != InControl.InputControlType.None) {
+										InterfaceActionManager.Get.GetKeyBinding(newGainedSomethingMessage.Control, ref newGainedSomethingMessage.Key);
+										InterfaceActionManager.Get.GetMouseBinding(newGainedSomethingMessage.Control, ref newGainedSomethingMessage.Mouse);
+								}
+						}
 						mQueuedMessages.Enqueue(newGainedSomethingMessage);
 				}
 
@@ -452,6 +486,11 @@ namespace Frontiers.GUI
 								GainedSomethingName = null;
 
 								UpdatedIcon = false;
+
+								Key = KeyCode.None;
+								Mouse = ActionSetting.MouseAction.None;
+								Control = InControl.InputControlType.None;
+								ActionDescription = string.Empty;
 						}
 
 						public bool	Skip;
@@ -474,6 +513,11 @@ namespace Frontiers.GUI
 						public string Message;
 						public string MissionToActivate;
 						public bool CenterText;
+
+						public KeyCode Key;
+						public ActionSetting.MouseAction Mouse;
+						public InControl.InputControlType Control;
+						public string ActionDescription;
 
 						public bool GainedSomething {
 								get {

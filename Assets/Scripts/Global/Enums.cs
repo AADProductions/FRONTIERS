@@ -2335,15 +2335,15 @@ namespace Frontiers
 		[Serializable]
 		public enum MapDirection
 		{
-				A_North,
-				B_NorthEast,
-				C_East,
-				D_SEast,
-				E_South,
-				F_SouthWest,
-				G_West,
-				H_NorthWest,
-				I_None,
+				A_North = 0,
+				B_NorthEast = 45,
+				C_East = 90,
+				D_SEast = 135,
+				E_South = 180,
+				F_SouthWest = 225,
+				G_West = 270,
+				H_NorthWest = 315,
+				I_None = 360,
 		}
 
 		[Serializable]
@@ -2849,7 +2849,6 @@ namespace Frontiers
 		{
 				LookAtTarget,
 				OrientToTarget,
-				Zoom,
 		}
 
 		public enum FXType

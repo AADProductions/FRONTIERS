@@ -16,6 +16,7 @@ namespace Frontiers.World.BaseWIScripts
 				public InnKeeper ParentInkeeper;
 				public Character ParentResident;
 				public Character Occupant;
+				public bool IsEnclosed = true;
 
 				public bool IsOccupied {
 						get {

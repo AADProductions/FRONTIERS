@@ -112,11 +112,7 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void RefreshPlantProps()
 				{
-						if (string.IsNullOrEmpty(State.PlantName)) {
-								State.PlantName = worlditem.Props.Local.Subcategory;
-						} else {
-								worlditem.Props.Local.Subcategory = State.PlantName;
-						}
+						worlditem.Props.Local.Subcategory = State.PlantName;
 						if (State.Season == TimeOfYear.None || !HasBeenPicked) {
 								State.Season = WorldClock.SeasonCurrent;
 						}

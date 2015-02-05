@@ -9,12 +9,34 @@ namespace Frontiers.World.BaseWIScripts
 {
 		public class LiquidSource : WIScript
 		{
+				public static Transform LiquidSourceLookPoint;
+
 				public LiquidSourceState State = new LiquidSourceState();
 
 				public override void OnInitialized()
-		{
+				{
 						worlditem.OnPlayerUse += OnPlayerUse;
-		}
+				}
+
+				public override int OnRefreshHud(int lastHudPriority)
+				{
+						lastHudPriority++;
+						if (LiquidSourceLookPoint == null) {
+								LiquidSourceLookPoint = new GameObject("Liquid Source Look Point").transform;
+						}
+						enabled = true;
+						GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Drink", LiquidSourceLookPoint, GameManager.Get.GameCamera);
+						return lastHudPriority;
+				}
+
+				public void Update () {
+						if (worlditem.HasPlayerFocus) {
+								LiquidSourceLookPoint.position = Player.Local.Surroundings.ClosestObjectFocusHitInfo.point;
+						} else {
+								enabled = false;
+								return;
+						}
+				}
 
 				public override void PopulateOptionsList(System.Collections.Generic.List<WIListOption> options, List <string> message)
 				{
@@ -33,7 +55,8 @@ namespace Frontiers.World.BaseWIScripts
 						options.Add(new WIListOption("Drink " + mGenericLiquid.DisplayName, "Drink"));
 				}
 
-				public void OnPlayerUse ( ) {
+				public void OnPlayerUse()
+				{
 						Drink();
 				}
 
@@ -58,7 +81,8 @@ namespace Frontiers.World.BaseWIScripts
 						mOptionsListItems.Clear();
 				}
 
-				protected void Drink ( ) {
+				protected void Drink()
+				{
 						if (mGenericLiquid == null) {
 								if (!WorldItems.GetRandomGenericWorldItemFromCatgeory(State.LiquidCategory, out mGenericLiquid)) {
 										return;

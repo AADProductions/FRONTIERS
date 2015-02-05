@@ -14,6 +14,8 @@ namespace Frontiers
 				public static bool ControllerDrivenMouseMovement = false;
 				public static float ControllerMouseSensitivity = 0.05f;
 				public static int ControllerMouseSmoothSteps = 5;
+				//this is the sprite suffix for controller buttons
+				public static string ActionSpriteSuffix = "XBox";
 
 				public static bool Suspended {
 						get {
@@ -83,6 +85,21 @@ namespace Frontiers
 						if (Profile.Get.HasSelectedProfile) {
 								Profile.Get.CurrentPreferences.Controls.InterfaceActionSettings.Clear();
 								Profile.Get.CurrentPreferences.Controls.InterfaceActionSettings.AddRange(CurrentActionSettings);
+						}
+						//figure out what kind of controller we have plugged in
+						foreach (InputDevice d in InputManager.Devices) {
+								string nameCheck = d.Name.ToLower();
+								if (nameCheck.Contains("xbox") || nameCheck.Contains("logitech")) {
+										ActionSpriteSuffix = "XBox";
+								} else if (nameCheck.Contains("ps2") || nameCheck.Contains("ps3")) {
+										ActionSpriteSuffix = "PS3";
+								} else if (nameCheck.Contains("steam")) {
+										ActionSpriteSuffix = "Steam";
+								} else {
+										Debug.Log("Setting action sprite suffix to default");
+										ActionSpriteSuffix = Globals.ControllerDefaultActionSpriteSuffix;
+								}
+								Debug.Log("Setting action sprite suffix to " + ActionSpriteSuffix);
 						}
 				}
 

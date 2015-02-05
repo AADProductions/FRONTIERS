@@ -10,10 +10,12 @@ namespace Frontiers.World
 {
 		public class Container : WIScript
 		{
-				public string OpenText = "Open";//changed by whatever uses it
-				public bool CanOpen = true;//whether it can be opened at all
-				public bool CanUseToOpen = true;//whether OnPlayerUse opens it automatically
-
+				public string OpenText = "Open";
+//changed by whatever uses it
+				public bool CanOpen = true;
+//whether it can be opened at all
+				public bool CanUseToOpen = true;
+//whether OnPlayerUse opens it automatically
 				public override bool CanBeCarried {
 						get {
 								return State.Type != ContainerType.ShopGoods;
@@ -48,6 +50,15 @@ namespace Frontiers.World
 				public override void OnInitialized()
 				{
 						worlditem.OnPlayerUse += OnPlayerUse;
+				}
+
+				public override int OnRefreshHud(int lastHudPriority)
+				{
+						if ((CanOpen && CanUseToOpen) && !worlditem.CanEnterInventory) {
+								lastHudPriority++;
+								GUI.GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Open", worlditem.HudTarget, GameManager.Get.GameCamera);
+						}
+						return lastHudPriority;
 				}
 
 				public void OnPlayerUse()
@@ -104,6 +115,7 @@ namespace Frontiers.World
 		public class ContainerState
 		{
 				public ContainerType Type = ContainerType.PersonalEffects;
-				public int ReputationChangeOnOpen = 0;//for coffins mainly
+				public int ReputationChangeOnOpen = 0;
+//for coffins mainly
 		}
 }

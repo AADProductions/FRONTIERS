@@ -10,6 +10,8 @@ namespace Frontiers
 {
 		public class PlayerFocus : PlayerScript
 		{
+				public Transform FocusTransform;
+				public Vector3 FocusTransformTarget;
 				public IItemOfInterest LastFocusedObject = null;
 				public List <IItemOfInterest> AttentionObjects = new List <IItemOfInterest>();
 				public Dictionary <IItemOfInterest, double> LosingAttentionObjects = new Dictionary <IItemOfInterest, double>();
@@ -19,6 +21,7 @@ namespace Frontiers
 				public override void OnGameStart()
 				{
 						mTargetHolder = gameObject.GetOrAdd <RVOTargetHolder>();
+						FocusTransform = new GameObject("Focus Transform").transform;
 						enabled = true;
 				}
 
@@ -42,6 +45,7 @@ namespace Frontiers
 												LastFocusedObject = player.Surroundings.ClosestObjectFocus;
 												LastFocusedObject.HasPlayerFocus = true;
 										}
+										FocusTransformTarget = player.Surroundings.ClosestObjectFocusHitInfo.point;
 								} else {
 										if (LastFocusedObject != null) {
 												LastFocusedObject.HasPlayerFocus = false;
@@ -82,6 +86,10 @@ namespace Frontiers
 						if (LosingAttentionObjects.Remove(newAttentionObject)) {	//remove this in any case
 								LosingAttentionObjects.Remove(newAttentionObject);
 						}
+				}
+
+				public void Update(){
+						FocusTransform.position = Vector3.Lerp(FocusTransform.position, FocusTransformTarget, 0.35f);
 				}
 
 				public void LateUpdate()

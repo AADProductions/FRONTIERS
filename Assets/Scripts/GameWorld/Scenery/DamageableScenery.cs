@@ -38,10 +38,6 @@ namespace Frontiers.World
 				public virtual void OnGainPlayerFocus()
 				{
 						if (State.SpawnOnDamaage) {
-								if (mHudTarget == null) {
-										mHudTarget = new GameObject("DamageableSceneryHudTarget").transform;
-								}
-								mHudTarget.position = Player.Local.Surroundings.ClosestObjectFocusHitInfo.point;
 								mHasWeaponEquipped = false;
 								mHadWeaponEquippedLastFrame = false;
 								enabled = true;
@@ -58,17 +54,13 @@ namespace Frontiers.World
 						if (HasPlayerFocus) {
 								mHasWeaponEquipped = Player.Local.Tool.HasWorldItem && Player.Local.Tool.worlditem.Is <Weapon>();
 								if (mHasWeaponEquipped && !mHadWeaponEquippedLastFrame) {
-										mHudTarget.position = Player.Local.Surroundings.ClosestObjectFocusHitInfo.point;
-										GUIHud.Get.ShowControls(this, 0, "Mine", mHudTarget, GameManager.Get.GameCamera);
+										GUIHud.Get.ShowAction (this, UserActionType.ToolUse, "Mine", Player.Local.Focus.FocusTransform, GameManager.Get.GameCamera);
 								}
-								mHudTarget.position = Vector3.Lerp(mHudTarget.position, Player.Local.Surroundings.ClosestObjectFocusHitInfo.point, 0.35f);
 								mHadWeaponEquippedLastFrame = mHasWeaponEquipped;
 						} else {
 								enabled = false;
 						}
 				}
-
-				public static Transform mHudTarget;
 
 				public virtual bool TakeDamage(WIMaterialType materialType, Vector3 damagePoint, float attemptedDamage, Vector3 attemptedForce, string damageSource, out float actualDamage, out bool isDead)
 				{

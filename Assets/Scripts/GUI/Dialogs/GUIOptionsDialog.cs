@@ -45,6 +45,7 @@ namespace Frontiers.GUI
 				public UISlider VideoTerrainTerrainDetail;
 				public UISlider VideoTerrainTreeBillboardDistance;
 				public UISlider VideoTerrainTreeDistance;
+				public UISlider VideoAmbientLightAtNight;
 				public UISlider ImmersionCrosshairAlphaSlider;
 				public UISlider ImmersionCrosshairInactiveAlphaSlider;
 				public UISlider ImmersionPathGlowIntensitySlider;
@@ -57,6 +58,7 @@ namespace Frontiers.GUI
 				public UICheckbox ControllerCursorCheckbox;
 				public UICheckbox CustomDeadZonesCheckbox;
 				public UICheckbox OculusModeCheckbox;
+				public UICheckbox ControllerPrompts;
 				public UISlider AccessibilityTextSpeed;
 				public float VideoFovMin = 60.0f;
 				public float VideoFovMax = 120.0f;
@@ -146,6 +148,7 @@ namespace Frontiers.GUI
 						Profile.Get.CurrentPreferences.Controls.MouseInvertYAxis = MouseInvertYAxis.isChecked;
 						Profile.Get.CurrentPreferences.Controls.UseControllerMouse = ControllerCursorCheckbox.isChecked;
 						Profile.Get.CurrentPreferences.Controls.UseCustomDeadZoneSettings = CustomDeadZonesCheckbox.isChecked;
+						Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts = ControllerPrompts.isChecked;
 						Profile.Get.CurrentPreferences.Controls.Apply();
 				}
 
@@ -289,6 +292,7 @@ namespace Frontiers.GUI
 						mMadeVideoChanges = true;
 
 						TempVideoPrefs.AdjustBrightness = Mathf.CeilToInt (VideoLighting.sliderValue * 100);
+						TempVideoPrefs.NightAmbientLightBooster = VideoAmbientLightAtNight.sliderValue;
 						if (TempVideoPrefs.AdjustBrightness == 51 || VideoLighting.sliderValue == 49) {
 								//snap to middle
 								//that will disable the brightness adjustment
@@ -376,6 +380,7 @@ namespace Frontiers.GUI
 						VideoResolutionLabel.text = (videoPrefs.ResolutionWidth.ToString() + " x " + videoPrefs.ResolutionHeight.ToString());
 						VideoFOVLabel.text = videoPrefs.FieldOfView.ToString();
 						VideoLighting.sliderValue = ((float)videoPrefs.AdjustBrightness) / 100;
+						VideoAmbientLightAtNight.sliderValue = videoPrefs.NightAmbientLightBooster;
 			
 						#region labels
 						string textureResolution = string.Empty;
@@ -520,6 +525,7 @@ namespace Frontiers.GUI
 						MouseInvertYAxis.isChecked = Profile.Get.CurrentPreferences.Controls.MouseInvertYAxis;
 						ControllerCursorCheckbox.isChecked = Profile.Get.CurrentPreferences.Controls.UseControllerMouse;
 						CustomDeadZonesCheckbox.isChecked = Profile.Get.CurrentPreferences.Controls.UseCustomDeadZoneSettings;
+						ControllerPrompts.isChecked = Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts;
 						mRefreshingControls = false;
 				}
 

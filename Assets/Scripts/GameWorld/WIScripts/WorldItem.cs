@@ -100,9 +100,9 @@ namespace Frontiers.World
 						Props.Name.FileNameIncrement = increment;
 						#if UNITY_EDITOR
 						if (Application.isPlaying) {
-						#endif
+								#endif
 								var enumerator = mScripts.Values.GetEnumerator();
-								while (enumerator.MoveNext ( )) {
+								while (enumerator.MoveNext()) {
 										//foreach (WIScript script in mScripts.Values) {
 										if (!enumerator.Current.AutoIncrementFileName) {
 												Props.Name.FileName = enumerator.Current.GenerateUniqueFileName(increment);
@@ -110,7 +110,7 @@ namespace Frontiers.World
 												break;
 										}
 								}
-						#if UNITY_EDITOR
+								#if UNITY_EDITOR
 						} else {
 								WIScript[] wiScripts = gameObject.GetComponents <WIScript>();
 								foreach (WIScript script in wiScripts) {
@@ -176,7 +176,7 @@ namespace Frontiers.World
 								if (HudTargeter != null) {
 										return HudTargeter();
 								}
-								return transform;
+								return tr;
 						}
 				}
 
@@ -294,7 +294,7 @@ namespace Frontiers.World
 						return true;
 				}
 
-				public void RefreshTransform ()
+				public void RefreshTransform()
 				{
 						//gets the latest in-game position
 						if (!mDestroyed) {
@@ -347,33 +347,33 @@ namespace Frontiers.World
 				public void RefreshHud()
 				{
 						if (HasPlayerFocus) {
-								//disabling the wiscript HUD for now
-								//once i've settled on which items need custom HUDs i'll put this functionality back in each individual wiscript
-								/*
-								foreach (WIScript script in mScripts.Values) {
-									script.OnRefreshHud(HUD);
+								//GUIHud.Get.ClearFocusItem(worlditem);
+								int lastHudPriority = 0;
+								int currentHudPriority = 0;
+								var enumerator = mScripts.Values.GetEnumerator();
+								while (enumerator.MoveNext()) {
+										currentHudPriority = enumerator.Current.OnRefreshHud(lastHudPriority);
+										if (currentHudPriority < 0) {
+												//Debug.Log("Priority was less than zero, breaking");
+												lastHudPriority = currentHudPriority;
+												break;
+										} else {
+												lastHudPriority = Mathf.Max(currentHudPriority, lastHudPriority);
+										}
 								}
-								*/
-								if (Is <Trigger>(out mTriggerCheck)) {
-										GUIHud.Get.ShowControls(this, KeyCode.E, mTriggerCheck.ActionDescription, 1, "Interact", HudTarget, GameManager.Get.GameCamera);
-								} else if (Is <PathMarker>(out mPathMarkerCheck)) {
-										GUIHud.Get.ShowControls(this, KeyCode.E, "Fast Travel", 1, "Interact", HudTarget, GameManager.Get.GameCamera);
-								} else if (Is <Receptacle>(out mReceptacleCheck)) {
-										if (Player.Local.ItemPlacement.IsCarryingSomething || Player.Local.Tool.IsEquipped) {
-												GUIHud.Get.ShowControls(this, KeyCode.E, "Place", 1, "Interact", HudTarget, GameManager.Get.GameCamera);
+								//if nothing set the HUD priority, let the player know whether it can enter inventory
+								if (lastHudPriority == 0) {
+										//Debug.Log("Nothing else set priority, setting hud");
+										if (CanEnterInventory && Player.Local.Inventory.CanItemFit(this)) {
+												//Debug.Log("item can enter inventory and fit into inventory, showing 'pick up/interact'");
+												GUIHud.Get.ShowActions(this, UserActionType.ItemUse, UserActionType.ItemInteract, "Pick up", "Interact", HudTarget, GameManager.Get.GameCamera);
 										} else {
-												GUIHud.Get.ShowControls(this, 1, "Interact", HudTarget, GameManager.Get.GameCamera);
+												//Debug.Log("Item can't enter inventory, showing iteract");
+												GUIHud.Get.ShowAction(this, UserActionType.ItemInteract, "Interact", HudTarget, GameManager.Get.GameCamera);
 										}
-								} else {
-										if (CanEnterInventory) {
-												GUIHud.Get.ShowControls(this, KeyCode.E, "Pick up", 1, "Interact", HudTarget, GameManager.Get.GameCamera);
-										} else {
-												if (Is <Container>(out mContainerCheck) && mContainerCheck.CanUseToOpen) {
-														GUIHud.Get.ShowControls(this, KeyCode.E, mContainerCheck.OpenText, 1, "Interact", HudTarget, GameManager.Get.GameCamera);
-												} else {
-														GUIHud.Get.ShowControls(this, 1, "Interact", HudTarget, GameManager.Get.GameCamera);
-												}
-										}
+								} else if (lastHudPriority < 0) {
+										//Debug.Log("last hud priority was less than zero, clearing");
+										GUIHud.Get.ClearFocusItem(worlditem);
 								}
 						}
 				}
@@ -556,7 +556,7 @@ namespace Frontiers.World
 								try {
 										OnModeChange.SafeInvoke();
 								} catch (Exception e) {
-										Debug.LogError("Exception when changing mode, proceeding normally: " + e.ToString ());
+										Debug.LogError("Exception when changing mode, proceeding normally: " + e.ToString());
 								}
 						}
 				}
@@ -649,16 +649,16 @@ namespace Frontiers.World
 
 						ActiveState = WIActiveState.Invisible;
 						//this will create a save state to be saved to disk over time
-						WorldItems.Get.Save (this, true);//TODO make this NOT true
+						WorldItems.Get.Save(this, true);//TODO make this NOT true
 						//unloaded just means unloaded, not actually removed
 						//so don't tell our stack that we've been removed
 						//but do tell the group!
-						Group.UnloadChildItem (this);
+						Group.UnloadChildItem(this);
 						//this will call OnRemovedFromGroup
 						OnUnloaded.SafeInvoke();
 						//now scripts will start unloading their stuff
 						var enumerator = mScripts.Values.GetEnumerator();
-						while (enumerator.MoveNext ()) {
+						while (enumerator.MoveNext()) {
 								//foreach (WIScript script in mScripts.Values) {
 								enumerator.Current.enabled = false;
 						}

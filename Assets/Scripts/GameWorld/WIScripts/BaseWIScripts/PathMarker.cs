@@ -71,6 +71,13 @@ namespace Frontiers.World.BaseWIScripts
 						}
 				}
 
+				public override int OnRefreshHud(int lastHudPriority)
+				{
+						lastHudPriority++;
+						GUI.GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Fast Travel", worlditem.HudTarget, GameManager.Get.GameCamera);
+						return lastHudPriority;
+				}
+
 				public bool HasPathMarkerProps {
 						get {
 								if (mProps != null && mProps != PathMarkerInstanceTemplate.Empty) {

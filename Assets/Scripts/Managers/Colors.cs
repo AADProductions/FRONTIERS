@@ -290,6 +290,9 @@ namespace Frontiers
 						return colorKeys;
 				}
 
+				public Color LuminiteStencilColorNight = Color.white;
+				public Color LuminiteStencilColorDay = Color.white;
+				public Color LuminiteStencilColorNightSpyglass = Color.white;
 				public Color InteriorAmbientColorDay;
 				public Color InteriorAmbientColorNight;
 				public Color BelowGroundAmbientColor;

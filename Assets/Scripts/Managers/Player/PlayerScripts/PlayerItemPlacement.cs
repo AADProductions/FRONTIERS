@@ -263,12 +263,12 @@ namespace Frontiers
 								if (PlacementResultsInDrop) {
 										if (!mShowingHUD) {
 												mShowingHUD = true;
-												GUIHud.Get.ShowControls(KeyCode.E, "Drop", PlacementDoppleganger.transform, GameManager.Get.GameCamera);
+												GUIHud.Get.ShowAction(UserActionType.ItemUse, "Drop", PlacementDoppleganger.transform, GameManager.Get.GameCamera);
 										}
 								} else {
 										if (!mShowingHUD) {
 												mShowingHUD = true;
-												GUIHud.Get.ShowControls(KeyCode.E, "Place", 3, "Rotate", PlacementDoppleganger.transform, GameManager.Get.GameCamera);
+												GUIHud.Get.ShowActions (UserActionType.ItemUse, InterfaceActionType.SelectionNext, "Place", "Rotate", PlacementDoppleganger.transform, GameManager.Get.GameCamera);
 										}
 								}
 						} else {
@@ -346,15 +346,15 @@ namespace Frontiers
 				public bool ItemUse(double timeStamp)
 				{
 						if (WorldClock.RealTime < UseCoolDown) {
-								Debug.Log("Item use called - cooldown in effect");
+								//Debug.Log("Item use called - cooldown in effect");
 								return true;
 						}
 
-						Debug.Log("Item use called in item placement");
+						//Debug.Log("Item use called in item placement");
 						if (Player.Local.Surroundings.IsWorldItemInRange && LastItemUsed != null) {
 								if (Player.Local.Surroundings.WorldItemFocus == LastItemUsed
 								&& WorldClock.RealTime < UseCoolDown) {
-										Debug.Log("Cooldown time not over");
+										//Debug.Log("Cooldown time not over");
 										return true;
 								}
 						}
@@ -363,7 +363,7 @@ namespace Frontiers
 						LastItemUsed = Player.Local.Surroundings.WorldItemFocus;//even if it's null that's fine
 
 						if (PlacementModeEnabled) {
-								Debug.Log("Item use placement");
+								//Debug.Log("Item use placement");
 								if (Player.Local.Surroundings.IsReceptacleInPlayerFocus) {
 										//recepticles handle their own business
 										Player.Local.Surroundings.ReceptacleInPlayerFocus.worlditem.OnPlayerUse.SafeInvoke();

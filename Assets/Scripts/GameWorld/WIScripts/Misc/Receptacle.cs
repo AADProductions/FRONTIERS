@@ -24,6 +24,16 @@ namespace Frontiers.World.BaseWIScripts
 				public bool FocusPlacementPermitted = false;
 				public ReceptacleVisualStyle VisualStyle = ReceptacleVisualStyle.Projector;
 
+				public override int OnRefreshHud(int lastHudPriority)
+				{
+						//the player is looking at this recepticle
+						if (FocusPlacementPermitted) {
+								lastHudPriority++;
+								GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Place", FocusDoppleganger.transform, GameManager.Get.GameCamera);
+						}
+						return lastHudPriority;
+				}
+
 				public ReceptaclePivot AddPivot(Transform pivotTransform)
 				{
 						Transform newPivotTransform = pivotTransform;
@@ -187,21 +197,14 @@ namespace Frontiers.World.BaseWIScripts
 
 												Mats.Get.ItemPlacementOutlineMaterial.SetColor("_OutlineColor", Colors.Get.MessageSuccessColor);
 												Mats.Get.ItemPlacementMaterial.SetColor("_TintColor", Colors.Get.MessageSuccessColor);
-
 												if (CanOccupantFit(ItemToPlace, PivotInFocus, Pivots)) {
-														if (!mShowingHUD) {
-																mShowingHUD = true;
-																GUIHud.Get.ShowControls(KeyCode.E, "Place", FocusDoppleganger.transform, GameManager.Get.GameCamera);
-														}
-														FocusPlacementPermitted = true;
+															FocusPlacementPermitted = true;
 												} else {
-														if (!mShowingHUD) {
-																mShowingHUD = true;
-																GUIHud.Get.ShowControls(KeyCode.E, "Place", FocusDoppleganger.transform, GameManager.Get.GameCamera);
-														}
 														Mats.Get.ItemPlacementOutlineMaterial.SetColor("_OutlineColor", Colors.Get.MessageDangerColor);
 														Mats.Get.ItemPlacementMaterial.SetColor("_TintColor", Colors.Get.MessageDangerColor);
 												}
+												//this will show the place / pick up commands
+												worlditem.RefreshHud();
 												useDoppleganger = true;
 										} else {
 												FocusPlacementPermitted = false;
@@ -585,7 +588,7 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void OnChildWorldItemDestroyed()
 				{
-//			PlacedItem = null;
+					//			PlacedItem = null;
 				}
 
 				protected ReceptaclePivot mLastOptionPivot = null;

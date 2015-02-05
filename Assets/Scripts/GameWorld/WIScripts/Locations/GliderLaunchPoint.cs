@@ -67,7 +67,7 @@ namespace Frontiers.World
 								return;
 						}
 
-						if (editObject.DidAction) {
+						if (editObject.DidAction1) {
 								TakingOff = true;
 								StartCoroutine(TakeOffOverTime(glider));
 						}
@@ -95,8 +95,9 @@ namespace Frontiers.World
 										GameObject childEditor = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog("NGUIMessageActionDialog"));
 										mChildEditor = childEditor.GetComponent <GUIMessageActionDialog>();
 										MessageActionDialogResult editObject = new MessageActionDialogResult();
-										editObject.Action = UserActionType.MoveJump;
-										editObject.Message = "Jump to take off";
+										editObject.Message = "Launch Point";
+										editObject.Prompt1 = new GUIHud.HudPrompt(UserActionType.MoveJump, "Take Off");
+										editObject.CloseOnAction1 = true;
 										GUIManager.SendEditObjectToChildEditor <MessageActionDialogResult>(new ChildEditorCallback <MessageActionDialogResult>(ReceiveFromChildEditor), mChildEditor.gameObject, editObject);
 								}
 						} else {

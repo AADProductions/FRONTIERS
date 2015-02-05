@@ -117,14 +117,14 @@ namespace Frontiers.World.BaseWIScripts
 				{
 						mInitiatingConversation = true;
 						if (!worlditem.HasPlayerAttention) {
-							Debug.Log("We don't have player's attention");
-							mInitiatingConversation = false;
-							yield break;
+								Debug.Log("We don't have player's attention");
+								mInitiatingConversation = false;
+								yield break;
 						}
 						//make the character stand still
 						Character character = null;
 						if (worlditem.Is <Character>(out character)) {
-							mTalkMotileAction = character.LookAtPlayer();
+								mTalkMotileAction = character.LookAtPlayer();
 						}
 
 						yield return StartCoroutine(mTalkMotileAction.WaitForActionToStart(0f));
@@ -141,7 +141,7 @@ namespace Frontiers.World.BaseWIScripts
 								if (Mods.Get.Runtime.LoadMod(ref speech, "Speech", State.DTSSpeechName)) {
 										SayDTS(speech);
 								}
-								Debug.Log ("Defaulting to DTS");
+								Debug.Log("Defaulting to DTS");
 								mInitiatingConversation = false;
 								yield break;
 						}

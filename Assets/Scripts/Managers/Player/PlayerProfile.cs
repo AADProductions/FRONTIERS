@@ -378,6 +378,7 @@ namespace Frontiers
 						public bool MouseInvertYAxis = false;
 						public bool UseControllerMouse = true;
 						public bool UseCustomDeadZoneSettings = false;
+						public bool ShowControllerPrompts = true;
 				}
 
 				[Serializable]
@@ -438,6 +439,8 @@ namespace Frontiers
 								prefs.StructureShadows = true;
 								prefs.ObjectShadows = true;		
 								//prefs.RefreshPostFX ();
+
+								prefs.NightAmbientLightBooster = 0f;
 					
 								return prefs;
 						}
@@ -483,6 +486,8 @@ namespace Frontiers
 								TerrainShadows = copyFrom.TerrainShadows;
 								StructureShadows = copyFrom.StructureShadows;
 								ObjectShadows = copyFrom.ObjectShadows;
+
+								NightAmbientLightBooster = copyFrom.NightAmbientLightBooster;
 						}
 
 						public void Apply()
@@ -660,6 +665,7 @@ namespace Frontiers
 						public float TerrainTreeBillboardDistance = 128f;
 						public float TerrainTreeDistance = 2000f;
 						public int TerrainMaxMeshTrees = 128;
+						public float NightAmbientLightBooster = 0f;
 
 						#region helper functions
 
