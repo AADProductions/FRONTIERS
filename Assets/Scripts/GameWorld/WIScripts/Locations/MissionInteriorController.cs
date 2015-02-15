@@ -19,7 +19,13 @@ namespace Frontiers.World.BaseWIScripts
 								worlditem.OnVisible += OnVisible;
 								LastTopCondition = null;
 
-								Player.Get.AvatarActions.Subscribe(AvatarAction.MissionUpdated, new ActionListener(MissionUpdated));
+								if (structure.State.ForceBuildInterior) {
+										State.OnlyRefreshOnVisible = true;
+								}
+
+								if (State.OnlyRefreshOnVisible) {
+										Player.Get.AvatarActions.Subscribe(AvatarAction.MissionUpdated, new ActionListener(MissionUpdated));
+								}
 						}
 				}
 
@@ -28,9 +34,13 @@ namespace Frontiers.World.BaseWIScripts
 						if (mDestroyed)
 								return true;
 
+						if (State.OnlyRefreshOnVisible)
+								return true;
+
 						if (worlditem.Is(WIActiveState.Active | WIActiveState.Visible)) {
 								OnVisible();
 						}
+
 						return true;
 				}
 
@@ -81,7 +91,11 @@ namespace Frontiers.World.BaseWIScripts
 
 				protected IEnumerator OnMissionUpdated()
 				{
-						yield return WorldClock.WaitForSeconds(0.1);
+						double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 1f;
+						while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
+
 						if (!Player.Local.Surroundings.IsVisitingStructure(structure)) {
 								if (LastTopCondition != null) {
 										//if we've been through this before
@@ -115,6 +129,7 @@ namespace Frontiers.World.BaseWIScripts
 		{
 				public List <MissionInteriorCondition> Conditions = new List <MissionInteriorCondition>();
 				public MissionInteriorCondition Default = new MissionInteriorCondition();
+				public bool OnlyRefreshOnVisible;
 		}
 
 		[Serializable]

@@ -106,14 +106,20 @@ namespace Frontiers.World
 				//this ensures that OnTriggerEnter will fire
 				protected IEnumerator NudgeBubbleCollider()
 				{	//weird I know, seems to be a physics limitation
-						yield return WorldClock.WaitForSeconds(0.05);
+						double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 0.05f;
+						while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						transform.Translate(Vector3.zero);
 						yield break;
 				}
 
 				protected IEnumerator DestroyOverTime()
 				{
-						yield return WorldClock.WaitForSeconds(0.15);
+						double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 0.15f;
+						while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						GameObject.Destroy(gameObject);
 						yield break;
 				}

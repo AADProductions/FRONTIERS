@@ -48,7 +48,7 @@ namespace Frontiers.World
 						}
 				}
 
-				public bool Is (ChunkMode chunkMode)
+				public bool Is(ChunkMode chunkMode)
 				{
 						return Flags.Check((int)chunkMode, (int)mCurrentMode, Flags.CheckType.MatchAny);
 				}
@@ -744,6 +744,8 @@ namespace Frontiers.World
 				#endregion
 
 				#region load / save / unload
+
+				protected Vector3[] mHeightMapVertices = null;
 
 				public void OnGameUnload()
 				{

@@ -53,7 +53,7 @@ namespace Frontiers.GUI
 								if (Mods.Get.Runtime.LoadGame(ref game, CurrentWorld.Name, gameName)) {
 										saveGames.Add(game);
 								} else {
-										Debug.Log("Couldn't load game " + CurrentWorld.Name + ", " + gameName);
+										//Debug.Log("Couldn't load game " + CurrentWorld.Name + ", " + gameName);
 								}
 						}
 						return saveGames as IEnumerable <PlayerGame>;
@@ -72,10 +72,10 @@ namespace Frontiers.GUI
 
 						gameBrowserObject.Name.text = Colors.ColorWrap(
 								editObject.Name,
-								Colors.Get.MenuButtonTextColorDefault) + "\n" + Colors.ColorWrap(editObject.DifficultyName 
-								        + "Saved " + editObject.LastTimeSaved.ToLongDateString().ToLower() 
+								Colors.Get.MenuButtonTextColorDefault) + Colors.ColorWrap(
+										" Saved " + editObject.LastTimeSaved.ToLongDateString().ToLower() 
 										+ "\nat " + editObject.LastTimeSaved.ToLongTimeString().ToLower() + " (Hours Played: " + WorldClock.SecondsToHours (editObject.GameTimeOffset).ToString ("0.#") + ")",
-								Colors.Darken(Colors.Get.MenuButtonTextColorDefault));
+										Colors.Darken(Colors.Get.MenuButtonTextColorDefault));
 						gameBrowserObject.Icon.atlas = Mats.Get.IconsAtlas;
 						gameBrowserObject.Icon.spriteName = "IconMission";
 

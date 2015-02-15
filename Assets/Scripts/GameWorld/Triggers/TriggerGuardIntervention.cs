@@ -8,7 +8,8 @@ using Frontiers.World.BaseWIScripts;
 namespace Frontiers.World
 {
 		public class TriggerGuardIntervention : WorldTrigger
-		{		//this is used to create an impassable barrier
+		{
+				//this is used to create an impassable barrier
 				//that a character uses to keep the player out of somewhere
 				//eg a guard in front of a door
 				//needs to be tweaked
@@ -94,6 +95,7 @@ namespace Frontiers.World
 						if (GuardNode == null) {
 								ActionNodeState guardNodeState = null;
 								if (ParentChunk.GetNode(State.GuardActionNodeName, false, out guardNodeState)) {
+										guardNodeState.OccupantIsDead = State.GuardIsDead;
 										GuardNode = guardNodeState.actionNode;
 										if (GuardNode == null) {
 												//Debug.Log ("Couldn't get guard node from action node state, quitting in " + name);
@@ -215,6 +217,20 @@ namespace Frontiers.World
 						return true;
 				}
 
+				public void KillGuard()
+				{
+						State.GuardIsDead = true;
+						if (GuardCharacter != null && !GuardCharacter.IsDead) {
+								Damageable damageable = null;
+								if (GuardCharacter.worlditem.Is<Damageable>(out damageable)) {
+										damageable.InstantKill(string.Empty);
+								}
+						}
+						if (GuardNode != null) {
+								GuardNode.State.OccupantIsDead = true;
+						}
+				}
+
 				#if UNITY_EDITOR
 				public override void OnEditorRefresh()
 				{
@@ -238,6 +254,7 @@ namespace Frontiers.World
 				public STransform BarrierTriggerTransform = new STransform();
 				public bool ForwardDirectionOnly = true;
 				public bool RequireExchangesCompleted = false;
+				public bool GuardIsDead = false;
 				[FrontiersAvailableModsAttribute("Conversation")]
 				public string ConversationName = string.Empty;
 				public string ExchangeName = string.Empty;

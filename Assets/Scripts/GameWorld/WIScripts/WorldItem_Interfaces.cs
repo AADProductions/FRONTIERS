@@ -13,6 +13,7 @@ namespace Frontiers.World
 {
 		public partial class WorldItem
 		{
+
 				#region IUnloadableChild implementation
 
 				public bool PrepareToUnload()
@@ -24,7 +25,7 @@ namespace Frontiers.World
 
 						LoadState = WILoadState.PreparingToUnload;
 						var enumerator = mScripts.Values.GetEnumerator();
-						while (enumerator.MoveNext ()) {
+						while (enumerator.MoveNext()) {
 								//foreach (KeyValuePair <Type, WIScript> script in mScripts) {
 								if (!enumerator.Current.PrepareToUnload()) {
 										return false;
@@ -41,7 +42,7 @@ namespace Frontiers.World
 
 								var enumerator = mScripts.Values.GetEnumerator();
 								//foreach (WIScript script in mScripts.Values) {
-								while (enumerator.MoveNext ()) {
+								while (enumerator.MoveNext()) {
 										//we don't need to check them all
 										if (!enumerator.Current.ReadyToUnload) {
 												return false;
@@ -60,8 +61,8 @@ namespace Frontiers.World
 						}
 						LoadState = WILoadState.Unloading;
 						IEnumerator <WIScript> enumerator = mScripts.Values.GetEnumerator();
-						while (enumerator.MoveNext ()) {
-						//foreach (WIScript script in mScripts.Values) {
+						while (enumerator.MoveNext()) {
+								//foreach (WIScript script in mScripts.Values) {
 								//we don't need to check them all
 								//script.BeginUnload();
 								enumerator.Current.BeginUnload();
@@ -103,7 +104,7 @@ namespace Frontiers.World
 										//if we're still unloading, check if we're done
 										result = true;
 										IEnumerator <WIScript> enumerator = mScripts.Values.GetEnumerator();
-										while (enumerator.MoveNext ()) {
+										while (enumerator.MoveNext()) {
 												//foreach (WIScript script in mScripts.Values) {
 												//we don't need to check them all
 												//just until we hit one that isn't done
@@ -129,7 +130,7 @@ namespace Frontiers.World
 				public bool SaveItemOnUnloaded {
 						get {
 								IEnumerator <WIScript> enumerator = mScripts.Values.GetEnumerator();
-								while (enumerator.MoveNext ()) {
+								while (enumerator.MoveNext()) {
 										//foreach (WIScript script in mScripts.Values) {
 										if (!enumerator.Current.SaveItemOnUnloaded) {
 												return false;
@@ -163,7 +164,14 @@ namespace Frontiers.World
 
 				public string State {
 						get {
-								if (States != null) {
+								if (!Is(WILoadState.Initialized)) {
+										if (HasSaveState) {
+												return SaveState.LastState;
+										}
+										else if (HasStates) {
+												return States.State;
+										}
+								} else if (HasStates) {
 										return States.State;
 								}
 								return "Default";
@@ -365,10 +373,10 @@ namespace Frontiers.World
 				//Has and HasAtLeastOne are covererd by script manager
 				public ItemOfInterestType IOIType { get { return ItemOfInterestType.WorldItem; } }
 
-				public bool IsVisible { get { return true; } }//should this be linked to visibile state?
-
-				public float AwarenessDistanceMultiplier { get { return 1.0f; } }//should this be added to WIScript?
-
+				public bool IsVisible { get { return true; } }
+//should this be linked to visibile state?
+				public float AwarenessDistanceMultiplier { get { return 1.0f; } }
+//should this be added to WIScript?
 				public float FieldOfViewMultiplier { get { return 1.0f; } }
 
 				public Vector3 Position { get { return tr.position; } }

@@ -147,7 +147,7 @@ namespace Frontiers.World.Gameplay
 								case SkillKnowledgeState.Known:
 										DiscoverSkill();
 										if (PrerequisiteRequirementsMet) {
-												////////Debug.Log ("Learned! Posting gained item");
+												//Debug.Log ("Learned! Posting gained item");
 												Profile.Get.CurrentGame.Character.Exp.AddExperience(Info.ExperienceValueLearn, Info.ExperienceGainFlagset);
 												Player.Get.AvatarActions.ReceiveAction((AvatarAction.SkillLearn), WorldClock.AdjustedRealTime);
 												GUIManager.PostGainedItem(this);
@@ -193,7 +193,7 @@ namespace Frontiers.World.Gameplay
 
 				public virtual bool ActionUse(double timeStamp)
 				{
-						////Debug.Log ("Action use in " + name);
+						//Debug.Log ("Action use in " + name);
 						if (RequirementsMet) {
 								Use(0);
 						} else {
@@ -340,7 +340,7 @@ namespace Frontiers.World.Gameplay
 						OnUseStart();
 
 						if (!mUpdatingUsage) {
-								////Debug.Log ("use start in skill " +name +", updating usage now");
+								//Debug.Log ("use start in skill " +name +", updating usage now");
 								mUpdatingUsage = true;
 								StartCoroutine(UpdateUsage());
 						}
@@ -435,7 +435,10 @@ namespace Frontiers.World.Gameplay
 												yield return null;
 										}
 								} else {
-										yield return WorldClock.WaitForSeconds(Usage.CooldownInterval);
+										double waitUntil = Frontiers.WorldClock.AdjustedRealTime + Usage.CooldownInterval;
+										while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+												yield return null;
+										}
 								}
 						}
 						//broadcast on cooldown

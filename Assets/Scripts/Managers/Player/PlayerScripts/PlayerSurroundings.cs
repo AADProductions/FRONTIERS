@@ -90,6 +90,8 @@ namespace Frontiers
 								mCheckingSurroundings = true;
 								StartCoroutine(CheckSurroundings());
 						}
+
+						mTerrainType = Colors.Alpha (Color.black, 0f);
 				}
 
 				public override void OnLocalPlayerDespawn()
@@ -312,7 +314,11 @@ namespace Frontiers
 						sb = null;
 				}
 
-				public Color TerrainType = Color.black;
+				public Color TerrainType {
+						get {
+								return mTerrainType;
+						}
+				}
 				public float YDistanceFromCoast = 10.0f;
 				public Vector3 LastPositionOnland;
 				public IItemOfInterest ClosestObjectBelow;
@@ -1290,7 +1296,13 @@ namespace Frontiers
 						//only do this once in a while TODO maybe a coroutine would be better
 						if (mTerrainTypeCheck > 10) {
 								mTerrainTypeCheck = 0;
-								TerrainType = GameWorld.Get.TerrainTypeAtInGamePosition(player.Position, State.IsUnderground);
+								if (!player.HasSpawned) {
+										mTerrainType = mEmptyTerrainType;
+										return;
+								}
+								mTerrainType = GameWorld.Get.TerrainTypeAtInGamePosition(player.Position, State.IsUnderground);
+								//Color color = mTerrainType;
+								//Debug.Log ("Got terrain type rgba " + color.r.ToString() + ", " + color.g.ToString() + ", " + color.b.ToString() + ", " + color.a.ToString());
 								//this reduces the 'coastal' terrain type based on distance from water
 								//move these to global variables
 								//float maxDistanceFromCoast = 25.0f;
@@ -1419,6 +1431,9 @@ namespace Frontiers
 				public float DistanceToNearestFire = Mathf.Infinity;
 
 				#endregion
+
+				protected Color mTerrainType = Colors.Alpha (Color.black, 0f);
+				protected Color mEmptyTerrainType = Colors.Alpha (Color.black, 0f);
 
 		}
 

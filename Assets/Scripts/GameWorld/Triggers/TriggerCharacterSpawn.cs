@@ -59,7 +59,10 @@ namespace Frontiers.World
 								nodeState.CustomConversation = State.CustomConversation;
 						}
 						//wait until we're ready to spawn
-						yield return WorldClock.WaitForSeconds(State.SpawnDelay);
+						double waitUntil = Frontiers.WorldClock.AdjustedRealTime + State.SpawnDelay;
+						while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						//then boom! go
 						if (!Characters.GetOrSpawnCharacter(CurrentSpawnNode, State.CharacterName, ParentChunk.AboveGroundGroup, out SpawnedCharacter)) {
 								Debug.Log("Couldn't spawn character");

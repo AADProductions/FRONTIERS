@@ -363,7 +363,10 @@ namespace Frontiers.World
 
 				protected IEnumerator DestroyOverTime()
 				{
-						yield return WorldClock.WaitForSeconds(2);
+						double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 2;
+						while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						GameObject.Destroy(CenterGlow.renderer.material);
 						GameObject.Destroy(gameObject);
 				}

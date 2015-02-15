@@ -42,6 +42,8 @@ namespace Frontiers.GUI
 
 				public static bool ManuallyPaused = false;
 
+				public bool PrimaryInterfacesEnabled = true;
+
 				bool HasActiveButton {
 						get {
 								return ActiveButton != null;
@@ -85,6 +87,7 @@ namespace Frontiers.GUI
 				public UILabel VersionNumber;
 				public UILabel PausedLabel;
 				public UICamera NGUIPrimaryCamera;
+				public Camera PrimaryCamera;
 				public UIRoot NGUIPrimaryRoot;
 				public UIAnchor NGUIPrimaryCenterAnchor;
 				public UICamera NGUISecondaryCamera;
@@ -151,6 +154,7 @@ namespace Frontiers.GUI
 						GroupTesting = GameManager.Get.GameCamera.GetComponentInParent <GroupTestingUtility>();
 						GroupTesting.enabled = false;
 						VersionNumber.text = "Frontiers Beta v." + GameManager.Version;
+						PrimaryCamera = NGUIPrimaryCamera.cachedCamera;
 						//UNITY turn off the damn OnMouse events
 						Camera[] cameras = FindObjectsOfType <Camera>();
 						foreach (Camera cam in cameras) {
@@ -211,7 +215,7 @@ namespace Frontiers.GUI
 
 						if (Input.GetKeyDown(KeyCode.F5)) {
 								Missions.ShowEditor = !Missions.ShowEditor;
-				Missions.enabled = Missions.ShowEditor;
+								Missions.enabled = Missions.ShowEditor;
 						}
 
 						if (Input.GetKeyDown(KeyCode.F6)) {
@@ -318,6 +322,8 @@ namespace Frontiers.GUI
 								NGUISecondaryCamera.enabled = false;
 						}
 
+						PrimaryCamera.enabled = PrimaryInterfacesEnabled;
+
 						if (ScreenAspectRatio < Globals.ScreenAspectRatioSqueezeMaximum) {
 								//adjust the screen to fit
 								float normalizedScreenAdjust = (Globals.ScreenAspectRatioSqueezeMaximum - ScreenAspectRatio) / (Globals.ScreenAspectRatioSqueezeMaximum - Globals.ScreenAspectRatioSqueezeMinimum);
@@ -354,7 +360,7 @@ namespace Frontiers.GUI
 																break;
 												}
 										} else {
-												//Debug.Log ("We're paused and we have no top interface");
+												////Debug.Log ("We're paused and we have no top interface");
 												GameManager.Continue();
 										}
 								} else if (GameManager.Is(FGameState.InGame)) {
@@ -526,6 +532,12 @@ namespace Frontiers.GUI
 
 				public bool ReceiveInterfaceAction(InterfaceActionType action, double timeStamp)
 				{
+						if (action == InterfaceActionType.InterfaceHide) {
+								//Debug.Log("interface hide action");
+								PrimaryInterfacesEnabled = !PrimaryInterfacesEnabled;
+								return true;
+						}
+
 						//intercept manual pause requests
 						if (action == InterfaceActionType.GamePause) {
 								if (!HasActiveInterface) {
@@ -889,6 +901,22 @@ namespace Frontiers.GUI
 						} else {
 								mCachedMessages.Enqueue(new CachedMessage(GUIMessageDisplay.Type.Success, message));
 						}
+				}
+
+				public static void PostGainedItem(Frontiers.World.BaseWIScripts.QuestItemState questItem)
+				{
+						InterfaceActionType a = InterfaceActionType.ToggleInventory;
+						InControl.InputControlType c = InterfaceActionManager.Get.GetActionBinding((int)InterfaceActionType.ToggleInventory);
+						if (Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+								a = InterfaceActionType.ToggleInterfaceNext;
+						}
+						Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage(
+								"Added " + questItem.DisplayName + " to inventory",
+								0.0,
+								"Mission Item",
+								GainedSomethingType.QuestItem,
+								a,
+								"Inventory");
 				}
 
 				public static void PostGainedItem(Frontiers.World.PurseState purseState)

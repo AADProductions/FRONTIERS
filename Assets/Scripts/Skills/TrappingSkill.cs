@@ -84,7 +84,10 @@ namespace Frontiers.World.Gameplay
 														}
 												}
 										}
-										yield return WorldClock.WaitForSeconds(1.0);
+										double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 1f;
+										while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+												yield return null;
+										}
 								}
 								yield return null;
 						}

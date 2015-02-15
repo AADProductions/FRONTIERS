@@ -40,6 +40,7 @@ namespace Frontiers
 				public BookFlags SubterfugeFlags = new BookFlags();
 				public BookFlags ArchaeologyFlags = new BookFlags();
 				public BookFlags CraftingFlags = new BookFlags();
+				public LibraryCatalogueEntry CurrentOrder;
 
 				#region initialization
 
@@ -204,6 +205,14 @@ namespace Frontiers
 						Get.AquiredBooks.Clear();
 				}
 
+				public override void OnGameSave()
+				{
+						foreach (Library library in Libraries) {
+								Mods.Get.Runtime.SaveMod(library, "Library", library.Name);
+						}
+						base.OnGameSave();
+				}
+
 				#endregion
 
 				#region guild librarian stuff
@@ -241,7 +250,26 @@ namespace Frontiers
 						return order != null;
 				}
 
-				public void DeliverBookOrder(string libraryName)
+				public bool HasPlacedOrder(string libraryName)
+				{
+						Library library = null;
+						LibraryCatalogueEntry order = null;
+						if (mLibraryLookup.TryGetValue(libraryName, out library)) {
+								for (int i = 0; i < library.CatalogueEntries.Count; i++) {
+										LibraryCatalogueEntry catalogueEntry = library.CatalogueEntries[i];
+										//only ask if it's been placed
+										//don't bother to ask if it's arrived
+										//if we're doing our job elsewhere only one will be placed at any time
+										if (catalogueEntry.HasBeenPlaced) {
+												//set the library of the order for convenience
+												return true;
+										}
+								}
+						}
+						return false;
+				}
+
+				public bool DeliverBookOrder(string libraryName)
 				{
 						LibraryCatalogueEntry order = null;
 						if (HasPlacedOrder(libraryName, out order) && order.HasArrived && !order.HasBeenDelivered) {
@@ -251,7 +279,9 @@ namespace Frontiers
 								order.ARTPickUpTime = WorldClock.AdjustedRealTime;
 								Mods.Get.Runtime.SaveMod <Library>(order.Library, "Library", order.Library.Name);
 								AquireBook(order.BookName);
+								return true;
 						}
+						return false;
 				}
 
 				public bool TryToPlaceBookOrder(string libraryName, LibraryCatalogueEntry order, out string error)
@@ -805,7 +835,7 @@ namespace Frontiers
 						GUILayout.Label("Price in grains " + index.ToString());
 						//entry.OrderPrice = UnityEditor.EditorGUILayout.IntField (entry.OrderPrice);
 						GUILayout.Label("Delivery time (Real time) " + index.ToString());
-						entry.DeliveryTimeInHours = UnityEditor.EditorGUILayout.IntField((int)entry.DeliveryTimeInHours);
+						//entry.DeliveryTimeInHours = UnityEditor.EditorGUILayout.IntField((int)entry.DeliveryTimeInHours);
 						GUILayout.EndHorizontal();
 				}
 
@@ -1040,7 +1070,18 @@ namespace Frontiers
 				public string DisplayName = "Guild Library";
 				public string RequiredSkill = "GuildLibrary";
 				public string Motto = string.Empty;
+				public string LibrarianCharacterName = "GuildLibrarian";
+				public string LibrarianDTSOnReceivedOrder = "Enjoy your book. And remember: {motto}";
+				public string LibrarianDTSOnPlacedOrder = "We'll send an apprentice out to fetch your book. And remember: {motto}";
 				public List <LibraryCatalogueEntry> CatalogueEntries = new List <LibraryCatalogueEntry>();
+
+				public void SetDefaults()
+				{
+						Motto = "Scientia Potentia Est";
+						LibrarianCharacterName = "GuildLibrarian";
+						LibrarianDTSOnReceivedOrder = "Enjoy your book. And remember: {motto}.";
+						LibrarianDTSOnPlacedOrder = "We'll send an apprentice out to fetch your book. {motto}.";
+				}
 		}
 
 		[Serializable]
@@ -1066,16 +1107,27 @@ namespace Frontiers
 
 				public int OrderPrice {
 						get {
-								return Mathf.FloorToInt(Globals.GuildLibraryBasePrice * RelativeOrderPrice);
+								return Mathf.FloorToInt(Globals.GuildLibraryMinimumPrice + (Globals.GuildLibraryBasePrice * RelativeOrderPrice));
+						}
+				}
+
+				public float NormalizedTimeUntilDelivery {
+						get {
+								return Mathf.Max(0.015f, (float)((WorldClock.AdjustedRealTime - ARTOrderedTime) / WorldClock.GameHoursToRTSeconds(DeliveryTimeInHours)));
 						}
 				}
 
 				public int DisplayOrder = 0;
 				public WICurrencyType CurrencyType = WICurrencyType.A_Bronze;
-				public int DeliveryTimeInHours = 1;
+
+				public int DeliveryTimeInHours { 
+						get {
+								return Globals.GuildLibraryMinimumDeliveryTimeInHours + Mathf.FloorToInt(RelativeOrderPrice * Globals.GuildLibraryBaseDeliveryTimeInHours);
+						}
+				}
+
 				public double ARTOrderedTime = -1;
 				public double ARTPickUpTime = -1;
-
 				[XmlIgnore]
 				[NonSerialized]
 				public Frontiers.Library Library = null;
@@ -1089,7 +1141,9 @@ namespace Frontiers
 				public bool HasArrived {
 						get {
 								if (HasBeenPlaced) {
-										return WorldClock.AdjustedRealTime > (ARTOrderedTime + WorldClock.GameHoursToRTSeconds (DeliveryTimeInHours));
+										double deliveryTime = ARTOrderedTime + WorldClock.GameHoursToRTSeconds(DeliveryTimeInHours);
+										///Debug.Log("Current time: " + WorldClock.AdjustedRealTime.ToString() + " - ordered time: " + ARTOrderedTime.ToString() + " - delivery hours: " + DeliveryTimeInHours.ToString() + " - delivery time: " + deliveryTime.ToString());
+										return WorldClock.AdjustedRealTime > deliveryTime;
 								}
 								return false;
 						}

@@ -371,7 +371,10 @@ namespace Frontiers.World.BaseWIScripts
 				protected IEnumerator OnPlayerLeaveDen()
 				{
 						mLeavingDen = true;
-						yield return WorldClock.WaitForSeconds(1.0);
+						double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 1f;
+						while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						//wait for creatures to finish spawning
 						for (int i = SpawnedCreatures.Count - 1; i >= 0; i--) {
 								if (SpawnedCreatures[i] == null) {
@@ -388,7 +391,10 @@ namespace Frontiers.World.BaseWIScripts
 				protected IEnumerator OnPlayerVisitDen()
 				{
 						mVisitingDen = true;
-						yield return WorldClock.WaitForSeconds(1.0);
+						double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 1f;
+						while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						//wait for creatures to finish spawning
 						for (int i = SpawnedCreatures.Count - 1; i >= 0; i--) {
 								if (SpawnedCreatures[i] == null) {

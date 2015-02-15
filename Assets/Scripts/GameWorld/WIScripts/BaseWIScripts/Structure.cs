@@ -29,8 +29,8 @@ namespace Frontiers.World.BaseWIScripts
 				public override bool ReadyToUnload {
 						get {
 								//it's being used as a template at the moment
-								if (InUseAsTemplate > 0)
-										return false;
+								//if (InUseAsTemplate > 0)
+								//		return false;
 
 								//we have to wait for these processes to be over before we can unload
 								if (worlditem.Is(WIActiveState.Invisible)) {
@@ -70,7 +70,7 @@ namespace Frontiers.World.BaseWIScripts
 								return State.ForceBuildInterior || StructureShingle.PropertyIsDestroyed;
 						}
 				}
-				public int InUseAsTemplate = 0;
+				//public int InUseAsTemplate = 0;
 				//structure-specific stuff
 				public Character StructureOwner = null;
 				public DeedOfOwnership Deed = new DeedOfOwnership();

@@ -71,7 +71,7 @@ namespace Frontiers.World.BaseWIScripts
 						Talkative talkative = null;
 						if (worlditem.Is <Talkative>(out talkative)) {
 								lastHudPriority++;
-								GUI.GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Talk", worlditem.HudTarget, GameManager.Get.GameCamera);
+								GUI.GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Talk to " + State.Name.FirstName, worlditem.HudTarget, GameManager.Get.GameCamera);
 						}
 						return lastHudPriority;
 				}
@@ -314,7 +314,10 @@ namespace Frontiers.World.BaseWIScripts
 
 						double reviveTime = WorldClock.AdjustedRealTime + RTDuration;
 						while (mIsStunned && WorldClock.AdjustedRealTime < reviveTime) {
-								yield return WorldClock.WaitForSeconds(1.0);
+								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 1f;
+								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 						}
 						//if we're not dead
 						Damageable damageable = null;
@@ -401,7 +404,6 @@ namespace Frontiers.World.BaseWIScripts
 						PushMotileAction(newMotileAction, MotileActionPriority.ForceTop);
 						*/
 				}
-
 				//convenience
 				public MotileAction LookAtPlayer()
 				{
@@ -642,19 +644,23 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void OnDie()
 				{
-						Container container = worlditem.Get <Container>();
-						container.CanOpen = true;
-						container.CanUseToOpen = true;
-						//TODO link this to rep, not to being a bandit
-						if (!worlditem.Is <Bandit>()) {
-								Damageable damageable = worlditem.Get <Damageable>();
-								if (damageable.LastDamageSource.IOIType == ItemOfInterestType.Player || (damageable.LastDamageSource.IOIType == ItemOfInterestType.WorldItem && WorldItems.IsOwnedByPlayer(damageable.LastDamageSource.worlditem))) {
-										//MURDERER!
-										Debug.Log("You are now a murderer");
-										Profile.Get.CurrentGame.Character.Rep.LoseGlobalReputation(Globals.ReputationChangeMurderer);
-								}
+						try {
+							Container container = worlditem.Get <Container>();
+							container.CanOpen = true;
+							container.CanUseToOpen = true;
+							//TODO link this to rep, not to being a bandit
+							if (!worlditem.Is <Bandit>()) {
+									Damageable damageable = worlditem.Get <Damageable>();
+									if (damageable != null && damageable.LastDamageSource.IOIType == ItemOfInterestType.Player || (damageable.LastDamageSource.IOIType == ItemOfInterestType.WorldItem && WorldItems.IsOwnedByPlayer(damageable.LastDamageSource.worlditem))) {
+											//MURDERER!
+											Debug.Log("You are now a murderer");
+											Profile.Get.CurrentGame.Character.Rep.LoseGlobalReputation(Globals.ReputationChangeMurderer);
+									}
+							}
 						}
-
+						catch (Exception e) {
+								Debug.LogError("Error when killing character, proceeding normally: " + e.ToString());
+						}
 						Body.SetBloodOpacity(1f);
 				}
 
@@ -740,6 +746,24 @@ namespace Frontiers.World.BaseWIScripts
 										break;
 								}
 						}
+
+						if (stack == null) {
+								ShopOwner shopOwner = null;
+								if (worlditem.Is <ShopOwner>(out shopOwner)) {
+										//are we alive? if so, this can mean any containers that are owned by us in the group
+										//start in the group that
+										List<Container> containers = new List<Container>();
+										if (WIGroups.GetAllContainers(worlditem.Group, containers)) {
+												foreach (Container container in containers) {
+														if (Stacks.Find.Item(container.worlditem.StackContainer, item, out stack)) {
+																Debug.Log("Found item in shop owner container");
+																break;
+														}
+												}
+										}
+								}
+						}
+
 						return stack != null;
 				}
 
@@ -768,48 +792,28 @@ namespace Frontiers.World.BaseWIScripts
 						if (worlditem.Is <ShopOwner>(out shopOwner)) {
 								//are we alive? if so, this can mean any containers that are owned by us in the group
 								//start in the group that
-								mChildrenOfType.Clear();
-								var getAllChildrenByType = WIGroups.GetAllChildrenByType(
-										                           worlditem.Group.Props.PathName,
-										                           mWiScriptTypes,
-										                           mChildrenOfType,
-										                           transform.position,
-										                           100f,
-										                           100);
-								while (getAllChildrenByType.MoveNext()) {
-										yield return getAllChildrenByType.Current;
-								}
-								//now use the current index to get the next container
-								//if we didn't find any, the result is null
-								if (mChildrenOfType.Count == 0) {
-										yield break;
-								}
-
 								int nextIndex = currentIndex;
-								try {
+								List<Container> containers = new List<Container>();
+								if (WIGroups.GetAllContainers(worlditem.Group, containers)) {
 										if (forward) {
-												nextIndex = mChildrenOfType.NextIndex <WorldItem>(currentIndex);
+												nextIndex = containers.NextIndex <Container>(currentIndex);
 										} else {
-												nextIndex = mChildrenOfType.PrevIndex <WorldItem>(currentIndex);
+												nextIndex = containers.PrevIndex <Container>(currentIndex);
 										}
-
-										if (mContainerEnabler == null) {
-												mContainerEnabler = Stacks.Create.StackEnabler(worlditem.Group);
-										}
-
-										mContainer = mChildrenOfType[nextIndex].Get <Container>();
 										//tell the container that we're opening it, then wait a tick for it to fill
-										mContainer.OnOpenContainer();
-								} catch (Exception e) {
-										Debug.Log("Exception in GetInventoryContainer: " + e.ToString());
+										try {
+												containers[nextIndex].OnOpenContainer();
+										} catch (Exception e) {
+												Debug.LogException(e);
+												yield break;
+										}
+										yield return null;
+										mContainerEnabler.EnablerStack.Items.Clear();
+										Stacks.Display.ItemInEnabler(containers[nextIndex].worlditem, mContainerEnabler);
+										result.ContainerEnabler = mContainerEnabler;
+										result.ContainerIndex = nextIndex;
+										result.TotalContainers = containers.Count;
 								}
-								yield return null;
-
-								mContainerEnabler.EnablerStack.Items.Clear();
-								Stacks.Display.ItemInEnabler(mContainer.worlditem, mContainerEnabler);
-								result.ContainerEnabler = mContainerEnabler;
-								result.ContainerIndex = nextIndex;
-								result.TotalContainers = mChildrenOfType.Count;
 						} else {
 								//if we're not a shop owner
 								//then there's exactly one container, our inventory container

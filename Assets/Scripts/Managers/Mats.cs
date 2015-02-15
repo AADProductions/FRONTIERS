@@ -215,6 +215,10 @@ namespace Frontiers
 				}
 
 				protected Color mLuminiteStencilColor;
+
+				public Material WorldMapPathMaterial;
+				public Material CompassProjectorMaterial;
+				public Material DirectionArrowMaterial;
 				public Material LightProjectorMaterial;
 				public Material LuminiteStencilMaterial;
 				public Material BodyOfWaterMaterial;

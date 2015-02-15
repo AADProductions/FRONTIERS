@@ -73,8 +73,10 @@ namespace Frontiers.World.BaseWIScripts
 
 				public override int OnRefreshHud(int lastHudPriority)
 				{
-						lastHudPriority++;
-						GUI.GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Fast Travel", worlditem.HudTarget, GameManager.Get.GameCamera);
+						if (TravelManager.Get.State == FastTravelState.None) {
+								lastHudPriority++;
+								GUI.GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Fast Travel", worlditem.HudTarget, GameManager.Get.GameCamera);
+						}
 						return lastHudPriority;
 				}
 
@@ -182,29 +184,17 @@ namespace Frontiers.World.BaseWIScripts
 										visitable.Trigger.enabled = true;
 										SphereCollider sc = visitable.Trigger.VisitableCollider as SphereCollider;
 										sc.radius = Globals.PathOriginTriggerRadius;
+										worlditem.State = "CrossMarker";
 								} else {
 										visitable.Trigger.enabled = false;
-								}
-
-								switch (Props.Type) {
-										case PathMarkerType.PathMarker:
-										default:
-												worlditem.State = "PathMarker";
-												break;
-
-										case PathMarkerType.CrossMarker:
-												worlditem.State = "CrossMarker";
-												break;
-
-										case PathMarkerType.Location:
-												//locations don't change state
-												break;
+										worlditem.State = "PathMarker";
 								}
 						}
 				}
 
 				public bool FastTravel(Skill skill)
 				{
+						Debug.Log("Fast traveling in " + name);
 						return TravelManager.Get.FastTravel(this);
 				}
 
@@ -333,6 +323,19 @@ namespace Frontiers.World.BaseWIScripts
 								return mProps;
 						}
 				}
+
+				#if UNITY_EDITOR
+				public void DrawEditor () {
+						UnityEngine.GUI.color = Color.cyan;
+						if (HasPathMarkerProps) {
+								GUILayout.Button("Path Marker: " + Props.ID.ToString() + ", owned by path " + Props.ParentPath.Name);
+								GUILayout.Button("Num branches: " + Props.NumBranches.ToString());
+								foreach (KeyValuePair <string,int> branch in Props.Branches) {
+										GUILayout.Button(branch.Key + " : " + branch.Value.ToString());
+								}
+						}
+				}
+				#endif
 
 				protected PathMarkerInstanceTemplate mProps = null;
 				protected static HashSet <string> gEmptyPathList = new HashSet<string>();

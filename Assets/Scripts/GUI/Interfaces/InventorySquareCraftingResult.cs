@@ -88,6 +88,7 @@ namespace Frontiers.GUI
 														NumItemsCrafted--;
 												} else {
 														Debug.Log("Couldn't add to inventory, what now?");
+														break;
 												}
 										} else {
 												Debug.Log("We have to carry the item");

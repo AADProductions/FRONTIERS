@@ -34,7 +34,10 @@ namespace Frontiers.World
 				protected IEnumerator CheckConditionOverTime()
 				{
 						//wait for a second because missions may need to update in response to leaving this location
-						yield return WorldClock.WaitForSeconds(5.0);
+						double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 2.5f;
+						while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						//see if our mission conditions are met
 						if (MissionCondition.CheckCondition(State.Condition)) {
 								//create a spawner that follows the player around

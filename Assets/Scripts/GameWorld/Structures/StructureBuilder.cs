@@ -536,6 +536,19 @@ namespace Frontiers.World
 								case BuilderMode.Interior:
 										for (int i = 0; i < InteriorVariants.Count; i++) {
 												int interiorVariant = InteriorVariants[i];
+												if (!ParentStructure.StructureGroupInteriors.ContainsKey(interiorVariant)) {
+														Debug.Log("Didn't find interior variant " + interiorVariant.ToString() + " in " + ParentStructure.name + " - waiting for a bit...");
+														double timeOut = WorldClock.RealTime + 10f;
+														while (ParentStructure != null && !ParentStructure.StructureGroupInteriors.ContainsKey(interiorVariant)) {
+																//waiting for interior groups to spawn
+																yield return null;
+																if (WorldClock.RealTime > timeOut) {
+																		Debug.Log("Timed out waiting for interior group " + interiorVariant.ToString() + " in " + ParentStructure.name);
+																		break;
+																}
+														}
+												}
+
 												try {
 													group = ParentStructure.StructureGroupInteriors[interiorVariant];
 													structureItems = group.gameObject.FindOrCreateChild("_ITEMS_INT_" + interiorVariant.ToString());
@@ -543,6 +556,7 @@ namespace Frontiers.World
 													Debug.LogError(e.ToString());
 													continue;
 												}
+
 												//Debug.Log ("Generating items for interior variant " + interiorVariant.ToString ());
 												if (!ParentStructure.State.InteriorsLoadedOnce.Contains(interiorVariant) && interiorVariant < Template.InteriorVariants.Count) {
 														var generateIntItems = StructureBuilder.GenerateInteriorItems(

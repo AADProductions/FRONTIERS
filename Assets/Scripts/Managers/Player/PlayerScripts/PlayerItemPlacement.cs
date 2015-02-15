@@ -52,6 +52,8 @@ namespace Frontiers
 				public float PlacementRotationOffset = 0f;
 				public float PlacementRotationPerSelection = 15f;
 				public static bool RemovingItemUsingSkill = false;
+				[HideInInspector]
+				public YesNoCancelDialogResult DiscardQuestItemDialogResult;
 
 				public Vector3 DefaultDropPosition {
 						get {
@@ -120,6 +122,12 @@ namespace Frontiers
 						GUIInventoryInterface.Get.Subscribe(InterfaceActionType.ToggleInterface, new ActionListener(ToggleInterface));
 						Player.Get.AvatarActions.Subscribe((AvatarAction.ItemAQIChange), new ActionListener(ItemAQIChange));
 
+						DiscardQuestItemDialogResult = new YesNoCancelDialogResult();
+						DiscardQuestItemDialogResult.MessageType = "Discard Mission Item";
+						DiscardQuestItemDialogResult.Message = "You are about to discard a mission-related item. Are you sure you want to do this?";
+						DiscardQuestItemDialogResult.CancelButton = false;
+						DiscardQuestItemDialogResult.Result = DialogResult.None;
+
 						enabled = true;
 				}
 				//do this in late update so we don't get herky-jerky motion with the doppleganger
@@ -176,7 +184,6 @@ namespace Frontiers
 										//because we use the doppleganger's position when placing it in the world
 										PlacementDopplegangerContainer.size = ItemToPlace.BaseObjectBounds.size;
 										PlacementDopplegangerContainer.center = ItemToPlace.BaseObjectBounds.center;//ItemToPlace.BasePivotOffset;
-										//Debug.Log ("Setting center to " + PlacementDopplegangerContainer.center.ToString () + " base on " + ItemToPlace.BasePivotOffset.ToString ());
 								}
 
 								//TURN ON RIGIDBODY
@@ -210,7 +217,6 @@ namespace Frontiers
 
 								//MOVE THE RIGIDBODY IF IT'S BEEN STUCK TOO LONG
 								if (mRigidBodyStuck && (WorldClock.RealTime - mRigidBodyStuckStartTime) > mRigidBodyStuckMaxTime) {
-										//Debug.Log ("Weve been stuck for too long - un-sticking now");
 										PlacementDopplegangerContainer.transform.position = PlacementPreferredPoint;
 										mRigidBodyStuck = false;
 								} else {
@@ -232,7 +238,6 @@ namespace Frontiers
 												//if the rigid body is closer to the player than the preferred point then we're fine
 												//otherwise w'eve gotten stuck
 												if (Vector3.Distance(Player.Local.HeadPosition, PlacementPreferredPoint) < Vector3.Distance(rbPosition, PlacementPreferredPoint)) {
-														Debug.Log("We've gotten stuck");
 														mRigidBodyStuck = true;
 														mRigidBodyStuckStartTime = WorldClock.RealTime;
 												}
@@ -305,7 +310,6 @@ namespace Frontiers
 
 				public bool ToggleInterface(double timeStamp)
 				{
-						//Debug.Log("Setting item cooldown");
 						//this is to prevent accidentally spamming the ItemUse key
 						UseCoolDown = WorldClock.RealTime + CooldownInterval;
 						return true;
@@ -319,7 +323,10 @@ namespace Frontiers
 
 				public bool ItemInteract(double timeStamp)
 				{
-						Debug.Log("ITEM INTERACT");
+						if (DoingSomethingOverTime) {
+								//if we're in the middle of an action, do nothing
+								return true;
+						}
 						WorldItem worldItemInRange = null;
 						WorldItemUsable usable = null;
 						if (Player.Local.Surroundings.IsWorldItemInRange) {
@@ -345,16 +352,18 @@ namespace Frontiers
 
 				public bool ItemUse(double timeStamp)
 				{
-						if (WorldClock.RealTime < UseCoolDown) {
-								//Debug.Log("Item use called - cooldown in effect");
+						if (DoingSomethingOverTime) {
+								//if we're in the middle of an action, do nothing
 								return true;
 						}
 
-						//Debug.Log("Item use called in item placement");
+						if (WorldClock.RealTime < UseCoolDown) {
+								return true;
+						}
+
 						if (Player.Local.Surroundings.IsWorldItemInRange && LastItemUsed != null) {
 								if (Player.Local.Surroundings.WorldItemFocus == LastItemUsed
 								&& WorldClock.RealTime < UseCoolDown) {
-										//Debug.Log("Cooldown time not over");
 										return true;
 								}
 						}
@@ -363,7 +372,6 @@ namespace Frontiers
 						LastItemUsed = Player.Local.Surroundings.WorldItemFocus;//even if it's null that's fine
 
 						if (PlacementModeEnabled) {
-								//Debug.Log("Item use placement");
 								if (Player.Local.Surroundings.IsReceptacleInPlayerFocus) {
 										//recepticles handle their own business
 										Player.Local.Surroundings.ReceptacleInPlayerFocus.worlditem.OnPlayerUse.SafeInvoke();
@@ -407,14 +415,12 @@ namespace Frontiers
 								|| LastItemCarried == worldItemInRange.gameObject && WorldClock.RealTime < CarryCoolDown
 								|| LastItemDropped == worldItemInRange.gameObject && WorldClock.RealTime < DropCoolDown) {
 										//return true, because if this is the case, we don't want to do anything else
-										Debug.Log("Cooldowns not over");
 										return true;
 								}
 
 								if (!ItemPickUp(worldItemInRange)) {
 										//if we can't pick it up
 										//interpret it as an interaction
-										Debug.Log("Couldn't pick up, using instead");
 										worldItemInRange.OnPlayerUse.SafeInvoke();
 										return true;
 								}
@@ -435,8 +441,6 @@ namespace Frontiers
 
 						mPickUpTarget = worlditemInRange;
 
-						Debug.Log("Using skill to pick up item " + mPickUpTarget.name);
-
 						//add the option list we'll use to select the skill
 						SpawnOptionsList optionsList = gameObject.GetOrAdd <SpawnOptionsList>();
 						optionsList.Message = "Use a skill";
@@ -450,7 +454,6 @@ namespace Frontiers
 						mRemoveSkillList.Clear();
 						mRemoveSkillList.AddRange(Skills.Get.SkillsByName(mRemoveItemSkillNames));
 						foreach (Skill removeItemSkill in mRemoveSkillList) {
-								//Debug.Log ("Attempting to use remove item skill " + removeItemSkill.name);
 								optionsList.AddOption(removeItemSkill.GetListOption(mSkillUseTarget.worlditem));
 						}
 						optionsList.AddOption(new WIListOption("Cancel"));
@@ -463,8 +466,6 @@ namespace Frontiers
 
 				public void OnSelectRemoveSkill(System.Object result)
 				{
-						Debug.Log("OnSelectRemoveSkill");
-
 						UsingSkillList = false;
 
 						WIListResult dialogResult = result as WIListResult;
@@ -502,179 +503,13 @@ namespace Frontiers
 
 				#endregion
 
-				public bool ItemPickUp(WorldItem item)
-				{
-						//if we've gotten this far we didn't place it, so pick it up instead
-						WIStackError error = WIStackError.None;
-						if (item.CanEnterInventory) {//quest items are automatically fine
-								//Debug.Log ("It can enter inventory...");
-								if (!item.Is <QuestItem>() && !item.Is <OwnedByPlayer>() && item.UseRemoveItemSkill(mRemoveItemSkillNames, ref mSkillUseTarget)) {
-										//Debug.Log("World item uses remove item skill");
-										UseSkillsToPickUpItem(item);
-										return true;
-								} else if (Player.Local.Inventory.CanItemFit(item)) {
-										if (Player.Local.Inventory.AddItems(item, ref error)) {
-												//Debug.Log("Adding item to inventory");
-												return true;
-										} else if (item.CanBeCarried) {
-												//Debug.Log("Couldn't add to inventory, force-carry");
-												//try to carry it
-												return ItemForceCarry(item);
-
-										}
-								} else if (item.CanBeCarried) {
-										//Debug.Log("Couldn't fit, but could be carried");
-										//try to carry it
-										return ItemForceCarry(item);
-								} else {
-										//Debug.Log("Couldn't be carried, couldn't fit");
-								}
-						}
-						return false;
-				}
-
-				public void DropSelectedItems()
-				{
-						if (Player.Local.Inventory.SelectedStack.TopItem.Size == WISize.Tiny) {
-								GUIManager.PostWarning("You can't drop tiny items");
-								return;
-						}
-
-						if (mDroppingSelectedItems) {
-								return;
-						}
-
-						mDroppingSelectedItems = true;
-						StartCoroutine(DropSelectedItemssOverTime());
-				}
-
-				protected IEnumerator DropSelectedItemssOverTime()
-				{
-						WIGroup group = WIGroups.Get.World;
-						if (player.Surroundings.IsVisitingLocation) {
-								group = player.Surroundings.CurrentLocation.LocationGroup;
-						}
-						while (!Player.Local.Inventory.SelectedStack.IsEmpty) {
-								Stacks.Pop.ContentsIntoWorld(Player.Local.Inventory.SelectedStack, 1, Player.Local.Grabber.Position, group);
-								yield return WorldClock.WaitForRTSeconds(0.1f);
-						}
-						mDroppingSelectedItems = false;
-						yield break;
-				}
-
-				protected bool mDroppingSelectedItems = false;
-
-				public void PlaceOrDropEquippedItem()
-				{
-						if (!PlacementPermitted || !PlacementPossible) {
-								GUIManager.PostWarning("Can't place " + ItemToPlace.DisplayName + ": " + PlacementErrorMessage);
-								return;
-						}
-
-						if (Player.Local.Tool.IsEquipped && ItemToPlace == Player.Local.Tool.worlditem) {
-
-								WIGroup locationGroup = GameWorld.Get.PrimaryChunk.AboveGroundGroup;
-								if (Player.Local.Surroundings.IsVisitingLocation) {
-										locationGroup = Player.Local.Surroundings.CurrentLocation.LocationGroup;
-								}
-								//put it into the world (TODO make sure this works)
-								WorldItem aqi = null;
-								WIStackError error = WIStackError.None;
-								if (Player.Local.Inventory.PopAQIIntoWorld(out aqi, locationGroup, ref error)) {
-										aqi.ActiveState = WIActiveState.Active;
-										if (PlacementResultsInDrop) {
-												//don't bother with offsets just drop it
-												ItemToPlace.Props.Local.FreezeOnStartup = false;
-												ItemToPlace.SetMode(WIMode.World);
-												ItemToPlace.tr.position = player.GrabberTargetObject.position;
-												ItemToPlace.tr.rotation = Quaternion.identity;
-												ItemToPlace.tr.Rotate(ItemToPlace.Props.Global.BaseRotation);
-												ItemToPlace.LastActiveDistanceToPlayer = 0f;
-												ItemToPlace = null;
-										} else if (PlacementInReceptaclePossible) {
-												PlacementPreferredReceptacle.AddToReceptacle(ItemToPlace);
-										} else {
-												ItemToPlace.SetMode(WIMode.Frozen);
-												ItemToPlace.tr.position = PlacementPreferredPointSmooth;
-												if (PlacementDoppleganger != null) {
-														ItemToPlace.tr.rotation = PlacementDoppleganger.transform.rotation;
-												} else {
-														ItemToPlace.tr.Rotate(PlacementPreferredNormal);
-														ItemToPlace.tr.Rotate(ItemToPlace.Props.Global.BaseRotation);
-												}
-												ItemToPlace.Props.Local.FreezeOnStartup	= true;
-												ItemToPlace.LastActiveDistanceToPlayer = 0f;
-												ItemToPlace.OnPlayerPlace.SafeInvoke();
-												ItemToPlace = null;
-										}
-								}
-						}
-				}
-
-				public bool PlaceOrDropCarriedItem()
-				{
-						if (!PlacementPermitted || !PlacementPossible) {
-								GUIManager.PostWarning("Can't drop " + CarryObject.DisplayName);
-								return false;
-						}
-
-						if (PlacementResultsInDrop) {
-								//if placement results in drop we just drop it even if it's placeable
-								//we've already checked if we're allowed to drop it
-								LastItemDropped = CarryObject.gameObject;
-								DropCoolDown = WorldClock.RealTime + CooldownInterval;
-								player.Grabber.Joint.connectedBody = null;
-								CarryObject.LastActiveDistanceToPlayer = 0f;
-								CarryObject.SetMode(WIMode.World);
-								CarryObject.tr.position = PlacementPreferredPointSmooth;
-								if (PlacementDoppleganger != null) {
-										CarryObject.tr.rotation = PlacementDoppleganger.transform.rotation;
-								}
-								GUIManager.PostInfo("Dropping " + CarryObject.DisplayName);
-								CarryObject.OnPlayerDrop.SafeInvoke();
-								//CarryObject.SendMessage ("OnDroppedByPlayer", SendMessageOptions.DontRequireReceiver);
-
-								CarryObject = null;
-								return true;
-						}
-
-						if (PlacementInReceptaclePossible) {
-								//this is kind of risky but I think it works without a check
-								CarryObject.SetMode(WIMode.Frozen);
-								CarryObject.tr.position = PlacementPreferredPointSmooth;
-								if (PlacementDoppleganger != null) {
-										CarryObject.tr.rotation = PlacementDoppleganger.transform.rotation;
-								} else {
-										CarryObject.tr.Rotate(PlacementPreferredNormal);
-										CarryObject.tr.Rotate(ItemToPlace.Props.Global.BaseRotation);
-								}
-								CarryObject.Props.Local.FreezeOnStartup	= true;
-								CarryObject.LastActiveDistanceToPlayer = 0f;
-								CarryObject = null;
-								return true;
-						} else {
-								LastItemPlaced = CarryObject.gameObject;
-								PlaceCoolDown = WorldClock.RealTime + CooldownInterval;
-								player.Grabber.Joint.connectedBody = null;
-								CarryObject.SetMode(WIMode.Frozen);
-								CarryObject.transform.position = PlacementPreferredPointSmooth;
-								CarryObject.transform.rotation = Quaternion.identity;
-								if (PlacementDoppleganger != null) {
-										CarryObject.transform.rotation = PlacementDoppleganger.transform.rotation;
-								} else {
-										CarryObject.transform.Rotate(PlacementPreferredNormal);
-										CarryObject.transform.Rotate(CarryObject.Props.Global.BaseRotation);
-								}
-								CarryObject.LastActiveDistanceToPlayer = 0f;
-								CarryObject.OnPlayerPlace.SafeInvoke();
-								GUIManager.PostSuccess("Placed " + CarryObject.DisplayName);
-								CarryObject = null;
-						}
-						return true;
-				}
-
 				public bool ItemPlace(double timeStamp)
 				{
+						if (DoingSomethingOverTime) {
+								//if we're in the middle of an action, do nothing
+								return true;
+						}
+
 						if (Player.Local.Inventory.SelectedStack.HasTopItem) {
 								DropSelectedItems();
 								return true;
@@ -700,25 +535,13 @@ namespace Frontiers
 						return true;
 				}
 
-				public void ItemDropAtFeet(IWIBase item)
-				{
-						WorldItem worlditem = null;
-						if (item.IsWorldItem) {
-								worlditem = item.worlditem;
-						} else {
-								WorldItems.CloneFromStackItem(item.GetStackItem(WIMode.World), WIGroups.Get.Player, out worlditem);
-								worlditem.Initialize();
-						}
-						worlditem.ActiveState = WIActiveState.Active;
-						worlditem.Props.Local.FreezeOnStartup = false;
-						worlditem.SetMode(WIMode.World);
-						worlditem.tr.position = Player.Local.GrabberTargetObject.position;
-						worlditem.tr.rotation = Player.Local.GrabberTargetObject.rotation;
-						worlditem.LastActiveDistanceToPlayer = 0f;
-				}
-
 				public bool ItemThrow(double timeStamp)
 				{
+						if (DoingSomethingOverTime) {
+								//if we're in the middle of an action, do nothing
+								return true;
+						}
+
 						if (Player.Local.Inventory.SelectedStack.HasTopItem) {
 								DropSelectedItems();
 								return true;
@@ -735,54 +558,105 @@ namespace Frontiers
 						return true;
 				}
 
+				public bool ItemPickUp(WorldItem item)
+				{
+						//if we've gotten this far we didn't place it, so pick it up instead
+						WIStackError error = WIStackError.None;
+						if (item.CanEnterInventory) {//quest items are automatically fine
+								if (!item.Is <QuestItem>() && !item.Is <OwnedByPlayer>() && item.UseRemoveItemSkill(mRemoveItemSkillNames, ref mSkillUseTarget)) {
+										UseSkillsToPickUpItem(item);
+										return true;
+								} else if (Player.Local.Inventory.CanItemFit(item)) {
+										if (Player.Local.Inventory.AddItems(item, ref error)) {
+												return true;
+										} else if (item.CanBeCarried) {
+												//try to carry it
+												//add 'owned by player' script to make sure the player owns it
+												item.Add("OwnedByPlayer");
+												return ItemForceCarry(item);
+
+										}
+								} else if (item.CanBeCarried) {
+										//try to carry it
+										return ItemForceCarry(item);
+								}
+						}
+						return false;
+				}
+
+				public void DropSelectedItems()
+				{
+						if (Player.Local.Inventory.SelectedStack.TopItem.Size == WISize.Tiny) {
+								GUIManager.PostWarning("You can't drop tiny items");
+								return;
+						}
+
+						if (!mDroppingSelectedItems) {
+								mDroppingSelectedItems = true;
+								StartCoroutine(DropSelectedItemssOverTime());
+						}
+				}
+
+				public void PlaceOrDropEquippedItem()
+				{
+						if (!PlacementPermitted || !PlacementPossible) {
+								GUIManager.PostWarning("Can't place " + ItemToPlace.DisplayName + ": " + PlacementErrorMessage);
+								return;
+						}
+
+						if (!mPlacingOrDroppingEquippedItem) {
+								mPlacingOrDroppingEquippedItem = true;
+								StartCoroutine(PlaceOrDropEquippedItemOverTime());
+						}
+				}
+
+				public bool PlaceOrDropCarriedItem()
+				{
+						if (!PlacementPermitted || !PlacementPossible) {
+								GUIManager.PostWarning("Can't drop " + CarryObject.DisplayName);
+								return false;
+						}
+
+						if (!mPlacingOrDroppingCarriedItem) {
+								mPlacingOrDroppingCarriedItem = true;
+								StartCoroutine(PlaceOrDropCarriedItemOverTime());
+						}
+						return true;
+				}
+
+				public void ItemDropAtFeet(IWIBase item)
+				{
+						WorldItem worlditem = null;
+						if (item.IsWorldItem) {
+								worlditem = item.worlditem;
+						} else {
+								WorldItems.CloneFromStackItem(item.GetStackItem(WIMode.World), WIGroups.Get.Player, out worlditem);
+						}
+						if (!worlditem.Is(WILoadState.Initialized)) {
+								worlditem.Initialize();
+						}
+						worlditem.ActiveState = WIActiveState.Active;
+						worlditem.Props.Local.FreezeOnStartup = false;
+						worlditem.SetMode(WIMode.World);
+						worlditem.tr.position = Player.Local.GrabberTargetObject.position;
+						worlditem.tr.rotation = Player.Local.GrabberTargetObject.rotation;
+						worlditem.LastActiveDistanceToPlayer = 0f;
+				}
+
 				public void ThrowEquippedItem()
 				{
-						if (Player.Local.Tool.IsEquipped) {
-								WIGroup locationGroup = GameWorld.Get.PrimaryChunk.AboveGroundGroup;
-								if (Player.Local.Surroundings.IsVisitingLocation) {
-										locationGroup = Player.Local.Surroundings.CurrentLocation.LocationGroup;
-								}
-								//put it into the world (TODO make sure this works)
-								WorldItem aqi = null;
-								WIStackError error = WIStackError.None;
-								Vector3 toolPosition = Player.Local.Tool.ItemPosition;
-								Quaternion toolRotation = Player.Local.Tool.ItemRotation;
-								if (Player.Local.Inventory.PopAQIIntoWorld(out aqi, locationGroup, ref error)) {
-										aqi.ActiveState = WIActiveState.Active;
-										aqi.Props.Local.FreezeOnStartup = false;
-										aqi.SetMode(WIMode.World);
-										aqi.tr.position = toolPosition;
-										aqi.tr.rotation = toolRotation;
-										aqi.LastActiveDistanceToPlayer = 0f;
-
-										aqi.ApplyForce(Player.Local.FocusVector * ThrowForce, aqi.tr.position);
-
-										ItemToPlace = null;
-								}
+						if (!mThrowingEquippedItem) {
+								mThrowingEquippedItem = true;
+								StartCoroutine(ThrowEquippedItemOverTime());
 						}
 				}
 
 				public bool ThrowCarriedItem()
 				{
-						if (CarryObject.CanBeDropped) {
-								//if placement results in drop we just drop it even if it's placeable
-								//we've already checked if we're allowed to drop it
-								LastItemDropped = CarryObject.gameObject;
-								DropCoolDown = WorldClock.RealTime + CooldownInterval;
-								player.Grabber.Joint.connectedBody = null;
-								CarryObject.LastActiveDistanceToPlayer = 0f;
-								CarryObject.SetMode(WIMode.World);
-								CarryObject.tr.position = PlacementPreferredPointSmooth;
-								if (PlacementDoppleganger != null) {
-										CarryObject.tr.rotation = PlacementDoppleganger.transform.rotation;
-								}
-								GUIManager.PostInfo("Dropping " + CarryObject.DisplayName);
-								CarryObject.OnPlayerDrop.SafeInvoke();
-								CarryObject.ApplyForce(Player.Local.FocusVector * ThrowForce, CarryObject.tr.position);
-								CarryObject = null;
+						if (!mThrowingCarriedItem) {
+								mThrowingCarriedItem = true;
+								StartCoroutine(ThrowCarriedItemOverTime());
 								return true;
-						} else {
-								GUIManager.PostWarning("Can't throw " + CarryObject.DisplayName);
 						}
 						return false;
 				}
@@ -791,7 +665,6 @@ namespace Frontiers
 				{
 						if (IsCarryingSomething) {
 								if (!PlaceOrDropCarriedItem()) {
-										Debug.Log("Already carrying something and we can't put it down");
 										return false;
 								}
 						}
@@ -895,7 +768,6 @@ namespace Frontiers
 												raycastDown.x = raycastDown.x - PlacementDopplegangerContainer.bounds.extents.x;
 												raycastDown.z = raycastDown.z - PlacementDopplegangerContainer.bounds.extents.z;
 												if (Physics.Raycast(raycastDown, Vector3.down, out mDropHit, 0.05f, Globals.LayersActive)) {
-														//Debug.Log ("Nothing below item, placement will result in drop");
 														PlacementResultsInDrop = true;
 												}
 												PlacementDopplegangerContainer.enabled = true;
@@ -906,46 +778,8 @@ namespace Frontiers
 						}
 						#endregion
 
-						//DISABLED
-						//		#region item path tool
-						//		if (Player.Local.Tool.IsEquipped && Player.Local.Tool.Type == PlayerToolType.PathEditor)
-						//		{
-						//			//placeable is assumed for path editor tool
-						//			if (Player.Local.Surroundings.IsTerrainInPlayerFocus)
-						//			{
-						//				PlacementPreferredTerrain	 	= Player.Local.Surroundings.TerrainFocus;
-						//				PlacementPreferredPoint			= Player.Local.Surroundings.TerrainFocusHitInfo.point;
-						//				PlacementPreferredNormal		= Player.Local.Surroundings.TerrainFocusHitInfo.normal;
-						//				PlacementPreferredObject		= PlacementPreferredTerrain.gameObject;
-						//				if (Player.Local.Tool.worlditem.Get<Placeable> ( ).CanPlaceOnRawSurface (PlacementPreferredTerrain, PlacementPreferredPoint, PlacementPreferredNormal))
-						//				{
-						//					//if we can place here, we're done
-						//					PlacementPermitted 			= true;
-						//					return;
-						//				}
-						//			}
-						//			else if (Player.Local.Surroundings.IsTerrainUnderGrabber)
-						//			{
-						//				PlacementPreferredTerrain	 	= Player.Local.Surroundings.TerrainUnderGrabber;
-						//				PlacementPreferredPoint			= Player.Local.Surroundings.TerrainUnderGrabberHitInfo.point;
-						//				PlacementPreferredNormal		= Player.Local.Surroundings.TerrainUnderGrabberHitInfo.normal;
-						//				PlacementPreferredObject		= PlacementPreferredTerrain.gameObject;
-						//				if (Player.Local.Tool.worlditem.Get<Placeable> ( ).CanPlaceOnRawSurface (PlacementPreferredTerrain, PlacementPreferredPoint, PlacementPreferredNormal))
-						//				{
-						//					//if we can place here, we're done
-						//					PlacementPermitted 			= true;
-						//					return;
-						//				}
-						//			}
-						//			//if we're using a path tool we're done even if we can't place it
-						//			PlacementPermitted = false;
-						//			return;
-						//		}
-						//		#endregion
-
 						#region item general
 						if (Player.Local.Tool.IsEquipped) {
-								//Debug.Log("Player tool is equipped");
 								if (Player.Local.Surroundings.IsReceptacleInPlayerFocus) {
 										Receptacle recepticle = Player.Local.Surroundings.ReceptacleInPlayerFocus;
 										if (recepticle.HasRoom(Player.Local.Tool.worlditem, out PlacementPreferredReceptaclePivot) &&
@@ -959,7 +793,6 @@ namespace Frontiers
 												PlacementResultsInDrop = false;
 										}
 								} else {
-										//Debug.Log("Object is not placeable, proceeding anyway");
 										if (Player.Local.Surroundings.IsWorldItemInRange) {
 												WorldItem worlditemInFocus = Player.Local.Surroundings.WorldItemFocus.worlditem;
 												if (worlditemInFocus.Mode == WIMode.Frozen) {
@@ -1000,15 +833,267 @@ namespace Frontiers
 										Vector3 raycastDown = PlacementPreferredPoint;
 										raycastDown.y -= PlacementDopplegangerContainer.bounds.extents.y;
 										if (!Physics.Raycast(raycastDown, Vector3.down, out mDropHit, 0.05f, Globals.LayersActive)) {
-												//Debug.Log ("Nothing below item, placement will result in drop");
 												PlacementResultsInDrop = true;
 										}
 										PlacementDopplegangerContainer.enabled = true;
-								} else {
-										//Debug.Log ("Normal is fine: " + Vector3.Dot (Vector3.up, PlacementPreferredNormal).ToString ());
 								}
 						}
 						#endregion
+				}
+
+				protected IEnumerator PlaceOrDropCarriedItemOverTime ( ) {
+
+						if (CarryObject.IsQuestItem) {
+								GameObject childEditorGameObject = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog("NGUIYesNoCancelDialog"));
+								GUIYesNoCancelDialog childEditor = childEditorGameObject.GetComponent <GUIYesNoCancelDialog>();
+								DiscardQuestItemDialogResult.Result = DialogResult.None;
+								GUIManager.SendEditObjectToChildEditor <YesNoCancelDialogResult>(childEditorGameObject, DiscardQuestItemDialogResult);
+								while (!childEditor.IsFinished) {
+										//wait to see if we really want to toss it
+										yield return null;
+								}
+								if (DiscardQuestItemDialogResult.Result != DialogResult.Yes) {
+										//don't throw it
+										mPlacingOrDroppingCarriedItem = false;
+										yield break;
+								}
+						}
+
+						if (CarryObject == null) {
+								//whoops, something happened while the dialog was up
+								mPlacingOrDroppingCarriedItem = false;
+								yield break;
+						}
+
+						if (PlacementResultsInDrop) {
+								//if placement results in drop we just drop it even if it's placeable
+								//we've already checked if we're allowed to drop it
+								LastItemDropped = CarryObject.gameObject;
+								DropCoolDown = WorldClock.RealTime + CooldownInterval;
+								player.Grabber.Joint.connectedBody = null;
+								CarryObject.LastActiveDistanceToPlayer = 0f;
+								CarryObject.SetMode(WIMode.World);
+								CarryObject.tr.position = PlacementPreferredPointSmooth;
+								if (PlacementDoppleganger != null) {
+										CarryObject.tr.rotation = PlacementDoppleganger.transform.rotation;
+								}
+								GUIManager.PostInfo("Dropping " + CarryObject.DisplayName);
+								CarryObject.OnPlayerDrop.SafeInvoke();
+								//CarryObject.SendMessage ("OnDroppedByPlayer", SendMessageOptions.DontRequireReceiver);
+
+								CarryObject = null;
+						} else if (PlacementInReceptaclePossible) {
+								//this is kind of risky but I think it works without a check
+								CarryObject.SetMode(WIMode.Frozen);
+								CarryObject.tr.position = PlacementPreferredPointSmooth;
+								if (PlacementDoppleganger != null) {
+										CarryObject.tr.rotation = PlacementDoppleganger.transform.rotation;
+								} else {
+										CarryObject.tr.Rotate(PlacementPreferredNormal);
+										CarryObject.tr.Rotate(ItemToPlace.Props.Global.BaseRotation);
+								}
+								CarryObject.Props.Local.FreezeOnStartup	= true;
+								CarryObject.LastActiveDistanceToPlayer = 0f;
+								CarryObject = null;
+						} else {
+								LastItemPlaced = CarryObject.gameObject;
+								PlaceCoolDown = WorldClock.RealTime + CooldownInterval;
+								player.Grabber.Joint.connectedBody = null;
+								CarryObject.SetMode(WIMode.Frozen);
+								CarryObject.transform.position = PlacementPreferredPointSmooth;
+								CarryObject.transform.rotation = Quaternion.identity;
+								if (PlacementDoppleganger != null) {
+										CarryObject.transform.rotation = PlacementDoppleganger.transform.rotation;
+								} else {
+										CarryObject.transform.Rotate(PlacementPreferredNormal);
+										CarryObject.transform.Rotate(CarryObject.Props.Global.BaseRotation);
+								}
+								CarryObject.LastActiveDistanceToPlayer = 0f;
+								CarryObject.OnPlayerPlace.SafeInvoke();
+								GUIManager.PostSuccess("Placed " + CarryObject.DisplayName);
+								CarryObject = null;
+						}
+
+						mPlacingOrDroppingCarriedItem = false;
+						yield break;
+				}
+
+				protected IEnumerator ThrowCarriedItemOverTime () {
+
+						if (CarryObject.IsQuestItem) {
+								GameObject childEditorGameObject = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog("NGUIYesNoCancelDialog"));
+								GUIYesNoCancelDialog childEditor = childEditorGameObject.GetComponent <GUIYesNoCancelDialog>();
+								DiscardQuestItemDialogResult.Result = DialogResult.None;
+								GUIManager.SendEditObjectToChildEditor <YesNoCancelDialogResult>(childEditorGameObject, DiscardQuestItemDialogResult);
+								while (!childEditor.IsFinished) {
+										//wait to see if we really want to toss it
+										yield return null;
+								}
+								if (DiscardQuestItemDialogResult.Result != DialogResult.Yes) {
+										//don't throw it
+										mThrowingCarriedItem = false;
+										yield break;
+								}
+						}
+
+						if (CarryObject.CanBeDropped) {
+								//if placement results in drop we just drop it even if it's placeable
+								//we've already checked if we're allowed to drop it
+								LastItemDropped = CarryObject.gameObject;
+								DropCoolDown = WorldClock.RealTime + CooldownInterval;
+								player.Grabber.Joint.connectedBody = null;
+								CarryObject.LastActiveDistanceToPlayer = 0f;
+								CarryObject.SetMode(WIMode.World);
+								CarryObject.tr.position = PlacementPreferredPointSmooth;
+								if (PlacementDoppleganger != null) {
+										CarryObject.tr.rotation = PlacementDoppleganger.transform.rotation;
+								}
+								GUIManager.PostInfo("Dropping " + CarryObject.DisplayName);
+								CarryObject.OnPlayerDrop.SafeInvoke();
+								CarryObject.ApplyForce(Player.Local.FocusVector * ThrowForce, CarryObject.tr.position);
+								CarryObject = null;
+						} else {
+								GUIManager.PostWarning("Can't throw " + CarryObject.DisplayName);
+						}
+						mThrowingCarriedItem = false;
+						yield break;
+				}
+
+				protected IEnumerator ThrowEquippedItemOverTime () {
+
+						if (Player.Local.Tool.IsEquipped) {
+								if (Player.Local.Tool.worlditem.IsQuestItem) {
+										GameObject childEditorGameObject = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog("NGUIYesNoCancelDialog"));
+										GUIYesNoCancelDialog childEditor = childEditorGameObject.GetComponent <GUIYesNoCancelDialog>();
+										DiscardQuestItemDialogResult.Result = DialogResult.None;
+										GUIManager.SendEditObjectToChildEditor <YesNoCancelDialogResult>(childEditorGameObject, DiscardQuestItemDialogResult);
+										while (!childEditor.IsFinished) {
+												//wait to see if we really want to toss it
+												yield return null;
+										}
+										if (DiscardQuestItemDialogResult.Result != DialogResult.Yes) {
+												//don't throw it
+												mThrowingEquippedItem = false;
+												yield break;
+										}
+								}
+						}
+
+						//start again from scratch, things may have changed
+						if (Player.Local.Tool.IsEquipped) {
+								WIGroup locationGroup = WIGroups.GetCurrent();
+								/*GameWorld.Get.PrimaryChunk.AboveGroundGroup;
+								if (Player.Local.Surroundings.IsVisitingLocation) {
+										locationGroup = Player.Local.Surroundings.CurrentLocation.LocationGroup;
+								}*/
+								//put it into the world (TODO make sure this works)
+								WorldItem aqi = null;
+								WIStackError error = WIStackError.None;
+								Vector3 toolPosition = Player.Local.Tool.ItemPosition;
+								Quaternion toolRotation = Player.Local.Tool.ItemRotation;
+								if (Player.Local.Inventory.PopAQIIntoWorld(out aqi, locationGroup, ref error)) {
+										aqi.ActiveState = WIActiveState.Active;
+										aqi.Props.Local.FreezeOnStartup = false;
+										aqi.SetMode(WIMode.World);
+										aqi.tr.position = toolPosition;
+										aqi.tr.rotation = toolRotation;
+										aqi.LastActiveDistanceToPlayer = 0f;
+
+										aqi.ApplyForce(Player.Local.FocusVector * ThrowForce, aqi.tr.position);
+
+										ItemToPlace = null;
+								}
+						}
+
+						mThrowingEquippedItem = false;
+				}
+
+				protected IEnumerator DropSelectedItemssOverTime()
+				{
+						WIGroup group = WIGroups.Get.World;
+						if (player.Surroundings.IsVisitingLocation) {
+								group = player.Surroundings.CurrentLocation.LocationGroup;
+						}
+
+						if (Stacks.Contains.QuestItem(player.Inventory.SelectedStack)) {
+								GameObject childEditorGameObject = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog("NGUIYesNoCancelDialog"));
+								GUIYesNoCancelDialog childEditor = childEditorGameObject.GetComponent <GUIYesNoCancelDialog>();
+								DiscardQuestItemDialogResult.Result = DialogResult.None;
+								GUIManager.SendEditObjectToChildEditor <YesNoCancelDialogResult>(childEditorGameObject, DiscardQuestItemDialogResult);
+								while (!childEditor.IsFinished) {
+										//wait to see if we really want to toss it
+										yield return null;
+								}
+								if (DiscardQuestItemDialogResult.Result != DialogResult.Yes) {
+										//don't throw it
+										mDroppingSelectedItems = false;
+										yield break;
+								}
+						}
+
+						while (!Player.Local.Inventory.SelectedStack.IsEmpty) {
+								Stacks.Pop.ContentsIntoWorld(Player.Local.Inventory.SelectedStack, 1, Player.Local.Grabber.Position, group);
+								yield return WorldClock.WaitForRTSeconds(0.1f);
+						}
+						mDroppingSelectedItems = false;
+						yield break;
+				}
+
+				protected IEnumerator PlaceOrDropEquippedItemOverTime () {
+						//get this all out of the way BEFORE we try to place
+						Vector3 placePosition = PlacementPreferredPointSmooth;
+						Quaternion placeRotation = Quaternion.identity;
+						if (PlacementResultsInDrop) {
+								placePosition = player.GrabberTargetObject.position;
+						} else if (PlacementDoppleganger != null) {
+								placeRotation = PlacementDoppleganger.transform.rotation;
+						} else {
+								placeRotation = Quaternion.Euler(PlacementPreferredNormal);
+						}
+
+						if (ItemToPlace.Is<QuestItem>()) {
+								GameObject childEditorGameObject = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog("NGUIYesNoCancelDialog"));
+								GUIYesNoCancelDialog childEditor = childEditorGameObject.GetComponent <GUIYesNoCancelDialog>();
+								DiscardQuestItemDialogResult.Result = DialogResult.None;
+								GUIManager.SendEditObjectToChildEditor <YesNoCancelDialogResult>(childEditorGameObject, DiscardQuestItemDialogResult);
+								while (!childEditor.IsFinished) {
+										//wait to see if we really want to toss it
+										yield return null;
+								}
+								if (DiscardQuestItemDialogResult.Result != DialogResult.Yes) {
+										//don't throw it
+										mPlacingOrDroppingEquippedItem = false;
+										yield break;;
+								}
+						}
+
+						if (Player.Local.Tool.IsEquipped) {
+								WIGroup locationGroup = WIGroups.GetCurrent();
+								WorldItem aqi = null;
+								WIStackError error = WIStackError.None;
+								if (Player.Local.Inventory.PopAQIIntoWorld(out aqi, locationGroup, ref error)) {
+										if (PlacementInReceptaclePossible) {
+												PlacementPreferredReceptacle.AddToReceptacle(aqi);
+										} else {
+												aqi.ActiveState = WIActiveState.Active;
+												if (PlacementResultsInDrop) {
+														aqi.Props.Local.FreezeOnStartup = false;
+														aqi.SetMode(WIMode.World);
+												} else {
+														aqi.Props.Local.FreezeOnStartup = true;
+														aqi.SetMode(WIMode.Frozen);
+												}
+												aqi.tr.position = placePosition;
+												aqi.tr.rotation = placeRotation;
+												aqi.LastActiveDistanceToPlayer = 0f;
+												aqi.OnPlayerPlace.SafeInvoke();
+										}
+										ItemToPlace = null;
+								}
+						}
+
+						mPlacingOrDroppingEquippedItem = false;
+						yield break;
 				}
 
 				protected RaycastHit mDropHit;
@@ -1017,5 +1102,17 @@ namespace Frontiers
 				{
 						return SurfaceOrientation.None;
 				}
+
+				protected bool DoingSomethingOverTime {
+						get {
+								return mThrowingCarriedItem || mDroppingSelectedItems || mPlacingOrDroppingEquippedItem || mThrowingEquippedItem || mPlacingOrDroppingCarriedItem;
+						}
+				}
+
+				protected bool mThrowingCarriedItem = false;
+				protected bool mDroppingSelectedItems = false;
+				protected bool mPlacingOrDroppingEquippedItem = false;
+				protected bool mThrowingEquippedItem = false;
+				protected bool mPlacingOrDroppingCarriedItem = false;
 		}
 }

@@ -26,7 +26,10 @@ namespace Frontiers.World
 
 				public IEnumerator PlayCutsceneOverTime()
 				{
-						yield return WorldClock.WaitForSeconds(State.InitialDelay);
+						double waitUntil = Frontiers.WorldClock.AdjustedRealTime + State.InitialDelay;
+						while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						//get the creature body - we're only using a shell here
 						CreatureBody body = null;
 						CreatureTemplate template = null;

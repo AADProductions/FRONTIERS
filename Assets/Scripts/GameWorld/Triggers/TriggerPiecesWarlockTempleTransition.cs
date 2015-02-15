@@ -15,6 +15,11 @@ namespace Frontiers.World
 				public Transform HijackedPosition;
 				public Transform HijackedLookTarget;
 
+				public override void OnInitialized()
+				{
+					State.ObjectiveRequirement = MissionRequireType.None;
+				}
+
 				public override bool OnPlayerEnter()
 				{
 						if (mUpdatingTransition) {
@@ -34,7 +39,10 @@ namespace Frontiers.World
 						//explosion makes them go blind
 						CameraFX.Get.SetBlind(true);
 						CameraFX.Get.AddDamageOverlay(1f);
-						yield return WorldClock.WaitForSeconds(State.CharacterDTSDelay);
+						double waitUntil = WorldClock.AdjustedRealTime + State.CharacterDTSDelay;
+						while (WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						//robert says some DTS
 						Frontiers.GUI.NGUIScreenDialog.AddSpeech(State.CharacterDTSText, State.CharacterDTSName, State.CharacterDTSDuration);
 						Player.Local.Audio.Cough();
@@ -49,12 +57,31 @@ namespace Frontiers.World
 								}
 						}
 						//wait for a bit while that settles in
-						yield return WorldClock.WaitForSeconds(State.CharacterDTSDuration);
+						waitUntil = WorldClock.AdjustedRealTime + State.CharacterDTSDuration;
+						while (WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						//player is moved to temple entrance
 						GameWorld.Get.ShowAboveGround(true);
 						Player.Local.Surroundings.ExitUnderground();
-						yield return WorldClock.WaitForSeconds(0.1);//give gameworld a sec to catch up
+						waitUntil = WorldClock.AdjustedRealTime + 0.1f;
+						while (WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
+						//give gameworld a sec to catch up
 						//lock the player's position for a moment
+						//kill the guard at the temple door
+						WorldTriggerState triggerState = null;
+						List <WorldTrigger> triggers = GameWorld.Get.PrimaryChunk.Triggers;
+						for (int i = 0; i < triggers.Count; i++) {
+								if (triggers[i].name == "TriggerWarlockCampGuardIntervention") {
+										//get the trigger and kill the guard
+										//(due to the cave-in)
+										TriggerGuardIntervention tgi = triggers[i].GetComponent <TriggerGuardIntervention>();
+										tgi.KillGuard();
+										break;
+								}
+						}
 						Player.Local.Position = State.PlayerWakeUpPosition;
 						//blindness goes away
 						CameraFX.Get.SetBlind(false);
@@ -70,6 +97,21 @@ namespace Frontiers.World
 								Player.Local.SetHijackTargets(HijackedPosition, HijackedLookTarget);
 								yield return null;
 						}
+
+						Character character = null;
+						if (!Characters.Get.SpawnedCharacter("Robert", out character)) {
+								//spawn Robert if we haven't already
+								CharacterSpawnRequest spawnRequest = new CharacterSpawnRequest();
+								spawnRequest.ActionNodeName = "RobertPiecesTempleSpawn";
+								spawnRequest.FinishOnSpawn = true;
+								spawnRequest.CharacterName = "Robert";
+								spawnRequest.MinimumDistanceFromPlayer = 3f;
+								spawnRequest.SpawnBehindPlayer = false;
+								spawnRequest.UseGenericTemplate = false;
+								spawnRequest.CustomConversation = "Robert-Enc-Act-02-Pieces-05";
+								Player.Local.CharacterSpawner.AddSpawnRequest(spawnRequest);
+						}
+
 						Player.Local.RestoreControl(true);
 						Player.Local.MovementLocked = false;
 						GameObject.Destroy(HijackedPosition.gameObject, 0.5f);

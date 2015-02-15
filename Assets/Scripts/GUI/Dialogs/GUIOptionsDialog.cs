@@ -26,6 +26,7 @@ namespace Frontiers.GUI
 				public UICheckbox VideoShadowObjects;
 				public UICheckbox VideoShadowTerrain;
 				public UICheckbox VideoShadowStructure;
+				public UICheckbox VideoVSync;
 				public UISlider VideoFieldOfView;
 				public UISlider VideoLighting;
 				public UICheckbox VideoHDR;
@@ -49,6 +50,8 @@ namespace Frontiers.GUI
 				public UISlider ImmersionCrosshairAlphaSlider;
 				public UISlider ImmersionCrosshairInactiveAlphaSlider;
 				public UISlider ImmersionPathGlowIntensitySlider;
+				public UISlider ImmersionWalkingSpeedSlider;
+				public UISlider ImmersionCameraSmoothingSlider;
 				public UICheckbox ImmersionWorldItemsOverlay;
 				public UICheckbox ImmersionWorldItemHUD;
 				public UICheckbox ImmersionSpecialObjectsOverlay;
@@ -96,6 +99,34 @@ namespace Frontiers.GUI
 						MouseSensitivityFPSMax = Globals.MouseSensitivityFPSMax;
 						MouseSensitivityFPSMin = Globals.MouseSensitivityFPSMin;
 
+						SoundGeneral.functionName = "OnSoundLevelChange";
+						SoundMusic.functionName = "OnSoundLevelChange";
+						SoundFX.functionName = "OnSoundLevelChange";
+						SoundAmbient.functionName = "OnSoundLevelChange";
+						SoundInterface.functionName = "OnSoundLevelChange";
+						SfxSoundFootstep.functionName = "OnSoundLevelChange";
+						SfxSoundPlayerVoice.functionName = "OnSoundLevelChange";
+						SfxSoundDynamicObjects.functionName = "OnSoundLevelChange";
+						SfxSoundCreaturs.functionName = "OnSoundLevelChange";
+
+						ImmersionCrosshairAlphaSlider.functionName = "OnImmersionSettingChange";
+						ImmersionCrosshairAlphaSlider.eventReceiver = gameObject;
+						ImmersionCrosshairInactiveAlphaSlider.functionName = "OnImmersionSettingChange";
+						ImmersionCrosshairInactiveAlphaSlider.eventReceiver = gameObject;
+						ImmersionWorldItemsOverlay.functionName = "OnImmersionSettingChange";
+						ImmersionWorldItemsOverlay.eventReceiver = gameObject;
+						ImmersionPathGlowIntensitySlider.functionName = "OnImmersionSettingChange";
+						ImmersionPathGlowIntensitySlider.eventReceiver = gameObject;
+						ImmersionSpecialObjectsOverlay.functionName = "OnImmersionSettingChange";
+						ImmersionSpecialObjectsOverlay.eventReceiver = gameObject;
+						ImmersionWorldItemHUD.functionName = "OnImmersionSettingChange";
+						ImmersionWorldItemHUD.eventReceiver = gameObject;
+						ImmersionPathGlowIntensitySlider.functionName = "OnImmersionSettingChange";
+						ImmersionPathGlowIntensitySlider.eventReceiver = gameObject;
+						ImmersionCameraSmoothingSlider.functionName = "OnImmersionSettingChange";
+						ImmersionCameraSmoothingSlider.eventReceiver = gameObject;
+
+
 						Tabs.Initialize(this);
 
 						Initialized = true;
@@ -135,6 +166,8 @@ namespace Frontiers.GUI
 						Profile.Get.CurrentPreferences.Immersion.PathGlowIntensity = ImmersionPathGlowIntensitySlider.sliderValue;
 						Profile.Get.CurrentPreferences.Immersion.SpecialObjectsOverlay	= ImmersionSpecialObjectsOverlay.isChecked;
 						Profile.Get.CurrentPreferences.Immersion.WorldItemHUD = ImmersionWorldItemHUD.isChecked;
+						Profile.Get.CurrentPreferences.Immersion.WalkingSpeed = ImmersionWalkingSpeedSlider.sliderValue;
+						Profile.Get.CurrentPreferences.Immersion.CameraSmoothing = ImmersionCameraSmoothingSlider.sliderValue;
 				}
 
 				public void OnControlSettingsChange()
@@ -280,6 +313,7 @@ namespace Frontiers.GUI
 						TempVideoPrefs.ObjectShadows = VideoShadowObjects.isChecked;
 						TempVideoPrefs.TerrainShadows = VideoShadowTerrain.isChecked;
 						TempVideoPrefs.StructureShadows = VideoShadowStructure.isChecked;
+						TempVideoPrefs.VSync = VideoVSync.isChecked;
 
 						VideoRefresh(TempVideoPrefs);
 				}
@@ -330,6 +364,8 @@ namespace Frontiers.GUI
 						Profile.Get.CurrentPreferences.Sound.SfxPlayerVoice = SfxSoundPlayerVoice.sliderValue;
 						Profile.Get.CurrentPreferences.Sound.SfxDynamicObjects = SfxSoundDynamicObjects.sliderValue;
 						Profile.Get.CurrentPreferences.Sound.SfxCreatures = SfxSoundCreaturs.sliderValue;
+
+						Profile.Get.CurrentPreferences.Sound.Apply();
 				}
 
 				public void OnAccessibilitySettingsChange ( ) {
@@ -381,6 +417,7 @@ namespace Frontiers.GUI
 						VideoFOVLabel.text = videoPrefs.FieldOfView.ToString();
 						VideoLighting.sliderValue = ((float)videoPrefs.AdjustBrightness) / 100;
 						VideoAmbientLightAtNight.sliderValue = videoPrefs.NightAmbientLightBooster;
+						VideoVSync.isChecked = videoPrefs.VSync;
 			
 						#region labels
 						string textureResolution = string.Empty;
@@ -394,7 +431,7 @@ namespace Frontiers.GUI
 										break;
 
 								case 2:
-										textureResolution = "Quater Res";
+										textureResolution = "Quarter Res";
 										break;
 
 								case 3:
@@ -543,6 +580,8 @@ namespace Frontiers.GUI
 						ImmersionSpecialObjectsOverlay.isChecked = Profile.Get.CurrentPreferences.Immersion.SpecialObjectsOverlay;
 						ImmersionWorldItemsOverlay.isChecked = Profile.Get.CurrentPreferences.Immersion.WorldItemOverlay;
 						ImmersionWorldItemHUD.isChecked = Profile.Get.CurrentPreferences.Immersion.WorldItemHUD;
+						ImmersionWalkingSpeedSlider.sliderValue = Profile.Get.CurrentPreferences.Immersion.WalkingSpeed;
+						ImmersionCameraSmoothingSlider.sliderValue = Profile.Get.CurrentPreferences.Immersion.CameraSmoothing;
 			
 						mRefreshingImmersion = false;
 				}

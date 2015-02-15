@@ -1200,7 +1200,7 @@ namespace Frontiers
 										return false;
 								}
 
-								public static bool LoadTerrainMap(ref Texture2D map, int resolution, TextureFormat format, bool linear, string chunkName, string mapName, DataType type)
+								public static bool LoadTerrainMap(ref Texture2D map, int resolution, TextureFormat format, bool linear, bool filtering, string chunkName, string mapName, DataType type)
 								{
 										string dataPath = GetDataPath(type);
 										string directory = System.IO.Path.Combine(dataPath, "ChunkMap");
@@ -1220,7 +1220,11 @@ namespace Frontiers
 										FileAccess access = FileAccess.ReadWrite;
 
 										map = new Texture2D(resolution, resolution, format, false, linear);
-										map.filterMode = FilterMode.Bilinear;
+										if (filtering) {
+												map.filterMode = FilterMode.Bilinear;
+										} else {
+												map.filterMode = FilterMode.Point;
+										}
 										map.wrapMode = TextureWrapMode.Clamp;
 										byte[] byteArray = File.ReadAllBytes(fullPath);
 										map.LoadImage(byteArray);
@@ -1772,16 +1776,18 @@ namespace Frontiers
 								}
 						}
 
-						public static void GetTextureFormat(string mapName, ref int resolution, ref TextureFormat format, ref bool linear)
+						public static void GetTextureFormat(string mapName, ref int resolution, ref TextureFormat format, ref bool linear, ref bool filtering)
 						{
 								resolution = 128;
 								format = TextureFormat.RGB24;
 								linear = false;
+								filtering = false;
 
 								switch (mapName) {
 										case "AboveGroundTerrainType":
 												format = TextureFormat.ARGB32;
 												linear = true;
+												filtering = true;
 												break;
 
 										case "TerrainData":
@@ -1795,10 +1801,19 @@ namespace Frontiers
 												resolution = Globals.WorldChunkSplatMapResolution;//1024;
 												format = TextureFormat.RGBA32;
 												linear = true;
+												filtering = true;
 												break;
 
 										case "ColorOverlay":
 												resolution = Globals.WorldChunkColorOverlayResolution;//512;
+												filtering = true;
+												break;
+
+										case "MiniHeightMap":
+												resolution = 32;
+												format = TextureFormat.ARGB32;
+												linear = true;
+												filtering = true;
 												break;
 
 										default:
@@ -1979,7 +1994,11 @@ namespace Frontiers
 												string[] splitChunkName = ChunkName.Split(new String [] { "-" }, StringSplitOptions.RemoveEmptyEntries);
 												//C-0-0-ID#
 												//0 1 2 3
-												mChunkID = Int32.Parse(splitChunkName[3]);
+												if (splitChunkName.Length > 3) {
+														mChunkID = Int32.Parse(splitChunkName[3]);
+												} else {
+														Debug.LogError("Error when splitting mobile reference for chunk ID: " + ChunkName.ToString());
+												}
 										}
 										return mChunkID;
 								}

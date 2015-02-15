@@ -51,6 +51,7 @@ namespace Frontiers.Story.Conversations
 		[XmlInclude(typeof(LibraryDeliverBookOrder))]
 		[XmlInclude(typeof(MakeLoanPayment))]
 		[XmlInclude(typeof(RequireBookStatus))]
+		[XmlInclude(typeof(RequireCharacterSpokenToOnce))]
 		[XmlInclude(typeof(RequireCharWIScript))]
 		[XmlInclude(typeof(RequireConversationVariable))]
 		[XmlInclude(typeof(RequireCuratorItemsAvailable))]

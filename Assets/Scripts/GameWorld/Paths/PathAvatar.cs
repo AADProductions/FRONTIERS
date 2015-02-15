@@ -436,6 +436,9 @@ namespace Frontiers.World
 								return IndexInParentPath;
 						}
 						int index;
+						foreach (KeyValuePair <string,int> branch in Branches) {
+								Debug.Log("(Checking path marker " + ID.ToString () + " " + branch.Key + ", index in path is " + branch.Value.ToString() + ")");
+						}
 						if (Branches.TryGetValue(pathName, out index)) {
 								return index;
 						}
@@ -448,6 +451,12 @@ namespace Frontiers.World
 				public int Marker = -1;
 				[XmlIgnore]
 				public bool IsActive = false;
+
+		public int NumBranches {
+						get {
+								return Branches.Count;
+						}
+				}
 
 				[XmlIgnore]
 				public bool HasInstance {

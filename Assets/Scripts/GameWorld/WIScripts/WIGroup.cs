@@ -103,9 +103,10 @@ namespace Frontiers.World
 				{
 						mDestroyed = true;
 						if (!mSavedState) {
-							//Debug.Log("WIGROUP " + name + " WAS DESTROYED WITHOUT SAVING STATE");
+								//Debug.Log("WIGROUP " + name + " WAS DESTROYED WITHOUT SAVING STATE");
 						}
 				}
+
 
 				#region ownership / parent / manager
 
@@ -323,7 +324,7 @@ namespace Frontiers.World
 								return false;
 
 						if (Is(WIGroupLoadState.PreparingToUnload | WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
-								Debug.Log("Trying to add child item " + childItem.Name + " to group while it's unloading / unloaded");
+								//Debug.Log("Trying to add child item " + childItem.Name + " to group while it's unloading / unloaded");
 								return false;
 						}
 
@@ -340,7 +341,7 @@ namespace Frontiers.World
 								return false;
 
 						if (Is(WIGroupLoadState.PreparingToUnload | WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
-								Debug.Log("Trying to add child item " + childItem.FileName + " to group while it's unloading / unloaded");
+								//Debug.Log("Trying to add child item " + childItem.FileName + " to group while it's unloading / unloaded");
 								return false;
 						}
 						//does it already have a group?
@@ -349,6 +350,7 @@ namespace Frontiers.World
 								//first we have to remove it from its existing group
 								if (childItem.Group != this && !childItem.Group.RemoveChildItemFromGroup(childItem)) {
 										//we can't proceed if the other group won't let it go
+										//Debug.Log("Couldn't remove from existing group");
 										return false;
 								}
 						} else {
@@ -409,7 +411,7 @@ namespace Frontiers.World
 										childItem.OnGroupLoaded.SafeInvoke();
 								}
 						} else {
-								Debug.Log("Child item " + childItem.name + " was already in group " + name);
+								//Debug.Log("Child item " + childItem.name + " was already in group " + name);
 								result = true;
 								broadcast = false;
 						}
@@ -426,7 +428,7 @@ namespace Frontiers.World
 								return false;
 
 						if (Is(WIGroupLoadState.PreparingToUnload | WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
-								Debug.Log("Trying to add child group " + childGroup.Path + " to group while it's unloading / unloaded");
+								//Debug.Log("Trying to add child group " + childGroup.Path + " to group while it's unloading / unloaded");
 								return false;
 						}
 						//we assume that group ownership check and the like have been
@@ -515,9 +517,10 @@ namespace Frontiers.World
 								//we've been changed forever so save the group props
 								//Mods.Get.Runtime.SaveGroupProps (Props);
 								OnChildItemRemoved.SafeInvoke();
-								return true;
 						}
-						return false;
+						//return true in either case
+						//if it's not in the group, no harm done
+						return true;
 				}
 
 				public bool RemoveChildGroupFromGroup(WIGroup childGroup)
@@ -1186,7 +1189,7 @@ namespace Frontiers.World
 						EditorNumGroupsToLoad = mEditorChildGroupsToLoad.Count;
 
 						foreach (string nextChild in mEditorStackItemsToLoad) {
-								//Debug.Log ("Loading child item " + nextChild);
+								Debug.Log ("Loading child item " + nextChild);
 								StackItem stackItem = null;
 								if (Mods.Get.Editor.LoadStackItemFromGroup(ref stackItem, Props.UniqueID, nextChild)) {
 										WorldItem newChildItem = null;
@@ -1197,7 +1200,7 @@ namespace Frontiers.World
 												if (WorldItems.Get.PackPrefab(stackItem.PackName, stackItem.PrefabName, out packPrefab)) {
 														GameObject basePrefab = UnityEditor.PrefabUtility.FindPrefabRoot(packPrefab.gameObject);
 														if (basePrefab != null) {
-																//Debug.Log ("Creating non-generic world item " + basePrefab.name);
+																Debug.Log ("Creating non-generic world item " + basePrefab.name);
 																GameObject instantiatedUnWi = UnityEditor.PrefabUtility.InstantiatePrefab(basePrefab) as GameObject;
 																//instantiate a new prefab - keep it as a prefab!
 																instantiatedUnWi.name = basePrefab.name;
@@ -1333,7 +1336,6 @@ namespace Frontiers.World
 										WorldItem worlditem = child.GetComponent <WorldItem>();
 										if (worlditem != null) {
 												StackItem stackItem = worlditem.GetStackItem(WIMode.Frozen);
-												//ColoredDebug.Log ("Saving worlditem " + worlditem.name + " in group " + Props.Name + " Position: " + stackItem.Props.Local.Transform.Position.ToString ( ));
 												Mods.Get.Editor.SaveMod <StackItem>(stackItem, "Group", Props.UniqueID, worlditem.FileName);
 										}
 								}

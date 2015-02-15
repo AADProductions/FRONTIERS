@@ -125,8 +125,11 @@ namespace Frontiers.World
 												waitForBottom = false;
 										}
 								}
+								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 0.5f;
+								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 								//Debug.Log ("Waiting for top / bottom: " + waitForTop.ToString () + " / " + waitForBottom.ToString ());
-								yield return WorldClock.WaitForSeconds(0.5);
 						}
 						enabled = true;
 						yield break;

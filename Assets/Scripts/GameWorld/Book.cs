@@ -41,7 +41,6 @@ namespace Frontiers.World
 				public int NumCopiesSpawned = 0;
 				public int NumCopiesReceived = 0;
 				public string Text = string.Empty;
-//raw book text
 				public bool MultiChapterType {
 						get {
 								return (TypeOfBook == BookType.Book
@@ -121,9 +120,10 @@ namespace Frontiers.World
 						//this is now done in the chapter on the fly
 						//chapter.Contents = Frontiers.Data.GameData.InterpretScripts (chapter.Contents, Profile.Get.CurrentGame.Character.Gender, null);
 
-						if (chapterNumber == mBookChapters.LastIndex()) {
+						//if (chapterNumber == mBookChapters.LastIndex()) {
+						//TODO temp - book reading will go back to chapter-based eventually
 								OnFullyRead();
-						}
+						//}
 			
 						return true;
 				}

@@ -96,10 +96,10 @@ namespace Frontiers
 								} else if (nameCheck.Contains("steam")) {
 										ActionSpriteSuffix = "Steam";
 								} else {
-										Debug.Log("Setting action sprite suffix to default");
+										//Debug.Log("Setting action sprite suffix to default");
 										ActionSpriteSuffix = Globals.ControllerDefaultActionSpriteSuffix;
 								}
-								Debug.Log("Setting action sprite suffix to " + ActionSpriteSuffix);
+								//Debug.Log("Setting action sprite suffix to " + ActionSpriteSuffix);
 						}
 				}
 
@@ -138,6 +138,20 @@ namespace Frontiers
 						aSetting.Controller = MouseXAxis;
 						aSetting.AvailableControllerButtons = DefaultAvailableAxis;
 						aSetting.Axis = ActionSetting.InputAxis.MouseX;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Analog;
+						aSetting.ActionDescription = "Interface Movement Y";
+						aSetting.Controller = MovementXAxis;
+						aSetting.AvailableControllerButtons = DefaultAvailableAxis;
+						aSetting.Axis = ActionSetting.InputAxis.MovementY;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Analog;
+						aSetting.ActionDescription = "Interface Movement X";
+						aSetting.Controller = MovementYAxis;
+						aSetting.AvailableControllerButtons = DefaultAvailableAxis;
+						aSetting.Axis = ActionSetting.InputAxis.MovementX;
 						actionSettings.Add(aSetting);
 
 						aSetting = ActionSetting.Analog;
@@ -210,6 +224,16 @@ namespace Frontiers
 						aSetting.AvailableControllerButtons = DefaultAvailableActions;
 						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
 						aSetting.Cursor = ActionSetting.CursorAction.RightClick;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)InterfaceActionType.InterfaceHide;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(InterfaceActionType.InterfaceHide.ToString());
+						aSetting.Controller = InputControlType.Button10;
+						aSetting.Key = KeyCode.F2;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
 						actionSettings.Add(aSetting);
 
 						return actionSettings;

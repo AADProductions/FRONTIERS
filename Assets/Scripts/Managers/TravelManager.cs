@@ -5,6 +5,7 @@ using Frontiers;
 using Frontiers.World;
 using Frontiers.World.BaseWIScripts;
 using Frontiers.GUI;
+using System;
 
 namespace Frontiers
 {
@@ -21,34 +22,57 @@ namespace Frontiers
 
 				public FastTravelState State = FastTravelState.None;
 				public float TimeScaleTravel = 1.0f;
-				public PathMarker LastVisitedPathMarker;
-				public PathMarker LastFastTravelStartPathMarker;
-				public string LastChosenPath;
-				public PathSegment CurrentSegment;
-				public float PathStartPosition;
-				public float PathEndPosition;
-				public float PathCurrentMeters;
-				public float LastChosenPathMarkerPathPosition;
-				public Vector3 CurrentOrientation;
-				public Vector3 CurrentPosition;
-				public int StartMarkerIndexInPath;
-				public int EndMarkerIndexInPath;
-				public Dictionary <PathMarkerInstanceTemplate,int> AvailablePathMarkers = new Dictionary<PathMarkerInstanceTemplate, int>();
-				public PathDirection CurrentDirection;
-				public PathMarkerInstanceTemplate LastChosenPathMarker;
+				public float MaxFastTravelWaitRadius = 3f;
 				public GUIFastTravelInterface FastTravelInterface;
 				public PathMarkerType DesiredLocationTypes;
 				public StatusKeeper StrengthStatusKeeper;
-				#if UNITY_EDITOR
-				public List <string> BranchesInLastChoice = new List <string>();
-				public List <string> BranchesInCurrentChoice = new List <string>();
-				#endif
-				public bool HasReachedOrPassedLastChosenPathMarker {
+
+				public List<FastTravelChoice> AvailablePathMarkers = new List <FastTravelChoice>();
+				public FastTravelChoice CurrentChoice;
+				public int StartMarkerIndex {
+						get {
+								if (CurrentChoice != null) {
+										return CurrentChoice.StartMarkerIndex;
+								}
+								return 0;
+						}
+				}
+				public int EndMarkerIndex {
+						get {
+								if (CurrentChoice != null) {
+										return CurrentChoice.EndMarkerIndex;
+								}
+								return 0;
+						}
+				}
+				public PathDirection CurrentDirection {
+						get {
+								if (CurrentChoice != null) {
+										return CurrentChoice.Direction;
+								}
+								return PathDirection.None;
+						}
+				}
+
+				public PathMarker LastVisitedPathMarker;
+				public PathMarkerInstanceTemplate LastFastTravelStartPathMarker;
+				public PathSegment CurrentSegment;
+				public float PathStartMeters;
+				public float PathEndMeters;
+				public float PathCurrentMeters;
+				public Vector3 CurrentOrientation;
+				public Vector3 CurrentPosition;
+				public string LastChosenPath;
+				public PathMarkerInstanceTemplate LastChosenPathMarker;
+
+				public bool HasReachedOrPassedDestination {
 						get {
 								if (CurrentDirection == PathDirection.Forward) {
-										return LastChosenPathMarkerPathPosition <= PathCurrentMeters;
+										//Debug.Log("We're going forward, is path end position less than current meters?" + (PathEndMeters <= PathCurrentMeters).ToString());
+										return PathEndMeters <= PathCurrentMeters;
 								} else {
-										return LastChosenPathMarkerPathPosition >= PathCurrentMeters;
+										//Debug.Log("We're going backwards, is path end position greater than current meters?" + (PathEndMeters >= PathCurrentMeters).ToString());
+										return PathEndMeters >= PathCurrentMeters;
 								}
 						}
 				}
@@ -63,135 +87,77 @@ namespace Frontiers
 				public bool FastTravel(PathMarker startingPathMarker)
 				{
 						if (State == FastTravelState.None) {
-								OnStartTraveling(startingPathMarker);
+								if (startingPathMarker.HasPathMarkerProps) {
+										OnStartTraveling(startingPathMarker.Props, startingPathMarker.Props.PathName);
+										State = FastTravelState.ArrivingAtDestination;
+								} else {
+										Debug.Log("Starting path maker had no properties");
+								}
 						}
 						return true;
 				}
 
 				public void CancelTraveling()
 				{
-						State = FastTravelState.Finished;
+						if (State != FastTravelState.None) {
+								State = FastTravelState.Finished;
+								Player.Local.Projections.ClearDirectionalArrows();
+						}
 				}
 
-				protected void OnStartTraveling(PathMarker startingPathMarker)
+				protected void OnStartTraveling(PathMarkerInstanceTemplate startingPathMarker, string pathName)
 				{
-						State = FastTravelState.ArrivingAtDestination;
+						//Debug.Log("Starting traveling on path " + pathName);
 						Player.Get.AvatarActions.ReceiveAction((AvatarAction.FastTravelStart), WorldClock.AdjustedRealTime);
 
 						LastFastTravelStartPathMarker = startingPathMarker;
-						LastChosenPathMarker = startingPathMarker.Props;
-						StartMarkerIndexInPath = LastChosenPathMarker.IndexInParentPath;
-						LastChosenPath = LastChosenPathMarker.ParentPath.Name;
-						Paths.SetActivePath(LastChosenPath, GameWorld.Get.PrimaryChunk);
-						PathStartPosition = 0f;
-						PathEndPosition = Paths.ActivePath.MetersFromPosition(LastChosenPathMarker.Position);
-						PathCurrentMeters = Paths.ActivePath.MetersFromPosition(LastChosenPathMarker.Position);
-						CurrentPosition = Player.Local.Position;
+						LastChosenPathMarker = startingPathMarker;
+
 						Player.Local.Status.GetStatusKeeper("Strength", out StrengthStatusKeeper);
-
-						#if UNITY_EDITOR
-						BranchesInLastChoice.Clear();
-						BranchesInCurrentChoice.Clear();
-
-						foreach (KeyValuePair <string,int> branch in LastChosenPathMarker.Branches) {
-								BranchesInLastChoice.Add(branch.Key + " - " + branch.Value.ToString());
-						}
-						#endif
-
-						Player.Local.HijackControl();
-						Player.Local.HijackLookSpeed = 0.05f;
 				}
 
 				protected void OnFinishTraveling()
 				{
+						//Debug.Log("Finished traveling");
+						Player.Local.Projections.ClearDirectionalArrows();
 						State = FastTravelState.None;
 						Player.Get.AvatarActions.ReceiveAction((AvatarAction.FastTravelStop), WorldClock.AdjustedRealTime);
 						FastTravelInterface.Minimize();
-						mTerrainHit.feetPosition = CurrentPosition;
-						CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit) + 0.25f;//just in case, pad it out
-						Player.Local.Position = CurrentPosition;
-						//WorldClock.Get.SetTargetSpeed (1.0f);
+						CurrentChoice = null;
 
-						Player.Local.RestoreControl(true);
+						if (Player.Local.IsHijacked) {
+								mTerrainHit.feetPosition = CurrentPosition;
+								CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit) + 0.25f;//just in case, pad it out
+								//WorldClock.Get.SetTargetSpeed (1.0f);
+								Player.Local.Position = CurrentPosition;
+								Player.Local.RestoreControl(true);
+						}
 				}
 
-				public void ConsiderChoice(KeyValuePair <PathMarkerInstanceTemplate,int> choice, WorldChunk chunk)
+				public void ConsiderChoice(FastTravelChoice choice)
 				{
-						if (State == FastTravelState.WaitingForNextChoice) {
-								#if UNITY_EDITOR
-								BranchesInCurrentChoice.Clear();
-								foreach (KeyValuePair <string,int> branch in choice.Key.Branches) {
-										BranchesInCurrentChoice.Add(branch.Key + " - " + branch.Value.ToString());
-								}
-								#endif
-
-								//okay, we're considering this choice
-								//that means we want the path that attaches our current path marker to the new choice
-								//first check if they both belong to the same path
-								LastChosenPath = string.Empty;
-								if (choice.Key.PathName == LastChosenPathMarker.PathName) {
-										LastChosenPath = choice.Key.PathName;
-								} else {
-										//look in all the branches of our last chosen path marker
-										//and find the one that links them
-										foreach (KeyValuePair <string,int> lastChoiceBranch in LastChosenPathMarker.Branches) {
-												foreach (KeyValuePair <string,int> currentChoiceBranch in choice.Key.Branches) {
-														if (lastChoiceBranch.Key == currentChoiceBranch.Key) {
-																//found the link
-																LastChosenPath = currentChoiceBranch.Key;
-																break;
-														}
-												}
-										}
-								}
-								//look in that direction - approximately 10 meters down the path
-								Paths.SetActivePath(LastChosenPath, GameWorld.Get.PrimaryChunk);
-								mLookMetersDownPath = Paths.ActivePath.MetersFromPosition(choice.Key.Position);
-								if (LastChosenPathMarker.IndexInParentPath < choice.Value) {
-										mLookDirection = PathDirection.Forward;
-								} else {
-										mLookDirection = PathDirection.Backwards;
-								}
-								mLookMetersDownPath = Paths.MoveAlongPath(mLookMetersDownPath, 10f, mLookDirection);
-								mLookMetersPosition = Paths.ActivePath.PositionFromMeters(mLookMetersDownPath);
-
-								Player.Local.HijackedPosition.position = LastChosenPathMarker.Position + Player.Local.Height;
-								Player.Local.HijackedLookTarget.position = mLookMetersPosition;
-								Player.Local.HijackLookSpeed = 0.05f;//slow this way down so we're not zipping around
-						}
+						//TODO show the path name or something
 				}
 
 				protected float mLookMetersDownPath;
 				protected Vector3 mLookMetersPosition;
 				protected PathDirection mLookDirection;
 
-				public void MakeChoice(KeyValuePair <PathMarkerInstanceTemplate,int> choice, WorldChunk chunk)
+				public void MakeChoice(FastTravelChoice choice)
 				{
-						#if UNITY_EDITOR
-						BranchesInLastChoice.Clear();
-						BranchesInLastChoice.AddRange(BranchesInCurrentChoice);
-						BranchesInCurrentChoice.Clear();
-						#endif
+						Player.Local.HijackControl();
+						Player.Local.HijackLookSpeed = 0.05f;
 
-						//the choice will always be considered before it's made
-						//so last chosen path will be active
-						//figure out whether we're going forwards or backwards
-						StartMarkerIndexInPath = EndMarkerIndexInPath;
-						EndMarkerIndexInPath = choice.Value;
-						if (StartMarkerIndexInPath < EndMarkerIndexInPath) {
-								CurrentDirection = PathDirection.Forward;
-						} else {
-								CurrentDirection = PathDirection.Backwards;
-						}
-
-						//our start position is the meters from the position of our last chosen marker
-						PathStartPosition = Paths.ActivePath.MetersFromPosition(LastChosenPathMarker.Position);
-						//we're starting at this position
-						PathCurrentMeters = PathStartPosition;
-						LastChosenPathMarker = choice.Key;
-						//our end position is the meters from the position of our newly chosen marker
-						LastChosenPathMarkerPathPosition = Paths.ActivePath.MetersFromPosition(LastChosenPathMarker.Position);
-						PathEndPosition = LastChosenPathMarkerPathPosition;
+						CurrentChoice = choice;
+						//convert the current choice's indexes & whatnot into start / end spline params
+						LastChosenPath = choice.ConnectingPath;
+						Paths.SetActivePath(LastChosenPath, GameWorld.Get.PrimaryChunk);
+						CurrentPosition = Player.Local.Position;
+						CurrentOrientation = Player.Local.Rotation.eulerAngles;
+						PathEndMeters = Paths.ActivePath.MetersFromPosition(CurrentChoice.EndMarker.Position);
+						PathStartMeters = Paths.ActivePath.MetersFromPosition(CurrentChoice.StartMarker.Position);
+						PathCurrentMeters = PathStartMeters;
+						//go!
 						State = FastTravelState.Traveling;
 						//enabled = true;
 						MasterAudio.PlaySound(MasterAudio.SoundType.PlayerInterface, "FastTravelMakeChoice");
@@ -215,6 +181,12 @@ namespace Frontiers
 
 								case FastTravelState.WaitingForNextChoice:
 										//this will loop about until traveling is either started or cancelled
+										if ((mNextChoiceWaitStartTime + 2f) < WorldClock.AdjustedRealTime) {
+												if (Vector3.Distance(Player.Local.Position, Player.Local.Projections.DirectionArrowsParent.position) > MaxFastTravelWaitRadius) {
+														//Debug.Log("Wait radius exceeded wait distance " + Vector3.Distance(Player.Local.Position, Player.Local.Projections.DirectionArrowsParent.position).ToString());
+														State = FastTravelState.Finished;
+												}
+										}
 										return;
 
 								case FastTravelState.Traveling:
@@ -234,7 +206,6 @@ namespace Frontiers
 
 				protected void UpdateTraveling()
 				{
-
 						if (!Paths.HasActivePath) {
 								return;
 						}
@@ -249,14 +220,18 @@ namespace Frontiers
 								return;
 						}
 
+						//Debug.Log("Updating traveling... we're at " + PathCurrentMeters.ToString() + " and moving towards " + PathEndMeters.ToString());
+
 						CurrentSegment = Paths.ActivePath.SegmentFromMeters(PathCurrentMeters);
-						float metersToMove = (float)(TimeScaleTravel * WorldClock.RTDeltaTime);// * Paths.PathDifficultyToMetersPerHour (CurrentSegment.Difficulty));
+						float metersToMove = (float)(TimeScaleTravel * WorldClock.RTDeltaTime);
 						PathCurrentMeters = Paths.MoveAlongPath(PathCurrentMeters, metersToMove, CurrentDirection);
 						CurrentPosition = Paths.ActivePath.PositionFromMeters(PathCurrentMeters);
 						mTerrainHit.feetPosition = CurrentPosition;
-						mTerrainHit.overhangHeight = 100f;
-						mTerrainHit.groundedHeight = 10f;
-						CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit);//CurrentPosition, passOverSolidTerrain, ref hitWater, ref hitTerrainMesh, ref normal);
+						mTerrainHit.overhangHeight = 2f;
+						mTerrainHit.groundedHeight = 2f;
+						CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit) + Player.Local.Height.y;
+
+						//Debug.Log("We're now at " + PathCurrentMeters.ToString());
 
 						if (mTerrainHit.hitWater) {
 								GUIManager.PostDanger("You can't fast travel over water");
@@ -267,9 +242,10 @@ namespace Frontiers
 
 						//make sure hijacked position is facing the right direction, etc
 						Player.Local.State.HijackMode = PlayerHijackMode.OrientToTarget;
-						Player.Local.HijackedPosition.position = CurrentPosition + Player.Local.Height;
+						Player.Local.HijackedPosition.position = CurrentPosition;
 						Player.Local.HijackedPosition.rotation = Quaternion.identity;
 						Player.Local.HijackLookSpeed = Globals.PlayerHijackLerp;
+
 
 						CurrentOrientation = Paths.ActivePath.OrientationFromMeters(PathCurrentMeters, true);
 						Player.Local.HijackedPosition.transform.Rotate(CurrentOrientation);
@@ -277,8 +253,9 @@ namespace Frontiers
 								Player.Local.HijackedPosition.transform.Rotate(0f, 180f, 0f);
 						}
 
-						if (HasReachedOrPassedLastChosenPathMarker) {
-								State = FastTravelState.ArrivingAtDestination;
+						if (HasReachedOrPassedDestination) {
+								//Debug.Log("Has reached destination...");
+								ArriveAtDestination();
 						}
 
 						//update the passage of time
@@ -291,20 +268,42 @@ namespace Frontiers
 						WorldClock.AddARTDeltaTime(timeAdvanced);
 				}
 
+				protected void ArriveAtDestination()
+				{
+						LastChosenPathMarker = CurrentChoice.EndMarker;
+						CurrentChoice = null;
+						State = FastTravelState.ArrivingAtDestination;
+				}
+
 				protected void WaitForNextChoice()
 				{
-						//WorldClock.Get.SetTargetSpeed (0f);
+						mNextChoiceWaitStartTime = WorldClock.AdjustedRealTime;
 						AvailablePathMarkers.Clear();
 						Paths.GetAllNeighbors(LastChosenPathMarker, DesiredLocationTypes, AvailablePathMarkers);
-						Player.Local.State.HijackMode = PlayerHijackMode.LookAtTarget;
-						Player.Local.HijackedPosition.transform.position = LastChosenPathMarker.Position + Player.Local.Height;
-						FastTravelInterface.AddAvailablePathMarkers(AvailablePathMarkers);
-						if (FastTravelInterface.Maximize()) {
-								State = FastTravelState.WaitingForNextChoice;
-						} else {
-								//something's up, we can't maximize interface
-								State = FastTravelState.Finished;
+						if (Player.Local.IsHijacked) {
+								//let the player walk around again
+								mTerrainHit.feetPosition = CurrentPosition;
+								CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit) + 0.25f;//just in case, pad it out
+								Player.Local.Position = CurrentPosition;
+								Player.Local.RestoreControl(true);
 						}
+						Player.Local.Projections.ShowFastTravelChoices(LastChosenPathMarker, AvailablePathMarkers);
+						FastTravelInterface.Maximize();
+						State = FastTravelState.WaitingForNextChoice;
+				}
+
+				protected double mNextChoiceWaitStartTime = 0f;
+
+				[Serializable]
+				public class FastTravelChoice
+				{
+						public PathMarkerInstanceTemplate StartMarker;
+						public PathMarkerInstanceTemplate FirstInDirection;
+						public PathMarkerInstanceTemplate EndMarker;
+						public int StartMarkerIndex;
+						public int EndMarkerIndex;
+						public PathDirection Direction;
+						public string ConnectingPath;
 				}
 		}
 }

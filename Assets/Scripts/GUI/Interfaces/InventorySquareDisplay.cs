@@ -37,8 +37,8 @@ namespace Frontiers.GUI
 						if (Background != null)
 								Background.depth = 100;
 
-						if (ActiveHighlight != null)
-								ActiveHighlight.depth = 101;
+						if (QuestItemHighlight != null)
+								QuestItemHighlight.depth = 101;
 
 						if (WeightLabel != null)
 								WeightLabel.depth = 102;
@@ -70,7 +70,6 @@ namespace Frontiers.GUI
 				{
 						Color backgroundColor = Color.white;
 						Color shadowColor = Color.black;
-						Color activeHighlightColor = Color.white;
 						bool shadowEnabled = true;
 						bool activeHighlightEnabled = false;
 
@@ -101,8 +100,8 @@ namespace Frontiers.GUI
 										break;
 
 								case SquareDisplayMode.SoldOut:
-										activeHighlightEnabled = true;
-										activeHighlightColor = Colors.Disabled(activeHighlightColor, 0.5f);
+										QuestItemHighlight.enabled = true;
+										QuestItemHighlight.color = Color.gray;
 										break;
 
 								default:
@@ -114,10 +113,6 @@ namespace Frontiers.GUI
 						Shadow.enabled = shadowEnabled;
 						Shadow.color = shadowColor;
 						Background.color = backgroundColor;
-						if (ActiveHighlight != null) {
-								ActiveHighlight.enabled = activeHighlightEnabled;
-								ActiveHighlight.color = activeHighlightColor;
-						}
 				}
 
 				public virtual void UpdateDoppleganger()

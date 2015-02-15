@@ -8,11 +8,6 @@ namespace Frontiers
 {
 		public class PlayerDamageHandler : PlayerScript, IDamageable
 		{
-				protected float MinimumFallImpactThreshold = 5.0f;
-				protected float MinimumBrokenBoneFallDamage	= 18.0f;
-				protected float BrokenBoneProbability = 0.25f;
-				protected float MaximumBrokenBoneFallDamage	= 30.0f;
-				protected float MaximumFallImpactThreshold	= 45.0f;
 				public float MinimumDamageThreshold = 1.25f;
 				public float FallDamageMultiplier = 5f;
 				public float DamageLastTaken = 0.0f;
@@ -134,27 +129,51 @@ namespace Frontiers
 
 				public void TakeFallDamage(float fallImpact)
 				{
-						if (player.IsHijacked || !player.HasSpawned || GameManager.Get.JustLookingMode) {
+						if (player.IsHijacked || !player.HasSpawned) {
 								return;
 						}
 
 						float actualDamage;
-						float attemptedDamage = fallImpact * Globals.DamageFallDamageMultiplier;
+						float attemptedDamage = fallImpact;
 						bool isDead;
-						WIMaterialType fallOn = DamageManager.GroundTypeToMaterialType(Player.Local.Surroundings.State.GroundBeneathPlayer);
+						float impactThreshold = Mathf.Infinity;
+						float deathThreshold = Mathf.Infinity;
+						float breakBoneThreshold = Mathf.Infinity;
 
-						if (attemptedDamage < Globals.DamageMinimumFallImpactThreshold) {
+						switch (Profile.Get.CurrentGame.Difficulty.FallDamage) {
+								case FallDamageStyle.None:
+										//don't do anything
+										return;
+
+								case FallDamageStyle.Forgiving:
+										attemptedDamage *= Globals.DamageFallDamageForgivingMultiplier;
+										deathThreshold = Globals.DamageFallDamageForgivingImpactDeathThreshold;
+										impactThreshold = Globals.DamageFallDamageForgivingImpactThreshold;
+										breakBoneThreshold = Globals.DamageFallDamageForgivingBrokenBoneThreshold;
+										break;
+
+								case FallDamageStyle.Realistic:
+										attemptedDamage *= Globals.DamageFallDamageRealisticMultiplier;
+										deathThreshold = Globals.DamageFallDamageRealisticImpactDeathThreshold;
+										impactThreshold = Globals.DamageFallDamageRealisticImpactThreshold;
+										breakBoneThreshold = Globals.DamageFallDamageRealisticBrokenBoneThreshold;
+										break;
+
+						}
+
+						if (attemptedDamage < impactThreshold) {
 								return;
-						} else if (attemptedDamage > Globals.DamageMaximumFallImpactThreshold) {
+						} else if (attemptedDamage > deathThreshold) {
 								player.Die("FallDamage");
 								return;
 						} else {
+								WIMaterialType fallOn = DamageManager.GroundTypeToMaterialType(Player.Local.Surroundings.State.GroundBeneathPlayer);
 								TakeDamage(fallOn, Player.Local.Position, attemptedDamage, Vector3.zero, "FallDamage", out actualDamage, out isDead);
 								bool breakBone = false;
-								if (actualDamage >= MaximumBrokenBoneFallDamage) {
+								if (actualDamage >= breakBoneThreshold) {
 										breakBone = true;
-								} else if (actualDamage >= MinimumBrokenBoneFallDamage) {
-										if (Random.value >= BrokenBoneProbability) {
+								} else if (actualDamage >= breakBoneThreshold * 0.25f) {//TODO move these to globals
+										if (Random.value >= 0.5f) {
 												breakBone = true;
 										}
 								}

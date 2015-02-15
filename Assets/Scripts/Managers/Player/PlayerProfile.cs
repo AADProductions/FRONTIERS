@@ -172,8 +172,15 @@ namespace Frontiers
 				public CharacterEyeColor EyeColor = CharacterEyeColor.None;
 				public PlayerExperience Exp = new PlayerExperience();
 				public PlayerReputation Rep = new PlayerReputation();
+				public List <string> CharactersSpokenTo = new List<string> ();
 
-				public void RefreshVisual () {
+				public bool HasSpokenToCharacter(string characterName)
+				{
+					return CharactersSpokenTo.Contains(characterName);
+				}
+
+				public void RefreshVisual()
+				{
 						//chooses body + face / body textures
 						if (Gender == CharacterGender.Male) {
 								BodyName = Globals.DefaultMalePlayerBody;
@@ -285,6 +292,8 @@ namespace Frontiers
 								prefs.WorldItemHUD = true;
 								prefs.PathGlowIntensity = 1.0f;
 								prefs.SpecialObjectsOverlay = true;
+								prefs.WalkingSpeed = 1f;
+								prefs.CameraSmoothing = 0f;
 								return prefs;
 						}
 
@@ -295,6 +304,8 @@ namespace Frontiers
 						public float PathGlowIntensity = 1.0f;
 						public bool SpecialObjectsOverlay = true;
 						public double HUDPersistTime = 1.5;
+						public float WalkingSpeed = 0.8f;
+						public float CameraSmoothing = 0f;
 
 						public void Apply()
 						{
@@ -420,6 +431,7 @@ namespace Frontiers
 								prefs.PostFXMBlur = false;
 								prefs.PostFXAA = true;
 								prefs.HDR = true;
+								prefs.VSync = false;
 
 								prefs.ResolutionWidth = 1920;
 								prefs.ResolutionHeight = 1080;
@@ -468,6 +480,7 @@ namespace Frontiers
 								PostFXAA = copyFrom.PostFXAA;
 								PostFXGlobalFog = copyFrom.PostFXGlobalFog;
 								HDR = true;// copyFrom.HDR;
+								VSync = copyFrom.VSync;
 
 								ResolutionWidth = copyFrom.ResolutionWidth;
 								ResolutionHeight = copyFrom.ResolutionHeight;
@@ -616,6 +629,12 @@ namespace Frontiers
 												Structures.Get.RefreshStructureShadowSettings(StructureShadows, TerrainShadows);
 										}
 
+										if (VSync) {
+												QualitySettings.vSyncCount = 1;
+										} else {
+												QualitySettings.vSyncCount = 0;
+										}
+
 										GameManager.Get.SetOculusMode(OculusMode);
 								} catch (Exception e) {
 										Debug.LogException(e);
@@ -649,6 +668,7 @@ namespace Frontiers
 						public bool PostFXAA = false;
 						public bool PostFXGlobalFog = true;
 						public bool HDR = true;
+						public bool VSync = false;
 						public int ResolutionWidth = 1920;
 						public int ResolutionHeight = 1080;
 						public int TextureResolution = 0;

@@ -746,7 +746,7 @@ namespace Frontiers
 
 				public static double GameHoursToRTSeconds(double gameHours)
 				{
-						return  (gameHours / gHoursPerRTSecond);
+						return gameHours * 60 * gRTSecondsPerGameMinute;
 				}
 
 				public static double SecondsToMinutes(double gameSeconds)

@@ -311,8 +311,8 @@ namespace Frontiers
 								//loads the pixels from the mod data into the existing texture
 								//check to see if a local copy exists
 								if (GameData.IO.LoadProfileTexture(texture, dataType, dataName)
-								    || GameData.IO.LoadWorldTexture(texture, dataType, dataName)
-								    || GameData.IO.LoadBaseTexture(texture, dataType, dataName)) {
+								|| GameData.IO.LoadWorldTexture(texture, dataType, dataName)
+								|| GameData.IO.LoadBaseTexture(texture, dataType, dataName)) {
 										//always set this just in case
 										texture.name = dataName;
 										return true;
@@ -373,11 +373,12 @@ namespace Frontiers
 								int resolution = 0;
 								TextureFormat format = TextureFormat.ARGB32;
 								bool linear = false;
-								GameData.GetTextureFormat(mapName, ref resolution, ref format, ref linear);
+								bool filtering = false;
+								GameData.GetTextureFormat(mapName, ref resolution, ref format, ref linear, ref filtering);
 
-								if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.Profile)) {
-										if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.World)) {
-												return GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.Base);
+								if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, filtering, chunkName, mapName, DataType.Profile)) {
+										if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, filtering, chunkName, mapName, DataType.World)) {
+												return GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, filtering, chunkName, mapName, DataType.Base);
 										}
 								}
 								return true;
@@ -806,13 +807,14 @@ namespace Frontiers
 								int resolution = 0;
 								TextureFormat format = TextureFormat.ARGB32;
 								bool linear = false;
+								bool filtering = false;
 								if (!Manager.IsAwake <GameWorld>()) {
 										Manager.WakeUp <GameWorld>("__WORLD");
 								}
-								GameData.GetTextureFormat(mapName, ref resolution, ref format, ref linear);
-								if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.Profile)) {
-										if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.World)) {
-												return GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, chunkName, mapName, DataType.Base);
+								GameData.GetTextureFormat(mapName, ref resolution, ref format, ref linear, ref filtering);
+								if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, filtering, chunkName, mapName, DataType.Profile)) {
+										if (!GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, filtering, chunkName, mapName, DataType.World)) {
+												return GameData.IO.LoadTerrainMap(ref map, resolution, format, linear, filtering, chunkName, mapName, DataType.Base);
 										}
 								}
 								return true;
@@ -973,38 +975,42 @@ namespace Frontiers
 
 						public static string GUILayoutAvailable(string currentItem, string modType, bool includeNone, string noneOption, int maxWidth)
 						{
-								noneOption = "(" + noneOption + ")";
-								List <string> available = null;
-								if (!gAvailable.TryGetValue(modType, out available) || available.Count == 0) {
-										if (!Manager.IsAwake <Mods>()) {
-												Manager.WakeUp <Mods>("__MODS");
-												Mods.Get.Editor.InitializeEditor(true);
-										}
-										available = Get.Available(modType);
-										gAvailable.Add(modType, available);
-								}
-								if (includeNone) {
-										if (!available.Contains(noneOption)) {
-												available.Insert(0, noneOption);
-										}
-								} else {
-										available.Remove(noneOption);
-								}
-								int currentItemIndex = available.IndexOf(currentItem);
-								currentItemIndex = UnityEditor.EditorGUILayout.Popup(currentItemIndex, available.ToArray(), GUILayout.MaxWidth(maxWidth));
-								if (currentItemIndex < 0 || currentItemIndex >= available.Count) {
-										currentItemIndex = 0;
-								}
 								string newItem = currentItem;
 								try {
-										newItem = available[currentItemIndex];
-										if (newItem == noneOption) {
-												return string.Empty;
+										noneOption = "(" + noneOption + ")";
+										List <string> available = null;
+										if (!gAvailable.TryGetValue(modType, out available) || available.Count == 0) {
+												if (!Manager.IsAwake <Mods>()) {
+														Manager.WakeUp <Mods>("__MODS");
+														Mods.Get.Editor.InitializeEditor(true);
+												}
+												available = Get.Available(modType);
+												gAvailable.Add(modType, available);
 										}
-										//take it out again just in case
-										available.Remove(noneOption);
+										if (includeNone) {
+												if (!available.Contains(noneOption)) {
+														available.Insert(0, noneOption);
+												}
+										} else {
+												available.Remove(noneOption);
+										}
+										int currentItemIndex = available.IndexOf(currentItem);
+										currentItemIndex = UnityEditor.EditorGUILayout.Popup(currentItemIndex, available.ToArray(), GUILayout.MaxWidth(maxWidth));
+										if (currentItemIndex < 0 || currentItemIndex >= available.Count) {
+												currentItemIndex = 0;
+										}
+										try {
+												newItem = available[currentItemIndex];
+												if (newItem == noneOption) {
+														return string.Empty;
+												}
+												//take it out again just in case
+												available.Remove(noneOption);
+										} catch (Exception e) {
+												Debug.LogError("Exception with available " + modType + " - num available: " + available.Count.ToString() + " " + e.ToString());
+										}
 								} catch (Exception e) {
-										Debug.LogError("Exception with available " + modType + " - num available: " + available.Count.ToString() + " " + e.ToString());
+										Debug.LogError(e.ToString());
 								}
 								return newItem;
 						}

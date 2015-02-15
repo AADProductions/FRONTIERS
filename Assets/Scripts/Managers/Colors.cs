@@ -416,6 +416,10 @@ namespace Frontiers
 				public Color BookColorLore = Color.white;
 				[InterfaceColorAttribute]
 				public Color BookColorSkill = Color.white;
+				[InterfaceColorAttribute]
+				public Color WorldMapPathColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color WorldMapActivePathColor = Color.white;
 				public Color HairColorBlack = Color.white;
 				public Color HairColorBrown = Color.white;
 				public Color HairColorBlonde = Color.white;

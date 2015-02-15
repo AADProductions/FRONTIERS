@@ -176,7 +176,7 @@ namespace Frontiers.World
 								if (HudTargeter != null) {
 										return HudTargeter();
 								}
-								return tr;
+								return transform;
 						}
 				}
 
@@ -307,10 +307,9 @@ namespace Frontiers.World
 										//if we have, then we'll need it to show up correctly on a map etc
 										WorldChunk chunk = Group.GetParentChunk();
 										if (chunk != null) {
-												Props.Local.ChunkPosition = WorldChunk.WorldPositionToChunkPosition(chunk.ChunkBounds, transform.position - chunk.ChunkOffset);
+												Props.Local.ChunkPosition = WorldChunk.WorldPositionToChunkPosition(chunk.ChunkBounds, tr.position - chunk.ChunkOffset);
 										} else {
 												Props.Local.ChunkPosition = Vector3.zero;
-												//Debug.Log("Chunk was NULL in get stack item, probably trying to get group WORLD, no big deal");
 										}
 								}
 						}
@@ -354,7 +353,6 @@ namespace Frontiers.World
 								while (enumerator.MoveNext()) {
 										currentHudPriority = enumerator.Current.OnRefreshHud(lastHudPriority);
 										if (currentHudPriority < 0) {
-												//Debug.Log("Priority was less than zero, breaking");
 												lastHudPriority = currentHudPriority;
 												break;
 										} else {
@@ -363,16 +361,12 @@ namespace Frontiers.World
 								}
 								//if nothing set the HUD priority, let the player know whether it can enter inventory
 								if (lastHudPriority == 0) {
-										//Debug.Log("Nothing else set priority, setting hud");
 										if (CanEnterInventory && Player.Local.Inventory.CanItemFit(this)) {
-												//Debug.Log("item can enter inventory and fit into inventory, showing 'pick up/interact'");
 												GUIHud.Get.ShowActions(this, UserActionType.ItemUse, UserActionType.ItemInteract, "Pick up", "Interact", HudTarget, GameManager.Get.GameCamera);
 										} else {
-												//Debug.Log("Item can't enter inventory, showing iteract");
 												GUIHud.Get.ShowAction(this, UserActionType.ItemInteract, "Interact", HudTarget, GameManager.Get.GameCamera);
 										}
 								} else if (lastHudPriority < 0) {
-										//Debug.Log("last hud priority was less than zero, clearing");
 										GUIHud.Get.ClearFocusItem(worlditem);
 								}
 						}

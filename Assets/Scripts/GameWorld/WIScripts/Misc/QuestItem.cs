@@ -11,11 +11,11 @@ namespace Frontiers.World.BaseWIScripts
 				public static List <string> RecentlyDestroyedQuestItems = new List <string>();
 				public QuestItemState State = new QuestItemState();
 
-				public override bool CanBeDropped {
+				/*public override bool CanBeDropped {
 						get {
 								return State.CanBeDropped;
 						}
-				}
+				}*/
 
 				public override bool UnloadWhenStacked {
 						get {
@@ -35,6 +35,8 @@ namespace Frontiers.World.BaseWIScripts
 						worlditem.Props.Name.DisplayName = State.DisplayName;
 						Missions.Get.AddQuestItem(worlditem);
 
+						worlditem.OnPlayerCarry += OnPlayerCarry;
+
 						Damageable damageable = null;
 						if (worlditem.Is <Damageable>(out damageable)) {
 								damageable.OnDie += OnDie;
@@ -50,6 +52,12 @@ namespace Frontiers.World.BaseWIScripts
 				{
 						if (State.LockVisibility) {
 								State.VisibleNow = State.VisibleOnStartup;
+						}
+				}
+
+				public void OnPlayerCarry ( ) {
+						if (Player.Local.Inventory.AddQuestItem(State.QuestName)) {
+								GUI.GUIManager.PostGainedItem(State);
 						}
 				}
 
@@ -87,6 +95,7 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void OnAddedToGroup()
 				{
+						Debug.Log("On added to group in quest item " + name);
 						SetQuestItemVisibility(State.VisibleNow);
 				}
 

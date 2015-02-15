@@ -41,7 +41,10 @@ namespace Frontiers.World.Gameplay
 						while (WorldClock.AdjustedRealTime < (StartTime + RTEffectTime)) {
 								FXManager.Get.SpawnFX(TargetFXObject, FXOnUpdate);
 								UpdateEffects();
-								yield return WorldClock.WaitForSeconds(RTUpdateInterval);
+								double waitUntil = WorldClock.RealTime + RTUpdateInterval;
+								while (WorldClock.RealTime < waitUntil) {
+										yield return null;
+								}
 						}
 						Finish();
 						yield break;

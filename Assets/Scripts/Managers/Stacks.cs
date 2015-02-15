@@ -62,6 +62,21 @@ namespace Frontiers
 						}
 				}
 
+				public static class Contains {
+			
+						public static bool QuestItem (WIStack stack) {
+								if (stack == null || stack.IsEmpty)
+										return false;
+
+								for (int i = 0; i < stack.Items.Count; i++) {
+										if (stack.Items[i].IsQuestItem) {
+												return true;
+										}
+								}
+								return false;
+						}
+				}
+
 				public static class Pop
 				{
 						public static void Force(WIStack stack)
@@ -178,6 +193,7 @@ namespace Frontiers
 										IWIBase topItem = stack.TopItem;
 										if (topItem.IsWorldItem) {
 												newTopItem = topItem.worlditem;
+												return true;
 										} else if (Convert.TopItemToWorldItem(stack, out newTopItem)) {
 												WIStackError error = WIStackError.None;
 												if (Pop.Top(stack, out topItem, WIGroups.Get.World, ref error)) {
@@ -296,7 +312,7 @@ namespace Frontiers
 														newTopItem = newWorldItem;
 												} else {
 														//whoops something went wrong
-														Debug.LogError("Couldn't clone from stack item in PUSH operation");
+														//Debug.LogError("Couldn't clone from stack item in PUSH operation");
 														error = WIStackError.InvalidOperation;
 														return false;
 												}
@@ -339,9 +355,12 @@ namespace Frontiers
 						}
 
 						public static bool Stack(IWIBase item1, IWIBase item2) {
+								if (item1.IsQuestItem || item2.IsQuestItem) {
+										return false;
+								}
 
 								if (item1.StackName.Equals(item2.StackName)) {
-										bool statesMatch = ((string.IsNullOrEmpty(item1.State) || string.IsNullOrEmpty(item2.State)) || (item1.State.Equals("Default") || item2.State.Equals("Default")));
+										bool statesMatch = ((string.IsNullOrEmpty(item1.State) || string.IsNullOrEmpty(item2.State)) || (item1.State.Equals("Default") || item2.State.Equals("Default")) || item1.State.Equals(item2.State));
 										bool subcatsMatch = ((string.IsNullOrEmpty(item1.Subcategory) || string.IsNullOrEmpty(item2.Subcategory)) || item1.Subcategory.Equals(item2.Subcategory));
 										return statesMatch && subcatsMatch;
 								}
@@ -564,9 +583,9 @@ namespace Frontiers
 												mClearTopItem.Clear();
 												stack.Items.RemoveAt(i);
 										} else if (mClearTopItem.Group != stack.Group) {
-												Debug.Log("Item group wasn't the same as stack group, removing");
+												//Debug.Log("Item group wasn't the same as stack group, removing");
 												if (mClearTopItem.Group != null && stack.Group != null) {
-														Debug.Log("Group " + mClearTopItem.Group.name + " vs " + stack.Group.name);
+														//Debug.Log("Group " + mClearTopItem.Group.name + " vs " + stack.Group.name);
 												}
 												stack.Items.RemoveAt(i);
 										}
@@ -648,6 +667,20 @@ namespace Frontiers
 								for (int i = 0; i < stackContainer.StackList.Count; i++) {
 										ItemsOfType(stackContainer.StackList[i], scriptName, searchStackContainers, itemsOfType);
 								}
+						}
+
+						public static bool Item(WIStackContainer inContainer, IWIBase item, out WIStack stack)
+						{
+								bool result = false;
+								stack = null;
+								foreach (WIStack stackContender in inContainer.StackList) {
+										if (!stackContender.IsEmpty && stackContender.Items.Contains (item)) {
+												stack = stackContender;
+												result = true;
+												break;
+										}
+								}
+								return result;
 						}
 
 						public static bool StackContainingItem(WIStackContainer inContainer, string keyword, out WIStack stack)

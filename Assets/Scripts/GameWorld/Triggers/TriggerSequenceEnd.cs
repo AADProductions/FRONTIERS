@@ -29,7 +29,7 @@ namespace Frontiers.World
 
 				protected IEnumerator FinishSequenceOverTime()
 				{
-						yield return StartCoroutine(GUILoading.LoadStart(GUILoading.Mode.FullScreenBlack));
+						yield return StartCoroutine(GUILoading.LoadStart(GUILoading.Mode.FullScreenBlack, true));
 						GUILoading.Lock(this);
 						Player.Local.Despawn();
 						yield return null;

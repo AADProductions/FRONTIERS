@@ -240,8 +240,11 @@ namespace Frontiers
 								//whoops
 								yield break;
 						}
+						double waitUntil = Frontiers.WorldClock.AdjustedRealTime + delay;
+						while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 
-						yield return WorldClock.WaitForSeconds(delay);
 						PlayerStartupPosition firstStartupPosition = null;
 						for (int i = 0; i < GameWorld.Get.WorldStartupPositions.Count; i++) {
 								if (GameWorld.Get.WorldStartupPositions[i].Name == startupPositionName) {

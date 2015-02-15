@@ -177,7 +177,7 @@ namespace Frontiers.World
 
 				{
 						//lock the structure so it won't unload while we're doing this
-						cachedStructure.InUseAsTemplate++;
+						//cachedStructure.InUseAsTemplate++;
 						//duplicate all of its meshes piece for piece
 						//start with the normal meshes
 						builder.StructurePiece = builder.StructureBase.FindOrCreateChild(GetChildName (false, false));
@@ -208,7 +208,7 @@ namespace Frontiers.World
 						}
 						//done!
 						//let the cached structure unload if it wants
-						cachedStructure.InUseAsTemplate--;
+						//cachedStructure.InUseAsTemplate--;
 						yield break;
 				}
 

@@ -38,7 +38,6 @@ namespace Frontiers.GUI
 			}
 
 			switch (Profile.Get.CurrentGame.Difficulty.DeathStyle) {
-				case DifficultyDeathStyle.BlackOut:
 				case DifficultyDeathStyle.Respawn:
 					TitleLabel.text = "You have lost consciousness";
 					OfLabel.enabled = false;

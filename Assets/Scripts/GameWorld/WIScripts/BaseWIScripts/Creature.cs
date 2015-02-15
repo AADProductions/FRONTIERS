@@ -829,7 +829,10 @@ namespace Frontiers.World.BaseWIScripts
 
 						double reviveTime = WorldClock.AdjustedRealTime + RTDuration;
 						while (mIsStunned && WorldClock.AdjustedRealTime < reviveTime) {
-								yield return WorldClock.WaitForSeconds(1.0);
+								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 1f;
+								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 						}
 						//if we're not dead
 						Damageable damageable = null;

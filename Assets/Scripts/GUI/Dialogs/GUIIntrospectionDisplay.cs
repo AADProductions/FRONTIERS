@@ -183,6 +183,13 @@ namespace Frontiers.GUI
 														IconSprite.spriteName = "SkillIconGuildSellMap";
 														break;
 
+														case GainedSomethingType.MissionItem:
+																IconSprite.atlas = Mats.Get.IconsAtlas;
+																IconSprite.color = Colors.Get.MessageSuccessColor;
+																IconBackground.color = Colors.Get.SuccessHighlightColor;
+																IconSprite.spriteName = "MiscIconMissionItem";
+																break;
+
 												case GainedSomethingType.Mission:
 														IconSprite.atlas = Mats.Get.IconsAtlas;
 														MissionState missionState = null;
@@ -283,7 +290,9 @@ namespace Frontiers.GUI
 								}
 						}
 			
-						if (mCurrentMessageFullDisplayTime < Frontiers.WorldClock.RealTime) {
+						MessageLabel.text = mCurrentMessage.Message;
+
+						/*if (mCurrentMessageFullDisplayTime < Frontiers.WorldClock.RealTime) {
 								MessageLabel.text = mCurrentMessage.Message.Trim();
 						} else {
 								double normalizedDisplayAmount = 1.0 - ((Frontiers.WorldClock.RealTime - mCurrentMessageFullDisplayTime) / (mCurrentMessageStartTime - mCurrentMessageFullDisplayTime));
@@ -291,7 +300,7 @@ namespace Frontiers.GUI
 								string subMessageFront = mCurrentMessage.Message.Substring(0, stringDisplayLength).Trim();
 								MessageLabel.text = subMessageFront;
 								return;
-						}
+						}*/
 			
 						if (mCurrentMessageStartFadeTime < Frontiers.WorldClock.RealTime) {
 								MessageLabel.alpha = (float)(1.0 - ((Frontiers.WorldClock.RealTime - mCurrentMessageStartFadeTime) / (mCurrentMessageEndTime - mCurrentMessageStartFadeTime)));
@@ -405,7 +414,6 @@ namespace Frontiers.GUI
 
 				public void AddGainedSomethingMessage(string newMessage, double delay, string gainedSomethingName, GainedSomethingType gainedSomethingType, InterfaceActionType action, string actionDescription)
 				{
-
 						IntrospectionMessage newGainedSomethingMessage = new IntrospectionMessage();
 						newGainedSomethingMessage.Message = newMessage;
 						newGainedSomethingMessage.Delay = delay;

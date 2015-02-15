@@ -44,21 +44,10 @@ namespace Frontiers.GUI
 						base.CreateSquares();
 						//now we hook up the squares we've created to the session we're using
 						for (int i = 0; i < InventorySquares.Count; i++) {
-								////Debug.Log ("Setting session in square " + i);
 								InventorySquareBarter square = InventorySquares[i].GetComponent <InventorySquareBarter>();
 								square.Party = Party;
 								square.SetSession(Session);
 						}
-
-						/*
-						if (Party == BarterParty.Character) {
-							InventoryEnablerDisplay ead = EnablerDisplay.GetComponent <InventoryEnablerDisplay> ();
-							if (ead == null) {
-								Debug.Log ("Couldn't get InventoryEnablerDisplay component from EnablerDisplay");
-							}
-							ead.ShowDefaultContainerWhenEmpty = true;
-						}
-						*/
 				}
 
 				protected override void OnRefresh()
@@ -92,13 +81,6 @@ namespace Frontiers.GUI
 										InventorySquareBarterOffer square = InventorySquares[i].GetComponent <InventorySquareBarterOffer>();
 										square.SetGoods(goods[i]);
 								}
-
-								/*
-								InventoryEnablerDisplay ead = EnablerDisplay.GetComponent <InventoryEnablerDisplay> ( );
-								if (enabler.HasEnablerContainer) {
-									ead.ContainerToDisplay = enabler.EnablerContainer;
-								}
-								*/
 						}
 				}
 		}

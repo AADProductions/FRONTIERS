@@ -137,6 +137,9 @@ namespace Frontiers.Story.Conversations
 				public void Initiate(Character speakingCharacter, Talkative talkative)
 				{
 						Debug.Log("Initiating conversation with " + speakingCharacter.FullName);
+						if (speakingCharacter.Template.TemplateType != CharacterTemplateType.Generic) {
+								Profile.Get.CurrentGame.Character.CharactersSpokenTo.SafeAdd(speakingCharacter.Template.Name);
+						}
 						SpeakingCharacter = speakingCharacter;
 						SpeakingCharacterTalkative = talkative;
 

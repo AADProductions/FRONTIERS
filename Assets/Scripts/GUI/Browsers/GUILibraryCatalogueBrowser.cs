@@ -6,6 +6,7 @@ using Frontiers;
 using Frontiers.World.Gameplay;
 using System;
 using Frontiers.World;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.GUI
 {
@@ -21,16 +22,29 @@ namespace Frontiers.GUI
 				public UILabel BookDescriptionLabel;
 				public UILabel BookStatusLabel;
 				public Transform BookDopplegangerParent;
+				public Transform BookOrderDopplegangerParent;
 				public float BookRotationSpeed = 25f;
 				public GameObject BookDoppleganger;
+				public GameObject BookOrderDoppleganger;
+				public GameObject OrderStatusProgressBarParent;
+				public UISlider OrderStatusProgressBar;
+				public UILabel OrderStatusLabelTop;
+				public UILabel OrderStatusLabelBottom;
+				public UISprite OrderStatusProgressBarGlow;
+				public UISprite BookOrderShadow;
 				public GenericWorldItem DopplegangerProps = new GenericWorldItem("Books", "BookAvatar");
 				public Skill RequiredSkill = null;
 				public bool SkillRequirementsMet = true;
+				public bool ReceivedOrder = false;
+				public bool PlacedOrder = false;
+				public GUITabs Tabs;
+				public LibraryCatalogueEntry CurrentOrder;
 
-				public override bool PushToViewerAutomatically {
-						get {
-								return true;
-						}
+				public override void Start()
+				{
+						base.Start();
+						Tabs.Initialize(this);
+						Tabs.OnSetSelection += OnSetSelection;
 				}
 
 				public void SetLibraryName(string newLibraryName)
@@ -44,21 +58,72 @@ namespace Frontiers.GUI
 										SkillRequirementsMet = false;
 								}
 						}
-						LibraryMottoLabel.text = library.Motto;
+						//LibraryMottoLabel.text = library.Motto;
 						LibraryNameLabel.text = library.DisplayName;
-						if (SkillRequirementsMet) {
-								NoSkillOverlay.enabled = false;
+
+						LibraryCatalogueEntry order = mSelectedObject;
+						if (SkillRequirementsMet && Books.Get.HasPlacedOrder(LibraryName, out order)) {
+								//show the order
+								mSelectedObject = order;
+								CurrentOrder = order;
+								Tabs.DefaultPanel = "CurrentOrder";
+								//Tabs.SetSelection("CurrentOrder");
 						} else {
-								NoSkillOverlay.enabled = true;
+								//show the catalogue
+								mSelectedObject = order;
+								CurrentOrder = null;
+								Tabs.DefaultPanel = "Catalogue";
+								//Tabs.SetSelection("Catalogue");
 						}
-
-						if (library.CatalogueEntries.Count > 0) {
-								mSelectedObject = library.CatalogueEntries[0];
-						}
-
-						Books.Get.DeliverBookOrder(LibraryName);//will automatically deliver an order if it exists / has arrived
 
 						Show();
+						OnSetSelection();
+				}
+
+				public void OnSetSelection()
+				{
+						NoSkillOverlay.enabled = false;
+						if (Tabs.SelectedTab == "Catalogue") {
+								Debug.Log("OnSetSelection in book browser and tab is Catalogue");
+								//just let the catalogue do its thing
+								WorldItems.ReturnDoppleganger(BookOrderDoppleganger);
+								PushEditObjectToNGUIObject();
+						} else {
+								Debug.Log("OnSetSelection in book browser and tab is Order");
+								WorldItems.ReturnDoppleganger(BookDoppleganger);
+								CurrentOrder = null;
+								if (Books.Get.HasPlacedOrder(library.Name, out CurrentOrder)) {
+										//update the order doppleganger and stuff
+										BookOrderShadow.enabled = true;
+										OrderStatusLabelBottom.enabled = true;
+										DopplegangerProps.CopyFrom(CurrentOrder.BookObject);
+										BookOrderDoppleganger = WorldItems.GetDoppleganger(DopplegangerProps, BookOrderDopplegangerParent, BookOrderDoppleganger, WIMode.Stacked);
+										Vector3 doppleGangerPosition = BookOrderDoppleganger.transform.localPosition;
+										doppleGangerPosition.z = 0f;
+										BookOrderDoppleganger.transform.localPosition = doppleGangerPosition;
+										OrderStatusProgressBarParent.gameObject.SetActive(true);
+										if (Books.Get.DeliverBookOrder(LibraryName)) {
+												ReceivedOrder = true;
+												OrderStatusLabelTop.text = CurrentOrder.BookObject.DisplayName + " has been added to your log";
+												OrderStatusLabelBottom.text = "Delivered";
+												OrderStatusProgressBarGlow.alpha = 0f;//Colors.Alpha(Colors.Get.MessageSuccessColor, 0.35f);
+												OrderStatusProgressBar.sliderValue = 1f;
+										} else {
+												OrderStatusLabelTop.text = CurrentOrder.BookObject.DisplayName + " has been ordered";
+												OrderStatusProgressBar.sliderValue = CurrentOrder.NormalizedTimeUntilDelivery;
+												OrderStatusProgressBarGlow.enabled = true;
+												OrderStatusLabelBottom.text = "In Transit:";
+										}
+								} else {
+										//get rid of the doppleganger, hide everything
+										WorldItems.ReturnDoppleganger(BookOrderDoppleganger);
+										OrderStatusProgressBarParent.SetActive(false);
+										OrderStatusLabelBottom.enabled = false;
+										OrderStatusLabelTop.enabled = true;
+										BookOrderShadow.enabled = false;
+										OrderStatusLabelTop.text = "You have no outstanding orders";
+								}
+						}
 				}
 
 				public override IEnumerable <LibraryCatalogueEntry> FetchItems()
@@ -67,6 +132,9 @@ namespace Frontiers.GUI
 								return null;
 						}
 						if (library != null) {
+								if (mSelectedObject == null) {
+										mSelectedObject = library.CatalogueEntries[0];
+								}
 								return library.CatalogueEntries.AsEnumerable();
 						}
 						return null;
@@ -118,12 +186,15 @@ namespace Frontiers.GUI
 				public void OnClickPlaceOrderButton()
 				{
 						string error;
+						LibraryCatalogueEntry order = mSelectedObject;
 						if (!Books.Get.TryToPlaceBookOrder(LibraryName, mSelectedObject, out error)) {
 								BookStatusLabel.text = error;
 						} else {
-								BookStatusLabel.text = "Ordered";
-								PlaceOrderButton.SendMessage("SetDisabled");
+								//there's a chance we've actually delivered an order by doing this
+								PlacedOrder = true;
+								Tabs.SetSelection("CurrentOrder");
 						}
+						mSelectedObject = order;
 						//refresh
 						PushEditObjectToNGUIObject();
 				}
@@ -132,7 +203,24 @@ namespace Frontiers.GUI
 
 				public override void PushSelectedObjectToViewer()
 				{
+						if (Tabs.SelectedTab != "Catalogue") {
+								Debug.Log("Not pushing selected object, tab is not catalogue");
+								return;
+						}
+
 						mDescription.Clear();
+
+						if (SkillRequirementsMet) {
+								NoSkillOverlay.enabled = false;
+								if (mSelectedObject.HasBeenPlaced) {
+										PlaceOrderButton.SendMessage("SetDisabled");
+								} else if (!Books.Get.HasPlacedOrder(LibraryName)) {
+										PlaceOrderButton.SendMessage("SetEnabled");
+								}
+						} else {
+								PlaceOrderButton.SendMessage("SetDisabled");
+								NoSkillOverlay.enabled = true;
+						}
 
 						if (mSelectedObject.HasBeenPlaced) {
 								BookStatusLabel.text = "In Transit";
@@ -141,14 +229,11 @@ namespace Frontiers.GUI
 								} else if (mSelectedObject.HasArrived) {
 										BookStatusLabel.text = "Arrived";
 								}
-								PlaceOrderButton.SendMessage("SetDisabled");
 						} else {
 								if (SkillRequirementsMet) {
 										BookStatusLabel.text = "Not Ordered";
-										PlaceOrderButton.SendMessage("SetEnabled");
 								} else {
 										BookStatusLabel.text = "This catalogue requires a skill you don't have. You can browse its contents but you cannot place orders.";
-										PlaceOrderButton.SendMessage("SetDisabled");
 								}
 						}
 						//TODO use a string builder
@@ -170,9 +255,60 @@ namespace Frontiers.GUI
 						BookDoppleganger.transform.localPosition = doppleGangerPosition;
 				}
 
+				protected override void OnFinish()
+				{
+						Debug.Log("Finishing in catalogue");
+						//have the librarian talk to the player
+						base.OnFinish();
+						if (PlacedOrder | ReceivedOrder) {
+								//if (string.IsNullOrEmpty(library.LibrarianCharacterName)) {
+								//Debug.Log("Setting defaults in catalogue");
+										library.SetDefaults();
+								//}
+								Character character = null;
+								if (Characters.Get.SpawnedCharacter(library.LibrarianCharacterName, out character)) {
+										Debug.Log("We got librarian character name");
+										character.LookAtPlayer();
+										if (ReceivedOrder && !gReceivedOrderOnceThisSession) {
+												gReceivedOrderOnceThisSession = true;
+
+												NGUIScreenDialog.AddSpeech(library.LibrarianDTSOnReceivedOrder.Replace("{motto}", library.Motto), character.worlditem.DisplayName, 2f);
+										} else if (!gPlacedOrderOnceThisSession) {
+												gPlacedOrderOnceThisSession = true;
+												NGUIScreenDialog.AddSpeech(library.LibrarianDTSOnPlacedOrder.Replace("{motto}", library.Motto), character.worlditem.DisplayName, 2f);
+										}		
+								} else {
+										Debug.Log("Couldn't find character " + library.LibrarianCharacterName);
+										if (ReceivedOrder && !gReceivedOrderOnceThisSession) {
+												gReceivedOrderOnceThisSession = true;
+												NGUIScreenDialog.AddSpeech(library.LibrarianDTSOnReceivedOrder.Replace("{motto}", library.Motto), "Librarian", 2f);
+										} else if (!gPlacedOrderOnceThisSession) {
+												gPlacedOrderOnceThisSession = true;
+												NGUIScreenDialog.AddSpeech(library.LibrarianDTSOnPlacedOrder.Replace("{motto}", library.Motto), "Librarian", 2f);
+										}
+								}
+						}
+				}
+
+				protected static bool gReceivedOrderOnceThisSession = false;
+				protected static bool gPlacedOrderOnceThisSession = false;
+
 				public void Update()
 				{
 						BookDopplegangerParent.Rotate(0f, (float)(WorldClock.RTDeltaTimeSmooth * BookRotationSpeed), 0f);
+						BookOrderDopplegangerParent.rotation = BookDopplegangerParent.rotation;
+						OrderStatusProgressBarGlow.alpha = GUIProgressDialog.PingPongProgressBarGlow();
+						if (CurrentOrder != null) {
+								OrderStatusProgressBar.sliderValue = CurrentOrder.NormalizedTimeUntilDelivery;
+								if (CurrentOrder.HasArrived) {
+										//if it arrives, send the message
+										if (Tabs.SelectedTab != "CurrentOrder") {
+												Tabs.SetSelection("CurrentOrder");
+										} else {
+												OnSetSelection();
+										}
+								}
+						}
 				}
 		}
 }

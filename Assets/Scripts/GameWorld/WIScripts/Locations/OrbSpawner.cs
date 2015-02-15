@@ -16,6 +16,12 @@ namespace Frontiers.World
 
 				public override void OnInitialized()
 				{
+						//hide on map
+						Revealable revealable = worlditem.Get<Revealable>();
+						revealable.State.CustomMapSettings = true;
+						revealable.State.IconStyle = MapIconStyle.None;
+						revealable.State.LabelStyle = MapLabelStyle.None;
+
 						Den = worlditem.Get <CreatureDen>();
 						WorldClock.Get.TimeActions.Subscribe(TimeActionType.DaytimeStart, new ActionListener(DaytimeStart));
 						WorldClock.Get.TimeActions.Subscribe(TimeActionType.NightTimeStart, new ActionListener(NightTimeStart));
@@ -58,7 +64,10 @@ namespace Frontiers.World
 				{
 						Location location = worlditem.Get <Location>();
 						while (location.LocationGroup == null || !location.LocationGroup.Is(WIGroupLoadState.Loaded)) {
-								yield return WorldClock.WaitForSeconds(0.5);
+								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 0.5f;
+								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 								if (worlditem.Is(WIActiveState.Invisible) || !worlditem.Is(WILoadState.Initialized)) {
 										yield break;
 								}

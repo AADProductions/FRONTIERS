@@ -92,6 +92,7 @@ namespace Frontiers.World.BaseWIScripts
 														projectileTarget.OnHitByProjectile(this, hitPoint);
 												}
 												StuckTo = ioi.worlditem.tr;
+												worlditem.ApplyForce(worlditem.tr.forward * LiveUpdater.InitialLaunchForce, worlditem.Position);
 												worlditem.tr.parent = ioi.worlditem.tr;
 												break;
 								}

@@ -67,7 +67,7 @@ namespace Frontiers.World
 								return;
 						}
 						//if we've been disabled, misfire and return
-						if (State.Mode == TrapMode.Disabled) {
+						if (State.Mode == TrapMode.Disabled || State.Mode == TrapMode.Triggered) {
 								MasterAudio.PlaySound(MisfireAnimationSoundType, worlditem.tr, MisfireAnimationSound);
 								return;
 						}
@@ -103,7 +103,10 @@ namespace Frontiers.World
 				{
 						State.Mode = TrapMode.Triggered;
 						//delay before trigger
-						yield return WorldClock.WaitForSeconds(InitialDelay);
+						double waitUntil = WorldClock.AdjustedRealTime + InitialDelay;
+						while (WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						//spawn fx and sounds
 						MasterAudio.PlaySound(TriggerAnimationSoundType, worlditem.tr, TriggerAnimationSound);
 						for (int i = 0; i < TriggerFXParents.Count; i++) {
@@ -122,7 +125,10 @@ namespace Frontiers.World
 								yield return null;
 						}
 						//delay before reset
-						yield return WorldClock.WaitForSeconds(ResetDelay);
+						waitUntil = WorldClock.AdjustedRealTime + ResetDelay;
+						while (WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 						//play the reset animation
 						AnimationTarget[ResetAnimationName].normalizedTime = 0f;
 						AnimationTarget.Play(ResetAnimationName, PlayMode.StopSameLayer);

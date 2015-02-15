@@ -355,7 +355,10 @@ namespace Frontiers.World.BaseWIScripts
 														}
 														//TEMP - implement listener target on pages
 														mSpeechBubble.NextPage("[Random]");
-														yield return WorldClock.WaitForSeconds(pageDuration);
+														double waitUntil = Frontiers.WorldClock.AdjustedRealTime + pageDuration;
+														while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+																yield return null;
+														}
 												} else {
 														//clear the current speech and stop giving speech
 														yield return StartCoroutine(FinishSpeech(mSpeech));
@@ -380,7 +383,10 @@ namespace Frontiers.World.BaseWIScripts
 						while (continueDTS) {
 								continueDTS = mDTS.GetPage(ref pageText, ref pageDuration, ref mLastDTSPage, true);
 								NGUIScreenDialog.AddSpeech(pageText, worlditem.DisplayName, pageDuration);
-								yield return WorldClock.WaitForSeconds(pageDuration);
+								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + pageDuration;
+								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 						}
 						if (!string.IsNullOrEmpty(mDTS.OnFinishMissionActivate)) {
 								if (!string.IsNullOrEmpty(mDTS.OnFinishObjectiveActivate)) {

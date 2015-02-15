@@ -348,6 +348,7 @@ public partial class GameWorld : Manager
 
 				for (int i = 0; i < Biomes.Count; i++) {
 						if (string.Equals(Biomes[i].Name, Settings.DefaultBiome)) {
+								Debug.Log("Default biome is: " + Biomes[i].Name);
 								CurrentBiome = Biomes[i];
 						}
 						Biomes[i].GenerateAlmanac();

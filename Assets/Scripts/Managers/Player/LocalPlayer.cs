@@ -17,7 +17,7 @@ namespace Frontiers
 
 				public override Vector3 Position {
 						get {
-								if (mInitialized && Status.IsStateActive("Traveling")) {
+								if (mInitialized && IsHijacked && Status.IsStateActive("Traveling")) {
 										return HijackedPosition.position;
 								}
 								return tr.position;
@@ -309,7 +309,10 @@ namespace Frontiers
 				{
 						double timeStart = WorldClock.AdjustedRealTime;
 						while (WorldClock.AdjustedRealTime < timeStart + earthquakeDuration) {
-								yield return WorldClock.WaitForSeconds(UnityEngine.Random.value);
+								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + UnityEngine.Random.value;
+								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+									yield return null;
+								}
 								FPSCamera.DoBomb(Vector3.one, earthquakeIntensity, earthquakeIntensity);
 						}
 				}
@@ -407,8 +410,16 @@ namespace Frontiers
 								//we want to take the hijacked camera rotation and apply it to the fps camera's rotation
 								//then we'll reset the game camera's rotation
 								if (keepLookDirection) {
-										FPSCamera.Pitch = gameCamera.transform.localRotation.eulerAngles.x;
-										FPSCamera.Yaw = gameCamera.transform.localRotation.eulerAngles.z;
+										//the camera's rotation needs to be pulled into the controller and the camera
+										//y rotation is pulled into the controller
+										//x / z is pulled into camera's pitch / yaw
+										//float controllerRotation = gameCamera.transform.eulerAngles.y + HijackedPosition.eulerAngles.y;
+										float pitch = gameCamera.transform.eulerAngles.x;
+										float yaw = HijackedPosition.rotation.eulerAngles.y;//gameCamera.transform.eulerAngles.z;
+										tr.localRotation = Quaternion.Euler(0f, HijackedPosition.rotation.eulerAngles.y, 0f);
+										FPSCamera.Pitch = pitch;
+										FPSCamera.Yaw = yaw;
+										//Debug.Log("Keeping look direction: c " + controllerRotation.ToString() + ", p " + pitch.ToString() + ", y " + yaw.ToString());
 								} else {
 										FPSCamera.Pitch = mPitchOnHijack;
 										FPSCamera.Yaw = mYawOnHijack;
@@ -628,7 +639,7 @@ namespace Frontiers
 						ItemPlacement = gameObject.GetOrAdd <PlayerItemPlacement>();
 						Projections = gameObject.GetOrAdd <PlayerProjections>();
 						CharacterSpawner = gameObject.GetOrAdd <PlayerCharacterSpawner>();
-			Illumination = gameObject.GetOrAdd <PlayerIllumination>();
+						Illumination = gameObject.GetOrAdd <PlayerIllumination>();
 
 						Audio.OnLocalPlayerCreated();
 						WeatherEffects.OnLocalPlayerCreated();
@@ -642,6 +653,7 @@ namespace Frontiers
 						Tool.OnLocalPlayerCreated();
 						Carrier.OnLocalPlayerCreated();
 						Wearables.OnLocalPlayerCreated();
+						Illumination.OnLocalPlayerCreated();
 				}
 
 				protected void FindFPSScripts()
@@ -849,8 +861,20 @@ namespace Frontiers
 								Scripts.Scripts[i].AdjustPlayerMotor(ref mMotorAccelerationMultiplier, ref mMotorJumpForceMultiplier, ref mMotorSlopeAngleMultiplier);
 						}
 
+						if (!FPSController.IsSprinting) {
+								//if we're walking then change the walk speed
+								mMotorAccelerationMultiplier *= Profile.Get.CurrentPreferences.Immersion.WalkingSpeed;
+						}
+
 						mColliderBounds.center = tr.position;
 						mColliderBounds.size = Vector3.one * (ColliderRadius * 2);
+
+						//the mouse smooth weight is always 1
+						//the camera smoothing adds smooth weight steps
+						FPSCamera.MouseSmoothWeight = 1f + (Profile.Get.CurrentPreferences.Immersion.CameraSmoothing * 5);
+						FPSCamera.MouseSmoothSteps = 3 + Mathf.FloorToInt(Profile.Get.CurrentPreferences.Immersion.CameraSmoothing * 22);
+						FPSCamera.MouseSensitivity.x = Profile.Get.CurrentPreferences.Controls.MouseSensitivityFPSCamera;
+						FPSCamera.MouseSensitivity.y = FPSCamera.MouseSensitivity.x;
 
 						base.FixedUpdate();//RVO simulator
 				}

@@ -13,10 +13,9 @@ namespace Frontiers.GUI {
 		public UILabel InventoryItemName;
 		public UILabel StackNumberLabel;
 		public UILabel WeightLabel;
-		public UISprite ActiveHighlight;
+		public UISprite QuestItemHighlight;
 		public UISprite Shadow;
 		public UISprite Background;
-		public UIButton Button;
 		public UIButtonScale ButtonScale;
 		public UIButtonMessage Message;
 		public Vector2 Dimensions = new Vector2 (100.0f, 100.0f);
@@ -43,12 +42,6 @@ namespace Frontiers.GUI {
 		public override void Awake ()
 		{
 			Panel = gameObject.GetComponent <UIPanel> ();
-
-			if (ActiveHighlight != null)
-				ActiveHighlight.color = Colors.Alpha (ActiveHighlight.color, 0f);
-
-			if (Button != null)
-				Button.defaultColor = Colors.Alpha (Button.hover, 0f);
 
 			if (ButtonScale == null) {
 				ButtonScale = gameObject.GetComponent <UIButtonScale> ();

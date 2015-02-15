@@ -48,7 +48,10 @@ namespace Frontiers.World
 						int lastSpeechPage = 0;
 						while (speech.GetPage(ref pageText, ref pageDuration, ref lastSpeechPage, true)) {
 								GUI.NGUIScreenDialog.AddSpeech(pageText, characterName, pageDuration);
-								yield return WorldClock.WaitForSeconds(pageDuration);
+								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + pageDuration;
+								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 						}
 						speech.FinishSpeech(characterName);
 						Mods.Get.Runtime.SaveMod <Speech>(speech, "Speech", speech.Name);
@@ -57,7 +60,10 @@ namespace Frontiers.World
 								//wait until the delay is over
 								//if the player is still in the trigger
 								//send the message to the target character
-								yield return WorldClock.WaitForSeconds(State.MessageDelay);
+								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + State.MessageDelay;
+								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 								if (character != null) {
 										if (Vector3.Distance(transform.position, Player.Local.Position) < State.FocusRange) {
 												character.gameObject.SendMessage(State.MessageOnRemainInRange);

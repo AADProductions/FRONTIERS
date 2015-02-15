@@ -120,7 +120,8 @@ namespace Frontiers
 										Player.Get.AvatarActions.ReceiveAction(AvatarAction.MissionVariableChange, WorldClock.AdjustedRealTime);
 										return true;
 								} else {
-										Debug.LogError("Variable " + variableName + " not found in mission " + missionName);
+										Debug.LogError("Variable " + variableName + " not found in mission " + missionName + " - adding now");
+										missionState.Variables.Add(variableName, variableValue);
 								}
 						}
 						return false;
@@ -137,7 +138,8 @@ namespace Frontiers
 										Player.Get.AvatarActions.ReceiveAction(AvatarAction.MissionVariableChange, WorldClock.AdjustedRealTime);
 										return true;
 								} else {
-										Debug.LogError("Variable " + variableName + " not found in mission " + missionName);
+										Debug.LogError("Variable " + variableName + " not found in mission " + missionName + " - adding now");
+										missionState.Variables.Add(variableName, variableValue + setValue);
 								}
 						}
 						return false;
@@ -154,7 +156,8 @@ namespace Frontiers
 										Player.Get.AvatarActions.ReceiveAction(AvatarAction.MissionVariableChange, WorldClock.AdjustedRealTime);
 										return true;
 								} else {
-										Debug.LogError("Variable " + variableName + " not found in mission " + missionName);
+										Debug.LogError("Variable " + variableName + " not found in mission " + missionName + " - adding now");
+										missionState.Variables.Add(variableName, variableValue);
 								}
 						}
 						return false;

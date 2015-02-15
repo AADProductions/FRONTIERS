@@ -25,7 +25,7 @@ namespace Frontiers.GUI
 				public override void Awake()
 				{
 						base.Awake();
-						ActiveHighlight.transform.localPosition = new Vector3(0f, 0f, -75f);
+						QuestItemHighlight.transform.localPosition = new Vector3(0f, 0f, -75f);
 				}
 
 				public int NumItems {
@@ -49,6 +49,10 @@ namespace Frontiers.GUI
 
 				public override void OnClickSquare()
 				{
+						if (HasStack && mStack.TopItem.IsQuestItem) {
+								return;
+						}
+
 						bool showMenu = false;
 						//right-clicking will show a menu
 						if (InterfaceActionManager.LastMouseClick == 1) {
@@ -80,6 +84,10 @@ namespace Frontiers.GUI
 						//by now our mouseover icon should be indicating
 						//that we're sending this to the session goods
 						if (NumItems > 0) {
+								if (mStack.TopItem.IsQuestItem) {
+										MasterAudio.PlaySound(MasterAudio.SoundType.PlayerInterface, "ButtonClickDisabled");
+										return;
+								}
 								SendGoodsToSession(1);
 								MasterAudio.PlaySound(SoundType, "InventoryPlaceStack");
 						} else {
@@ -112,7 +120,9 @@ namespace Frontiers.GUI
 						string stackNumberLabelText = string.Empty;
 						int numItems = NumItems;
 						bool soldOut = SoldOut;
-						if (soldOut) {
+						if (numItems > 0 && Stack.TopItem.IsQuestItem) {
+								stackNumberLabelText = "(Mission item)";
+						} else if (soldOut) {
 								if (Party == BarterParty.Character) {
 										stackNumberLabelText = "(Sold Out)";
 								} else {

@@ -203,11 +203,14 @@ namespace Frontiers.World
 						}
 				}
 
-				public void OnInitialized()
+				public void Initialize()
 				{
 						string startupState = DefaultState;
 						if (worlditem.HasSaveState && !string.IsNullOrEmpty(worlditem.SaveState.LastState)) {
+				//Debug.Log("Setting startup state to " + worlditem.SaveState.LastState + " in states");
 								startupState = worlditem.SaveState.LastState;
+						} else {
+				//Debug.Log("Didn't have save state or startup state was empty in states");
 						}
 
 						for (int i = 0; i < States.Count; i++) {
@@ -281,9 +284,22 @@ namespace Frontiers.World
 								stateName = DefaultState;
 						}
 
-						if (mCurrentState != null && (mCurrentState.Name == stateName || mCurrentState.IsPermanent)) {
-								//no need to do anything
-								return false;
+						if (mCurrentState != null){
+								if (mCurrentState.Name == stateName) {
+					//Debug.Log("Already set to state " + stateName);
+										if (worlditem.HasSaveState) {
+												worlditem.SaveState.LastState = mCurrentState.Name;
+										}
+										//no need to do anything
+										return false;
+								} else if (mCurrentState.IsPermanent) {
+					//Debug.Log("State is permanent, can't change to " + stateName);
+										if (worlditem.HasSaveState) {
+												worlditem.SaveState.LastState = mCurrentState.Name;
+										}
+										//no need to do anything
+										return false;
+								}
 						}
 
 						WIState newState = null;
@@ -350,6 +366,10 @@ namespace Frontiers.World
 								//but we won't show up as a world item
 								mCurrentState.StateObject.layer = Globals.LayerNumSolidTerrain;
 								mCurrentState.StateObject.tag = "WorldItem";
+						}
+
+						if (worlditem.HasSaveState) {
+								worlditem.SaveState.LastState = mCurrentState.Name;
 						}
 						worlditem.OnStateChange.SafeInvoke();
 						return true;

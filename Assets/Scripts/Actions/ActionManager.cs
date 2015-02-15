@@ -83,8 +83,25 @@ namespace Frontiers
 						//Debug.Log("Pushing " + newSettings.Count.ToString() + " settings in " + name);
 						//start over
 						ClearSettings();
-						
+
+						List <ActionSetting> settingsNotFound = new List<ActionSetting>();
+						//get the default settings and make sure all bindings are accounted for
+						for (int i = 0; i < DefaultActionSettings.Count; i++) {
+								bool foundInNewSettings = false;
+								for (int j = 0; j < newSettings.Count; j++) {
+										if (DefaultActionSettings[i].ActionDescription.Equals (newSettings[j].ActionDescription)) {
+												foundInNewSettings = true;
+												break;
+										}
+								}
+								if (!foundInNewSettings) {
+										Debug.Log("Didn't find action setting " + DefaultActionSettings[i].ActionDescription + " in preferences, adding now");
+										settingsNotFound.Add(DefaultActionSettings[i]);
+								}
+						}
+
 						CurrentActionSettings.AddRange(newSettings);
+						CurrentActionSettings.AddRange(settingsNotFound);
 
 						if (Profile.Get.CurrentPreferences.Controls.UseCustomDeadZoneSettings) {
 								//set the dead zones on current controllers

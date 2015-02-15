@@ -33,6 +33,9 @@ namespace Frontiers
 						mFootstepInterval = FootStepIntervalWalk;
 						//so our audio ignores sounds played by us
 						IgnoreColliders.Add(player.Controller);
+						CoughSound = "Cough";
+						TiredSound = "Tired";
+						ExhaustedSound = "OutOfBreath";
 
 						mInitialized = true;
 				}

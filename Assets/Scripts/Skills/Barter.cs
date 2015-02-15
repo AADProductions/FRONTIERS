@@ -3,8 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-
-using Frontiers.World.Gameplay;
 using System.Linq;
 using System;
 using Frontiers.GUI;
@@ -69,13 +67,13 @@ namespace Frontiers.World.Gameplay
 								//add the selected goods to the current session immediately
 								//so it's there when we start bartering
 								mCurrentSession.CharacterStartupItem = worldItemToMove;
+								WIStack startupStack = null;
 								//if the startup item is already in the character's inventory
 								//no need to create a startup stack
 								//but if it isn't we'll need the startup stack to display it
-								WIStack startupStack = null;
 								if (!character.HasItem(worldItemToMove, out startupStack)) {
 										//TODO put entire container in inventory
-										//Debug.Log ("Item " + worldItemToMove.FileName + " was NOT in character's inventory, creating temporary startup stack");
+										Debug.Log ("Item " + worldItemToMove.FileName + " was NOT in character's inventory, creating temporary startup stack");
 										mCurrentSession.CharacterStartupStack = character.HoldTemporaryItem(worldItemToMove);
 								}
 								SpawnBarterDialog();
@@ -124,6 +122,7 @@ namespace Frontiers.World.Gameplay
 										}
 								} else {
 										Debug.Log("Item " + worldItemToMove.FileName + " was in character's inventory");
+										mCurrentSession.CharacterStartupStack = startupStack;
 								}
 								SpawnBarterDialog();
 						}
@@ -491,6 +490,7 @@ namespace Frontiers.World.Gameplay
 
 				protected void ClearGoodsAndCurrency()
 				{
+						Debug.Log("Clearing goods and inventory in barter");
 						foreach (BarterGoods good in PlayerGoods) {
 								good.Clear();
 						}
@@ -552,20 +552,34 @@ namespace Frontiers.World.Gameplay
 
 				protected IEnumerator MakeTradeoverTime()
 				{
-						yield return BarterManager.StartCoroutine(GUILoading.LoadStart(GUILoading.Mode.SmallInGame));
-						GUILoading.ActivityInfo = "Making Trade...";
+						Debug.Log("Starting to make trade");
+						var loadStart = GUILoading.LoadStart(GUILoading.Mode.SmallInGame);
+						while (loadStart.MoveNext()) {
+								yield return null;
+						}
+						GUILoading.ActivityInfo = "Making Trade... " + CharacterGoods.Count.ToString () + " character goods going to player";
 						//give stuff to player...
 						foreach (BarterGoods good in CharacterGoods) {
 								foreach (KeyValuePair <WIStack,int> goodPair in good) {
-										yield return BarterManager.StartCoroutine(PlayerInventory.AddItems(goodPair.Key, goodPair.Value));
+										if (goodPair.Key.HasTopItem) {
+												Debug.Log("Adding " + goodPair.Key.TopItem.FileName + " to player inventory...");
+										}
+										var addItem = PlayerInventory.AddItems(goodPair.Key, goodPair.Value);
+										while (addItem.MoveNext()) {
+												yield return null;
+										}
 								}
+								yield return null;
 						}
 						//wait a tick...
 						yield return null;
 						//give stuff to character...
 						foreach (BarterGoods good in PlayerGoods) {
 								foreach (KeyValuePair <WIStack,int> goodPair in good) {
-										yield return BarterManager.StartCoroutine(CharacterInventory.AddItems(goodPair.Key, goodPair.Value));
+										var enumerator = CharacterInventory.AddItems(goodPair.Key, goodPair.Value);
+										while (enumerator.MoveNext()) {
+												yield return null;
+										}
 								}
 						}
 						//TODO determine what counts as a 'successful use'
@@ -577,9 +591,11 @@ namespace Frontiers.World.Gameplay
 						ClearGoodsAndCurrency();
 						MadeTradeThisSession = true;
 						Player.Get.AvatarActions.ReceiveAction(AvatarAction.BarterMakeTrade, WorldClock.AdjustedRealTime);
-
-						BarterManager.StartCoroutine(GUILoading.LoadFinish());
-
+						var loadFinish = GUILoading.LoadFinish();
+						while (loadFinish.MoveNext()) {
+								yield return null;
+						}
+						Debug.Log("Finished making trade");
 						mMakingTrade = false;
 						yield break;
 				}

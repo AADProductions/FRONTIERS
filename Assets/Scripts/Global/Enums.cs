@@ -190,6 +190,8 @@ namespace Frontiers
 				//27
 				CursorRightClick = 268435456,
 				//28
+				InterfaceHide = 536870912,
+
 				FlagsTogglePrimary = ToggleInventory | ToggleStatus | ToggleMap | ToggleLog,
 				FlagsSelectionNextPrev = SelectionNext | SelectionPrev,
 				FlagsAll = InventoryNextQuickslot | InventoryPrevQuickslot
@@ -1757,6 +1759,8 @@ namespace Frontiers
 
 		public enum GainedSomethingType
 		{
+		MissionItem,
+
 				None = 0,
 				Skill,
 				Condition,
@@ -1767,6 +1771,7 @@ namespace Frontiers
 				Book,
 				Currency,
 				Money,
+				QuestItem,
 		}
 
 		public enum SquareDisplayMode
@@ -1777,7 +1782,7 @@ namespace Frontiers
 				Error,
 				Success,
 				GlassCase,
-				SoldOut
+				SoldOut,
 		}
 
 		[Serializable]
@@ -2748,16 +2753,22 @@ namespace Frontiers
 		}
 
 		[Serializable]
+		public enum FallDamageStyle
+		{
+				None,
+				Forgiving,
+				Realistic,
+		}
+
+		[Serializable]
 		public enum DifficultyDeathStyle
 		{
-				BlackOut,
-				//black out for a bit, then wake up
-				Respawn,
+				Blackout,
 				//respawn in the nearest respawn structure
 				PermaDeath,
 				//hardcore mode
 				NoDeath,
-				//just looking mode
+				Respawn = Blackout,
 		}
 
 		[Serializable]

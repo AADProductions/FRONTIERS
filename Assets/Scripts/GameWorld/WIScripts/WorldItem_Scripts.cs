@@ -8,7 +8,7 @@ using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
-		public partial class WorldItem
+	public partial class WorldItem
 		{
 				#region Script Management
 
@@ -82,7 +82,7 @@ namespace Frontiers.World
 				public bool AddScript(WIScript worldItemScript)
 				{
 						if (mScripts.ContainsKey(worldItemScript.ScriptType)) {
-								Debug.Log("Couldn't add script " + worldItemScript.ScriptName + ", already exists");
+								//Debug.Log("Couldn't add script " + worldItemScript.ScriptName + ", already exists");
 								return false;
 						} else {
 								if (mScriptsAddedWhileInitializing != null) {
@@ -119,7 +119,7 @@ namespace Frontiers.World
 								}
 								options.Add(gCarryOption);
 						} else {
-								Debug.Log("Can't carry item");
+								//Debug.Log("Can't carry item");
 						}
 
 						var enumerator = mScripts.Values.GetEnumerator();
@@ -141,7 +141,7 @@ namespace Frontiers.World
 
 						switch (result.SecondaryResult) {
 								case "Carry":
-										Debug.Log("Carrying item");
+										//Debug.Log("Carrying item");
 										Player.Local.ItemPlacement.ItemCarry(this, false);
 										break;
 
@@ -355,6 +355,7 @@ namespace Frontiers.World
 				//the state is cleared by this process
 				public void ReceiveState(ref StackItem newState)
 				{
+						//Debug.Log("Receiving state in " + name);
 						//lock the world item to prevent saving as we change the script states
 						mLockSaveState = true;
 
@@ -402,6 +403,7 @@ namespace Frontiers.World
 						#endif
 
 						if (Is(WILoadState.Initialized) || IsTemplate) {
+				//Debug.Log("We're initialized, so set states now");
 								//get the script names for possible removal later (before new scripts are added)
 								//keep a list of newly added scripts to call OnInitialize
 								List <string> scriptNames = ScriptNames;
@@ -448,10 +450,6 @@ namespace Frontiers.World
 								for (int j = 0; j < newWiScripts.Count; j++) {
 										newWiScripts[j].OnInitialized();
 								}
-								//finally, intialize our state, if we have one
-								if (HasStates) {
-										States.OnInitialized();
-								}
 
 								if (mStackContainer != null) {
 										mStackContainer.Owner = this;
@@ -461,7 +459,8 @@ namespace Frontiers.World
 						} else {
 								//we're not initialized or a template
 								//just set our startup states and Initialize will take care of the rest
-								SaveState = newState.SaveState;
+				//Debug.Log("Saving our state for later");
+								SaveState = ObjectClone.Clone <WISaveState> (newState.SaveState);
 						}
 						//we're done!
 						//unlock the world item
@@ -753,7 +752,7 @@ namespace Frontiers.World
 				{
 						#if UNITY_EDITOR
 						if (!Application.isPlaying) {
-								Debug.Log ("Application not playing, returning");
+								//Debug.Log ("Application not playing, returning");
 								return;
 						}
 						#endif
@@ -814,6 +813,10 @@ namespace Frontiers.World
 										initializedScripts.Add(script);
 								}
 
+								if (HasStates) {
+										States.Initialize();
+								}
+
 								//at this point we're done with the save state
 								//so clear it out for the gc
 								if (SaveState != null) {
@@ -857,6 +860,7 @@ namespace Frontiers.World
 												initializedScripts[i].OnInitializedFirstTime();
 										}
 								}
+
 								for (int i = 0; i < initializedScripts.Count; i++) {	//this will get called whether we've
 										//called Initialize on the WIScript or not
 										initializedScripts[i].OnInitialized();
@@ -878,10 +882,6 @@ namespace Frontiers.World
 								}
 								if (mScriptsAddedWhileInitializing.Count > 0) {
 										OnScriptAdded.SafeInvoke ();
-								}
-
-								if (HasStates) {
-										States.OnInitialized();
 								}
 
 								RefreshNames(false);
@@ -994,7 +994,7 @@ namespace Frontiers.World
 								mTemplateStackitem.Props.CopyName(Props);
 								mTemplateStackitem.SaveState = GetSaveState(true);
 						} else if (mTemplateStackitem == null) {
-								Debug.Log("Not template so returning a null template");
+								//Debug.Log("Not template so returning a null template");
 						}
 						return mTemplateStackitem;
 				}
@@ -1066,51 +1066,49 @@ namespace Frontiers.World
 				{		//the 'guts' of a stack item
 						//contains the last known values of can be carried, dropped etc
 						//as well as a state for every WIScript
-						WISaveState states = new WISaveState();
-
+						WISaveState saveState = new WISaveState();
 						if (Application.isPlaying && !asTemplate) {
 								var enumerator = mScripts.Values.GetEnumerator ();
 								while (enumerator.MoveNext ()) {
-								//foreach (WIScript script in mScripts.Values) {
 										try {
-												states.Scripts.Add(enumerator.Current.ScriptName, enumerator.Current.SaveState);
+												saveState.Scripts.Add(enumerator.Current.ScriptName, enumerator.Current.SaveState);
 										} catch (Exception e) {
 												Debug.LogError("Exception in worlditem " + name + ":" + e.ToString());
 										}
 								}
-								states.CanBeCarried = CanBeCarried;
-								states.CanBeDropped = CanBeDropped;
-								states.CanEnterInventory = CanEnterInventory;
-								states.UnloadWhenStacked = UnloadWhenStacked;
-								states.HasStates = HasStates;
+								saveState.CanBeCarried = CanBeCarried;
+								saveState.CanBeDropped = CanBeDropped;
+								saveState.CanEnterInventory = CanEnterInventory;
+								saveState.UnloadWhenStacked = UnloadWhenStacked;
+								saveState.HasStates = HasStates;
 								//if the worlditem is loaded then its state will be set
 								//so use that
 								if (Is(WILoadState.Initialized)) {
-										states.LastState = State;
+										saveState.LastState = State;
 								} else if (HasSaveState) {
 										//otherwise use whatever the state WILL be when it's initialized
 										//assuming the worlditem has one
-										states.LastState = SaveState.LastState;
+										saveState.LastState = SaveState.LastState;
 								}
 								//if we actually have a state make sure our last state is as accurate as possible
-								if (HasStates && (string.IsNullOrEmpty(states.LastState) || states.LastState == "Default")) {
-										states.LastState = States.DefaultState;
+								if (HasStates && (string.IsNullOrEmpty(saveState.LastState) || saveState.LastState == "Default")) {
+										saveState.LastState = States.DefaultState;
 								}
 								//and we're done!
 						} else {
 								//get the template version of the save state
 								//this is used to store templates by the editor
 								//slightly different & slightly less efficient
-								states.CanBeCarried = CanBeCarried;
-								states.CanBeDropped = CanBeDropped;
-								states.CanEnterInventory = CanEnterInventory;
-								states.UnloadWhenStacked = true;
-								states.HasStates = HasStates;
+								saveState.CanBeCarried = CanBeCarried;
+								saveState.CanBeDropped = CanBeDropped;
+								saveState.CanEnterInventory = CanEnterInventory;
+								saveState.UnloadWhenStacked = true;
+								saveState.HasStates = HasStates;
 								if (HasStates) {
-										if (!HasSaveState || (string.IsNullOrEmpty(SaveState.LastState) || SaveState.LastState == "Default")) {
-												states.LastState = State;
+										if ((!HasSaveState || string.IsNullOrEmpty(SaveState.LastState)) || SaveState.LastState == "Default") {
+												saveState.LastState = State;
 										} else if (HasSaveState) {
-												states.LastState = SaveState.LastState;
+												saveState.LastState = SaveState.LastState;
 										}
 								}
 								//if application isn't playing then scripts won't be loaded
@@ -1119,20 +1117,20 @@ namespace Frontiers.World
 										if (!script.IsFinished) {
 												script.CheckScriptProps();
 												try {
-														states.Scripts.Add(script.ScriptName, script.SaveState);
+														saveState.Scripts.Add(script.ScriptName, script.SaveState);
 												} catch (Exception e) {
 														Debug.Log("Exception in worlditem " + name + ":" + e.ToString());
 												}
-												states.CanBeCarried &= script.CanBeCarried;
-												states.CanBeDropped &= script.CanBeDropped;
-												states.CanEnterInventory &= script.CanEnterInventory;
-												states.UnloadWhenStacked &= script.UnloadWhenStacked;
+												saveState.CanBeCarried &= script.CanBeCarried;
+												saveState.CanBeDropped &= script.CanBeDropped;
+												saveState.CanEnterInventory &= script.CanEnterInventory;
+												saveState.UnloadWhenStacked &= script.UnloadWhenStacked;
 										}
 								}
 								//set this worlditem's save state to the state we just created
-								SaveState = states;
+								SaveState = saveState;
 						}
-						return states;
+						return saveState;
 				}
 
 				#if UNITY_EDITOR

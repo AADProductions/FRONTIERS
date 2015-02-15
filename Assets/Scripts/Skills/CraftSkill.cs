@@ -223,6 +223,11 @@ namespace Frontiers.World.Gameplay
 				public static bool AreRequirementsMet(IWIBase item, GenericWorldItem template, BlueprintStrictness strictness, int numItemsInStack, out int maxItemsToCraft)
 				{
 						maxItemsToCraft = 1;
+
+						if (item != null && item.IsQuestItem) {
+								return false;
+						}
+
 						bool prefabReqsMet = true;
 						bool stackReqsMet = true;
 						bool stateReqsMet = true;

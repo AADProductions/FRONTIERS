@@ -52,14 +52,6 @@ namespace Frontiers.GUI
 						}
 				}
 
-				public override void Start()
-				{
-						base.Start();
-
-						Button.defaultColor = Color.white;
-						Button.hover = Colors.Get.GeneralHighlightColor;
-				}
-
 				public override void OnEnable()
 				{
 						base.OnEnable();
@@ -362,6 +354,7 @@ namespace Frontiers.GUI
 
 				public override void UpdateDisplay()
 				{
+						SetQuestItem();
 						SetProperties();
 						SetInventoryItemName();
 						SetWeightLabel();
@@ -376,6 +369,15 @@ namespace Frontiers.GUI
 						if (InventoryItemName != null) {
 								InventoryItemName.enabled = false;
 						}
+				}
+
+				public virtual void SetQuestItem () {
+					if (HasStack && mStack.HasTopItem && mStack.TopItem.IsQuestItem) {
+						QuestItemHighlight.enabled = true;
+						QuestItemHighlight.color = Colors.Get.MessageInfoColor;
+					} else {
+						QuestItemHighlight.enabled = false;
+					}
 				}
 
 				public virtual void SetInventoryStackNumber()

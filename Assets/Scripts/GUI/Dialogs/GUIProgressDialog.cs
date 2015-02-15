@@ -43,7 +43,11 @@ namespace Frontiers.GUI
 						IconSprite.spriteName = EditObject.ProgressIconName;
 						ProgressMessage.text = EditObject.ProgressMessage;
 						ProgressBar.sliderValue = Mathf.Lerp(ProgressBar.sliderValue, EditObject.ProgressValue, 0.5f);
-						GlowSprite.alpha = Mathf.PingPong(Time.realtimeSinceStartup, 1.5f) * 0.35f;
+						GlowSprite.alpha = PingPongProgressBarGlow();
+				}
+
+				public static float PingPongProgressBarGlow ( ) {
+						return Mathf.PingPong((float)WorldClock.RealTime, 1.5f) * 0.35f;
 				}
 		}
 }

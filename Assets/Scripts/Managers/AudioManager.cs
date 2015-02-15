@@ -125,8 +125,12 @@ namespace Frontiers
 						get { return mMasterMusicVolume; }
 						set {
 								mMasterMusicVolume = value;
-								Music1.volume = mMasterMusicVolume;
-								Music2.volume = mMasterMusicVolume;
+								if (Music1.volume != 0f) {
+										Music1.volume = mMasterMusicVolume;
+								}
+								if (Music2.volume != 0f) {
+										Music2.volume = mMasterMusicVolume;
+								}
 						}
 				}
 
@@ -168,11 +172,26 @@ namespace Frontiers
 
 				public override void OnGameStart()
 				{
-						UpdateMusicState();
-
+						GetAmbientAudioSettings();
 						AmbientAudio.ChunkSettings = CurrentAudioSettings;
-						StartCoroutine(UpdateAmbientStateOverTime());
-						StartCoroutine(UpdateMusicStateOverTime());
+						AmbientAudio.UpdateStackVolumes(Colors.Alpha(Color.black, 0f));
+						AmbientAudio.ClearAudio();
+						MasterAmbientVolume = 0f;
+				}
+
+				public override void OnLocalPlayerSpawn()
+				{
+						MasterAmbientVolume = Profile.Get.CurrentPreferences.Sound.Ambient;
+						UpdateMusicState();
+						AmbientAudio.ChunkSettings = CurrentAudioSettings;
+						if (!mUpdatingAmbientState) {
+								mUpdatingAmbientState = true;
+								StartCoroutine(UpdateAmbientStateOverTime());
+						}
+						if (!mUpdatingMusicState) {
+								mUpdatingMusicState = true;
+								StartCoroutine(UpdateMusicStateOverTime());
+						}
 						AmbientAudio.IsDaytime = WorldClock.IsDay;
 						AmbientAudio.IsInsideStructure = false;
 						AmbientAudio.IsUnderground = Player.Local.Surroundings.IsUnderground;
@@ -228,6 +247,10 @@ namespace Frontiers
 
 				protected bool DaytimeChange(double timeStamp)
 				{
+						if (!GameManager.Is(FGameState.InGame) || !Player.Local.HasSpawned) {
+								return true;
+						}
+
 						AmbientAudio.IsDaytime = WorldClock.IsDay;
 						AmbientAudio.UpdateStackVolumes(Player.Local.Surroundings.TerrainType);
 						UpdateMusicState();
@@ -236,7 +259,7 @@ namespace Frontiers
 
 				protected bool LocationStructureEnterOrExit(double timeStamp)
 				{
-						if (!GameManager.Is(FGameState.InGame)) {
+						if (!GameManager.Is(FGameState.InGame) || !Player.Local.HasSpawned) {
 								return true;
 						}
 
@@ -254,19 +277,27 @@ namespace Frontiers
 
 				protected bool DangerEnter(double timeStamp)
 				{
+						if (!GameManager.Is(FGameState.InGame) || !Player.Local.HasSpawned) {
+								return true;
+						}
+
 						StartCoroutine(PlayMusic(MusicType.Combat, MusicVolume.Default));
 						return true;
 				}
 
 				protected bool DangerExit(double timeStamp)
 				{
+						if (!GameManager.Is(FGameState.InGame) || !Player.Local.HasSpawned) {
+								return true;
+						}
+
 						UpdateMusicState();
 						return true;
 				}
 
 				protected bool LocationUndergroundEnterOrExit(double timeStamp)
 				{
-						if (!GameManager.Is(FGameState.InGame)) {
+						if (!GameManager.Is(FGameState.InGame) || !Player.Local.HasSpawned) {
 								return true;
 						}
 
@@ -397,6 +428,19 @@ namespace Frontiers
 								return;
 						}
 
+						if (!Player.Local.HasSpawned) {
+								AmbientAudioManager.TerrainTypeVolume = 0.001f;
+								mCurrentTerrainType = Colors.Alpha(Color.black, 0f);
+								if (!Mathf.Approximately(mCurrentTerrainType.a, mLastTerrainType.a) ||
+								    !Mathf.Approximately(mCurrentTerrainType.r, mLastTerrainType.r) ||
+								    !Mathf.Approximately(mCurrentTerrainType.g, mLastTerrainType.g) ||
+								    !Mathf.Approximately(mCurrentTerrainType.b, mLastTerrainType.b)) {
+										AmbientAudio.UpdateStackVolumes(mCurrentTerrainType);
+										mLastTerrainType = mCurrentTerrainType;
+								}
+								return;
+						}
+
 						if (GameManager.Is(FGameState.Cutscene)) {
 								mCurrentTerrainType = Cutscene.CurrentCutscene.TerrainColor;
 								AmbientAudio.WindIntensity = Cutscene.CurrentCutscene.WindIntensity;
@@ -431,8 +475,8 @@ namespace Frontiers
 						}
 				}
 
-				protected Color mCurrentTerrainType = Color.black;
-				protected Color mLastTerrainType = Color.black;
+				protected Color mCurrentTerrainType = Colors.Alpha(Color.black, 0f);
+				protected Color mLastTerrainType = Colors.Alpha(Color.black, 0f);
 
 				public void UpdateMusicState()
 				{

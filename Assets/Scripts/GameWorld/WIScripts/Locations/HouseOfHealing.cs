@@ -74,7 +74,10 @@ namespace Frontiers.World
 						//find the first bed
 						List <WorldItem> bedWorldItems = structure.StructureGroup.GetChildrenOfType(new List<string>() { "Bed" });
 						while (bedWorldItems.Count == 0) {
-								yield return WorldClock.WaitForSeconds(0.1);
+								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 0.1f;
+								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 								bedWorldItems = structure.StructureGroup.GetChildrenOfType(new List<string>() { "Bed" });
 						}
 						WorldItem bedWorldItem = bedWorldItems[UnityEngine.Random.Range(0, bedWorldItems.Count)];

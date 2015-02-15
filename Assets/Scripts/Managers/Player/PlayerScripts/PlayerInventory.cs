@@ -246,7 +246,6 @@ namespace Frontiers
 
 				public void ClearInventory(bool destroyItems)
 				{
-						Debug.Log("Clearing inventory in player inventory state");
 						for (int i = 0; i < InventoryEnablers.Count; i++) {
 								Stacks.Clear.Items(InventoryEnablers[i], destroyItems);
 						}
@@ -261,16 +260,18 @@ namespace Frontiers
 						WIStackError error = WIStackError.None;
 						mLastRelevantStack = null;
 						if (WorldItems.CloneWorldItem("Containers", "Sack 1", STransform.zero, false, WIGroups.Get.Player, out containerItem)) {
-								Debug.Log("adding sack to inventory");
 								AddItems(containerItem, ref error);
 						}
+						mLastRelevantStack = null;
 				}
 
-				public void AddQuestItem(string questItem)
+				public bool AddQuestItem(string questItem)
 				{
 						if (State.QuestItemsAcquired.SafeAdd(questItem)) {
 								Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemQuestItemAddToInventory, WorldClock.AdjustedRealTime);
+								return true;
 						}
+						return false;
 				}
 
 				#region user / interface actions / actions in general
@@ -284,7 +285,6 @@ namespace Frontiers
 								return true;
 						}
 						int selection = -1;
-						//Debug.Log("Last key pressed: " + InterfaceActionManager.LastKey.ToString());
 
 						switch (InterfaceActionManager.LastKey) {
 								case KeyCode.None:
@@ -400,7 +400,6 @@ namespace Frontiers
 				{
 						if (item == null) {
 								error = WIStackError.InvalidOperation;
-								Debug.Log("Was null");
 								return false;
 						}
 
@@ -416,7 +415,6 @@ namespace Frontiers
 						}
 
 						if (!item.Is <Stackable>()) {
-								Debug.Log("Not stackable");
 								//can't add non-stackable items, dummy
 								return false;
 						}
@@ -472,7 +470,6 @@ namespace Frontiers
 						}
 
 						if (item.Is <BookAvatar>()) {
-								Debug.Log("Item is book avatar");
 								if (item.IsWorldItem) {	
 										BookAvatar avatar = item.worlditem.Get <BookAvatar>();
 										Books.AquireBook(avatar.State.BookName);
@@ -490,7 +487,6 @@ namespace Frontiers
 										}
 								}
 								//never put books in our inventory
-								Debug.Log("Removing book from game");
 								item.RemoveFromGame();
 								return true;
 						}
@@ -502,24 +498,16 @@ namespace Frontiers
 						//this may have been set by CanItemFit
 						//or it may have been set the last time we added something
 						//try to use it again
-						if (mLastRelevantStack != null && mLastRelevantStack.Group == WIGroups.Get.Player) {
+						if (FindMostRelevantStack(ref mLastRelevantStack, item, true, true, ref error)) {
 								addResult = Stacks.Push.Item(mLastRelevantStack, item, true, StackPushMode.Manual, ref error);
-						} else {
-								//bleh, set it to null, it's outdated
-								mLastRelevantStack = null;
-						}
-						if (!addResult) {
-								if (FindMostRelevantStack(ref mLastRelevantStack, item, true, true, ref error)) {
-										addResult = Stacks.Push.Item(mLastRelevantStack, item, true, StackPushMode.Manual, ref error);
-								} else {
-										Debug.Log("Couldn't find a relevant stack");
-								}
 						}
 
 						if (!addResult) {
 								//whoops! drop it at our feed
 								GUIManager.PostInfo(item.DisplayName + " wouldn't fit.");
-								item.Add("OwnedByPlayer");
+								if (!item.Is <OwnedByPlayer>()) {
+										item.Add("OwnedByPlayer");
+								}
 								player.ItemPlacement.ItemDropAtFeet(item);
 								return true;
 						} else {
@@ -532,8 +520,18 @@ namespace Frontiers
 										Player.Get.AvatarActions.ReceiveAction((AvatarAction.ItemAddToInventory), WorldClock.AdjustedRealTime);
 								}
 								if (item.IsQuestItem) {
-										State.QuestItemsAcquired.SafeAdd(item.QuestName);
-										Player.Get.AvatarActions.ReceiveAction((AvatarAction.ItemQuestItemAddToInventory), WorldClock.AdjustedRealTime);
+										if (State.QuestItemsAcquired.SafeAdd(item.QuestName)) {
+												Player.Get.AvatarActions.ReceiveAction((AvatarAction.ItemQuestItemAddToInventory), WorldClock.AdjustedRealTime);
+												QuestItemState questItemState = null;
+												if (item.IsWorldItem) {
+														QuestItem questItem = item.worlditem.Get <QuestItem>();
+														questItemState = questItem.State;
+												} else {
+														StackItem questItem = item.GetStackItem(WIMode.Unloaded);
+														questItem.GetStateData <QuestItemState>(out questItemState);
+												}
+												GUIManager.PostGainedItem(questItemState);
+										}
 								}
 								Player.Get.AvatarActions.ReceiveAction((AvatarAction.ItemAddToInventory), WorldClock.AdjustedRealTime);
 								GUIManager.PostInfo("Added " + item.DisplayName + " to inventory.");
@@ -546,9 +544,11 @@ namespace Frontiers
 				public bool FindMostRelevantStack(ref WIStack mostRelevantStack, IWIBase item, bool enablerStacksOk, bool compatibleOK, ref WIStackError error)
 				{
 						//first see if the stack we have will fit it
-						if (mostRelevantStack != null) {
-								if (!mostRelevantStack.IsFull && Stacks.Can.Stack(mostRelevantStack, item)) {
-										return true;
+						if (mostRelevantStack != null && mostRelevantStack.Mode == WIStackMode.Generic) {
+								if (mostRelevantStack.Group == WIGroups.Get.Player) {
+										if (!mostRelevantStack.IsFull && Stacks.Can.Stack(mostRelevantStack, item)) {
+												return true;
+										}
 								}
 						}
 
@@ -567,25 +567,36 @@ namespace Frontiers
 										return true;
 								}
 
-								if (QuickslotEnabler.IsEnabled
-								&& Stacks.Can.Fit(item.Size, QuickslotEnabler.EnablerContainer.Size)) {	//if quickslots have a stack and they're enabled
-										//and the item will fit in a container that size
-										//fill quickslots first
-										checkedQuickslots = true;
-										foreach (WIStack stack in QuickslotEnabler.EnablerStacks) {	
-												if (Stacks.Can.Stack(stack, item)) {
-														mostRelevantStack = stack;
-														return true;
-												}
-										}
-								}
 								//if we've gotten this far then quickslots are full
 								//so check the remaining enablers to see if they need containers
-								foreach (WIStackEnabler enabler in InventoryEnablers) {
-										if (!enabler.HasEnablerTopItem) {	//fill enabler stacks before adding items to existing containers
+								for (int i = 0; i < InventoryEnablers.Count; i++) {
+										WIStackEnabler enabler = InventoryEnablers[i];
+										if (!enabler.HasEnablerTopItem) {//fill enabler stacks before adding items to existing containers
 												//don't bother to check for size, it'll be NoLimit
 												mostRelevantStack = enabler.EnablerStack;
 												return true;
+										}
+								}
+
+								if (QuickslotEnabler.IsEnabled
+								    && Stacks.Can.Fit(item.Size, QuickslotEnabler.EnablerContainer.Size)) {	//if quickslots have a stack and they're enabled
+										//and the item will fit in a container that size
+										//fill quickslots first
+										checkedQuickslots = true;
+										List <WIStack> quickslotStacks = QuickslotEnabler.EnablerStacks;
+										for (int i = 0; i < quickslotStacks.Count; i++) {
+												WIStack stack = quickslotStacks[i];
+												if (!foundFirstEmpty && stack.IsEmpty) {
+														foundFirstEmpty = true;
+														firstEmpty = stack;
+												}
+												if (!foundFirstCompatible && compatibleOK && !stack.IsFull && Stacks.Can.Stack(stack, item)) {
+														foundFirstCompatible = true;
+														firstCompatible = stack;
+												}
+												if (foundFirstCompatible && compatibleOK) {//that's all we need
+														break;
+												}
 										}
 								}
 						}
@@ -601,7 +612,7 @@ namespace Frontiers
 												foundFirstEmpty = true;
 												firstEmpty = stack;
 										}
-										if (!foundFirstCompatible && compatibleOK && Stacks.Can.Stack(stack, item) && !stack.IsFull) {
+										if (!foundFirstCompatible && compatibleOK && !stack.IsFull && Stacks.Can.Stack(stack, item)) {
 												foundFirstCompatible = true;
 												firstCompatible = stack;
 										}
@@ -621,11 +632,11 @@ namespace Frontiers
 												if (Stacks.Can.Fit(item.Size, enabler.EnablerContainer.Size)) {
 														foreach (WIStack stack in enabler.EnablerStacks) {
 																if (!foundFirstEmpty
-																&& stack.IsEmpty) {
+																    && stack.IsEmpty) {
 																		foundFirstEmpty = true;
 																		firstEmpty = stack;
 																}
-																if (!foundFirstCompatible && compatibleOK && Stacks.Can.Stack(stack, item) && !stack.IsFull) {
+																if (!foundFirstCompatible && compatibleOK && !stack.IsFull && Stacks.Can.Stack(stack, item)) {
 																		foundFirstCompatible = true;
 																		firstCompatible = stack;
 																}
@@ -667,7 +678,6 @@ namespace Frontiers
 				//this totally bypasses all checks so it's quick, like swapping stacks in an inventory square
 				public bool QuickAddItems(WIStack fromStack, ref WIStackError error)
 				{
-						Debug.Log("Swapping stacks");
 						return false;
 						//return Stacks.Swap.Stacks(fromStack, toStack, ref error);
 				}
@@ -874,17 +884,17 @@ namespace Frontiers
 				{
 						IStackOwner owner = null;
 						WIStackError error = WIStackError.None;
+						WorldItem newWorldItem = null;
 						for (int i = 0; i < numItems; i++) {
-								if (!AddItems(stack.TopItem, ref error)) {
-										WIGroup group = WIGroups.Get.World;
-										if (player.Surroundings.IsVisitingLocation) {
-												group = player.Surroundings.CurrentLocation.LocationGroup;
-										}
-										Stacks.Pop.ContentsIntoWorld(stack, Int32.MaxValue, Player.Local.Grabber.transform.position, group);
+								//AddItems will drop items at feet if needed
+								if (Stacks.Pop.TopIntoWorld(stack, out newWorldItem)) {
+										AddItems(newWorldItem, ref error);
 								} else {
-										Stacks.Pop.Force(stack, false);
+										Stacks.Pop.Force(stack);
 								}
+								yield return null;
 						}
+						stack.Refresh();
 						yield break;
 				}
 
@@ -979,7 +989,6 @@ namespace Frontiers
 
 								//---this part is relatively safe so don't bother with exception handling
 								if (mChangingAci) {
-										//Debug.Log ("----Changing quickslot ACI...");
 										//if it has changed and we're supposed to announce the change do so now
 										//this action should ONLY originate from here
 										Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemACIChange, WorldClock.AdjustedRealTime);
@@ -989,7 +998,6 @@ namespace Frontiers
 										//because if it doesn't use a doppleganger we'll get a jarring disappearing tool
 										if (hadItemPrev) {
 												while (player.Carrier.ToolState == PlayerToolState.Unequipping) {
-														//Debug.Log ("Waiting for tool to UNequip in inventory...");
 														yield return null;
 												}
 										}
@@ -998,10 +1006,8 @@ namespace Frontiers
 										//this will keep quickslots locked until the tool is ready to go
 										while (player.Carrier.ToolState == PlayerToolState.Equipping) {
 												//then wait for the tool to equip
-												//Debug.Log ("Waiting for tool to equip in inventory...");
 												yield return null;
 										}
-										//Debug.Log ("DONE waiting for tool to equip");
 										GUIInventoryInterface.Get.RefreshContainers();
 										mChangingAci = false;
 								}
@@ -1029,7 +1035,6 @@ namespace Frontiers
 
 								while (player.LockQuickslots) {
 										//other scripts are something important that we can't interrupt
-										//Debug.Log ("Waiting for quickslots to unlock...");
 										yield return null;
 								}
 
@@ -1094,7 +1099,6 @@ namespace Frontiers
 
 								//---this part is relatively safe so don't bother with exception handling
 								if (mChangingAqi) {
-										Debug.Log("----Changing quickslot AQI...");
 										//if it has changed and we're supposed to announce the change do so now
 										//this action should ONLY originate from here
 										Player.Get.AvatarActions.ReceiveAction(AvatarAction.ItemAQIChange, WorldClock.AdjustedRealTime);
@@ -1104,7 +1108,6 @@ namespace Frontiers
 										//because if it doesn't use a doppleganger we'll get a jarring disappearing tool
 										if (hadItemPrev && lastQuickslotStack != null && lastQuickslotStack != currentQuickslotStack) {
 												while (player.Tool.ToolState == PlayerToolState.Unequipping) {
-														//Debug.Log ("Waiting for tool to UNequip in inventory...");
 														yield return null;
 												}
 												//tell the old AQI that it's no longer equipped / turn it into a stack item
@@ -1179,14 +1182,13 @@ namespace Frontiers
 																announceChange = false;
 														}//otherwise just set & announce it at the end normally
 												} else {
-														//Debug.Log ("is quickslots stack group null? " + (aqiQuickslotStack.Group == null).ToString());
 														//if it's not a world item then we need to turn it into one
 														Stacks.Convert.TopItemToWorldItem(aqiQuickslotStack, out newAQI);
 														newAQI.SetMode(WIMode.Equipped);
 														//if this doesn't work... erm, TODO check for this not working lol
 												}
 										} else {
-												if (!hadItemPrev) { //Debug.Log ("PLAYERINVENTORY: had NO item previously, not announcing"); 
+												if (!hadItemPrev) {
 														//if the quickslot stack doesn't have a top item
 														//if we already DON'T have an AQI
 														//then we don't need to announce anything
@@ -1250,8 +1252,8 @@ namespace Frontiers
 						for (int i = 0; i < Keys.Count; i++) {
 								//don't add the key if we already have a copy of it
 								if (Keys[i].KeyType == keyType &&
-								Keys[i].KeyTag == keyTag &&
-								Keys[i].KeyName == keyName) {
+								    Keys[i].KeyTag == keyTag &&
+								    Keys[i].KeyName == keyName) {
 										return false;
 								}
 						}
@@ -1272,8 +1274,8 @@ namespace Frontiers
 						for (int i = 0; i < Keys.Count; i++) {
 								//don't add the key if we already have a copy of it
 								if (Keys[i].KeyType == newKey.KeyType &&
-								Keys[i].KeyTag == newKey.KeyTag &&
-								Keys[i].KeyName == newKey.KeyName) {
+								    Keys[i].KeyTag == newKey.KeyTag &&
+								    Keys[i].KeyName == newKey.KeyName) {
 										return false;
 								}
 						}

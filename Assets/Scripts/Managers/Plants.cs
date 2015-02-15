@@ -702,6 +702,7 @@ namespace Frontiers
 				mPrototypPositionX += 1.5f;
 				newPlantPrototype.AddComponent <MeshFilter>().mesh = newPlantMesh.Mesh;
 				MeshRenderer mr = newPlantPrototype.AddComponent <MeshRenderer>();
+				mr.enabled = false;
 				mr.materials = newPlantMesh.Materials;
 				//this will create material instances and that's OK
 				//temp
@@ -722,7 +723,8 @@ namespace Frontiers
 						mat.SetTexture("_MainTex", ThornTextures[plant.ThornTexture]);
 					}
 				}
-				newPlantPrototype.AddComponent <BoxCollider>();
+				BoxCollider bc = newPlantPrototype.AddComponent <BoxCollider>();
+				bc.enabled = false;
 
 				//save plant for later
 				Dictionary <TimeOfYear, GameObject> seasonalLookup = null;

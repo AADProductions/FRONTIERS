@@ -78,7 +78,10 @@ namespace Frontiers.World.Gameplay
 														FXManager.Get.SpawnFX(detectedItem.transform.position, Effects.FXOnSuccessMasteredBooster);
 												}
 										}
-										yield return WorldClock.WaitForSeconds(1.0);//wait a bit between things
+										double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 1f;
+										while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+												yield return null;
+										}
 								}
 								OnSuccess();
 						}

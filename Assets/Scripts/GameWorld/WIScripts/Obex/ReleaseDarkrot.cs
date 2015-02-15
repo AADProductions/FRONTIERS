@@ -9,6 +9,12 @@ namespace Frontiers.World
 		{
 				public ReleaseDarkrotState State = new ReleaseDarkrotState();
 
+				public override bool UnloadWhenStacked {
+						get {
+								return false;
+						}
+				}
+
 				public override void OnInitialized()
 				{
 						worlditem.OnAddedToPlayerInventory += OnAddedToPlayerInventory;

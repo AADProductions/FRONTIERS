@@ -87,8 +87,8 @@ namespace Frontiers.World
 										if (prefab.HasComponent <WorldItem>(out worlditem)) {
 												WITemplate template = null;
 												if (Mods.Get.Runtime.LoadMod <WITemplate>(
-														ref template,
-														System.IO.Path.Combine("WorldItem", pack.Name), worlditem.name)) {
+														    ref template,
+														    System.IO.Path.Combine("WorldItem", pack.Name), worlditem.name)) {
 														worlditem.Props = template.Props;
 														//set script states, etc
 														//for now this is just about loading the right props
@@ -435,7 +435,7 @@ namespace Frontiers.World
 						float scaleAdjustment;
 						//find the object bounds by encapsulating all of its render bounds
 						Bounds objectBounds = new Bounds(doppleganger.transform.position, Vector3.zero);
-						Renderer [] objectRenderers = doppleganger.GetComponentsInChildren <Renderer>(false);
+						Renderer[] objectRenderers = doppleganger.GetComponentsInChildren <Renderer>(false);
 						//turns out get components in children gets renderer in base object too
 						/*Renderer baseRenderer = null;
 						if (doppleganger.HasComponent <Renderer>(out baseRenderer)) {
@@ -454,8 +454,9 @@ namespace Frontiers.World
 						doppleganger.transform.parent = dopplegangerParent;
 				}
 
-				public static void ApplyDopplegangerMaterials (GameObject doppleganger, WIMode mode) {
-						Renderer [] renderers = doppleganger.GetComponentsInChildren <Renderer>(false);
+				public static void ApplyDopplegangerMaterials(GameObject doppleganger, WIMode mode)
+				{
+						Renderer[] renderers = doppleganger.GetComponentsInChildren <Renderer>(false);
 						List <Material> materials = new List<Material>();
 						for (int i = 0; i < renderers.Length; i++) {
 								GameObject dopGameObject = renderers[i].gameObject;
@@ -491,7 +492,7 @@ namespace Frontiers.World
 												//materials.AddRange (wiMr.sharedMaterials);
 												sharedMaterialsLength = dopMr.sharedMaterials.Length;
 												for (int j = 0; j < sharedMaterialsLength; j++) {
-													materials.Add(Mats.Get.CraftingDoppleGangerMaterial);
+														materials.Add(Mats.Get.CraftingDoppleGangerMaterial);
 												}
 												break;
 
@@ -1145,11 +1146,11 @@ namespace Frontiers.World
 								mCheckOwnershipList.Clear();
 								mCheckOwnership = null;
 								if (!worlditem.Is<QuestItem>()
-								&& !worlditem.Is<OwnedByPlayer>()
-								&& (worlditem.UseRemoveItemSkill(mCheckOwnershipList, ref mCheckOwnership)
-								&& mCheckOwnership != Player.Local
-								&& mCheckOwnership.IsWorldItem
-								&& mCheckOwnership.worlditem.Is <Character>(out owner))) {
+								    && !worlditem.Is<OwnedByPlayer>()
+								    && (worlditem.UseRemoveItemSkill(mCheckOwnershipList, ref mCheckOwnership)
+								    && mCheckOwnership != Player.Local
+								    && mCheckOwnership.IsWorldItem
+								    && mCheckOwnership.worlditem.Is <Character>(out owner))) {
 										return true;
 								}
 						
@@ -1167,11 +1168,9 @@ namespace Frontiers.World
 						}
 
 						if (worlditem.Group == WIGroups.Get.Player
-						 || worlditem.Is <OwnedByPlayer>()) {
-								Debug.Log("Worlditem is owned by player, returning true");
+						    || worlditem.Is <OwnedByPlayer>()) {
 								return true;
 						}
-						Debug.Log("Worlditem was not owned by player, returning false");
 						return false;
 				}
 
@@ -1361,7 +1360,7 @@ namespace Frontiers.World
 						}
 
 						mIoiRBCheck = other.attachedRigidbody;
-						if (mIoiRBCheck != null && !mIoiRBCheck.CompareTag (Globals.TagNonInteractive)) {
+						if (mIoiRBCheck != null && !mIoiRBCheck.CompareTag(Globals.TagNonInteractive)) {
 								ioi = (IItemOfInterest)mIoiRBCheck.GetComponent(typeof(IItemOfInterest));
 								if (ioi != null) {
 										return true;
@@ -1377,10 +1376,10 @@ namespace Frontiers.World
 								//collider fluid objects are immediately parented under worlidtem
 								ioi = (IItemOfInterest)go.transform.parent.GetComponent(typeof(IItemOfInterest));
 						} else if (go.CompareTag(Globals.TagBodyLeg)
-						        || go.CompareTag(Globals.TagBodyArm)
-						        || go.CompareTag(Globals.TagBodyHead)
-						        || go.CompareTag(Globals.TagBodyTorso)
-						        || go.CompareTag(Globals.TagBodyGeneral)) {
+						           || go.CompareTag(Globals.TagBodyArm)
+						           || go.CompareTag(Globals.TagBodyHead)
+						           || go.CompareTag(Globals.TagBodyTorso)
+						           || go.CompareTag(Globals.TagBodyGeneral)) {
 								//body parts are kept separate - they store a link to their worlditem
 								if (go.HasComponent <BodyPart>(out mBodyPartCheck)) {
 										ioi = mBodyPartCheck.Owner;
@@ -1388,7 +1387,7 @@ namespace Frontiers.World
 						} else if (go.CompareTag(Globals.TagStateChild)) {
 								//state child objects are immediately parented under worlditem
 								ioi = go.transform.parent.GetComponent <WorldItem>();
-						} else if (!go.CompareTag (Globals.TagNonInteractive)) {
+						} else if (!go.CompareTag(Globals.TagNonInteractive)) {
 								ioi = (IItemOfInterest)go.GetComponent(typeof(IItemOfInterest));
 						}
 						return ioi != null;

@@ -23,7 +23,10 @@ namespace Frontiers.World
 				{
 						//wait for cutscenes / loading / etc. to finsih
 						while (!GameManager.Is(FGameState.InGame) || !Player.Local.HasSpawned) {
-								yield return WorldClock.WaitForSeconds(0.1);
+								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 0.1f;
+								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 						}
 
 						yield return null;

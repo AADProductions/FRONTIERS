@@ -418,7 +418,10 @@ namespace Frontiers
 														case ToolAction.UseHold:
 						//if we're holding down the tool
 																if (CanUse() && !WaitingForImpact) {	//if we can use, get to it!
-																		yield return WorldClock.WaitForSeconds(0.5);
+																		double waitUntil = WorldClock.AdjustedRealTime + 0.5f;
+																		while (WorldClock.AdjustedRealTime < waitUntil) {
+																				yield return null;
+																		}
 																		ToolState = PlayerToolState.InUse;
 																		yield return StartCoroutine(UseStart());
 																}
@@ -768,7 +771,10 @@ namespace Frontiers
 								yield return StartCoroutine(PlayAnimation("ToolGenericUnequip"));
 						}
 						//refresh the doppleganger here to add it to the weapon
+						//break it down first
 						RefreshToolDoppleganger(false);
+						//then rebuild it
+						RefreshToolDoppleganger(true);
 						//if we're playing the animation, we have to play the 'equip' animation here to bring the weapon back up
 						if (playLoadAnimation) {
 								yield return StartCoroutine(PlayAnimation("ToolGenericEquip"));

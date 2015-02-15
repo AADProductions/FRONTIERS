@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections;
 using ExtensionMethods;
-using Frontiers;
 using Frontiers.Gameplay;
 using Frontiers.World.Gameplay;
 using System.Collections.Generic;

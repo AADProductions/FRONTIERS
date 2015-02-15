@@ -13,7 +13,14 @@ public static class Globals
 		public static string GameManagerGameObjectName = "=GAME=";
 
 		#region difficulty
-
+		[EditableDifficultySetting(0f, 10000000f, "Base price in grains for a book in the guild library")]
+		public static float GuildLibraryBasePrice = 10000;
+		[EditableDifficultySetting(0f, 10000000f, "Minimum price in grains for a book in the guild library")]
+		public static float GuildLibraryMinimumPrice = 25;
+		[EditableDifficultySetting(0, 100000, "Minimum delivery time in hours for books in the Guild Library. Used along with the catalogue's base order value.")]
+		public static int GuildLibraryMinimumDeliveryTimeInHours = 2;
+		[EditableDifficultySetting(0, 100000, "Base delivery time in hours for books in the Guild Library. Used along with the catalogue's base order value.")]
+		public static int GuildLibraryBaseDeliveryTimeInHours = 5;
 		[EditableDifficultySetting(0f, 1f, "Movement speed multiplier when player is in water")]
 		public static float DefaultWaterAccelerationPenalty = 0.15f;
 		[EditableDifficultySetting(0f, 1f, "Jump height multiplier when player is in water")]
@@ -130,12 +137,22 @@ public static class Globals
 		public static float DamageMaterialPenaltyMultiplier = 0.5f;
 		[EditableDifficultySetting(0f, 10f, "Damage multiplier for forces")]
 		public static float DamageSumForceMultiplier = 0.35f;
-		[EditableDifficultySetting(0f, 10f, "Damage multiplier for fall damage")]
-		public static float DamageFallDamageMultiplier = 1.25f;
-		[EditableDifficultySetting(0f, 100f, "Minimum impact required before fall damage will take effect")]
-		public static float DamageMinimumFallImpactThreshold = 5f;
-		[EditableDifficultySetting(0f, 500f, "Maximum possible fall damage from any height")]
-		public static float DamageMaximumFallImpactThreshold = 50f;
+		[EditableDifficultySetting(0f, 10f, "Damage multiplier for fall damage on the 'Forgiving' setting")]
+		public static float DamageFallDamageForgivingMultiplier = 1.25f;
+		[EditableDifficultySetting(0f, 10f, "Damage multiplier for fall damage on the 'Realistic' setting")]
+		public static float DamageFallDamageRealisticMultiplier = 5f;
+		[EditableDifficultySetting(0f, 500f, "Maximum possible fall damage from any height on the 'Forgiving' setting")]
+		public static float DamageFallDamageForgivingImpactThreshold = 50f;
+		[EditableDifficultySetting(0f, 500f, "Maximum possible fall damage from any height on the 'Realistic' setting")]
+		public static float DamageFallDamageRealisticImpactThreshold = 200f;
+		[EditableDifficultySetting(0f, 100f, "Minimum impact required before fall damage will take effect on the 'Forgiving' setting")]
+		public static float DamageFallDamageForgivingImpactDeathThreshold = 5f;
+		[EditableDifficultySetting(0f, 100f, "Minimum impact required before fall damage will take effect on the 'Realistic' setting")]
+		public static float DamageFallDamageRealisticImpactDeathThreshold = 2f;
+		[EditableDifficultySetting(0f, 100f, "Minimum impact required before fall damage will cause a broken bone on the 'Forgiving' setting")]
+		public static float DamageFallDamageForgivingBrokenBoneThreshold = 5f;
+		[EditableDifficultySetting(0f, 100f, "Minimum impact required before fall damage will cause a broken bone on the 'Realistic' setting")]
+		public static float DamageFallDamageRealisticBrokenBoneThreshold = 2f;
 		[EditableDifficultySetting(0f, 100f, "Damage multiplier for material bonuses")]
 		public static float DamageMaterialBonusMultiplier = 2.0f;
 		[EditableDifficultySetting(0f, 1000f, "Damage caused by rolling stones during a rockslide")]
@@ -202,8 +219,6 @@ public static class Globals
 		public static float PathDeadlyMetersPerHour = PlayerAverageMetersPerHour * 0.55f;
 		[EditableDifficultySetting(0f, 1f, "Multiplier for fast travel speed on an impassible-level path")]
 		public static float PathImpassibleMetersPerHour = PlayerAverageMetersPerHour * 0.35f;
-		[EditableDifficultySetting(0f, 10000000f, "Base price in grains for a book in the guild library")]
-		public static float GuildLibraryBasePrice = 10000;
 		[EditableDifficultySetting(0f, 1000f, "Rate at which fires burn through their fuel")]
 		public static double FireBurnFuelRate = 5f;
 		[EditableDifficultySetting(0f, 1f, "Multiplier for how much total currency a healer takes upon reviving a player")]
@@ -224,6 +239,8 @@ public static class Globals
 		public static float RockslideNumRocksToSpawn = 10;
 		[EditableDifficultySetting(0.1f, 20f, "Multiplier for skill radius of spyglass. Used for placing markers on terrain.")]
 		public static float RaycastSpyGlassDistanceMultiplier = 3f;
+		[EditableDifficultySetting(2f, 10f, "Multiplier for cook time that it takes to burn food items.")]
+		public static float EdibleBurnTimeMultiplier = 4f;
 
 		#endregion
 
@@ -441,7 +458,8 @@ public static class Globals
 		public static string HouseOfHealingInteriorConversation = "Healer-Enc-Anytime-00";
 		[WorldSetting]
 		public static string HouseOfHealingExteriorConversation = "Healer-Enc-Anytime-01";
-
+		[WorldSetting]
+		public static int MaxPathMarkersInPath = 1024;
 		#endregion
 
 		#region visual

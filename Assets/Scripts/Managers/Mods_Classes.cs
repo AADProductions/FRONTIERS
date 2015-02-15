@@ -446,7 +446,7 @@ namespace Frontiers
 						Description = "A new world.";
 				}
 
-				public SColor DefaultTerrainType = Color.white;
+				public SColor DefaultTerrainType = Color.black;
 				[FrontiersAvailableModsAttribute("Biome")]
 				public string DefaultBiome;
 				public AmbientAudioManager.ChunkAudioSettings DefaultAmbientAudio = new AmbientAudioManager.ChunkAudioSettings();
@@ -514,7 +514,7 @@ namespace Frontiers
 
 				[XmlIgnore]
 				public bool HasBeenCustomized = false;
-
+				public FallDamageStyle FallDamage = FallDamageStyle.Forgiving;
 				public DifficultyDeathStyle DeathStyle = DifficultyDeathStyle.Respawn;
 				public List <DifficultySettingGlobal> GlobalVariables = new List<DifficultySettingGlobal> ();
 				// = new List <DifficultySettingGlobal> ();
@@ -545,7 +545,6 @@ namespace Frontiers
 												descriptionLines.Add("Death: If your health reaches zero nothing will happen.");
 												break;
 
-										case DifficultyDeathStyle.BlackOut:
 										case DifficultyDeathStyle.Respawn:
 										default:
 												descriptionLines.Add("Death: If your health reaches zero you will black out for a short time. Upon waking half of your money will be gone.");
@@ -1821,6 +1820,9 @@ namespace Frontiers
 
 						public void InitializeTemplates()
 						{
+								if (mTemplatesInitialized)
+										return;
+
 								for (int i = 0; i < Templates.Count; i++) {
 										if (i == 0 || i == Templates.LastIndex()) {
 												Templates[i].IsTerminal = true;
@@ -1833,27 +1835,34 @@ namespace Frontiers
 										Templates[i].IndexInParentPath = i;
 										Templates[i].ID = PathMarkerInstanceTemplate.gID++;
 								}
+
+								mTemplatesInitialized = true;
 						}
 
 						public void RefreshBranches()
-						{	//this assumes parent paths have already been set
+						{		//this assumes parent paths have already been set
 								//this is where we let other path markers know what paths are attached to it
 								//if we don't own the path marker, it's a branch
 								//so we add our name and the index where THIS path is using it
 								for (int i = 0; i < Templates.Count; i++) {
-										PathMarkerInstanceTemplate pm = Templates[i];
-										//if (pm.ParentPath != this) {
 										//paths can only have 1 branch to a path
 										//so if it's already been set don't worry about nuking the previous setting
 										//it's obviously wrong
-										if (pm.Branches.ContainsKey(this.Name)) {
-												pm.Branches[this.Name] = i;
+										if (Templates[i].Branches.ContainsKey(this.Name)) {
+												Templates[i].Branches[this.Name] = i;
 										} else {
-												pm.Branches.Add(this.Name, i);
+												if (Templates[i].ParentPath != this) {
+														Templates[i].Type = Templates[i].Type | PathMarkerType.Cross;
+												}
+												Templates[i].Branches.Add(this.Name, i);
+												if (Templates[i].Branches.Count > 1) {
+														Templates[i].Type = Templates[i].Type | PathMarkerType.Cross;
+												}
 										}
-										//}
 								}
 						}
+
+						protected bool mTemplatesInitialized = false;
 				}
 		}
 }

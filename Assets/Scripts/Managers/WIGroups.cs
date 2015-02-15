@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers;
 using Frontiers.Data;
 using Frontiers.World;
 using System;
@@ -199,7 +198,6 @@ namespace Frontiers
 				public static void Load(WIGroup group)
 				{
 						if (group == null) {
-								Debug.LogError("Attempted to load NULL group, ignoring");
 								return;
 						}
 
@@ -245,7 +243,6 @@ namespace Frontiers
 										break;
 
 								default:
-										Debug.LogError("Group had weird load state, ignoring: " + group.LoadState.ToString());
 										break;
 						}
 						//and that's it
@@ -283,7 +280,6 @@ namespace Frontiers
 						if (group.Is(WIGroupLoadState.Uninitialized
 						 | WIGroupLoadState.Initializing)) {
 								//this could be bad, potentially
-								Debug.Log("-----------ATTEMPTED TO UNLOAD WHILE " + group.Props.PathName + " WAS " + group.LoadState.ToString() + "---------------------");
 								group.AttemptedToUnload = true;
 								return;
 						}
@@ -297,7 +293,6 @@ namespace Frontiers
 						//if there isn't then we need to try and find an unloader that's the parent first
 						for (int i = 0; i < Unloaders.Count; i++) {
 								if (Unloaders[i].LoadState != WIGroupLoadState.Unloaded && Unloaders[i].RootGroup.IsParentOf(group)) {
-										Debug.Log("ADDING NEW CHILD GROUP TO UNLOADER");
 										//in a perfect world it would already be in the unloader
 										//but whatever, weird shit happens
 										//add it now and the unloader will sort it out
@@ -426,7 +421,6 @@ namespace Frontiers
 														} else {
 																//see if we've timed out
 																if (WorldClock.AdjustedRealTime > glr.Timeout) {
-																		Debug.Log("GROUP TIMED OUT: " + glr.Group.Path);
 																		GroupsLoading.Add(glr.Group);
 																		glr.Clear();
 																}
@@ -590,9 +584,12 @@ namespace Frontiers
 
 				public static WIGroup GetCurrent()
 				{
-						//TEMP
-						if (Frontiers.Player.Local.HasSpawned && Frontiers.Player.Local.Surroundings.IsVisitingLocation) {
-								return Frontiers.Player.Local.Surroundings.CurrentLocation.LocationGroup;
+						if (Frontiers.Player.Local.HasSpawned) {
+								if (Frontiers.Player.Local.Surroundings.IsVisitingLocation) {
+										return Frontiers.Player.Local.Surroundings.CurrentLocation.LocationGroup;
+								} else {
+										return GameWorld.Get.PrimaryChunk.AboveGroundGroup;
+								}
 						}
 						//TODO use player last visited location instead
 						//then remove this altogether
@@ -635,6 +632,23 @@ namespace Frontiers
 						yield break;
 				}
 
+				public static bool GetAllContainers(WIGroup group, List<Container> containers)
+				{
+						if (group == null)
+								return false;
+
+						Container container = null;
+						for (int i = 0; i < group.ChildItems.Count; i++) {
+								if (group.ChildItems[i].Is<Container>(out container)) {
+										containers.Add(container);
+								}
+						}
+						for (int i = 0; i < group.ChildGroups.Count; i++) {
+								GetAllContainers(group.ChildGroups[i], containers);
+						}
+						return containers.Count > 0;
+				}
+
 				public static IEnumerator GetAllStackItemsByType(string startGroup, List <string> wiScriptTypes, GroupSearchType searchType, Queue <StackItem> stackItemQueue)
 				{
 						return Get.GetAllStackItemsByTypeOverTime(startGroup, wiScriptTypes, searchType, stackItemQueue);
@@ -642,6 +656,7 @@ namespace Frontiers
 
 				protected IEnumerator GetAllStackItemsByTypeOverTime(string groupPath, List <string> wiScriptTypes, GroupSearchType searchType, Queue <StackItem> stackItemQueue)
 				{	//start by getting all the paths to search for
+						Debug.Log("Getting all stack items by type");
 						Queue <string> groupPathsQueue = new Queue <string>();
 						yield return StartCoroutine(GetAllPaths(groupPath, searchType, groupPathsQueue));
 						//once we've got all the paths, start searching them for stack items
@@ -657,7 +672,7 @@ namespace Frontiers
 												//check to see if it has any of the scripts indicated
 												if (stackItem.HasAtLeastOne(wiScriptTypes)) {
 														stackItemQueue.Enqueue(stackItem);
-														break;
+														//break;
 												}
 										}
 
@@ -838,7 +853,6 @@ namespace Frontiers
 										yield break;
 								}
 						}
-						Debug.Log("Group path " + groupPath + ", " + childItemFileName);
 						//if we don't find the group, create the superloader
 						GameObject newSuperLoader = Get.gameObject.CreateChild("WorldItemSuperLoader: " + childItemFileName).gameObject;
 						WorldItemSuperLoader superLoader = newSuperLoader.AddComponent <WorldItemSuperLoader>();
@@ -886,11 +900,9 @@ namespace Frontiers
 								Get.Groups.Add(group);
 								group.Initialize();
 								if (!mGroupLookup.ContainsKey(group.Props.UniqueID)) {
-										//Debug.Log("Adding group " + group.Path + " to lookup in GetOrAdd");
 										mGroupLookup.Add(group.Props.UniqueID, group);
 								} else {
 										//this is now the latest and greatest group
-										//Debug.Log ("Replacing group " + group.Path + " lookup in GetOrAdd");
 										mGroupLookup[group.Props.UniqueID] = group;
 								}
 						}
@@ -927,10 +939,8 @@ namespace Frontiers
 								group.Initialize();
 								Get.Groups.SafeAdd(group);
 								if (!mGroupLookup.ContainsKey(group.Props.UniqueID)) {
-										//Debug.Log("Adding group " + group.Path + " to lookup in GetOrAdd");
 										mGroupLookup.Add(group.Props.UniqueID, group);
 								} else {
-										//Debug.Log("Replacing group " + group.Path + " lookup in GetOrAdd");
 										//this is now the latest and greatest group
 										mGroupLookup[group.Props.UniqueID] = group;
 								}

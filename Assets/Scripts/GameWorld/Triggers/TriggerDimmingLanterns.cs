@@ -55,7 +55,10 @@ namespace Frontiers.World
 
 						GUI.GUIManager.PostIntrospection(State.IntrospectionBeforeStarting, true);
 
-						yield return WorldClock.WaitForSeconds(State.InitialDelay);
+						double waitUntil = WorldClock.AdjustedRealTime + State.InitialDelay;
+						while (WorldClock.AdjustedRealTime < waitUntil) {
+								yield return null;
+						}
 
 						GuardInterventionTrigger.SuspendGuard();
 						//GuardInterventionTrigger.gameObject.SetActive (false);
@@ -63,7 +66,7 @@ namespace Frontiers.World
 						for (int i = 0; i < LanternsToDim.Count; i++) {
 								LanternDimmer ld = LanternsToDim[i].Get <LanternDimmer>();
 								ld.StartDimming();
-								yield return WorldClock.WaitForSeconds(0.5);
+								waitUntil = WorldClock.AdjustedRealTime + 0.5f;
 						}
 
 						if (State.UseReactivationTrigger) {
@@ -72,7 +75,10 @@ namespace Frontiers.World
 										int numTimesTriggeredOnStart = reactivationTriggerState.NumTimesTriggered;
 										while (reactivationTriggerState.NumTimesTriggered == numTimesTriggeredOnStart) {
 												//wait until it's been triggered again
-												yield return WorldClock.WaitForSeconds(0.5);
+												waitUntil = WorldClock.AdjustedRealTime + 0.5f;
+												while (WorldClock.AdjustedRealTime < waitUntil) {
+														yield return null;
+												}
 										}
 								}
 						} else {
@@ -84,7 +90,10 @@ namespace Frontiers.World
 						for (int i = 0; i < LanternsToDim.Count; i++) {
 								LanternDimmer ld = LanternsToDim[i].Get <LanternDimmer>();
 								ld.StopDimming();
-								yield return WorldClock.WaitForSeconds(0.5);
+								waitUntil = WorldClock.AdjustedRealTime + 0.5f;
+								while (WorldClock.AdjustedRealTime < waitUntil) {
+										yield return null;
+								}
 						}
 
 						//GuardInterventionTrigger.gameObject.SetActive (true);

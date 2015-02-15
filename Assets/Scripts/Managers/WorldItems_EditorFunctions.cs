@@ -15,7 +15,7 @@ using System.Reflection;
 
 namespace Frontiers.World
 {
-		public partial class WorldItems : Manager
+		public partial class WorldItems
 		{
 				#if UNITY_EDITOR
 				public string [] CategoryNames {
@@ -353,8 +353,8 @@ namespace Frontiers.World
 				{
 						bool drawStructureEditor = true;
 						if (EditorStructureParent == null ||
-						 EditorSelectedItem == string.Empty ||
-						 EditorSepectedPack == string.Empty) {
+						    EditorSelectedItem == string.Empty ||
+						    EditorSepectedPack == string.Empty) {
 								drawStructureEditor = false;
 						}
 
@@ -593,7 +593,7 @@ namespace Frontiers.World
 										foreach (GameObject prefab in pack.Prefabs) {
 												WorldItem wi = prefab.GetComponent <WorldItem>();
 												WITemplate template = new WITemplate(wi);
-												Debug.Log ("Saving template " + wi.name);
+												Debug.Log("Saving template " + wi.name);
 												Mods.Get.Editor.SaveMod <WITemplate>(
 														template,
 														System.IO.Path.Combine("WorldItem", wi.Props.Name.PackName),

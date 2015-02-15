@@ -44,6 +44,24 @@ namespace Frontiers
 						}
 				}
 
+				public List <Path> RelevantPaths {
+						get {
+								return mRelevantPaths;
+						}
+				}
+
+				public List <Path> NonRelevantPaths {
+						get {
+								return mNonRelevantPaths;
+						}
+				}
+
+				public List <Path> LoadedPaths {
+						get {
+								return mLoadedPaths;
+						}
+				}
+
 				public string LoadPathName;
 				public PathAvatar WorldPathPrefab;
 				public SplineNode SplineNodePrefab;
@@ -118,70 +136,6 @@ namespace Frontiers
 
 				public IEnumerator UpdatePassivePath()
 				{
-//			while (mInitialized) {
-//				while (!GameManager.Is(FGameState.InGame)) {
-//					yield return new WaitForSeconds(1f);
-//				}
-//
-//				if (HasPassivePath) {
-//					//check to see if we're still intersecting with it
-//					bool isInRange = false;
-//					float currentDistance = 0f;
-//					for (int i = 0; i < PassivePath.Templates.Count; i++) {
-//						currentDistance = Vector3.Distance(Player.Local.Position, PassivePath.Templates[i].Position);
-//						if (currentDistance < Globals.PathStrayDistanceInMeters) {
-//							//we've found a path marker that's close to the player
-//							//so this is still our passive path
-//							PlayerDistanceFromPassivePath = currentDistance;
-//							isInRange = true;
-//							break;
-//						}
-//					}
-//					if (!isInRange) {
-//						Debug.Log("Stopped following " + PassivePath.Name);
-//						//set our passive path to null
-//						//on the next loop through we'll look for a new one
-//						PassivePath = null;
-//					}
-//				} else {
-//					PlayerDistanceFromPassivePath = 1f;
-//					//if we don't have a passive path, but we do have an active path, wait
-//					if (HasActivePath) {
-//						yield return new WaitForSeconds(1f);
-//					} else {
-//						//if we don't have an active path, try to find a passive path
-//						for (int i = 0; i < mLoadedPaths.Count; i++) {
-//							if (PassivePath != null) {
-//								//we set it on the last loop
-//								break;
-//							}
-//							//does the player intersect with an active path?
-//							Path loadedPath = mLoadedPaths[i];
-//							mPassivePathBounds.center = loadedPath.PathBounds.center;
-//							mPassivePathBounds.size = loadedPath.PathBounds.size;
-//							if (mPassivePathBounds.Contains(Player.Local.Position)) {
-//								//odds are we're close enough
-//								bool isInRange = false;
-//								float currentDistance = 0f;
-//								for (int t = 0; t < PassivePath.Templates.Count; t++) {
-//									currentDistance = Vector3.Distance(Player.Local.Position, PassivePath.Templates[t].Position);
-//									if (currentDistance < Globals.PathStrayDistanceInMeters) {
-//										//we've found a new passive path
-//										FollowPathSkill.Use(true);
-//										PassivePath = loadedPath;
-//										PlayerDistanceFromPassivePath = currentDistance;
-//										isInRange = true;
-//										break;
-//									}
-//								}
-//							}
-//							yield return null;
-//						}
-//					}
-//				}
-//				yield return new WaitForSeconds(1f);
-//			}
-//
 						yield break;
 				}
 
@@ -241,6 +195,7 @@ namespace Frontiers
 								for (int j = 0; j < mLoadedPaths[i].Templates.Count; j++) {
 										if (mLoadedPaths[i].Templates[j] == pm1) {
 												mLoadedPaths[i].Templates[j] = pm2;
+												//Debug.Log("Replacing path marker id " + pm1.ID.ToString() + " in path " + mLoadedPaths[i].Name);
 										}
 								}
 						}
@@ -253,50 +208,7 @@ namespace Frontiers
 						for (int i = 0; i < mLoadedPaths.Count; i++) {
 								Path path = mLoadedPaths[i];
 								path.InitializeTemplates();
-								//------OLD FANCYPANTS METHOD-----//
-								/*
-				//every path has some shared path markers
-				//we know them when the instance template's path name isn't the owner path's name
-				for (int j = 0; j < path.Templates.Count; j++) {
-					PathMarkerInstanceTemplate pm = path.Templates [j];
-					if (pm.PathName != path.Name) {
-						Debug.Log ("Found path marker from path " + pm.PathName + " in path " + path.Name + " at index " + j.ToString ());
-						//it's not our template
-						//get it from the path that owns it
-						Path otherPath = null;
-						if (mLoadedPathsByName.TryGetValue (pm.PathName, out otherPath)) {
-							//now here's the tricky part - the template we have won't have an accurate index
-							//so we use the branches from the other path to determine where to put the template
-							//we're looking for a branch to this path
-							int otherTemplateIndex = -1;
-							PathMarkerInstanceTemplate otherPm = null;
-							for (int k = 0; k < otherPath.Templates.Count; k++) {
-								PathMarkerInstanceTemplate checkPm = otherPath.Templates [k];
-								//only look at templates that it owns
-								if (checkPm.PathName == otherPath.Name) {
-									if (checkPm.Branches.TryGetValue (path.Name, out otherTemplateIndex)) {
-										//check to see if this index is the index we're looking for
-										if (otherTemplateIndex == j) {
-											otherPm = checkPm;
-											break;
-										} else {
-											Debug.Log ("Found other template with link to path but template index was " + otherTemplateIndex.ToString () + " and not " + j.ToString ());
-										}
-									} else {
-										Debug.Log ("Checking " + otherPath.Name + " template " + k.ToString () + " but it has no branches");
-									}
-								}
-							}
-							if (otherPm != null) {
-								path.Templates [j] = otherPm;
-							} else {
-								Debug.Log ("Tried to find template from " + otherPath.Name + " but failed");
-							}
 						}
-					}
-				}*/
-						}
-						//-----NEW BRUTE FORCE METHOD-----//
 						//we're going to link up every path marker by proximity
 						//first-come, first-serve basis
 						Path path1 = null;
@@ -304,8 +216,8 @@ namespace Frontiers
 						Path replaceCheckPath = null;
 						PathMarkerInstanceTemplate pm1;
 						PathMarkerInstanceTemplate pm2;
-						Bounds path1Bounds;
-						Bounds path2Bounds;
+						//Bounds path1Bounds;
+						//Bounds path2Bounds;
 
 						float mergeDistance = 0.15f;
 						for (int i = 0; i < mLoadedPaths.Count; i++) {
@@ -313,25 +225,25 @@ namespace Frontiers
 								for (int j = 0; j < mLoadedPaths.Count; j++) {
 										if (i != j) {
 												path2 = mLoadedPaths[j];
-												path1Bounds = path1.PathBounds;
-												path2Bounds = path2.PathBounds;
+												//path1Bounds = path1.PathBounds;
+												//path2Bounds = path2.PathBounds;
 												//extend the bounds a tad to leave room for error
-												path1Bounds.size = path1Bounds.size * 1.05f;
-												path2Bounds.size = path2Bounds.size * 1.05f;
-												if (path1Bounds.Intersects(path2Bounds)) {
-														//they occupy some of the same space, so check each path marker against every other
-														for (int x = 0; x < path1.Templates.Count; x++) {
-																for (int y = 0; y < path2.Templates.Count; y++) {
-																		pm1 = path1.Templates[x];
-																		pm2 = path2.Templates[y];
-																		if (pm1 != pm2 && Vector3.Distance(pm1.Position, pm2.Position) < mergeDistance) {
-																				//if they're not already the same (for some reason... just in case)
-																				//BRUUUUUTE FOOOOOOORCE!
-																				ReplaceAllTemplateInstances(pm1, pm2);
-																		}
+												//path1Bounds.size = path1Bounds.size * 1.05f;
+												//path2Bounds.size = path2Bounds.size * 1.05f;
+												//if (path1Bounds.Intersects(path2Bounds)) {
+												//they occupy some of the same space, so check each path marker against every other
+												for (int x = 0; x < path1.Templates.Count; x++) {
+														for (int y = 0; y < path2.Templates.Count; y++) {
+																pm1 = path1.Templates[x];
+																pm2 = path2.Templates[y];
+																if (pm1 != pm2 && Vector3.Distance(pm1.Position, pm2.Position) < mergeDistance) {
+																		//if they're not already the same (for some reason... just in case)
+																		//BRUUUUUTE FOOOOOOORCE!
+																		ReplaceAllTemplateInstances(pm1, pm2);
 																}
 														}
 												}
+												//}
 										}
 								}
 						}
@@ -574,18 +486,15 @@ namespace Frontiers
 						Get.Evaluator.EvaluateSegment(segment);
 				}
 
-				public static void GetAllNeighbors(PathMarkerInstanceTemplate start, PathMarkerType desiredTypes, Dictionary <PathMarkerInstanceTemplate,int> neighbors)
+				public static void GetAllNeighbors(PathMarkerInstanceTemplate start, PathMarkerType desiredTypes, List<TravelManager.FastTravelChoice> neighbors)
 				{
 						//if there's no path there are no neighbors
 						if (!start.HasParentPath) {
-								Debug.Log("Path marker had no parent path, returning");
+								//Debug.Log("Path marker had no parent path, returning");
 								return;
 						}
-						//Path startPath = start.ParentPath;
-						//int startIndex = start.IndexInParentPath;
-						//first check the parent path for neighbors
-						//GetNeighborsOnPath (startPath, startIndex, desiredTypes, neighbors);
-						//now check for neighbors in branches
+						//we can have up to two neighbors on the start marker's owner path: BACKWARDS<-----START----->FORWARDS
+						//and we can have up to one neighbor on any of the start marker's branches: START---->BRANCH
 						foreach (KeyValuePair <string,int> branch in start.Branches) {
 								Path branchPath = null;
 								int branchStartIndex = branch.Value;
@@ -595,43 +504,76 @@ namespace Frontiers
 						}
 				}
 
-				public static void GetNeighborsOnPath(Path path, int startIndex, PathMarkerType desiredTypes, Dictionary <PathMarkerInstanceTemplate,int> neighbors)
+				public static void GetNeighborsOnPath(Path path, int startIndex, PathMarkerType desiredTypes, List<TravelManager.FastTravelChoice> neighbors)
 				{
-						//Debug.Log ("Getting neighbors on path " + path.Name + " starting at index " + startIndex.ToString ());
-						bool searchForward = startIndex < path.Templates.LastIndex();
+						int numIterations = 0;
 						int forwardIndex = startIndex + 1;
-						while (searchForward) {
-								PathMarkerInstanceTemplate forwardPm = path.Templates[forwardIndex];
-								if (Flags.Check((uint)desiredTypes, (uint)forwardPm.Type, Flags.CheckType.MatchAny)) {
-										//if it's not filtered out, add it and quit searching
-										if (neighbors.ContainsKey(forwardPm)) {
-												neighbors[forwardPm] = forwardIndex;
-										} else {
-												neighbors.Add(forwardPm, forwardIndex);
+						int backwardsIndex = startIndex - 1;
+						bool searchForward = startIndex < path.Templates.LastIndex();
+						bool searchBackwards = startIndex > 0;
+
+						TravelManager.FastTravelChoice ftc = null;
+
+						if (searchForward) {
+								ftc = new TravelManager.FastTravelChoice();
+								ftc.Direction = PathDirection.Forward;
+								ftc.StartMarkerIndex = startIndex;
+								ftc.StartMarker = path.Templates[startIndex];
+								while (searchForward) {
+										PathMarkerInstanceTemplate forwardPm = path.Templates[forwardIndex];
+										//if we haven't set the direction yet, set it now
+										if (ftc.FirstInDirection == null) {
+												ftc.FirstInDirection = forwardPm;
 										}
-										searchForward = false;
-										//Debug.Log ("Found path marker forward");
-								} else {
+										//if it's not filtered out, add it and quit searching
+										if (Flags.Check((uint)desiredTypes, (uint)forwardPm.Type, Flags.CheckType.MatchAny)) {
+												ftc.EndMarker = forwardPm;
+												ftc.EndMarkerIndex = forwardIndex;
+												ftc.ConnectingPath = path.Name;
+												neighbors.Add(ftc);
+												break;
+										}
+
 										forwardIndex++;
 										searchForward = forwardIndex < path.Templates.Count;
+
+										numIterations++;
+										if (numIterations > Globals.MaxPathMarkersInPath) {
+												//Debug.Log("Hit max iterations, breaking");
+												searchForward = false;
+										}
 								}
 						}
-						bool searchBackwards = startIndex > 0;
-						int backwardsIndex = startIndex - 1;
-						while (searchBackwards) {
-								PathMarkerInstanceTemplate backPm = path.Templates[backwardsIndex];
-								if (Flags.Check((uint)desiredTypes, (uint)backPm.Type, Flags.CheckType.MatchAny)) {
-										//if it's not filtered out, add it and quit searching
-										if (neighbors.ContainsKey(backPm)) {
-												neighbors[backPm] = backwardsIndex;
-										} else {
-												neighbors.Add(backPm, backwardsIndex);
+
+						numIterations = 0;
+
+						if (searchBackwards) {
+								ftc = new TravelManager.FastTravelChoice();
+								ftc.Direction = PathDirection.Backwards;
+								ftc.StartMarkerIndex = startIndex;
+								ftc.StartMarker = path.Templates[startIndex];
+								while (searchBackwards) {
+										PathMarkerInstanceTemplate backPm = path.Templates[backwardsIndex];
+										if (ftc.FirstInDirection == null) {
+												ftc.FirstInDirection = backPm;
 										}
-										searchBackwards = false;
-										//Debug.Log ("Found path marker backwards");
-								} else {
+										if (Flags.Check((uint)desiredTypes, (uint)backPm.Type, Flags.CheckType.MatchAny)) {
+												//if it's not filtered out, add it and quit searching
+												ftc.EndMarker = backPm;
+												ftc.EndMarkerIndex = backwardsIndex;
+												ftc.ConnectingPath = path.Name;
+												neighbors.Add(ftc);
+												break;
+										}
+
 										backwardsIndex--;
 										searchBackwards = backwardsIndex >= 0;
+
+										numIterations++;
+										if (numIterations > Globals.MaxPathMarkersInPath) {
+												//Debug.Log("Hit max iterations, breaking");
+												searchBackwards = false;
+										}
 								}
 						}
 				}
@@ -745,20 +687,98 @@ namespace Frontiers
 				{
 						PathMarkerInstanceTemplate marker = onPath.Templates[0];
 						float distance = 0f;
-						for (int i = 0; i < onPath.Templates.Count; i++) {	
+						for (int i = 0; i < onPath.Templates.Count; i++) {
 								distance = Vector3.Distance(position, onPath.Templates[i].Position);
 								if (distance < max && distance > min) {
 										marker = onPath.Templates[i];
-										break; 
+										break;
 								}
 						}
 						return marker;
 				}
 
+				public static bool GetNextMarkerInDirection(PathMarkerInstanceTemplate startMarker, PathMarkerInstanceTemplate endMarker, PathDirection direction, out PathMarkerInstanceTemplate nextMarker)
+				{
+						Debug.Log("Looking for first marker in path " + startMarker.ParentPath.Name + " along the way to " + endMarker.ID.ToString() + " on " + endMarker.ParentPath.Name);
+						nextMarker = null;
+						Path path = startMarker.ParentPath;
+						int startIndex = startMarker.IndexInParentPath;
+						int endIndex = -1;
+						int nextIndex = -1;
+
+						if (path == endMarker.ParentPath) {
+								//this is easy
+								endIndex = endMarker.IndexInParentPath;
+								if (direction == PathDirection.Forward) {//going forward
+										nextIndex = startIndex + 1;
+								} else {//going backward
+										nextIndex = startIndex - 1;
+								}
+
+								if (nextIndex < 0 || nextIndex > path.Templates.LastIndex()) {
+										Debug.Log("Both markers were in the same path but next index was out of range\n-----");
+										return false;
+								} else {
+										Debug.Log("Found next marker in same path\n-----");
+										nextMarker = path.Templates[nextIndex];
+										return true;
+								}
+						} else {
+								endIndex = endMarker.IndexInPath(path.Name);
+								if (endIndex >= 0) {
+										//this is still easy
+										//if the index is OK then it's in the start marker's path, we can proceed normally
+										if (direction == PathDirection.Forward) {//going forward
+												nextIndex = startIndex + 1;
+										} else {//going backward
+												nextIndex = startIndex - 1;
+										}
+
+										if (nextIndex < 0 || nextIndex > path.Templates.LastIndex()) {
+												Debug.Log("Both markers were in the same path but next index was out of range\n-----");
+												return false;
+										} else {
+												Debug.Log("Found next marker LINKED in the same path\n-----");
+												nextMarker = path.Templates[nextIndex];
+												return true;
+										}
+								} else {
+										//this is trickier
+										//if the index fails then it's not actually in our path - the start marker is in the end marker's path
+										path = endMarker.ParentPath;
+										startIndex = startMarker.IndexInPath(path.Name);
+										endIndex = endMarker.IndexInParentPath;
+										if (startIndex >= 0) {
+												if (direction == PathDirection.Forward) {//going forward
+														nextIndex = startIndex + 1;
+												} else {//going backward
+														nextIndex = startIndex - 1;
+												}
+
+												if (nextIndex < 0 || nextIndex > path.Templates.LastIndex()) {
+														Debug.Log("Both markers were in the same path but next index was out of range\n-----");
+														return false;
+												} else {
+														Debug.Log("Found next marker LINKED in end marker's path\n-----");
+														nextMarker = path.Templates[nextIndex];
+														return true;
+												}
+										} else {
+												//very weird, something's gone badly wrong
+												Debug.Log("Something went wrong, start marker wasn't in end marker's path\n------");
+												return false;
+										}
+								}
+						}
+						Debug.Log("Whoops, something went wrong\n-----");
+						return false;
+
+				}
+
 				public static bool GetNextMarkerInDirection(Path path, PathDirection direction, PathMarkerInstanceTemplate currentMarker, out PathMarkerInstanceTemplate nextMarker)
 				{
 						nextMarker = null;
-						int index = path.Templates.IndexOf (currentMarker);
+						int index = path.Templates.IndexOf(currentMarker);
 
 						if (index < 0) {
 								//it's not in the current path dummy
@@ -769,7 +789,7 @@ namespace Frontiers
 								case PathDirection.Forward:
 										index++;
 										if (index < path.Templates.Count) {
-												nextMarker = path.Templates [index];
+												nextMarker = path.Templates[index];
 										}
 										break;
 
@@ -777,7 +797,7 @@ namespace Frontiers
 								default:
 										index--;
 										if (index > 0) {
-												nextMarker = path.Templates.PrevItem(index);
+												nextMarker = path.Templates[index];
 										}
 										break;
 						}
@@ -979,7 +999,7 @@ namespace Frontiers
 						}
 				}
 
-				protected WaitForSeconds mWaitForUpdatePathMarkers = new WaitForSeconds (0.1f);
+				protected WaitForSeconds mWaitForUpdatePathMarkers = new WaitForSeconds(0.1f);
 
 				protected IEnumerator UpdateWorldPathMarkers()
 				{
@@ -1025,7 +1045,9 @@ namespace Frontiers
 												float distance = Vector3.Distance(Player.Local.Position, irrelevantPathMarker.worlditem.Position);
 												if (distance < Globals.PathStrayDistanceInMeters) {
 														PlayerDistanceFromPassivePath = distance;
-														SetActivePath(irrelevantPathMarker.Props.ParentPath.Name, GameWorld.Get.PrimaryChunk);
+														if (TravelManager.Get.State == FastTravelState.None) {
+																SetActivePath(irrelevantPathMarker.Props.ParentPath.Name, GameWorld.Get.PrimaryChunk);
+														}
 												}
 										}
 								}
@@ -1086,7 +1108,6 @@ namespace Frontiers
 						}
 				}
 				#endif
-
 				protected PathAvatar mActivePath;
 				protected List <Path> mRelevantPaths = new List <Path>();
 				protected List <Path> mNonRelevantPaths = new List <Path>();

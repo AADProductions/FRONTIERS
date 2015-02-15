@@ -47,6 +47,18 @@ namespace Frontiers
 						}
 				}
 
+				public static List <Path> RelevantPathsToDisplay {
+						get {
+								return Paths.Get.RelevantPaths;
+						}
+				}
+
+				public static List <Path> NonRelevantPathsToDisplay {
+						get {
+								return Paths.Get.NonRelevantPaths;
+						}
+				}
+
 				public static void ClearLog()
 				{
 						MarkedLocations.Clear();
@@ -75,13 +87,16 @@ namespace Frontiers
 				public IEnumerator LocationsForChunks(string chunkName, int chunkID, Queue <WorldMapLocation> locationData, List <MapMarker> activeMapMarkers)
 				{	//Debug.Log ("WorldMap: LocationsForChunks");
 						List <MobileReference> locationList = null;
+
 						if (!mRevealableToShow.TryGetValue(chunkName, out locationList)) {
 								//Debug.Log ("WorldMap: We have no locations for this chunk from SetMapData, returning immediately");
 								yield break;
 						}
+						Vector3 chunkPosition;
 						//add markers
 						for (int i = 0; i < activeMapMarkers.Count; i++) {
 								if (activeMapMarkers[i].ChunkID == chunkID) {
+										chunkPosition = activeMapMarkers[i].ChunkPosition;
 										WorldMapLocation wml = new WorldMapLocation(
 												                  null,
 												                  1,
@@ -95,7 +110,7 @@ namespace Frontiers
 												                  MapIconStyle.Medium,
 												                  MapLabelStyle.None,
 												                  Vector3.zero,
-												                  activeMapMarkers[i].ChunkPosition,
+												                  chunkPosition,
 												                  false,
 												                  false,
 												                  LocationTypesToDisplay);
@@ -112,6 +127,7 @@ namespace Frontiers
 								currentLocation = locationList[i];
 								StackItem stackItem = null;
 								if (WIGroups.LoadStackItem(currentLocation, out stackItem)) {
+										chunkPosition = stackItem.ChunkPosition;
 										//Debug.Log ("WorldMap: found stack item " + stackItem.DisplayName);
 										//next we need to get the location state from the stack item
 										LocationState ls = null;
@@ -153,7 +169,7 @@ namespace Frontiers
 																rs.IconStyle,
 																rs.LabelStyle,
 																rs.IconOffset,
-																stackItem.ChunkPosition,
+																chunkPosition,
 																isNewLocation,
 																isMarked,
 																LocationTypesToDisplay);
@@ -162,7 +178,7 @@ namespace Frontiers
 														string iconName = "Outpost";
 														MapIconStyle iconStyle = MapIconStyle.None;
 														MapLabelStyle labelStyle = MapLabelStyle.None;
-														Color32 iconColor = Color.white;
+														Color32 iconColor = Color.gray;
 														Vector3 iconOffset = Vector3.zero;
 
 														GetIconProperties(stackItem, ls, rs, vs, ref iconName, ref iconStyle, ref labelStyle, ref iconColor, ref iconOffset);
@@ -180,7 +196,7 @@ namespace Frontiers
 																iconStyle,
 																labelStyle,
 																iconOffset,
-																stackItem.ChunkPosition,
+																chunkPosition,
 																isNewLocation,
 																isMarked,
 																LocationTypesToDisplay);
@@ -225,17 +241,107 @@ namespace Frontiers
 								MarkedLocations.Remove(wml.Reference);
 								wml.IsMarked = false;
 								wml.IsNew = false;
-								NGUIWorldMap.Get.RemoveMarkedLocationSprite(wml);
 								return false;
 						}
 						wml.IsMarked = true;
+						NGUIWorldMap.Get.RemoveMarkedLocationSprite(wml);
 						NGUIWorldMap.Get.CreateMarkedLocationSprite(wml);
 						return true;
 				}
 
+				public static MapDirection GetClockwiseMapDirection(Transform lockObject)
+				{
+						switch (GetMapDirectionFromRotation(lockObject)) {
+								case MapDirection.A_North:
+										return MapDirection.B_NorthEast;
+
+								case MapDirection.B_NorthEast:
+										return MapDirection.C_East;
+
+								case MapDirection.C_East:
+										return MapDirection.D_SEast;
+
+								case MapDirection.D_SEast:
+										return MapDirection.E_South;
+
+								case MapDirection.E_South:
+										return MapDirection.F_SouthWest;
+
+								case MapDirection.F_SouthWest:
+										return MapDirection.G_West;
+
+								case MapDirection.G_West:
+										return MapDirection.H_NorthWest;
+
+								case MapDirection.H_NorthWest:
+										return MapDirection.A_North;
+
+								case MapDirection.I_None:
+								default:
+										return MapDirection.B_NorthEast;
+						}
+				}
+
+				public static string GetMapDirectionNameFromRotation(Transform lockObject)
+				{
+						MapDirection dir = GetMapDirectionFromRotation(lockObject);
+						switch (dir) {
+								case MapDirection.A_North:
+										return "North";
+
+								case MapDirection.B_NorthEast:
+										return "Northeast";
+
+								case MapDirection.C_East:
+										return "East";
+
+								case MapDirection.D_SEast:
+										return "Southeast";
+
+								case MapDirection.E_South:
+										return "South";
+
+								case MapDirection.F_SouthWest:
+										return "Southwest";
+
+								case MapDirection.G_West:
+										return "West";
+
+								case MapDirection.H_NorthWest:
+										return "Northwest";
+
+								case MapDirection.I_None:
+								default:
+										return "North";
+						}
+				}
+
+				public static MapDirection GetMapDirectionFromRotation(Transform lockObject)
+				{
+						float rotation = lockObject.rotation.eulerAngles.y;
+						if (rotation < (int)MapDirection.B_NorthEast) {
+								return MapDirection.A_North;
+						} else if (rotation < (int)MapDirection.C_East) {
+								return MapDirection.B_NorthEast;
+						} else if (rotation < (int)MapDirection.D_SEast) {
+								return MapDirection.C_East;
+						} else if (rotation < (int)MapDirection.E_South) {
+								return MapDirection.D_SEast;
+						} else if (rotation < (int)MapDirection.F_SouthWest) {
+								return MapDirection.E_South;
+						} else if (rotation < (int)MapDirection.G_West) {
+								return MapDirection.F_SouthWest;
+						} else if (rotation < (int)MapDirection.H_NorthWest) {
+								return MapDirection.G_West;
+						} else if (rotation < 360) {
+								return MapDirection.H_NorthWest;
+						} else {
+								return MapDirection.A_North;
+						}
+				}
+
 				public static void CreateLocationLabel(GUI.GUIMapTile mapTile, WorldMapLocation wml)
 				{
-
 						//Debug.Log ("Creating location label for " + wml.Name);
 
 						bool createIcon = true;
@@ -296,10 +402,14 @@ namespace Frontiers
 								mapTile.ConstantLocations.Add(wml);
 						}
 
-						Vector3 mapTilePosition = new Vector3(wml.ChunkPosition.x * mapTile.ChunkToDisplay.TileScale, wml.ChunkPosition.z * mapTile.ChunkToDisplay.TileScale, 0f);
+						Vector3 mapTilePosition = new Vector3(wml.ChunkPosition.x, wml.ChunkPosition.z, 0f);//-(wml.ChunkPosition.y));
+						wml.LocationTransform = mapTile.TileBackground.gameObject.CreateChild(wml.Name).transform;
+						mapTilePosition.z = NGUIWorldMap.GetWorldMapAtChunkPosition(mapTilePosition, mapTile.ChunkToDisplay.MiniHeightmap, 0f);
+						wml.LocationTransform.localPosition = mapTilePosition;
+
 						if (createLabel) {
 								float mapTileScale = 1f;//Mathf.Clamp (location.Radius * gLocationRadiusMult, 1f, 5f);
-								GameObject newWMLabelGo	= NGUITools.AddChild(mapTile.gameObject, mapTile.WMLabelPrefab);
+								GameObject newWMLabelGo	= NGUITools.AddChild(NGUIWorldMap.Get.LabelsPanel.gameObject, mapTile.WMLabelPrefab);
 								UILabel label = newWMLabelGo.GetComponent <UILabel>();
 								label.name = wml.Name;
 								label.text = wml.Name;
@@ -313,14 +423,14 @@ namespace Frontiers
 										wml.LabelPosition = Vector3.zero;
 								}
 								wml.LabelTransform = label.cachedTransform;
-								wml.LabelTransform.localPosition = mapTilePosition + wml.LabelPosition + wml.IconOffset - Vector3.forward;//make sure labels appear in front of icons
+								wml.LabelTransform.localPosition = mapTilePosition + wml.LabelPosition + wml.IconOffset;
 								wml.LabelTransform.localScale = Vector3.one;
 								label.alpha = 0f;
 								label.enabled = true;
 						}
 
 						if (createIcon) {
-								GameObject newWMIconGo = NGUITools.AddChild(mapTile.gameObject, mapTile.WMIconPrefab);
+								GameObject newWMIconGo = NGUITools.AddChild(NGUIWorldMap.Get.IconsPanel.gameObject, mapTile.WMIconPrefab);
 								UISprite icon = newWMIconGo.GetComponent <UISprite>();
 								WMIcon wmIcon = newWMIconGo.GetComponent <WMIcon>();
 								wmIcon.OnClick += wml.OnClick;
@@ -333,7 +443,7 @@ namespace Frontiers
 								wml.IconTransform.localScale = Vector3.one * wml.IconScale;
 								icon.alpha = 0f;
 								icon.enabled = true;
-								newWMIconGo.AddComponent <BoxCollider>();//for mouseovers
+								newWMIconGo.AddComponent <SphereCollider>();//for mouseovers
 
 								if (wml.IsMarked || wml.IsNew) {
 										NGUIWorldMap.Get.CreateMarkedLocationSprite(wml);
@@ -358,7 +468,7 @@ namespace Frontiers
 						iconName = "MapIconOutpost";
 						iconStyle = MapIconStyle.Small;
 						labelStyle = MapLabelStyle.None;
-						iconColor = Color.white;
+						iconColor = Color.grey;
 
 						switch (ls.Type) {
 								case "City":
@@ -555,12 +665,19 @@ namespace Frontiers
 				{
 						Name = string.Empty;
 						ChunkID = -1;
-						DistanceFromFocus	= Mathf.Infinity;
+						DistanceFromFocus = Mathf.Infinity;
 						Mode = ChunkMode.Unloaded;
 						TileOffset = tileOffset;
 						TileScale = tileScale;
+						TileElevation = 0f;
 						DisplaySettings = null;
-						LocationsToDisplay	= new Queue <WorldMapLocation>();
+						LocationsToDisplay = new Queue <WorldMapLocation>();
+						MiniHeightmap = null;
+						BlendIDTop = -1;
+						BlendIDBottom = -1;
+						BlendIDLeft = -1;
+						BlendIDRight = -1;
+						MagicChunkScale = 6.5f;
 				}
 
 				public WorldMapChunk(WorldChunk chunk)
@@ -571,20 +688,35 @@ namespace Frontiers
 						Mode = chunk.CurrentMode;
 						TileOffset = chunk.State.TileOffset;
 						TileScale = chunk.State.SizeX;
+						TileElevation = chunk.TerrainData.HeightmapHeight;
 						DisplaySettings = chunk.State.DisplaySettings;
 						LocationsToDisplay = new Queue <WorldMapLocation>();
+						MiniHeightmap = null;
+						Mods.Get.Runtime.ChunkMap(ref MiniHeightmap, Name, "MiniHeightMap");
+						BlendIDTop = chunk.State.NeighboringChunkTop;
+						BlendIDBottom = chunk.State.NeighboringChunkBot;
+						BlendIDLeft = chunk.State.NeighboringChunkLeft;
+						BlendIDRight = chunk.State.NeighboringChunkRight;
+						MagicChunkScale = 6.5f;
 				}
 
 				public bool IsEmpty { get { return ChunkID < 1; } }
 
 				public string Name;
 				public int ChunkID;
+				public int BlendIDTop;
+				public int BlendIDBottom;
+				public int BlendIDLeft;
+				public int BlendIDRight;
 				public float DistanceFromFocus;
 				public Vector3 TileOffset;
 				public float TileScale;
+				public float TileElevation;
+				public float MagicChunkScale;
 				public ChunkDisplaySettings DisplaySettings;
 				public ChunkMode Mode;
 				public Queue <WorldMapLocation>	LocationsToDisplay;
+				public Texture2D MiniHeightmap;
 		}
 
 		[Serializable]
@@ -617,7 +749,7 @@ namespace Frontiers
 						Visited = visited;
 						MarkedForTriangulation = markedForTriangulation;
 						IconName = iconName;
-						IconColor = iconColor;
+						IconColor = Color.gray;//iconColor;
 						IconStyle = iconStyle;
 						LabelStyle = labelStyle;
 						ChunkPosition = chunkPosition;
@@ -661,7 +793,8 @@ namespace Frontiers
 						//LabelPosition = Vector3.up * IconScale;
 				}
 
-				public void UpdateType(List <string> typesToDisplay) {
+				public void UpdateType(List <string> typesToDisplay)
+				{
 						Display = (LabelStyle == MapLabelStyle.Descriptive && typesToDisplay.Contains("Descriptive")) || typesToDisplay.Contains(IconName);
 						SearchHit = false;
 				}
@@ -676,8 +809,68 @@ namespace Frontiers
 						}
 				}
 
-				public void UpdateLabel(float scale, float labelScale, float alpha)
+				public void UpdateLabel(float scale, float labelScale, float maxDistance, float minScale, float maxScale, float alpha, Camera perspectiveCamera, Camera interfaceCamera)
 				{
+						Vector3 pos = perspectiveCamera.WorldToViewportPoint(LocationTransform.position);
+						float distanceFromCamera = 0f;
+						// Determine the visibility and the target alpha
+						bool isVisible = (pos.z > 0f && pos.x > 0f && pos.x < 1f && pos.y > 0f && pos.y < 1f);
+						// If visible, update the position
+						if (isVisible) {
+								if (LabelTransform != null) {
+										LabelTransform.position = interfaceCamera.ViewportToWorldPoint(pos);
+										pos = LabelTransform.localPosition;
+								} else if (IconTransform != null) {
+										IconTransform.position = interfaceCamera.ViewportToWorldPoint(pos);
+										pos = IconTransform.localPosition;
+								}
+								pos.x = Mathf.RoundToInt(pos.x);
+								pos.y = Mathf.RoundToInt(pos.y);
+
+								float fadeStart = maxDistance * 0.75f;
+								distanceFromCamera = Vector3.Distance(perspectiveCamera.transform.position, LocationTransform.position);
+								pos.z = -distanceFromCamera;
+								scale = Mathf.Clamp(scale / distanceFromCamera, minScale, maxScale);
+
+								if (distanceFromCamera > maxDistance) {
+										isVisible = false;
+										alpha = 0f;
+								} else if (distanceFromCamera >= fadeStart) {
+										float fadeAmount = (distanceFromCamera - fadeStart) / (maxDistance - fadeStart);
+										alpha = Mathf.Lerp(alpha, 0f, fadeAmount);
+								}
+						}
+
+						if (!isVisible) {
+								//Debug.Log(Name + " was not visible: " + pos.ToString());
+								if (Label != null) {
+										Label.enabled = false;
+								}
+								if (Icon != null) {
+										Icon.enabled = false;
+								}
+								if (Attention != null) {
+										Attention.enabled = false;
+								}
+								return;
+						} else {
+								if (LabelTransform != null) {
+										LabelTransform.localPosition = pos;
+										Label.enabled = true;
+										Label.depth = Mathf.FloorToInt(-distanceFromCamera * 1000);
+								}
+								if (IconTransform != null) {
+										IconTransform.localPosition = pos;
+										Icon.enabled = true;
+										Icon.depth = Mathf.FloorToInt(-distanceFromCamera * 1000);
+								}
+								if (AttentionTransform != null) {
+										AttentionTransform.localPosition = pos;
+										Attention.enabled = true;
+										Attention.depth = Mathf.FloorToInt(-distanceFromCamera * 1000);
+								}
+						}
+
 						bool mouseOver = Icon != null && (UICamera.hoveredObject == Icon.gameObject);
 						if (Label != null) {
 								Label.color = Colors.Alpha(LabelColor, Label.alpha);
@@ -695,6 +888,10 @@ namespace Frontiers
 																break;
 
 														case MapLabelStyle.Descriptive:
+																//fade out descriptive labels when we get clsoe
+																if (distanceFromCamera < (maxDistance / 5)) {
+																		alpha = 0f;
+																}
 																Label.alpha = Mathf.Lerp(Label.alpha, alpha, 0.25f);
 																break;
 
@@ -702,7 +899,7 @@ namespace Frontiers
 																if (mouseOver || IsMarked) {
 																		Label.alpha = Mathf.Lerp(Label.alpha, alpha, 0.25f);
 																} else {
-																		Label.alpha = Mathf.Lerp(Label.alpha, alpha / 2f, 0.25f);
+																		Label.alpha = Mathf.Lerp(Label.alpha, alpha, 0.25f);
 																}
 																break;
 
@@ -714,17 +911,19 @@ namespace Frontiers
 								} else {
 										Label.alpha = Mathf.Lerp(Label.alpha, 0f, 0.25f);
 								}
-								LabelTransform.localScale = ((LabelScale * labelScale) / scale) * Vector3.one;
-								//LabelPosition.Set (LabelPosition.x, LabelPosition.y, 0f);
-								//LabelTransform.localPosition = ChunkPosition + LabelPosition;
+								LabelTransform.localScale = ((LabelScale * labelScale) * scale) * Vector3.one;
+								//LabelTransform.position = pos;
 						}
 
 						if (Icon != null) {
 								if (Display) {
+										if (IsMarked) {
+												Icon.color = Attention.color;
+										} else {
+												Icon.color = Colors.Alpha(IconColor, alpha);
+										}
 										Icon.alpha = Mathf.Lerp(Icon.alpha, alpha, 0.25f);
-										IconTransform.localScale = (IconScale / scale) * Vector3.one;
-										//IconPosition.Set (IconPosition.x, IconPosition.y, 0f + 1f);//behind label always
-										//IconTransform.localPosition = ChunkPosition + IconPosition;
+										IconTransform.localScale = (IconScale * scale) * Vector3.one;
 								} else {
 										Icon.alpha = Mathf.Lerp(Icon.alpha, 0f, 0.25f);
 								}
@@ -765,6 +964,7 @@ namespace Frontiers
 				public UILabel Label;
 				public UISprite Icon;
 				public UISprite Attention;
+				public Transform LocationTransform;
 				public Transform LabelTransform;
 				public Transform IconTransform;
 				public Transform AttentionTransform;

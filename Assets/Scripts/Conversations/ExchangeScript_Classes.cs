@@ -639,7 +639,21 @@ namespace Frontiers.Story.Conversations
 
 				protected override void Action()
 				{
+						Debug.Log("Delivering book order");
 						Books.Get.DeliverBookOrder(LibraryName);
+				}
+
+				protected override bool CheckRequirementsMet()
+				{
+						LibraryCatalogueEntry order = null;
+						if (Books.Get.HasPlacedOrder(LibraryName, out order)) {
+								if (order.HasArrived) {
+										Debug.Log("order has arrived");
+										return true;
+								}
+								Debug.Log("We have an order but it hasn't arrived");
+						}
+						return false;
 				}
 		}
 
@@ -686,6 +700,16 @@ namespace Frontiers.Story.Conversations
 								}
 						}
 						return false;
+				}
+		}
+
+		[Serializable]
+		public class RequireCharacterSpokenToOnce : ExchangeScript {
+				public string CharacterName = string.Empty;
+
+				protected override bool CheckRequirementsMet()
+				{
+						return Profile.Get.CurrentGame.Character.HasSpokenToCharacter(CharacterName);
 				}
 		}
 
@@ -752,9 +776,12 @@ namespace Frontiers.Story.Conversations
 								ConversationName = SubstituteConversation.Substitution(conversation.Props.Name, ConversationName);
 						}
 
+						Debug.Log("Require exchange " + ExchangeName + " concluded in " + ConversationName);
+
 						int numTimes = 0;
 						if (Frontiers.Conversations.Get.HasCompletedExchange(ConversationName, ExchangeName, out numTimes)) {
 								bool result = GameData.CheckVariable(CheckType, NumTimes, numTimes);
+								Debug.Log("Result: " + result.ToString());
 								return result;
 						}
 						return false;
@@ -788,6 +815,8 @@ namespace Frontiers.Story.Conversations
 
 						string conversationName = ConversationName;
 
+						Debug.Log("Require exchanges concluded in " + ConversationName);
+
 						foreach (string exchangeName in Exchanges) {
 								string finalExchangeName = exchangeName;
 								if (exchangeName.Contains(":")) {
@@ -803,6 +832,7 @@ namespace Frontiers.Story.Conversations
 								}
 								bool completedThis = Frontiers.Conversations.Get.HasCompletedExchange(conversationName, finalExchangeName);
 								//do we want them completed or not completed?
+								Debug.Log("Require " + exchangeName + " - result " + completedThis.ToString());
 								if (RequireConcluded) {
 										//we WANT them to be concluded
 										if (RequireAllExchanges) {
@@ -968,36 +998,11 @@ namespace Frontiers.Story.Conversations
 		public class RequireLibraryBookOrder : ExchangeScript
 		{
 				public string LibraryName = "GuildLibrary";
-				public bool HasBeenPlaced = false;
-				public bool HasBeenDelivered = false;
 
 				protected override bool CheckRequirementsMet()
 				{
 						LibraryCatalogueEntry order = null;
-						if (Books.Get.HasPlacedOrder(LibraryName, out order)) {
-								//we have placed an order
-								if (HasBeenPlaced) {
-										//which is what we want
-										if (HasBeenDelivered) {
-												//we also want it to be delivered
-												if (order.HasBeenDelivered) {
-														return true;
-												}
-										} else {
-												//we want it NOT to be delivered
-												if (!order.HasBeenDelivered) {
-														return true;
-												}
-										}
-								}
-						} else {
-								//we haven't placed an order
-								if (!HasBeenPlaced) {
-										//which is what we want
-										return true;
-								}
-						}
-						return false;
+						return Books.Get.HasPlacedOrder(LibraryName, out order);
 				}
 		}
 

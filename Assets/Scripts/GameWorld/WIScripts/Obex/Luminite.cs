@@ -2,17 +2,25 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
 		public class Luminite : WIScript, ILuminite
 		{
 				public LuminiteState State = new LuminiteState();
+				public bool IsGoodForHandHeld = true;
 
 				public override void OnInitialized()
 				{
 						if (IsDark) {
 								worlditem.State = "Dark";
+						}
+						if (!IsGoodForHandHeld) {
+								Equippable equippable = null;
+								if (worlditem.Is <Equippable>(out equippable)) {
+										equippable.OnEquip += OnEquip;
+								}
 						}
 				}
 
@@ -46,6 +54,15 @@ namespace Frontiers.World
 								}
 						}
 						return amountLeft;
+				}
+
+				public void OnEquip () {
+						if (!IsGoodForHandHeld && (Player.Local.Surroundings.IsInsideStructure || Player.Local.Surroundings.IsUnderground || WorldClock.IsNight)) {
+								if (!Profile.Get.CurrentPreferences.HideDialogs.Contains("BadHandHeldLanternWarning")) {
+										Frontiers.GUI.GUIManager.PostIntrospection("This light is blinding! I should find a proper hand-held lantern.");
+										Profile.Get.CurrentPreferences.HideDialogs.Add("BadHandHeldLanternWarning");
+								}
+						}
 				}
 		}
 

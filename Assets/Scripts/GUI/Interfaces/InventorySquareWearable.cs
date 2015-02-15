@@ -136,10 +136,6 @@ namespace Frontiers.GUI
 
 						Shadow.color = shadowColor;
 						Background.color = backgroundColor;
-
-						if (ActiveHighlight != null) {
-								ActiveHighlight.enabled = false;
-						}
 				}
 
 				public override void SetStack(WIStack stack)

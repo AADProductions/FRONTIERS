@@ -29,7 +29,11 @@ namespace Frontiers.World.BaseWIScripts
 						//the player is looking at this recepticle
 						if (FocusPlacementPermitted) {
 								lastHudPriority++;
-								GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Place", FocusDoppleganger.transform, GameManager.Get.GameCamera);
+								Transform hud = worlditem.tr;
+								if (FocusDoppleganger != null) {
+										hud = FocusDoppleganger.transform;
+								}
+								GUIHud.Get.ShowAction(worlditem, UserActionType.ItemUse, "Place", hud, GameManager.Get.GameCamera);
 						}
 						return lastHudPriority;
 				}
