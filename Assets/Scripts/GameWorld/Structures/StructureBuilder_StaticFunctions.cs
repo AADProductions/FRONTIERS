@@ -302,7 +302,7 @@ namespace Frontiers.World
 								if (sendChildPieces) {
 										yield return null;
 								} else {
-										//Debug.Log("DIDN'T SEND CHILD PIECES TO MESH COMBINER");
+										Debug.Log("DIDN'T SEND CHILD PIECES TO MESH COMBINER in " + builder.name);
 										//yiked clear everything out
 										builder.State = BuilderState.Error;
 										combiner.ClearMeshes();
@@ -780,7 +780,7 @@ namespace Frontiers.World
 								childPieces = null;
 								return true;
 						} else {
-								Debug.LogError("Didn't find prefab " + staticLayer.PackName + ", " + staticLayer.PrefabName);
+							Debug.LogError("Didn't find prefab " + staticLayer.PackName + ", " + staticLayer.PrefabName);
 						}
 						return false;
 				}

@@ -1164,33 +1164,40 @@ namespace Frontiers.World
 								}
 								//wait a moment
 								yield return null;
-
-								//check to see if we need to spawn any more
-								System.Random random = new System.Random(Profile.Get.CurrentGame.Seed);
-								while (SpawnedPilgrims.Count < Globals.MaxSpawnedPilgrims) {
-										if (GameManager.Is(FGameState.InGame)) {
-												//get a nearby path
-												Path onPath = null;
-												if (Paths.Get.PathNearPlayer(out onPath, random.Next())) {
-														Character newPilgrim = null;
-														WIFlags locationFlags = GameWorld.Get.CurrentRegion.ResidentFlags;
-														PathMarkerInstanceTemplate atMarker = Paths.Get.FirstMarkerWithinRange(Globals.PlayerEncounterRadius * 2, Globals.PlayerColliderRadius, onPath, Player.Local.Position);
-														CharacterTemplate template = GenericCharacterTemplates[random.Next(0, GenericCharacterTemplates.Count)];
-														try {
-																if (SpawnRandomPilgrim(template, onPath, atMarker, locationFlags, out newPilgrim)) {
-																		SpawnedPilgrims.Add(newPilgrim);
-																		Pilgrim pilgrim = newPilgrim.worlditem.GetOrAdd <Pilgrim>();
-																		pilgrim.LastMarker = atMarker;
-																		pilgrim.ActivePath = onPath;
+								if (Player.Local.Status.IsStateActive("Traveling")) {
+										//move the spawned pilgrims about on their paths
+										for (int i = 0; i < SpawnedPilgrims.Count; i++) {
+												Pilgrim pilgrim = SpawnedPilgrims[i].worlditem.Get<Pilgrim>();
+												pilgrim.OnFastTravelFrame();
+										}
+								} else {
+										//check to see if we need to spawn any more
+										System.Random random = new System.Random(Profile.Get.CurrentGame.Seed);
+										while (SpawnedPilgrims.Count < Globals.MaxSpawnedPilgrims) {
+												if (GameManager.Is(FGameState.InGame)) {
+														//get a nearby path
+														Path onPath = null;
+														if (Paths.Get.PathNearPlayer(out onPath, random.Next())) {
+																Character newPilgrim = null;
+																WIFlags locationFlags = GameWorld.Get.CurrentRegion.ResidentFlags;
+																PathMarkerInstanceTemplate atMarker = Paths.Get.FirstMarkerWithinRange(Globals.PlayerEncounterRadius * 2, Globals.PlayerColliderRadius, onPath, Player.Local.Position);
+																CharacterTemplate template = GenericCharacterTemplates[random.Next(0, GenericCharacterTemplates.Count)];
+																try {
+																		if (SpawnRandomPilgrim(template, onPath, atMarker, locationFlags, out newPilgrim)) {
+																				SpawnedPilgrims.Add(newPilgrim);
+																				Pilgrim pilgrim = newPilgrim.worlditem.GetOrAdd <Pilgrim>();
+																				pilgrim.LastMarker = atMarker;
+																				pilgrim.ActivePath = onPath;
+																		}
+																} catch (Exception e) {
+																		Debug.LogError("Exception while spawning pilgrim - continuing normally: " + e.ToString());
 																}
-														} catch (Exception e) {
-																Debug.LogError("Exception while spawning pilgrim - continuing normally: " + e.ToString());
 														}
 												}
+												yield return mWaitForUpdatePilgrims;
 										}
 										yield return mWaitForUpdatePilgrims;
 								}
-								yield return mWaitForUpdatePilgrims;
 						}
 						mUpdatingPilgrims = false;
 						yield break;

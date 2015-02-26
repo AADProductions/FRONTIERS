@@ -210,7 +210,7 @@ namespace Frontiers
 
 				public bool IsWorldItemInPlayerFocus {
 						get {
-								return (WorldItemFocus != null && !WorldItemFocus.Destroyed);
+								return (WorldItemFocus != null && !WorldItemFocus.Destroyed && WorldItemFocus.IOIType == ItemOfInterestType.WorldItem);
 						}
 				}
 
@@ -326,12 +326,14 @@ namespace Frontiers
 				public IItemOfInterest ClosestObjectForward;
 				public IItemOfInterest ClosestObjectFocus;
 				public IItemOfInterest ClosestObjectInRange;
+				public BodyPart ClosestBodyPartInRange;
 				public RaycastHit ClosestObjectBelowHitInfo;
 				public RaycastHit ClosestObjectAboveHitInfo;
 				public RaycastHit ClosestObjectForwardHitInfo;
 				public RaycastHit ClosestObjectFocusHitInfo;
 				public RaycastHit ClosestObjectInRangeHitInfo;
 				public IItemOfInterest WorldItemFocus;
+				public BodyPart BodyPartFocus;
 				public IItemOfInterest TerrainFocus;
 				public RaycastHit WorldItemFocusHitInfo;
 				public RaycastHit TerrainFocusHitInfo;
@@ -464,10 +466,17 @@ namespace Frontiers
 										//we've been given a boost, probably by a spyglass
 										return true;
 								}
-
-								return (IsVisitingLocation && CurrentLocation.State.IsCivilized)
-										//|| TerrainType.b > 0f
-								|| (Paths.HasActivePath);
+								if (Paths.HasActivePath) {
+										return true;
+								}
+								if (IsVisitingLocation) {
+										for (int i = 0; i < VisitingLocations.Count; i++) {
+												if (VisitingLocations[i].IsCivilized) {
+														return true;
+												}
+										}
+								}
+								return false;
 						}
 				}
 
@@ -785,12 +794,18 @@ namespace Frontiers
 						if (GameManager.Is(FGameState.InGame) && player.HasSpawned) {
 								//we have to do this every frame to identify moving platforms etc
 								RaycastAllDown();
+								mSanityCheck++;
+								if (mSanityCheck > 20) {
+										mSanityCheck = 0;
+										GroundSanityCheck();
+								}
 						}
 				}
 
 				#region hostiles and danger
 
 				protected int mCheckHostiles = 0;
+				protected int mSanityCheck = 0;
 				protected IItemOfInterest mLastEncounteredScenery;
 				public List <IHostile> Hostiles = new List <IHostile>();
 				public int HostilesTargetingPlayer = 0;
@@ -999,6 +1014,19 @@ namespace Frontiers
 						ReceptacleUnderGrabber = null;
 				}
 
+				public void GroundSanityCheck () {
+						if (!IsUnderground && !player.Status.IsStateActive ("Traveling")) {
+								WorldChunk c = GameWorld.Get.PrimaryChunk;
+								Vector3 playerPosition = player.Position;
+								float height = c.PrimaryTerrain.SampleHeight(playerPosition);
+								if (playerPosition.y < height) {
+										Debug.Log ("Player has fallen through the world, bumping them back up");
+										playerPosition.y = height + 0.25f;
+										player.Position = playerPosition;
+								}
+						}
+				}
+
 				public void RaycastAllDown()
 				{
 						//if we're on a moving platform take the platform's velocity into account when doing raycasts
@@ -1097,12 +1125,12 @@ namespace Frontiers
 						//so do that here, then do the rest as spherecast
 						if (Physics.Raycast(mPlayerHeadPosition, player.FocusVector, out worldItemHit, Globals.RaycastAllFocusDistance, Globals.LayerWorldItemActive)) {
 								//if (!worldItemHit.collider.isTrigger) {
-								if (WorldItems.GetIOIFromCollider(worldItemHit.collider, out focusItemOfInterest)) {
+								if (WorldItems.GetIOIFromCollider(worldItemHit.collider, out focusItemOfInterest, out bodyPartHit)) {
 										focusItemOfInterest = CheckForCarried(focusItemOfInterest);
 										focusItemOfInterest = CheckForEquipped(focusItemOfInterest);
 										if (focusItemOfInterest != null) {
-												CheckForClosest(ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, focusItemOfInterest, worldItemHit, true);
-												CheckForClosest(ref WorldItemFocus, ref WorldItemFocusHitInfo, focusItemOfInterest, worldItemHit, true);
+												CheckForClosest(ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, ref ClosestBodyPartInRange, focusItemOfInterest, worldItemHit, bodyPartHit, true);
+												CheckForClosest(ref WorldItemFocus, ref WorldItemFocusHitInfo, ref BodyPartFocus, focusItemOfInterest, worldItemHit, bodyPartHit, true);
 										}
 								}
 								//}
@@ -1127,14 +1155,14 @@ namespace Frontiers
 														mObstructionHit = worldItemHit;
 														checkObstruction = true;
 												}
-										} else if (WorldItems.GetIOIFromCollider(worldItemHit.collider, out focusItemOfInterest)) {
+										} else if (WorldItems.GetIOIFromCollider(worldItemHit.collider, out focusItemOfInterest, out bodyPartHit)) {
 												//make sure we're not carrying or equipping this item
 												//(we no longer have to check for body parts, get ioi from collider does that for us)
 												focusItemOfInterest = CheckForCarried(focusItemOfInterest);
 												focusItemOfInterest = CheckForEquipped(focusItemOfInterest);
 												if (focusItemOfInterest != null) {
-														CheckForClosest(ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, focusItemOfInterest, worldItemHit, true);
-														CheckForClosest(ref WorldItemFocus, ref WorldItemFocusHitInfo, focusItemOfInterest, worldItemHit, true);
+														CheckForClosest(ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, ref ClosestBodyPartInRange, focusItemOfInterest, worldItemHit, bodyPartHit, true);
+														CheckForClosest(ref WorldItemFocus, ref WorldItemFocusHitInfo, ref BodyPartFocus, focusItemOfInterest, worldItemHit, bodyPartHit, true);
 												}
 										}
 								}
@@ -1224,7 +1252,11 @@ namespace Frontiers
 						}
 				}
 
-				protected void CheckForClosest(ref IItemOfInterest currentClosest, ref RaycastHit currentHit, IItemOfInterest contender, RaycastHit hit, bool checkForRange)
+				protected void CheckForClosest(ref IItemOfInterest currentClosest, ref RaycastHit currentHit, IItemOfInterest contender, RaycastHit hit, bool checkForRange) {
+						CheckForClosest(ref currentClosest, ref currentHit, ref bodyPartCheck, contender, hit, null, checkForRange);
+				}
+
+				protected void CheckForClosest(ref IItemOfInterest currentClosest, ref RaycastHit currentHit, ref BodyPart currentBodyPart, IItemOfInterest contender, RaycastHit hit, BodyPart contenderBodyPart, bool checkForRange)
 				{
 						if (contender == null)
 								return;
@@ -1236,10 +1268,12 @@ namespace Frontiers
 								currentClosest = contender;
 								currentHit = hit;
 								currentDistance = contenderDistance;
+								currentBodyPart = contenderBodyPart;
 						} else if (currentDistance > contenderDistance) {
 								currentClosest = contender;
 								currentHit = hit;
 								currentDistance = contenderDistance;
+								currentBodyPart = contenderBodyPart;
 						}
 
 						//this gets weird in the case of bodies of water
@@ -1249,9 +1283,11 @@ namespace Frontiers
 								if (ClosestObjectInRange == null) {
 										ClosestObjectInRange = currentClosest;
 										ClosestObjectInRangeHitInfo = currentHit;
+										ClosestBodyPartInRange = currentBodyPart;
 								} else if (Vector3.Distance(ClosestObjectInRange.Position, mPlayerHeadPosition) < currentDistance) {
 										ClosestObjectInRange = currentClosest;
 										ClosestObjectInRangeHitInfo = currentHit;
+										ClosestBodyPartInRange = currentBodyPart;
 								}
 						}
 				}
@@ -1316,6 +1352,7 @@ namespace Frontiers
 				protected IItemOfInterest downItemOfInterest;
 				protected Vector3 downRaycastStart;
 				protected RaycastHit worldItemHit;
+				protected BodyPart bodyPartHit;
 				protected RaycastHit terrainHit;
 				protected RaycastHit[] sphereCastHits;
 				protected IItemOfInterest focusItemOfInterest = null;
@@ -1323,6 +1360,7 @@ namespace Frontiers
 				protected IItemOfInterest upItemOfInterest = null;
 				protected RaycastHit[ ] hitsForward;
 				protected RaycastHit hitForward;
+				protected BodyPart bodyPartCheck;
 				protected int CheckGroundType = 0;
 				protected double mTerrainTypeCheckInterval = 0.5f;
 				protected int mTerrainTypeCheck = 0;

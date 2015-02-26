@@ -95,7 +95,7 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void OnAddedToGroup()
 				{
-						Debug.Log("On added to group in quest item " + name);
+						//Debug.Log("On added to group in quest item " + name);
 						SetQuestItemVisibility(State.VisibleNow);
 				}
 

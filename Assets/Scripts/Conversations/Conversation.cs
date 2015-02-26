@@ -452,6 +452,7 @@ namespace Frontiers.Story.Conversations
 										break;
 
 								case ExchangeOutgoingStyle.ManualOnly:
+										Debug.Log("All off in conversation");
 										//all existing options are cleared and only manual #on options are added
 										mRunningOutgoingChoices.Clear();
 										clearSiblngs = true;

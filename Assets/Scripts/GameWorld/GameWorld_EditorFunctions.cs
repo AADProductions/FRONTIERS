@@ -16,6 +16,13 @@ using Pathfinding.RVO;
 public partial class GameWorld : Manager
 {
 		#if UNITY_EDITOR
+
+		public bool SaveFlags = false;
+		public bool SaveBiomes = false;
+		public bool SaveRegions = false;
+		public bool SaveAudio = false;
+		public bool SaveStartupPositions = false;
+
 		public void EditorNormalizeBiomes()
 		{
 				for (int i = 0; i < Biomes.Count; i++) {
@@ -37,6 +44,7 @@ public partial class GameWorld : Manager
 				if (!Manager.IsAwake <Mods>()) {
 						Manager.WakeUp <Mods>("__MODS");
 				}
+				Mods.Get.EditorCurrentWorldName = EditorCurrentWorldName;
 				Mods.Get.Editor.InitializeEditor();
 
 				WorldFlags.Clear();
@@ -46,12 +54,22 @@ public partial class GameWorld : Manager
 				AudioProfiles.Clear();
 
 				string errorMessage = string.Empty;
-				GameData.IO.LoadWorld(ref Settings, "FRONTIERS", out errorMessage);
-				Mods.Get.Editor.LoadAvailableMods <FlagSet>(WorldFlags, "FlagSet");
-				Mods.Get.Editor.LoadAvailableMods <Biome>(Biomes, "Biome");
-				Mods.Get.Editor.LoadAvailableMods <Region>(Regions, "Region");
-				Mods.Get.Editor.LoadAvailableMods <AudioProfile>(AudioProfiles, "AudioProfile");
-				Mods.Get.Editor.LoadAvailableMods <PlayerStartupPosition>(WorldStartupPositions, "PlayerStartupPosition");
+				GameData.IO.LoadWorld(ref Settings, EditorCurrentWorldName, out errorMessage);
+				if (SaveFlags) {
+						Mods.Get.Editor.LoadAvailableMods <FlagSet>(WorldFlags, "FlagSet");
+				}
+				if (SaveBiomes) {
+						Mods.Get.Editor.LoadAvailableMods <Biome>(Biomes, "Biome");
+				}
+				if (SaveRegions) {
+						Mods.Get.Editor.LoadAvailableMods <Region>(Regions, "Region");
+				}
+				if (SaveAudio) {
+						Mods.Get.Editor.LoadAvailableMods <AudioProfile>(AudioProfiles, "AudioProfile");
+				}
+				if (SaveStartupPositions) {
+						Mods.Get.Editor.LoadAvailableMods <PlayerStartupPosition>(WorldStartupPositions, "PlayerStartupPosition");
+				}
 
 				UnityEditor.EditorUtility.SetDirty(gameObject);
 				UnityEditor.EditorUtility.SetDirty(this);
@@ -62,12 +80,30 @@ public partial class GameWorld : Manager
 				if (!Manager.IsAwake <Mods>()) {
 						Manager.WakeUp <Mods>("__MODS");
 				}
+				Mods.Get.EditorCurrentWorldName = EditorCurrentWorldName;
 				Mods.Get.Editor.InitializeEditor();
-				Mods.Get.Editor.SaveMods <FlagSet>(WorldFlags, "FlagSet");
-				Mods.Get.Editor.SaveMods <Biome>(Biomes, "Biome");
-				Mods.Get.Editor.SaveMods <Region>(Regions, "Region");
-				Mods.Get.Editor.SaveMods <AudioProfile>(AudioProfiles, "AudioProfile");
-				Mods.Get.Editor.SaveMods <PlayerStartupPosition>(WorldStartupPositions, "PlayerStartupPosition");
+				if (SaveFlags) {
+						Mods.Get.Editor.SaveMods <FlagSet>(WorldFlags, "FlagSet");
+				}
+				if (SaveBiomes) {
+						Mods.Get.Editor.SaveMods <Biome>(Biomes, "Biome");
+				}
+				if (SaveRegions) {
+						Mods.Get.Editor.SaveMods <Region>(Regions, "Region");
+				}
+				if (SaveAudio) {
+						Mods.Get.Editor.SaveMods <AudioProfile>(AudioProfiles, "AudioProfile");
+				}
+				if (SaveStartupPositions) {
+						foreach (PlayerStartupPosition p in WorldStartupPositions) {
+								if (p.BooksToAdd.Count > 0) {
+										p.BooksToAdd.Clear();
+										p.BooksToAdd.Add("PlayerSurvivalGuide0");
+										p.BooksToAdd.Add("PlayerSkillGuide0");
+								}
+						}
+						Mods.Get.Editor.SaveMods <PlayerStartupPosition>(WorldStartupPositions, "PlayerStartupPosition");
+				}
 				Settings.Version = GameManager.VersionString;
 				GameData.IO.SaveWorldSettings(Settings);
 		}

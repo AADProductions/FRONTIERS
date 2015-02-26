@@ -24,6 +24,8 @@ namespace Frontiers
 				//believe it or not this actually has an effect on allocations / garbage
 				public static readonly string VersionString = Version.ToString();
 				public static readonly uint SteamAppID = 293480;
+				public static readonly string FocusOnCheatCode = "skiptotheend";
+				public static readonly string FocusOnSubject = "TrappingAndFishing";
 
 				public static bool Is(FGameState state)
 				{
@@ -274,6 +276,7 @@ namespace Frontiers
 						yield return StartCoroutine(Manager.WakeUpAndInitialize <Mats>("Frontiers_ArtResourceManagers"));
 						yield return StartCoroutine(Manager.WakeUpAndInitialize <Meshes>("Frontiers_ArtResourceManagers"));
 						yield return StartCoroutine(Manager.WakeUpAndInitialize <Creatures>("Initializing Creatures"));
+						yield return StartCoroutine(Manager.WakeUpAndInitialize <Critters>("Initializing Critters"));
 						yield return StartCoroutine(Manager.WakeUpAndInitialize <Characters>("Initializing Characters"));
 						yield return StartCoroutine(Manager.WakeUpAndInitialize <WorldItems>("Initializing WorldItems"));
 						yield return StartCoroutine(Manager.WakeUpAndInitialize <WIGroups>("Initializing WIGroups"));
@@ -580,7 +583,7 @@ namespace Frontiers
 						//set the mode to in-game
 						string errorMessage;
 						Profile.Get.SetOrCreateProfile("Testing", out errorMessage);
-						Profile.Get.SetWorldAndGame("FRONTIERS", "Game01", true, true);
+						Profile.Get.SetWorldAndGame(GameData.IO.gModWorldFolderName, "Game01", true, true);
 						Profile.Get.CurrentGame.HasStarted = true;
 						Manager.GameStart();
 						//yield return StartCoroutine (GameWorld.Get.LoadBlankChunk ());

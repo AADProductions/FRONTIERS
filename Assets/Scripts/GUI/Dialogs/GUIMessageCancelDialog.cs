@@ -14,7 +14,9 @@ namespace Frontiers.GUI
 
 				public override bool ActionCancel(double timeStamp)
 				{
-						mEditObject.Cancelled = true;
+						if (mEditObject != null) {
+								mEditObject.Cancelled = true;
+						}
 						return base.ActionCancel(timeStamp);
 				}
 

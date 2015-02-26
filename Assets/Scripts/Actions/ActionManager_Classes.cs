@@ -517,6 +517,8 @@ namespace Frontiers
 						MovementX,
 						MovementY,
 						ScrollWheel,
+						InterfaceX,
+						InterfaceY,
 				}
 
 				public enum MouseAction

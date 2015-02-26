@@ -415,6 +415,7 @@ namespace Frontiers
 				public string ControllerState;
 				public string InventoryFillCategory;
 				public string WearableFillCategory;
+				public List <string> BooksToAdd = new List<string>();// { "PlayerSurvivalGuideIndex", "PlayerSkillGuideIndex" };
 				public List <StatusKeeperValue> StatusValues = new List<StatusKeeperValue>();
 				public bool ClearRevealedLocations = false;
 				public List <CurrencyValue> CurrencyToAdd = new List<CurrencyValue>();
@@ -483,6 +484,8 @@ namespace Frontiers
 				public float TimeDays = 0f;
 				public float TimeMonths = 0f;
 				public float TimeYears = 0f;
+				public int WorldChunkTerrainHeightmapResolution = Globals.WorldChunkTerrainHeightmapResolution;
+				public int MaxSpawnedChunks = Globals.MaxSpawnedChunks;
 				public List <MobileReference> DefaultRevealedLocations = new List<MobileReference>();
 				public CharacterFlags DefaultResidentFlags = new CharacterFlags();
 				public WIFlags DefaultContainerFlags = new WIFlags();
@@ -774,6 +777,9 @@ namespace Frontiers
 				public float TideBaseElevation = 15f;
 				public float WaveSpeed = 4f;
 				public float FogDistanceMultiplier = 1f;
+				public List<string> DayCritterTypes = new List<string>();
+				public List<string> NightCritterTypes = new List<string>();
+				public float CritterDensity = 1f;
 				public BiomeStatusTemps StatusTempsSummer = new BiomeStatusTemps();
 				public BiomeStatusTemps StatusTempsSpring = new BiomeStatusTemps();
 				public BiomeStatusTemps StatusTempsAutumn = new BiomeStatusTemps();
@@ -1778,9 +1784,16 @@ namespace Frontiers
 				public TreeInstance	ToInstance {
 						get {
 								TreeInstance treeInstance = new TreeInstance();
-								treeInstance.lightmapColor	= Color.white;
-								treeInstance.color = new Color(R, G, B, A);
-								treeInstance.position = new Vector3(X, Y, Z);
+								treeInstance.lightmapColor = Color.white;
+								gInstanceColor.r = R;
+								gInstanceColor.g = G;
+								gInstanceColor.b = B;
+								gInstanceColor.a = A;
+								treeInstance.color = gInstanceColor;
+								gInstancePosition.x = X;
+								gInstancePosition.y = Y;
+								gInstancePosition.z = Z;
+								treeInstance.position = gInstancePosition;
 								treeInstance.heightScale = HeightScale;
 								treeInstance.widthScale = WidthScale;
 								treeInstance.prototypeIndex	= PrototypeIndex;
@@ -1788,6 +1801,8 @@ namespace Frontiers
 						}
 				}
 
+				protected static Color gInstanceColor;
+				protected static Vector3 gInstancePosition;
 				protected static TreeInstanceTemplate gEmptyTreeTemplate;
 		}
 

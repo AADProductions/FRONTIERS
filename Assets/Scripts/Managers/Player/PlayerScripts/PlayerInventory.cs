@@ -244,6 +244,40 @@ namespace Frontiers
 						return false;
 				}
 
+				public void TryToEquip (IWIBase item)
+				{
+						//this specifically looks for a spot in our quickslot bar
+						//then adds it to that stack
+						//if it can't find an empty quickslot bar, it just adds it normally
+						WIStackError error = WIStackError.None;
+						int selection = -1;
+						if (!player.ItemPlacement.PlacementModeEnabled) {
+								List <WIStack> quickslotStacks = QuickslotEnabler.EnablerStacks;
+								for (int i = 0; i < quickslotStacks.Count; i++) {
+										if (Stacks.Push.Item(quickslotStacks[i], item, ref error)) {
+												selection = i;
+												break;
+										}
+								}
+						} else {
+								Debug.Log("Couldn't equip, placement mode enabled");
+						}
+
+						if (selection >= 0) {
+								Debug.Log("Added to quickslot, selecting now");
+								State.ActiveQuickslot = selection;
+								if (State.ActiveQuickslot >= Globals.MaxStacksPerContainer) {	//quickslots will always cap at MaxStacksPerContainer
+										State.ActiveQuickslot = 0;
+								} else if (State.ActiveQuickslot < 0) {
+										State.ActiveQuickslot = 0;
+								}
+								GUIInventoryInterface.Get.SetActiveQuickslots(State.ActiveQuickslot);
+						} else {
+								Debug.Log("Couldn't equip directly, adding to inventory normally");
+								AddItems(item, ref error);
+						}
+				}
+
 				public void ClearInventory(bool destroyItems)
 				{
 						for (int i = 0; i < InventoryEnablers.Count; i++) {
@@ -567,14 +601,18 @@ namespace Frontiers
 										return true;
 								}
 
-								//if we've gotten this far then quickslots are full
-								//so check the remaining enablers to see if they need containers
-								for (int i = 0; i < InventoryEnablers.Count; i++) {
-										WIStackEnabler enabler = InventoryEnablers[i];
-										if (!enabler.HasEnablerTopItem) {//fill enabler stacks before adding items to existing containers
-												//don't bother to check for size, it'll be NoLimit
-												mostRelevantStack = enabler.EnablerStack;
-												return true;
+								//we can use anything for the quickslot enabler
+								//but for other enablers, check this first
+								if (item.UseAsContainerInInventory) {
+										//if we've gotten this far then quickslots are full
+										//so check the remaining enablers to see if they need containers
+										for (int i = 0; i < InventoryEnablers.Count; i++) {
+												WIStackEnabler enabler = InventoryEnablers[i];
+												if (!enabler.HasEnablerTopItem) {//fill enabler stacks before adding items to existing containers
+														//don't bother to check for size, it'll be NoLimit
+														mostRelevantStack = enabler.EnablerStack;
+														return true;
+												}
 										}
 								}
 

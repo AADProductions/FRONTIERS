@@ -35,7 +35,6 @@ namespace Frontiers.World.Gameplay
 												return true;
 										}
 								} else {
-										Debug.Log("Can't barter with non-characters");
 										return false;
 								}
 						}

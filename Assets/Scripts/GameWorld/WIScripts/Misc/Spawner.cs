@@ -244,7 +244,7 @@ namespace Frontiers.World.BaseWIScripts
 										mTerrainHit.groundedHeight = spawnLocation.worlditem.ActiveRadius;
 										mTerrainHit.feetPosition = (UnityEngine.Random.insideUnitSphere * mTerrainHit.groundedHeight) + spawnLocation.worlditem.tr.position;
 										mTerrainHit.feetPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit);
-										if (mTerrainHit.hitTerrain || mTerrainHit.hitTerrainMesh) {
+										if (mTerrainHit.hitTerrain || mTerrainHit.hitTerrainMesh && !mTerrainHit.hitStructureMesh) {
 												spawnPoint.Transform.Position = spawnLocation.worlditem.tr.InverseTransformPoint(mTerrainHit.feetPosition);
 												spawnPoint.Transform.Rotation = Quaternion.LookRotation(SVector3.Random(-1f, 1f), mTerrainHit.normal).eulerAngles;
 												spawnPoint.Transform.Scale = Vector3.one;

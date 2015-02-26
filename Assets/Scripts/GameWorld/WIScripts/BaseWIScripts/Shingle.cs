@@ -15,6 +15,7 @@ namespace Frontiers.World.BaseWIScripts
 				public GameObject ForSaleSignPrefab;
 				public Structure ParentStructure;
 				public GameObject ForSaleSign;
+				public TextMesh ShingleText;
 
 				public bool PropertyIsDestroyed {
 						get {
@@ -88,6 +89,11 @@ namespace Frontiers.World.BaseWIScripts
 								ForSaleSign = GameObject.Instantiate(ForSaleSignPrefab) as GameObject;
 								ForSaleSign.transform.parent = transform;
 								State.ForSaleSignOffset.ApplyTo(ForSaleSign.transform);
+						}
+
+						if (ShingleText != null) {
+								Location location = worlditem.Get<Location>();
+								ShingleText.text = location.State.Name.CommonName;
 						}
 				}
 
@@ -184,7 +190,9 @@ namespace Frontiers.World.BaseWIScripts
 										break;
 
 								case PropertyStatusType.ForSale:
-										mForSaleOption.OptionText = "Buy for " + State.PriceInMarks.ToString() + " marks";
+										mForSaleOption.OptionText = "Buy";
+										mForSaleOption.CurrencyValue = State.PriceInMarks;
+										mForSaleOption.RequiredCurrencyType = WICurrencyType.D_Luminite;
 										if (Player.Local.Inventory.InventoryBank.CanAfford(Currency.ConvertToBaseCurrency(State.PriceInMarks, WICurrencyType.D_Luminite))) {
 												mForSaleOption.Disabled = false;
 										} else {
@@ -198,7 +206,9 @@ namespace Frontiers.World.BaseWIScripts
 										break;
 
 								case PropertyStatusType.Destroyed:
-										mRestoreOption.OptionText = "Restore for " + (State.PriceInMarks / 2).ToString() + " marks";
+										mRestoreOption.OptionText = "Restore";
+										mForSaleOption.CurrencyValue = State.PriceInMarks / 2;
+										mForSaleOption.RequiredCurrencyType = WICurrencyType.D_Luminite;
 										if (!Player.Local.Inventory.InventoryBank.HasExactChange(State.PriceInMarks, WICurrencyType.D_Luminite)) {
 												mForSaleOption.Disabled = true;
 										} else {

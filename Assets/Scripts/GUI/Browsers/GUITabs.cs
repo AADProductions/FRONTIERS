@@ -11,6 +11,7 @@ namespace Frontiers.GUI
 		public class GUITabs : GUIObject, IGUITabOwner
 		{
 				public IGUITabOwner Owner;
+
 				public int NumColumns = 3;
 				public float TabButtonWidth = 100f;
 				public float TabButtonHeight = 50f;
@@ -19,10 +20,42 @@ namespace Frontiers.GUI
 
 				public Action OnHide { get; set; }
 
+				public bool HasSubTabs { get { return SubTabs.Count > 0; } }
+
+				public bool HasParentTabs { get { return ParentTabs != null; } }
+
+				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects)
+				{
+						for (int i = 0; i < Buttons.Count; i++) {
+								FrontiersInterface.Widget w = new FrontiersInterface.Widget();
+								w.Collider = Buttons[i].Collider;
+								w.SearchCamera = NGUICamera;
+								currentObjects.Add(w);
+						}
+						for (int i = 0; i < Pages.Count; i++) {
+								if (Pages[i].Selected) {
+										//Debug.Log("Getting page " + Pages[i].name);
+										Pages[i].GetActiveInterfaceObjects(currentObjects);
+								} else {
+										//Debug.Log("Skipped page " + Pages[i].name + ", wasn't visible");
+								}
+						}
+						for (int i = 0; i < SubTabs.Count; i++) {
+								if (SubTabs[i].Visible) {
+										//Debug.Log("Getting subtab " + SubTabs[i].name);
+										SubTabs[i].GetActiveInterfaceObjects(currentObjects);
+								} else {
+										//Debug.Log("Skipped subtab " + SubTabs[i].name + ", wasn't visible");
+								}
+						}
+				}
+
 				public Action OnSetSelection;
 				public List <GUITabButton> Buttons = new List <GUITabButton>();
 				public List <GUITabPage> Pages = new List <GUITabPage>();
 				public List <GUITabs> SubTabs = new List<GUITabs>();
+				public GUITabs ParentTabs;
+				public bool HorizontalButtons = true;
 
 				public void SetTabsDisabled (bool disabled){
 						for (int i = 0; i < Buttons.Count; i++) {
@@ -37,6 +70,72 @@ namespace Frontiers.GUI
 								}
 								return mLastPage;
 						}
+				}
+
+				public bool GetPrevButton(GUITabButton current, out GUITabButton next)
+				{
+						next = null;
+						if (Visible) {
+								if (current == null && Buttons.Count > 0) {
+										next = Buttons[0];
+								} else {
+										for (int i = 0; i < Buttons.Count; i++) {
+												if (Buttons[i].Name == current.Name && i > 0) {
+														next = Buttons[i - 1];
+														break;
+												}
+										}
+								}
+						}
+						return next != null;
+				}
+
+				public bool GetNextButton(GUITabButton current, out GUITabButton next)
+				{
+						next = null;
+						if (Visible) {
+								if (current == null && Buttons.Count > 0) {
+										next = Buttons[0];
+								} else {
+										for (int i = 0; i < Buttons.Count; i++) {
+												if (Buttons[i].Name == current.Name && i < Buttons.LastIndex()) {
+														next = Buttons[i + 1];
+														break;
+												}
+										}
+								}
+						}
+						return next != null;
+				}
+
+				public bool GetPrevSubTab(GUITabs current, out GUITabs next) {
+						if (current == null && SubTabs.Count > 0) {
+								next = SubTabs[0];
+						} else {
+								next = null;
+								for (int i = 0; i < SubTabs.Count; i++) {
+										if (SubTabs [i].Visible && SubTabs[i] == current && i < SubTabs.LastIndex()) {
+												next = SubTabs[i + 1];
+												break;
+										}
+								}
+						}
+						return next != null;
+				}
+
+				public bool GetNextSubTab(GUITabs current, out GUITabs next) {
+						if (current == null && SubTabs.Count > 0) {
+								next = SubTabs[0];
+						} else {
+								next = null;
+								for (int i = 0; i < SubTabs.Count; i++) {
+										if (SubTabs [i].Visible && SubTabs[i] == current && i > 0) {
+												next = SubTabs[i - 1];
+												break;
+										}
+								}
+						}
+						return next != null;
 				}
 
 				public bool ManagesPanel(UIPanel panel)
@@ -87,19 +186,26 @@ namespace Frontiers.GUI
 
 								GUITabPage page = null;
 								if (child.gameObject.HasComponent <GUITabPage>(out page)) {
+										page.NGUICamera = NGUICamera;
 										Pages.Add(page);
 										GUITabs subTabs = null;
 										if (child.gameObject.HasComponent <GUITabs>(out subTabs)) {
 												page.SubTabs = subTabs;
+												subTabs.NGUICamera = NGUICamera;
+												subTabs.ParentTabs = this;
 												subTabs.Initialize(this);
 												SubTabs.Add(subTabs);
 										}
 								}
 						}
 
+						//sort the buttons
+						Buttons.Sort();
+
 						for (int i = 0; i < Pages.Count; i++) {
 								for (int j = 0; j < Buttons.Count; j++) {
 										if (Pages[i].name == Buttons[j].Name) {
+												Pages[i].NGUICamera = NGUICamera;
 												Pages[i].Initialize(this, Buttons[j]);
 												Buttons[j].Initialize(this, Pages[i]);
 										}

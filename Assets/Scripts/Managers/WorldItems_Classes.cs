@@ -217,6 +217,14 @@ namespace Frontiers.World
 						}
 				}
 
+				public bool RequiresCurrency {
+						get{
+								return RequiredCurrencyType != WICurrencyType.None;
+						}
+				}
+
+				public WICurrencyType RequiredCurrencyType = WICurrencyType.None;
+				public int CurrencyValue = 0;
 				public bool Divider = false;
 				public bool Disabled = false;
 				public string IconName = string.Empty;
@@ -315,6 +323,7 @@ namespace Frontiers.World
 				public float ActiveRadius = 5f;
 				public float VisibleDistance = 50f;
 				public bool IsStackContainer = false;
+				public bool UseAsContainerInInventory = true;
 				public bool StolenGoods = false;
 				public string Subcategory = string.Empty;
 				public string LightTemplateName = string.Empty;

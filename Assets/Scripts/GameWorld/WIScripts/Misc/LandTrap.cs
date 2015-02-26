@@ -17,11 +17,21 @@ namespace Frontiers.World
 
 				public double TimeSet { get { return State.TimeSet; } }
 
-				public float SkillOnSet { get { return State.SkillOnSet; } }
+				public float SkillOnSet { 
+						get { return State.SkillOnSet; } 
+						set {
+								State.SkillOnSet = value;
+								worlditem.RefreshHud();
+						}
+				}
+
+				public bool RequiresMinimumPlayerDistance { get { return true; } }
 
 				public WorldItem Owner { get { return worlditem; } }
 
 				public string TrappingSkillName { get { return "Trapping"; } }
+
+				public bool LastTriggerWasSuccessful { get; set; }
 
 				public List <string> Exceptions {
 						get {
@@ -37,6 +47,24 @@ namespace Frontiers.World
 
 				public bool SkillUpdating { get; set; }
 
+				public float NormalizedChanceOfSuccess {
+						get {
+								float chanceOfSuccess = 0f;
+								int numDens = IntersectingDens.Count;
+								//Debug.Log("Checking normalized chance of success - num intersecting dens: " + numDens.ToString());
+								for (int i = 0; i < IntersectingDens.Count; i++) {
+										float distanceToDen = Vector3.Distance(IntersectingDens[i].Position, worlditem.Position) - IntersectingDens[i].InnerRadius;
+										float normalizedChanceForThisDen = (distanceToDen / (IntersectingDens[i].Radius - IntersectingDens[i].InnerRadius));
+										chanceOfSuccess += normalizedChanceForThisDen;
+										//Debug.Log("Distance to den: " + distanceToDen.ToString() + ", normalized chance: " + normalizedChanceForThisDen.ToString());
+								}
+								if (numDens > 0) {
+										chanceOfSuccess /= numDens;
+								}
+								return (chanceOfSuccess + State.SkillOnSet) / 2;
+						}
+				}
+
 				public TrapMode Mode {
 						get {
 								return State.Mode;
@@ -47,13 +75,28 @@ namespace Frontiers.World
 						}
 				}
 
+				public override int OnRefreshHud(int lastHudPriority)
+				{
+						if (Mode == TrapMode.Set) {
+								GUI.GUIHud.Get.ShowProgressBar(Colors.Get.GenericHighValue, Colors.Get.GenericLowValue, NormalizedChanceOfSuccess);
+						}
+						return lastHudPriority;
+				}
+
 				public List <ICreatureDen> IntersectingDens { get { return mIntersectingDens; } }
+
+				public void OnCatchTarget(float skillRoll)
+				{
+						Mode = TrapMode.Triggered;
+						LastTriggerWasSuccessful = true;
+				}
 
 				#endregion
 
 				public string AnimationOpenClipName;
 				public string AnimationCloseClipName;
 				public float BaseDamageOnTrap = 0f;
+				public Collider TrapCollider;
 
 				public override bool CanBeCarried {
 						get {
@@ -69,14 +112,29 @@ namespace Frontiers.World
 
 				public override void OnInitialized()
 				{
+						SkillUpdating = false;
 						switch (Mode) {
 								case TrapMode.Set:
 										animation.Play(AnimationOpenClipName);
+										Refresh();
 										break;
 
 								default:
 										animation.Play(AnimationCloseClipName);
 										break;
+						}
+						TrapCollider.enabled = true;
+						TrapCollider.isTrigger = true;
+						TrapCollider.gameObject.layer = Globals.LayerNumTrigger;
+
+						worlditem.OnPlayerEncounter += OnPlayerEncounter;
+				}
+
+				public void OnPlayerEncounter()
+				{
+						if (LastTriggerWasSuccessful) {
+								LastTriggerWasSuccessful = false;
+								GUI.GUIManager.PostSuccess("Trap successfully caught something");
 						}
 				}
 
@@ -92,11 +150,15 @@ namespace Frontiers.World
 										break;
 
 								case TrapMode.Set:
-										examine.Add(new WIExamineInfo("It has been set with " + Skill.MasteryAdjective(State.SkillOnSet) + " skill."));
+										if (IntersectingDens.Count > 0) {
+												examine.Add(new WIExamineInfo("It has been set with " + Skill.MasteryAdjective(State.SkillOnSet) + " skill. The odds of it catching something are " + Skill.MasteryAdjective(NormalizedChanceOfSuccess)));
+										} else {
+												examine.Add(new WIExamineInfo("It has been set with " + Skill.MasteryAdjective(State.SkillOnSet) + " skill. There is no chance it will catch something because there are no animals nearby."));
+										}
 										break;
 
 								case TrapMode.Triggered:
-										examine.Add(new WIExamineInfo("It has triggered successfully."));
+										examine.Add(new WIExamineInfo("The trap is full."));
 										break;
 						}
 				}
@@ -114,10 +176,6 @@ namespace Frontiers.World
 
 				public void OnTriggerEnter(Collider other)
 				{
-						if (other.isTrigger) {
-								return;
-						}
-
 						IItemOfInterest target = null;
 						if (!WorldItems.GetIOIFromCollider(other, out target)) {
 								return;
@@ -169,6 +227,7 @@ namespace Frontiers.World
 						//how well was the trap set?
 						if (UnityEngine.Random.value > State.SkillOnSet) {
 								Misfire();
+								Debug.Log("Misfired!");
 								return false;
 						} else {
 								Trigger(target);
@@ -181,6 +240,8 @@ namespace Frontiers.World
 						//TODO play misfire sound
 						Mode = TrapMode.Misfired;
 						animation.Play(AnimationCloseClipName);
+						MasterAudio.PlaySound(MasterAudio.SoundType.Machines, transform, "HuntingTrapTrigger");
+						GUI.GUIManager.PostWarning("Trap misfired");
 						State.NumTimesMisfired++;
 				}
 
@@ -189,12 +250,14 @@ namespace Frontiers.World
 						if (Mode == TrapMode.Set) {
 								Mode = TrapMode.Disabled;
 								animation.Play(AnimationCloseClipName);
+								worlditem.RefreshHud();
 								return true;
 						} else {
 								Mode = TrapMode.Set;
 								MasterAudio.PlaySound(MasterAudio.SoundType.Machines, transform, "HuntingTrapSet");
-								State.SkillOnSet = skillLevel;// TEMP TODO link this to skill
+								State.SkillOnSet = skillLevel;
 								animation.Play(AnimationOpenClipName);
+								worlditem.RefreshHud();
 								return true;
 						}
 				}
@@ -219,7 +282,7 @@ namespace Frontiers.World
 				}
 
 				protected List <ICreatureDen> mIntersectingDens = new List<ICreatureDen>();
-				protected List <string> gExceptions = new List <string>() { "Fish" };
+				protected List <string> gExceptions = new List <string>() { "Fish", "Orb" };
 				protected List <string> gCanCatch = new List <string>();
 		}
 
@@ -232,6 +295,7 @@ namespace Frontiers.World
 				public int NumTimesMisfired = 0;
 				public float SkillOnSet = 0f;
 				public double TimeSet = 0f;
+				public float NormalizedDistanceFromNearestCreatureDen = 0f;
 				public DamagePackage Damage = new DamagePackage();
 		}
 }

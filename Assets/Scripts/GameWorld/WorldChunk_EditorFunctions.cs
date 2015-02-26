@@ -13,6 +13,9 @@ namespace Frontiers.World
 		public partial class WorldChunk
 		{
 				#if UNITY_EDITOR
+				public string CurrentWorldName = "FRONTIERS";
+
+				public bool LockTileOffset = true;
 				public bool SaveSceneryOnSave = true;
 				public bool SavePathsOnSave = true;
 				public bool SaveWorldItemsOnSave = true;
@@ -86,8 +89,14 @@ namespace Frontiers.World
 								string fileName	= texture.name.Replace("SplatAlpha ", "Splat") + ".png";
 								fileName = fileName.Replace("1", "2");
 								fileName = fileName.Replace("0", "1");
-								string path = Application.dataPath + "/Resources/Chunks/" + Name + "/" + Name + "-" + fileName;
-								////Debug.Log (path);
+								if (!Manager.IsAwake<Mods>()) {
+										Manager.WakeUp <Mods>("__MODS");
+								}
+								Mods.Get.Editor.EditorCurrentWorldName = this.CurrentWorldName;
+								Mods.Get.Editor.InitializeEditor(false);
+								string directory = System.IO.Path.Combine(GameData.IO.gCurrentWorldModsPath, "ChunkMap");// + Name + "-" + fileName;
+								//string path = Application.dataPath + "/Resources/Chunks/" + Name + "/" + Name + "-" + fileName;
+								string path = System.IO.Path.Combine(directory, Name + "-" + fileName);
 								System.IO.File.WriteAllBytes(path, bytes);
 						}
 				}
@@ -258,6 +267,7 @@ namespace Frontiers.World
 						if (!Manager.IsAwake <Mods>()) {
 								Manager.WakeUp <Mods>("__MODS");
 						}
+						Mods.Get.Editor.EditorCurrentWorldName = CurrentWorldName;
 						Mods.Get.Editor.InitializeEditor();
 
 						Mods.Get.Editor.DeleteMod("Group", ChunkGroup.Props.PathName);
@@ -269,7 +279,7 @@ namespace Frontiers.World
 						State.YOffset = PrimaryTerrain.transform.localPosition.y;
 						TerrainData.HeightmapHeight = (int)PrimaryTerrain.terrainData.size.y;
 						TerrainData.HeightmapResolution = PrimaryTerrain.terrainData.heightmapResolution;
-						if (!State.ArbitraryPosition) {
+						if (!State.ArbitraryPosition && !LockTileOffset) {
 								State.TileOffset = new SVector3(
 										(Globals.WorldChunkSize * State.XTilePosition) + Globals.WorldChunkOffsetX,
 										State.YOffset,

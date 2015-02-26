@@ -4,14 +4,17 @@ using System;
 
 namespace Frontiers.GUI
 {
-		public class GUITabButton : GUIObject
+		public class GUITabButton : GUIObject, IComparable <GUITabButton>
 		{
 				public string Name;
 				public string DisplayName;
+				public bool Horizontal = true;
 				public GUITabs TabParent;
 				public GUITabPage Page;
 				public UIButtonScale ButtonScale;
 				public UIButton Button;
+				public BoxCollider Collider;
+
 				public bool Disabled {
 						get {
 								return mDisabled;
@@ -82,6 +85,7 @@ namespace Frontiers.GUI
 						Button = gameObject.GetComponent <UIButton>();
 						ButtonScale.enabled = false;
 						Button.enabled = false;
+						Collider = gameObject.GetComponent<BoxCollider>();
 				}
 
 				public void Initialize(GUITabs tabParent, GUITabPage page)
@@ -167,6 +171,60 @@ namespace Frontiers.GUI
 										MasterAudio.PlaySound(MasterAudio.SoundType.PlayerInterface, "ButtonClickDisabled");
 								}
 						}
+				}
+
+				public override bool Equals(object obj)
+				{
+						if (obj == null) {
+								return false;
+						}
+
+						GUITabButton other = obj as GUITabButton;
+
+						if (other == null) {
+								return false;
+						}
+
+						return (this == other);
+				}
+
+				public bool Equals(GUITabButton p)
+				{
+						if (p == null) {
+								return false;
+						}
+
+						return (this == p);
+				}
+
+				public int CompareTo(GUITabButton other)
+				{
+						if (other == null) {
+								return 0;
+						}
+						gComparePosThis = this.transform.localPosition;
+						gComparePosOther = other.transform.localPosition;
+						int thisPos = Mathf.FloorToInt(gComparePosThis.x);
+						int otherPos = Mathf.FloorToInt(gComparePosOther.x);
+						//check to see if we're horizontal
+						if (thisPos == otherPos) {
+								//we're vertical
+								Horizontal = true;
+								thisPos = Mathf.FloorToInt(gComparePosThis.y);
+								otherPos = Mathf.FloorToInt(gComparePosOther.y);
+								return otherPos.CompareTo(thisPos);
+						} else {
+								Horizontal = false;
+						}
+						return thisPos.CompareTo(otherPos);
+				}
+
+				public static Vector3 gComparePosThis;
+				public static Vector3 gComparePosOther;
+
+				public override int GetHashCode()
+				{
+						return Name.GetHashCode();
 				}
 
 				protected bool mStartupSet = false;

@@ -235,6 +235,16 @@ namespace Frontiers.World
 								}
 						}
 				}
+				//sets any worlditems within range of the target position to active for this frame
+				//they will naturally return to non-active on the next update cycle
+				public static void SetActiveStateOverride(Vector3 position, float range)
+				{		//active worlditems are fine, invisible worlditems don't count
+						for (int i = 0; i < Get.VisibleWorldItems.Count; i++) {
+								if (Vector3.Distance(Get.VisibleWorldItems[i].Position, position) < range) {
+										Get.VisibleWorldItems[i].ActiveState = WIActiveState.Active;
+								}
+						}
+				}
 
 				protected WIActiveRadiusComparer ActiveRadiusComparer = new WIActiveRadiusComparer();
 				protected WIVisibleRadiusComparer VisibleRadiusComparer = new WIVisibleRadiusComparer();

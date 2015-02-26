@@ -19,6 +19,10 @@ namespace Frontiers
 		[ExecuteInEditMode]
 		public class Mods : Manager
 		{
+				#if UNITY_EDITOR
+				public string EditorCurrentWorldName = "FRONTIERS";
+				#endif
+
 				public static Mods Get;
 				public ModsEditor Editor = new ModsEditor();
 				public ModsRuntime Runtime = new ModsRuntime();
@@ -657,7 +661,8 @@ namespace Frontiers
 						//this is the class used to save / load stuff in the editor while building the world
 						//it's really similar to mods runtime but it assumes you're saving to the base data set
 						public Mods mods;
-
+						public string EditorCurrentWorldName = "FRONTIERS";
+						 
 						public void InitializeEditor()
 						{
 								InitializeEditor(false);
@@ -675,6 +680,12 @@ namespace Frontiers
 								}
 
 								string errorMessage = string.Empty;
+								#if UNITY_EDITOR
+								//for convenience
+								EditorCurrentWorldName = mods.EditorCurrentWorldName;
+								#endif
+								Debug.Log("Setting global world path to " + EditorCurrentWorldName);
+								GameData.IO.SetWorldName(EditorCurrentWorldName);
 								GameData.IO.InitializeSystemPaths(out errorMessage);
 								Data.GameData.IO.SetDefaultLocalDataPaths();
 						}
@@ -719,7 +730,7 @@ namespace Frontiers
 								data.Name = dataName;
 								data.Type = typeof(T).ToString();
 								data.Version = GameManager.VersionString;
-								GameData.IO.SaveBaseData <T>(data, dataType, dataName, DataCompression.None);
+								GameData.IO.SaveWorldData <T>(data, dataType, dataName, DataCompression.None);
 								gAvailable.Clear();
 						}
 

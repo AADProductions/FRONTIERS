@@ -15,6 +15,9 @@ using Pathfinding.RVO;
 public partial class GameWorld : Manager
 {
 		public static GameWorld Get;
+		#if UNITY_EDITOR
+		public string EditorCurrentWorldName = "FRONTIERS";
+		#endif
 		public RVOSimulator Simulator;
 		public WorldSettings Settings = new WorldSettings();
 		public WorldState State = new WorldState();
@@ -283,14 +286,14 @@ public partial class GameWorld : Manager
 
 		public override void Initialize()
 		{
-				string errorMessage = string.Empty;
 				WorldFlags.Clear();
 				WorldStartupPositions.Clear();
 				Biomes.Clear();
 				Regions.Clear();
 				AudioProfiles.Clear();
 
-				GameData.IO.LoadWorld(ref Settings, "FRONTIERS", out errorMessage);
+				string errorMessage = string.Empty;
+				GameData.IO.LoadWorld(ref Settings, GameData.IO.gModWorldFolderName, out errorMessage);
 
 				mInitialized = true;
 		}
@@ -304,6 +307,9 @@ public partial class GameWorld : Manager
 
 		public override void OnModsLoadStart()
 		{
+				string errorMessage = string.Empty;
+				GameData.IO.LoadWorld(ref Settings, GameData.IO.gModWorldFolderName, out errorMessage);
+
 				Mods.Get.Runtime.LoadAvailableMods <FlagSet>(WorldFlags, "FlagSet");
 				Mods.Get.Runtime.LoadAvailableMods <Biome>(Biomes, "Biome");
 				Mods.Get.Runtime.LoadAvailableMods <Region>(Regions, "Region");
@@ -364,7 +370,8 @@ public partial class GameWorld : Manager
 				//create our terrain pool
 				//create primary terrain
 				int[,] emptyDetailLayer = new int [1, 1];
-				for (int i = 0; i < Globals.MaxSpawnedChunks; i++) {
+				int numChunksToSpawn = Mathf.Min(Globals.MaxSpawnedChunks, Settings.MaxSpawnedChunks);
+				for (int i = 0; i < numChunksToSpawn; i++) {
 						GameObject newTerrainGameObject = GameObject.Instantiate(GameWorld.Get.EmptyTerrainPrefab) as GameObject;
 						newTerrainGameObject.name = "TerrainObject " + i.ToString();
 						//newTerrainGameObject.transform.parent = transform;
@@ -374,7 +381,7 @@ public partial class GameWorld : Manager
 
 						TerrainData newTerrainData = new TerrainData();
 						newTerrainData.baseMapResolution = newTerrain.terrainData.baseMapResolution;
-						newTerrainData.heightmapResolution = newTerrain.terrainData.heightmapResolution;
+						newTerrainData.heightmapResolution = Settings.WorldChunkTerrainHeightmapResolution;//newTerrain.terrainData.heightmapResolution;
 						newTerrainData.alphamapResolution = newTerrain.terrainData.alphamapResolution;
 						newTerrainData.SetDetailResolution(newTerrain.terrainData.detailResolution, 8);
 						newTerrainData.detailPrototypes = Plants.Get.DefaultDetailPrototypes;
@@ -433,7 +440,7 @@ public partial class GameWorld : Manager
 				}
 
 				//set up the chunk global data arrays
-				WorldChunk.gHeights = new float [Globals.WorldChunkTerrainHeightmapResolution, Globals.WorldChunkTerrainHeightmapResolution];
+				WorldChunk.gHeights = new float [Settings.WorldChunkTerrainHeightmapResolution, Settings.WorldChunkTerrainHeightmapResolution];
 
 				List <string> chunkNames = Mods.Get.ModDataNames("Chunk");
 				yield return null;
@@ -620,9 +627,12 @@ public partial class GameWorld : Manager
 				mRaycastStartPosition.y = terrainHit.feetPosition.y + raycastDistance;
 				mRaycastStartPosition.z = terrainHit.feetPosition.z;
 				//first get the ground
-				int layerMask = Globals.LayersTerrain;
+				int layerMask = Globals.LayersSolidTerrain;
 				if (!terrainHit.ignoreWorldItems) {
 						layerMask |= Globals.LayerWorldItemActive;
+				}
+				if (!terrainHit.ignoreWater) {
+						layerMask |= Globals.LayerFluidTerrain;
 				}
 				if (Physics.Raycast(mRaycastStartPosition, Vector3.down, out mHitGround, raycastDistance + terrainHit.groundedHeight, layerMask)) {
 						terrainHit.normal = mHitGround.normal;
@@ -646,6 +656,11 @@ public partial class GameWorld : Manager
 
 								case Globals.LayerNumWorldItemActive:
 										terrainHit.hitTerrainMesh = true;
+										break;
+
+								case Globals.LayerNumStructureTerrain:
+								case Globals.LayerNumStructureCustomCollider:
+										terrainHit.hitStructureMesh = true;
 										break;
 						}
 				}
@@ -683,9 +698,12 @@ public partial class GameWorld : Manager
 				mRaycastStartPosition.y = terrainHit.feetPosition.y + raycastDistance;
 				mRaycastStartPosition.z = terrainHit.feetPosition.z;
 				//first get the ground
-				int layerMask = Globals.LayersTerrain;
+				int layerMask = Globals.LayersSolidTerrain;
 				if (!terrainHit.ignoreWorldItems) {
 						layerMask |= Globals.LayerWorldItemActive;
+				}
+				if (!terrainHit.ignoreWater) {
+						layerMask |= Globals.LayerFluidTerrain;
 				}
 				if (Physics.Raycast(mRaycastStartPosition, Vector3.down, out mHitGround, raycastDistance + terrainHit.groundedHeight, layerMask)) {
 						terrainHit.normal = mHitGround.normal;
@@ -709,6 +727,11 @@ public partial class GameWorld : Manager
 
 								case Globals.LayerNumWorldItemActive:
 										terrainHit.hitTerrainMesh = true;
+										break;
+
+								case Globals.LayerNumStructureTerrain:
+								case Globals.LayerNumStructureCustomCollider:
+										terrainHit.hitStructureMesh = true;
 										break;
 						}
 				}
@@ -958,9 +981,11 @@ public partial class GameWorld : Manager
 				public Vector3 normal;
 				public Vector3 overhangNormal;
 				public bool ignoreWorldItems;
+				public bool ignoreWater;
 				public bool isGrounded;
 				public bool hitTerrain;
 				public bool hitTerrainMesh;
+				public bool hitStructureMesh;
 				public bool hitWater;
 				public bool hitOverhang;
 		}
@@ -1039,43 +1064,57 @@ public partial class GameWorld : Manager
 
 		public IEnumerator UpdateTreeColliders()
 		{
+				bool wasUndergroundLastFrame = false;
 				while (WorldLoaded) {
 						while (!GameManager.Is(FGameState.InGame)) {
 								yield return null;
 						}
 						yield return mWaitForTreeLoop;
 						//get all the now-irrelevant colliders
-						var enumerator = ColliderAssigner.FindIrrelevantColliders(Player.Local, this).GetEnumerator();
-						while (enumerator.MoveNext()) {
-								//foreach (TreeCollider irrelevantCollider in ColliderAssigner.FindIrrelevantColliders (Player.Local, this)) {
-								if (!GameManager.Is(FGameState.InGame)) {
-										//whoops, stop now
-										break;
-								}
-								TreeCollider irrelevantCollider = enumerator.Current;
-								//for each one, get the closest tree in need of a tree
-								TreeInstanceTemplate closestTree = ColliderAssigner.FindClosestTreeRequiringCollider(Player.Local, this);
-								//set the collider position to the closest tree position
-								if (closestTree != TreeInstanceTemplate.Empty) {
-										closestTree.HasInstance = true;
-										irrelevantCollider.Position = closestTree.Position;
-										//get the tree collider template from the tree's parent chunk
-										if (closestTree.PrototypeIndex < closestTree.ParentChunk.ColliderTemplates.Length) {
-												irrelevantCollider.CopyFrom(closestTree.ParentChunk.ColliderTemplates[closestTree.PrototypeIndex]);
-												irrelevantCollider.ParentChunk = closestTree.ParentChunk;
+						if (Player.Local.Surroundings.IsUnderground) {
+								if (!wasUndergroundLastFrame) {
+										var enumerator = ColliderMappings.Keys.GetEnumerator();
+										while (enumerator.MoveNext()) {
+												enumerator.Current.MainCollider.enabled = false;
+												enumerator.Current.SecondaryCollider.enabled = false;
 										}
-										//we can guarantee that collider mappings will have an entry
-										//but we don't know if it will be null or not
-										TreeInstanceTemplate existingTree = ColliderMappings[irrelevantCollider];
-										if (existingTree != null) {
-												//if it's not null, let it know that it has no collider
-												existingTree.HasInstance = false;
-										}
-										//update the reference
-										ColliderMappings[irrelevantCollider] = closestTree;
+										wasUndergroundLastFrame = true;
+										yield return null;
 								}
-								//wait a tick
-								yield return null;
+						} else {
+								wasUndergroundLastFrame = false;
+								var enumerator = ColliderAssigner.FindIrrelevantColliders(Player.Local, this).GetEnumerator();
+								while (enumerator.MoveNext()) {
+										//foreach (TreeCollider irrelevantCollider in ColliderAssigner.FindIrrelevantColliders (Player.Local, this)) {
+										if (!GameManager.Is(FGameState.InGame)) {
+												//whoops, stop now
+												break;
+										}
+										TreeCollider irrelevantCollider = enumerator.Current;
+										//for each one, get the closest tree in need of a tree
+										TreeInstanceTemplate closestTree = ColliderAssigner.FindClosestTreeRequiringCollider(Player.Local, this);
+										//set the collider position to the closest tree position
+										if (closestTree != TreeInstanceTemplate.Empty) {
+												closestTree.HasInstance = true;
+												irrelevantCollider.Position = closestTree.Position;
+												//get the tree collider template from the tree's parent chunk
+												if (closestTree.PrototypeIndex < closestTree.ParentChunk.ColliderTemplates.Length) {
+														irrelevantCollider.CopyFrom(closestTree.ParentChunk.ColliderTemplates[closestTree.PrototypeIndex]);
+														irrelevantCollider.ParentChunk = closestTree.ParentChunk;
+												}
+												//we can guarantee that collider mappings will have an entry
+												//but we don't know if it will be null or not
+												TreeInstanceTemplate existingTree = ColliderMappings[irrelevantCollider];
+												if (existingTree != null) {
+														//if it's not null, let it know that it has no collider
+														existingTree.HasInstance = false;
+												}
+												//update the reference
+												ColliderMappings[irrelevantCollider] = closestTree;
+										}
+										//wait a tick
+										yield return null;
+								}
 						}
 				}
 				yield break;

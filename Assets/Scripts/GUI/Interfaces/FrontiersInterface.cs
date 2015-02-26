@@ -13,29 +13,45 @@ namespace Frontiers.GUI
 
 				public Camera NGUICamera {
 						get {
-								Camera nguiCamera = null;
-								switch (Type) {
-										case InterfaceType.Base:
-												nguiCamera = GUIManager.Get.NGUIBaseCamera.camera;
-												break;
+								if (mNguiCamera == null) {
+										switch (Type) {
+												case InterfaceType.Base:
+														mNguiCamera = GUIManager.Get.NGUIBaseCamera.camera;
+														break;
 					
-										case InterfaceType.Primary:
-												nguiCamera = GUIManager.Get.NGUIPrimaryCamera.camera;
-												break;
+												case InterfaceType.Primary:
+														mNguiCamera = GUIManager.Get.NGUIPrimaryCamera.camera;
+														break;
 					
-										case InterfaceType.Secondary:
-												nguiCamera = GUIManager.Get.NGUISecondaryCamera.camera;
-												break;
+												case InterfaceType.Secondary:
+														mNguiCamera = GUIManager.Get.NGUISecondaryCamera.camera;
+														break;
 					
-										default:
-												break;
+												default:
+														break;
+										}
 								}
-								return nguiCamera;
+								return mNguiCamera;
+						} set {
+								mNguiCamera = value;
 						}
 				}
 
 				public UserActionReceiver UserActions;
 				public UIAnchor.Side AnchorSide = UIAnchor.Side.Center;
+				protected Camera mNguiCamera;
+
+				public virtual void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				{
+						gGetColliders.Clear();
+						transform.GetComponentsInChildren <BoxCollider>(gGetColliders);
+						for (int i = 0; i < gGetColliders.Count; i++) {
+								Widget w = new Widget();
+								w.Collider = gGetColliders[i];
+								w.SearchCamera = NGUICamera;
+								currentObjects.Add(w);
+						}
+				}
 
 				public bool IsDestroyed {
 						get {
@@ -103,6 +119,7 @@ namespace Frontiers.GUI
 
 				public bool GetPlayerAttention = false;
 				public bool DeactivateOnLoseFocus = false;
+				public bool SupportsControllerSearch = true;
 				public List <UIPanel> MasterPanels = new List <UIPanel>();
 				public List <UIAnchor> MasterAnchors = new List <UIAnchor>();
 				public int MasterDepth = 0;
@@ -137,5 +154,23 @@ namespace Frontiers.GUI
 
 				protected bool mDestroyed = false;
 				protected bool mFinished = false;
+
+				public struct Widget
+				{
+						public Camera SearchCamera;
+						public BoxCollider Collider;
+
+						public bool IsEmpty {
+								get {
+										return Collider == null || SearchCamera == null;
+								}
+								set {
+										Collider = null;
+										SearchCamera = null;
+								}
+						}
+				}
+
+				protected static List <BoxCollider> gGetColliders = new List<BoxCollider> ();
 		}
 }

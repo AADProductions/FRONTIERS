@@ -27,6 +27,7 @@ namespace Frontiers.World.BaseWIScripts
 				public Action OnRevived;
 				public Photosensitive photosensitive;
 				public CharacterAnimator animator;
+				public Damageable damageable;
 
 				public override bool CanBeCarried {
 						get {
@@ -170,13 +171,11 @@ namespace Frontiers.World.BaseWIScripts
 								listener.OnHearItemOfInterest += OnHearItemOfInterest;
 						}
 
-						Damageable damageable = null;
-						if (worlditem.Is <Damageable>(out damageable)) {
-								damageable.OnTakeDamage += OnTakeDamage;
-								damageable.OnTakeCriticalDamage += OnTakeCriticalDamage;
-								damageable.OnTakeOverkillDamage += OnTakeOverkillDamage;
-								damageable.OnDie += OnDie;
-						}
+						damageable = worlditem.Get<Damageable>();
+						damageable.OnTakeDamage += OnTakeDamage;
+						damageable.OnTakeCriticalDamage += OnTakeCriticalDamage;
+						damageable.OnTakeOverkillDamage += OnTakeOverkillDamage;
+						damageable.OnDie += OnDie;
 
 						mFollowAction = new MotileAction();
 						mFollowAction.Name = "Follow action by Character";
@@ -227,21 +226,21 @@ namespace Frontiers.World.BaseWIScripts
 
 				public bool IsDead {
 						get {
-								Damageable damageable = null;
-								if (worlditem.Is <Damageable>(out damageable)) {
-										if (damageable.State.IsDead) {
-												State.IsDead = true;
-										} else {
-												State.IsDead = false;
-										}
+								if (damageable == null) {
+										return State.IsDead;
+								}
+								else if (damageable.State.IsDead) {
+										State.IsDead = true;
+								} else {
+										State.IsDead = false;
 								}
 								return State.IsDead;
 						}
 						set {
-								Damageable damageable = null;
-								if (worlditem.Is <Damageable>(out damageable)) {
+								if (damageable != null) {
 										damageable.IsDead = true;
 								}
+								State.IsDead = true;
 						}
 				}
 
@@ -259,17 +258,10 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void TryToStun(float stunRTDuration)
 				{
-						if (mIsStunned) {
+						if (mIsStunned || IsDead) {
 								return;
 						}
 
-						//we can be stunned if we're not dead and not already stunned
-						Damageable damageable = null;
-						if (worlditem.Is <Damageable>(out damageable)) {
-								if (damageable.IsDead) {
-										return;
-								}
-						}
 						mIsStunned = true;
 						StartCoroutine(StunnedOverTime(stunRTDuration));
 						OnStunned.SafeInvoke();
@@ -320,20 +312,17 @@ namespace Frontiers.World.BaseWIScripts
 								}
 						}
 						//if we're not dead
-						Damageable damageable = null;
-						if (worlditem.Is <Damageable>(out damageable)) {
-								if (!damageable.IsDead) {
-										//revive our body
-										Body.SetRagdoll(false, 0f);
-										//start thinking about stuff again
-										if (motile != null) {
-												//start doing stuff again
-												motile.enabled = true;
-										}
-										enabled = true;
-										mIsStunned = false;
-										OnRevived.SafeInvoke();
+						if (!IsDead) {
+								//revive our body
+								Body.SetRagdoll(false, 0f);
+								//start thinking about stuff again
+								if (motile != null) {
+										//start doing stuff again
+										motile.enabled = true;
 								}
+								enabled = true;
+								mIsStunned = false;
+								OnRevived.SafeInvoke();
 						}
 						yield break;
 				}
@@ -435,7 +424,6 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void OnSeeItemOfInterest()
 				{
-						Debug.Log("Saw item of interest!");
 						Looker looker = worlditem.Get <Looker>();
 						ThinkAboutItemOfInterest(looker.LastSeenItemOfInterest);
 				}
@@ -589,7 +577,6 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void OnTakeDamage()
 				{
-						Damageable damageable = worlditem.Get <Damageable>();
 						Body.Animator.TakingDamage = true;
 						Body.Sounds.Refresh();
 						Body.SetBloodOpacity(damageable.NormalizedDamage);
@@ -600,7 +587,6 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void OnTakeCriticalDamage()
 				{
-						Damageable damageable = worlditem.Get <Damageable>();
 						Body.Animator.TakingDamage = true;
 						Body.Sounds.Refresh();
 						Body.SetBloodOpacity(damageable.NormalizedDamage);
@@ -611,7 +597,6 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void OnTakeOverkillDamage()
 				{
-						Damageable damageable = worlditem.Get <Damageable>();
 						Body.SetBloodOpacity(damageable.NormalizedDamage);
 						TryToStun(10f);
 						RespondToDamage(damageable.LastDamageSource, damageable.NormalizedDamage, damageable.IsDead);
@@ -628,11 +613,11 @@ namespace Frontiers.World.BaseWIScripts
 								Profile.Get.CurrentGame.Character.Rep.LosePersonalReputation(worlditem.FileName, worlditem.DisplayName, Globals.ReputationChangeLarge);
 								if (!isDead) {
 										Talkative talkative = worlditem.Get <Talkative>();
-										talkative.SayDTS(Characters.Get.SpeechInResponseToDamage(
+										talkative.GiveSpeech(Characters.Get.SpeechInResponseToDamage(
 												normalizedDamage,
 												State.KnowsPlayer,
 												Profile.Get.CurrentGame.Character.Rep.GetPersonalReputation(worlditem.FileName),
-												State.GlobalReputation));
+												State.GlobalReputation), null);
 
 										//become hostile
 										if (normalizedDamage > 0.75f) {
@@ -642,26 +627,32 @@ namespace Frontiers.World.BaseWIScripts
 						}
 				}
 
+				public void RespondToAttacker() {
+						Debug.Log("Responding to attacker");
+						FleeFromThing(Player.Local);
+				}
+
 				public void OnDie()
 				{
+						Body.SetBloodOpacity(1f);
 						try {
-							Container container = worlditem.Get <Container>();
-							container.CanOpen = true;
-							container.CanUseToOpen = true;
-							//TODO link this to rep, not to being a bandit
-							if (!worlditem.Is <Bandit>()) {
-									Damageable damageable = worlditem.Get <Damageable>();
-									if (damageable != null && damageable.LastDamageSource.IOIType == ItemOfInterestType.Player || (damageable.LastDamageSource.IOIType == ItemOfInterestType.WorldItem && WorldItems.IsOwnedByPlayer(damageable.LastDamageSource.worlditem))) {
-											//MURDERER!
-											Debug.Log("You are now a murderer");
-											Profile.Get.CurrentGame.Character.Rep.LoseGlobalReputation(Globals.ReputationChangeMurderer);
-									}
-							}
-						}
-						catch (Exception e) {
+								Container container = null;
+								if (worlditem.Is <Container>(out container)) {
+									container.CanOpen = true;
+									container.CanUseToOpen = true;
+										container.OpenText = "Search";
+								}
+								//TODO link this to rep, not to being a bandit
+								if (!worlditem.Is <Bandit>() && damageable.LastDamageSource != null) {
+										if (damageable.LastDamageSource.IOIType == ItemOfInterestType.Player || (damageable.LastDamageSource.IOIType == ItemOfInterestType.WorldItem && WorldItems.IsOwnedByPlayer(damageable.LastDamageSource.worlditem))) {
+												//MURDERER!
+												Debug.Log("You are now a murderer");
+												Profile.Get.CurrentGame.Character.Rep.LoseGlobalReputation(Globals.ReputationChangeMurderer);
+										}
+								}
+						} catch (Exception e) {
 								Debug.LogError("Error when killing character, proceeding normally: " + e.ToString());
 						}
-						Body.SetBloodOpacity(1f);
 				}
 
 				#endregion
@@ -679,8 +670,7 @@ namespace Frontiers.World.BaseWIScripts
 						if (worlditem.Is(WIMode.Destroyed)) {
 								Player.Get.AvatarActions.ReceiveAction(AvatarAction.NpcDie, WorldClock.AdjustedRealTime);
 								string deathMessage = worlditem.DisplayName + " has died";
-								Damageable damageable = null;
-								if (worlditem.Is <Damageable>(out damageable) && !string.IsNullOrEmpty(damageable.State.CauseOfDeath)) {
+								if (!string.IsNullOrEmpty(damageable.State.CauseOfDeath)) {
 										deathMessage += (" of " + damageable.State.CauseOfDeath);
 								}
 						}

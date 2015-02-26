@@ -566,6 +566,22 @@ namespace Frontiers.World
 						if (GUILayout.Button("\n\nSave Categories to CSV\n\n", UnityEditor.EditorStyles.miniButton)) {
 								ExportCategoriesDatabase();
 						}
+						if (GUILayout.Button("\n\nLoad Templates\n\n", UnityEditor.EditorStyles.miniButton)) {
+								if (!Manager.IsAwake <Mods>()) {
+										Manager.WakeUp <Mods>("__MODS");
+										Mods.Get.Editor.InitializeEditor();
+								}
+
+								foreach (WorldItemPack pack in WorldItemPacks) {
+										WITemplate template = null;
+										foreach (GameObject prefab in pack.Prefabs) {
+												WorldItem wi = prefab.GetComponent <WorldItem>();
+												if (Mods.Get.Editor.LoadMod <WITemplate>(ref template, System.IO.Path.Combine("WorldItem", wi.Props.Name.PackName), wi.Props.Name.PrefabName)) {
+														wi.Props = template.Props;
+												}
+										}
+								}
+						}
 						if (GUILayout.Button("\n\nSave Templates\n\n", UnityEditor.EditorStyles.miniButton)) {
 								if (!Manager.IsAwake <Mods>()) {
 										Manager.WakeUp <Mods>("__MODS");

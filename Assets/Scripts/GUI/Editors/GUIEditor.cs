@@ -125,6 +125,18 @@ namespace Frontiers.GUI
 				public float GridPadding = 0f;
 				public float ScrollBarSensitivity = 0.05f;
 
+				/*public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				{
+						FrontiersInterface.Widget w = new Widget();
+						w.SearchCamera = NGUICamera;
+						for (int i = 0; i < mBrowserObjectCollidersList.Count; i++) {
+								w.Collider = mBrowserObjectCollidersList[i];
+								currentObjects.Add(w);
+						}
+						w.Collider = ScrollBar.foreground.GetComponent <BoxCollider>();
+						currentObjects.Add(w);
+				}*/
+
 				public virtual IEnumerable <R> FetchItems()
 				{
 						return null;
@@ -331,6 +343,7 @@ namespace Frontiers.GUI
 
 								mBrowserObjectsList.Clear();
 								mEditObjectLookup.Clear();
+								mBrowserObjectCollidersList.Clear();
 								//reset the grid
 								mGrid = BrowserObjectsParent.GetComponent <UIGrid>();
 								if (UsesGrid) {
@@ -348,23 +361,17 @@ namespace Frontiers.GUI
 
 						foreach (R editObject in mEditObject) {
 								GameObject newBrowserObject = ConvertEditObjectToBrowserObject(editObject);
+								gBoxColliderChildren.Clear();
+								newBrowserObject.GetComponentsInChildren<BoxCollider>(true, gBoxColliderChildren);
+								mBrowserObjectCollidersList.AddRange(gBoxColliderChildren);
 								//check for divider
 								mBrowserObjectsList.Add(newBrowserObject);
 								mEditObjectLookup.Add(newBrowserObject, editObject);
 						}
-//			int offset = 0;
-//			foreach (DividerProps divider in mDividers) {
-//				GameObject newDivider = CreateDivider (divider);
-//				int insertionIndex = divider.Index + offset;
-//
-//				if (insertionIndex >= mBrowserObjectsList.Count) {
-//					mBrowserObjectsList.Add (newDivider);
-//				} else {
-//					mBrowserObjectsList.Insert (insertionIndex, newDivider);
-//				}
-//				offset++;
-//			}
 				}
+
+				protected static List <BoxCollider> gBoxColliderChildren = new List<BoxCollider>();
+				protected static List <GUIButtonSetup> gButtonChildren = new List<GUIButtonSetup>();
 
 				protected void BrandBrowserObjects()
 				{
@@ -448,6 +455,7 @@ namespace Frontiers.GUI
 				protected List <GameObject> mDividers = new List <GameObject>();
 				protected GameObject mBrowserObject = null;
 				protected List <GameObject> mBrowserObjectsList = new List <GameObject>();
+				protected List <BoxCollider> mBrowserObjectCollidersList = new List<BoxCollider>();
 				protected R mSelectedObject = default (R);
 				protected UIGrid mGrid = null;
 				protected UIDraggablePanel mBrowserPagePanel = null;

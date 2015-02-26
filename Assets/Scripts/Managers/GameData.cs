@@ -75,6 +75,14 @@ namespace Frontiers
 										return false;
 								}
 
+								public static void SetWorldName (string worldName) {
+										gModWorldFolderName = worldName;
+										string errorMessage = null;
+										if (!InitializeSystemPaths(out errorMessage)) {
+												Debug.Log(errorMessage);
+										}
+								}
+
 								public static bool InitializeSystemPaths(out string errorMessage)
 								{
 										bool result = true;
@@ -86,6 +94,8 @@ namespace Frontiers
 										//gBaseWorldModsPath
 										//gCurrentWorldPath
 										//gCurrentWorldModsPath
+										//gModWorldPath
+										//gModWorldModsPath
 
 										switch (Application.platform) {
 												case RuntimePlatform.LinuxPlayer:
@@ -104,7 +114,7 @@ namespace Frontiers
 														gGlobalDataPath = System.IO.Path.Combine(Application.dataPath, gFrontiersPrefix);
 														gGlobalChangeLogPath = System.IO.Path.Combine(gGlobalDataPath, "changelog.txt");
 														break;
-										// HACK: This is only to fix your building into the root of the project. Bad form!
+												// HACK: This is only to fix your building into the root of the project. Bad form!
 												case RuntimePlatform.OSXEditor:
 														gGlobalDataPath = gFrontiersPrefix;
 														break;
@@ -119,10 +129,12 @@ namespace Frontiers
 										gGlobalProfilesPath = System.IO.Path.Combine(gGlobalDataPath, gProfilesFolderName);
 										gBaseWorldPath = System.IO.Path.Combine(gGlobalWorldsPath, gBaseWorldFolderName);
 										gBaseWorldModsPath = System.IO.Path.Combine(gBaseWorldPath, gModsFolderName);
-										if (string.IsNullOrEmpty(gCurrentWorldPath)) {
-												gCurrentWorldPath = gBaseWorldPath;
-										}
-										gCurrentWorldModsPath = gBaseWorldModsPath;
+										//mod world is the world data sandwiched between current and base world
+										gModWorldPath = System.IO.Path.Combine(gGlobalWorldsPath, gModWorldFolderName);
+										gModWorldModsPath = System.IO.Path.Combine(gModWorldPath, gModsFolderName);
+										//current world is the current game's world
+										gCurrentWorldPath = System.IO.Path.Combine(gGlobalWorldsPath, gModWorldFolderName);
+										gCurrentWorldModsPath = System.IO.Path.Combine(gCurrentWorldPath, gModsFolderName);
 
 										if (!Directory.Exists(gGlobalDataPath)) {
 												errorMessage += ("Global data path not found at " + gGlobalDataPath + "\n");
@@ -143,10 +155,24 @@ namespace Frontiers
 												errorMessage += ("Base world mods path not found at " + gBaseWorldModsPath + "\n");
 												result = false;
 										}
+										if (!Directory.Exists(gModWorldPath)) {
+												errorMessage += ("Mod world path not found at " + gModWorldPath + "\n");
+												result = false;
+										}
+										if (!Directory.Exists(gModWorldModsPath)) {
+												errorMessage += ("Mod world mods path not found at " + gModWorldModsPath + "\n");
+												result = false;
+										}
 
 										if (gLoadedMaps == null) {
 												gLoadedMaps = new Dictionary<string, Texture2D>();
 										}
+
+										Debug.Log(gGlobalWorldsPath);
+										Debug.Log(gGlobalProfilesPath);
+										Debug.Log(gBaseWorldPath);
+										Debug.Log(gBaseWorldModsPath);
+										Debug.Log(gCurrentWorldModsPath);
 
 										return result;
 								}
@@ -171,6 +197,10 @@ namespace Frontiers
 
 										bool result = true;
 										errorMessage	= string.Empty;
+
+										gModWorldFolderName = worldName;
+										gModWorldPath = System.IO.Path.Combine(gGlobalWorldsPath, gModWorldFolderName);
+										gModWorldModsPath = System.IO.Path.Combine(gModWorldPath, gModsFolderName);
 
 										//FRONTIERS/Profiles/
 										gCurrentProfilePath = System.IO.Path.Combine(gGlobalProfilesPath, profileName);
@@ -225,6 +255,15 @@ namespace Frontiers
 														result = false;
 												}
 										}
+
+										/*
+										Debug.Log("Mod world path: " + gModWorldPath);
+										Debug.Log("Current profile path: " + gCurrentProfilePath);
+										Debug.Log("Current world path: " + gCurrentWorldPath);
+										Debug.Log("Current game path: " + gCurrentGamePath);
+										Debug.Log("Current profile mods path: " + gCurrentProfileModsPath);
+										Debug.Log("Current profile live game path: " + gCurrentProfileLiveGamePath);
+										*/
 
 										return result;
 								}
@@ -324,6 +363,7 @@ namespace Frontiers
 
 								public static List <string> GetFolderNamesInDirectory(string path)
 								{
+										Debug.Log("Getting folder names in " + path);
 										System.IO.DirectoryInfo profileDirectory = new System.IO.DirectoryInfo(path);
 										List <string> folderNames = new List <string>();
 										if (Directory.Exists(path)) {
@@ -1009,6 +1049,8 @@ namespace Frontiers
 												File.Delete(path);
 										}
 
+										//Debug.Log("Saving " + path);
+
 										try {
 												XmlWriterSettings writerSettings = new XmlWriterSettings();
 												writerSettings.NewLineHandling = NewLineHandling.Replace;
@@ -1245,6 +1287,8 @@ namespace Frontiers
 												return false;
 										}
 
+										//Debug.Log("loading " + chunkName + " heights at " + fullPath + " with resolution " + resolution.ToString());
+
 										FileMode mode = FileMode.Open;
 										FileShare share = FileShare.ReadWrite;
 										FileAccess access = FileAccess.ReadWrite;
@@ -1411,7 +1455,7 @@ namespace Frontiers
 														return gCurrentProfileLiveGamePath;
 
 												case DataType.World:
-														return gCurrentWorldModsPath;
+														return gModWorldModsPath;
 
 												case DataType.Base:
 												default:
@@ -1425,6 +1469,8 @@ namespace Frontiers
 								public static string gGlobalWorldsPath = string.Empty;
 								public static string gBaseWorldPath = string.Empty;
 								public static string gBaseWorldModsPath = string.Empty;
+								public static string gModWorldPath = string.Empty;
+								public static string gModWorldModsPath = string.Empty;
 								//these change based on the loaded profile / world / game
 								public static string gCurrentGamePath = string.Empty;
 								public static string gCurrentWorldPath = string.Empty;
@@ -1434,6 +1480,7 @@ namespace Frontiers
 								public static string gCurrentProfileLiveGamePath = string.Empty;
 								//these just help us create paths
 								public static string gBaseWorldFolderName = "FRONTIERS";
+								public static string gModWorldFolderName = "FRONTIERS";
 								public static string gFrontiersPrefix = "Frontiers";
 								public static string gGlobalWorldFolderName = "Worlds";
 								public static string gProfilesFolderName = "Profiles";

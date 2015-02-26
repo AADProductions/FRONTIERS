@@ -117,6 +117,20 @@ namespace Frontiers.World
 						DepletedOnMaxDamage = template.DepletedOnMaxDamage;
 						IntrospectionOnDepleted = template.IntrospectionOnDepleted;
 
+						//Debug.Log ("OnGainPlayerFocus");
+						if (string.IsNullOrEmpty(template.SpawnDescription)) {
+								WICategory cat = null;
+								if (WorldItems.Get.Category(SpawnCategory, out cat)) {
+										cat.RefreshDisplayNames();
+										List <string> stuffInCategory = new List<string>();
+										for (int i = 0; i < cat.GenericWorldItems.Count; i++) {
+												stuffInCategory.SafeAdd(cat.GenericWorldItems[i].DisplayName);
+										}
+										SpawnDescription = Data.GameData.CommaJoinWithLast(stuffInCategory, "&");
+								}
+						}
+
+
 						TotalDamage = 0f;
 
 						Refresh();
@@ -166,6 +180,8 @@ namespace Frontiers.World
 
 				public IItemOfInterest LastDamageSource { get; set; }
 
+				public BodyPart LastBodyPartHit { get; set; }
+
 				public bool IsDead { get { return false; } }
 
 				public float NormalizedDamage { get { return TotalDamage / SpawnDamageMinimum; } }
@@ -197,6 +213,10 @@ namespace Frontiers.World
 								}
 								mHasPlayerFocus = value;
 						}
+				}
+
+				public virtual void InstantKill (IItemOfInterest causeOfDeath) {
+						return;
 				}
 
 				public virtual bool TakeDamage(WIMaterialType materialType, Vector3 damagePoint, float attemptedDamage, Vector3 attemptedForce, string damageSource, out float actualDamage, out bool isDead)
@@ -234,7 +254,6 @@ namespace Frontiers.World
 
 				public virtual void OnGainPlayerFocus()
 				{
-						//Debug.Log ("OnGainPlayerFocus");
 						if (!mUpdatingHudTarget) {
 								mUpdatingHudTarget = true;
 								if (mHudTarget == null) {
@@ -256,7 +275,7 @@ namespace Frontiers.World
 								mHasWeaponEquipped = Player.Local.Tool.HasWorldItem && Player.Local.Tool.worlditem.Is <Weapon>();
 								if (mHasWeaponEquipped && !mHadWeaponEquippedLastFrame) {
 										mHudTarget.position = Player.Local.Surroundings.ClosestObjectFocusHitInfo.point;
-										GUIHud.Get.ShowAction(this, UserActionType.ToolUse, "Shake", mHudTarget, GameManager.Get.GameCamera);
+										GUIHud.Get.ShowAction(this, UserActionType.ToolUse, "Shake (" + gSpawnDescription + ")", mHudTarget, GameManager.Get.GameCamera);
 								}
 								mHudTarget.position = Vector3.Lerp(mHudTarget.position, Player.Local.Surroundings.ClosestObjectFocusHitInfo.point, 0.35f);
 								mHadWeaponEquippedLastFrame = mHasWeaponEquipped;
@@ -272,6 +291,7 @@ namespace Frontiers.World
 				protected bool mUpdatingHudTarget = false;
 				protected bool mRustling = false;
 				protected static Transform mHudTarget = null;
+				protected static string gSpawnDescription;
 				public GameObject windZone;
 				public CapsuleCollider MainCollider;
 				public CapsuleCollider SecondaryCollider;

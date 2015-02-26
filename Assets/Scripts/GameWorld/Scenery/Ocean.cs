@@ -4,10 +4,11 @@ using System.Collections.Generic;
 using Frontiers;
 using System;
 using ExtensionMethods;
+using Frontiers.World.BaseWIScripts;
 
 namespace Frontiers.World
 {
-		public class Ocean : Manager
+		public class Ocean : Manager, IBodyOfWater
 		{
 				public static Ocean Get;
 
@@ -20,6 +21,11 @@ namespace Frontiers.World
 				public Transform Pivot;
 				public Transform OverlayPivot;
 
+				public float WaterHeightAtPosition(Vector3 position)
+				{
+						return OceanSurfaceHeight;
+				}
+
 				public override void WakeUp()
 				{
 						Get = this;
@@ -27,6 +33,7 @@ namespace Frontiers.World
 						SubmergeTrigger = OceanTopCollider.gameObject.GetOrAdd <WaterSubmergeObjects>();
 						SubmergeTrigger.OnItemOfInterestEnterWater += OnItemOfInterestEnterWater;
 						SubmergeTrigger.OnItemOfInterestExitWater += OnItemOfInterestExitWater;
+						SubmergeTrigger.Water = this;
 				}
 
 				public override void OnGameStart()
@@ -91,11 +98,20 @@ namespace Frontiers.World
 						subjergedObject = null;
 						for (int i = SubmergedObjects.LastIndex(); i >= 0; i--) {
 								SubmergedObject subObj = SubmergedObjects[i];
-								if (subObj == null || subObj.Target == null || subObj.Target.Destroyed) {
+								if (subObj == null || subObj.Target == null || subObj.Target.Destroyed || (subObj.Target.IOIType == ItemOfInterestType.WorldItem && subObj.Target.worlditem.Is <WaterTrap>())) {
 										SubmergedObjects.RemoveAt(i);
 								} else {
 										subObj.Seeker = seeker;
-										if (subObj.HasExitedWater && (WorldClock.AdjustedRealTime - subObj.TimeExitedWater) > interestInterval) {
+										if (subObj.Target.IOIType == ItemOfInterestType.Scenery) {
+												//it's probably a fish or something
+												//there's a very low probability that we care
+												if (UnityEngine.Random.value < 0.0005f) {
+														subObj.IsOfInterest = true;
+												} else {
+														subObj.IsOfInterest = false;
+														SubmergedObjects.RemoveAt(i);
+												}
+										} else if (subObj.HasExitedWater && (WorldClock.AdjustedRealTime - subObj.TimeExitedWater) > interestInterval) {
 												//just in case we're already targeting a submerged object
 												subObj.IsOfInterest = false;
 												SubmergedObjects.RemoveAt(i);

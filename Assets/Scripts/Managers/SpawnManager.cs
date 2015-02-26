@@ -543,6 +543,9 @@ namespace Frontiers
 										Conversations.ClearLog();
 										Blueprints.ClearLog();
 								}
+								for (int i = 0; i < CurrentStartupPosition.BooksToAdd.Count; i++) {
+										Books.AquireBook(CurrentStartupPosition.BooksToAdd[i]);
+								}
 						}
 				}
 

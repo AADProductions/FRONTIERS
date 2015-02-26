@@ -96,7 +96,11 @@ namespace Frontiers.World.BaseWIScripts
 								Attack2MaximumDistance = Attack2MinimumDistance;
 						}
 
-						ColoredDebug.Log("HOSTILE: Refreshing attack settings - " + AttackMinimumDistance.ToString() + ", " + AttackMaximumDistance.ToString(), "Red");
+						State.Attack1.RTPreAttackInterval = Mathf.Max(0.25f, State.Attack1.RTPreAttackInterval);
+						State.Attack1.RTPostAttackInterval = Mathf.Max(0.5f, State.Attack1.RTPostAttackInterval);
+
+
+						//ColoredDebug.Log("HOSTILE: Refreshing attack settings - " + AttackMinimumDistance.ToString() + ", " + AttackMaximumDistance.ToString(), "Red");
 				}
 
 				#region IHostile implementation
@@ -281,7 +285,9 @@ namespace Frontiers.World.BaseWIScripts
 						if (!AttackingNow) {
 								//regardless of our state, check to see if we *can* attack
 								if (CanAttack) {
+										Debug.Log("We can attack, so attack now");
 										//if we can attack, do it and forget the rest
+										mAttackingNow = true;
 										StartCoroutine(AttackImmediately());
 										return;
 								} else {
@@ -354,6 +360,7 @@ namespace Frontiers.World.BaseWIScripts
 
 				public IEnumerator AttackImmediately()
 				{
+						Debug.Log("Attacking immediately");
 						RefreshAttackSettings();
 						//get random attack style
 						mAttackingNow = true;
@@ -377,12 +384,13 @@ namespace Frontiers.World.BaseWIScripts
 						//wait until the attack is supposed to hit
 						double waitUntil = WorldClock.AdjustedRealTime + style.RTPreAttackInterval;
 						while (waitUntil > WorldClock.AdjustedRealTime) {
-								if (Mode != HostileMode.Attacking) {
+								/*if (Mode != HostileMode.Attacking) {
 										mAttackingNow = false;
 										yield break;
-								}
+								}*/
 								yield return null;
 						}
+						yield return null;
 						//now check and see if we actually hit
 						//by default use the position in case we don't have a body
 						//or in case we aren't motile
@@ -424,12 +432,13 @@ namespace Frontiers.World.BaseWIScripts
 						//wait out the required amount of time before attacking again
 						waitUntil = WorldClock.AdjustedRealTime + style.RTPostAttackInterval;
 						while (waitUntil > WorldClock.AdjustedRealTime) {
-								if (Mode != HostileMode.Attacking) {
+								/*if (Mode != HostileMode.Attacking) {
 										mAttackingNow = false;
 										yield break;
-								}
+								}*/
 								yield return null;
 						}
+						yield return null;
 						finishAction.SafeInvoke();
 						mAttackingNow = false;
 				}

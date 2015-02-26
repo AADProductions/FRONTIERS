@@ -26,6 +26,13 @@ namespace Frontiers.World.BaseWIScripts
 						}
 				}
 
+				public override void OnInitialized()
+				{
+						if (StuckTo != null) {
+								enabled = true;
+						}
+				}
+
 				public void Launch(Transform actionPoint, Weapon fromWeapon, float initialLaunchForce)
 				{
 						if (Launched || IsLive)
@@ -49,7 +56,12 @@ namespace Frontiers.World.BaseWIScripts
 				public void OnReachEnd()
 				{
 						if (StuckTo == null && CollidedWith == null) {
+								Debug.Log("Projectile stuck to nothing - destroying");
 								worlditem.SetMode(WIMode.RemovedFromGame);
+						}
+						Launched = false;
+						if (LiveUpdater != null) {
+								GameObject.Destroy(LiveUpdater);
 						}
 				}
 
@@ -76,7 +88,13 @@ namespace Frontiers.World.BaseWIScripts
 						worlditem.ActiveState = WIActiveState.Active;
 						worlditem.tr.position = hitPoint;
 						IItemOfInterest ioi = null;
-						if (WorldItems.GetIOIFromCollider(withObject, out ioi)) {
+						BodyPart bodyPart = null;
+
+						if (gStuckToHelper == null) {
+								gStuckToHelper = new GameObject("StuckToHelper").transform;
+						}
+
+						if (WorldItems.GetIOIFromCollider(withObject, out ioi, out bodyPart)) {
 								switch (ioi.IOIType) {
 										case ItemOfInterestType.Player:
 												break;
@@ -91,13 +109,47 @@ namespace Frontiers.World.BaseWIScripts
 												if (ioi.worlditem.Is <ProjectileTarget>(out projectileTarget)) {
 														projectileTarget.OnHitByProjectile(this, hitPoint);
 												}
-												StuckTo = ioi.worlditem.tr;
-												worlditem.ApplyForce(worlditem.tr.forward * LiveUpdater.InitialLaunchForce, worlditem.Position);
-												worlditem.tr.parent = ioi.worlditem.tr;
+												if (bodyPart != null) {
+														StuckTo = bodyPart.tr;
+												} else {
+														StuckTo = ioi.worlditem.tr;
+												}
 												break;
 								}
 						}
+						if (StuckTo != null) {
+								gStuckToHelper.parent = StuckTo;
+								gStuckToHelper.position = worlditem.tr.position;
+								gStuckToHelper.rotation = worlditem.tr.rotation;
+								mStuckToLocalPosition = gStuckToHelper.localPosition;
+								mStuckToLocalRotation = gStuckToHelper.localRotation;
+								enabled = true;
+						}
 						worlditem.SetMode(WIMode.Frozen);
+				}
+
+				public void LateUpdate()
+				{
+						if (StuckTo != null) {
+								if (worlditem.Is(WIActiveState.Visible | WIActiveState.Active)) {
+										if (gStuckToHelper == null) {
+												gStuckToHelper = new GameObject("StuckToHelper").transform;
+										}
+										gStuckToHelper.parent = StuckTo;
+										gStuckToHelper.localPosition = mStuckToLocalPosition;
+										gStuckToHelper.localRotation = mStuckToLocalRotation;
+										worlditem.tr.position = gStuckToHelper.position;
+										worlditem.tr.rotation = gStuckToHelper.rotation;
+										worlditem.gameObject.layer = Globals.LayerNumBodyPart;
+								}
+						} else {
+								for (int i = 0; i < worlditem.Colliders.Count; i++) {
+										worlditem.Colliders[i].isTrigger = false;
+								}
+								worlditem.gameObject.layer = Globals.LayerNumWorldItemActive;
+								worlditem.SetMode(WIMode.World);
+								enabled = false;
+						}
 				}
 
 				public void SetStackedMode()
@@ -106,5 +158,10 @@ namespace Frontiers.World.BaseWIScripts
 						CollidedWith = null;
 						StuckTo = null;
 				}
+
+				protected static Transform gStuckToHelper;
+				protected Vector3 mStuckToLocalPosition;
+				protected Quaternion mStuckToLocalRotation;
+
 		}
 }

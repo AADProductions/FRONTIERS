@@ -909,6 +909,7 @@ namespace Frontiers
 										CarryObject.transform.Rotate(CarryObject.Props.Global.BaseRotation);
 								}
 								CarryObject.LastActiveDistanceToPlayer = 0f;
+								CarryObject.GetOrAdd <OwnedByPlayer>();
 								CarryObject.OnPlayerPlace.SafeInvoke();
 								GUIManager.PostSuccess("Placed " + CarryObject.DisplayName);
 								CarryObject = null;
@@ -949,6 +950,7 @@ namespace Frontiers
 										CarryObject.tr.rotation = PlacementDoppleganger.transform.rotation;
 								}
 								GUIManager.PostInfo("Dropping " + CarryObject.DisplayName);
+								CarryObject.GetOrAdd <OwnedByPlayer>();
 								CarryObject.OnPlayerDrop.SafeInvoke();
 								CarryObject.ApplyForce(Player.Local.FocusVector * ThrowForce, CarryObject.tr.position);
 								CarryObject = null;
@@ -998,7 +1000,7 @@ namespace Frontiers
 										aqi.tr.position = toolPosition;
 										aqi.tr.rotation = toolRotation;
 										aqi.LastActiveDistanceToPlayer = 0f;
-
+										aqi.GetOrAdd <OwnedByPlayer>();
 										aqi.ApplyForce(Player.Local.FocusVector * ThrowForce, aqi.tr.position);
 
 										ItemToPlace = null;
@@ -1085,6 +1087,7 @@ namespace Frontiers
 												}
 												aqi.tr.position = placePosition;
 												aqi.tr.rotation = placeRotation;
+												aqi.GetOrAdd <OwnedByPlayer>();
 												aqi.LastActiveDistanceToPlayer = 0f;
 												aqi.OnPlayerPlace.SafeInvoke();
 										}

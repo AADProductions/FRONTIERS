@@ -17,6 +17,8 @@ namespace Frontiers
 				public List <Skill> SkillsInUse = new List <Skill>();
 				public List <SkillStartupSetting> DefaultSkillStartupSettings = new List<SkillStartupSetting>();
 				public List <CredentialLevel> CredentialLevels = new List <CredentialLevel>();
+				public static Skill MostRecentlyLearnedSkill;
+
 				public GameObject EffectSpherePrefab;
 				public bool DebugSkills = true;
 

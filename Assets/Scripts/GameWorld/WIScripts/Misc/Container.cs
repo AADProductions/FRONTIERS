@@ -10,6 +10,7 @@ namespace Frontiers.World
 {
 		public class Container : WIScript
 		{
+				public bool UseAsContainerInInterface = true;
 				public string OpenText = "Open";
 //changed by whatever uses it
 				public bool CanOpen = true;

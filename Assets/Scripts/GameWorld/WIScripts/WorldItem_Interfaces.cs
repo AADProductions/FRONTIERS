@@ -365,7 +365,9 @@ namespace Frontiers.World
 				//focus / attention
 				public Action OnGainPlayerFocus;
 				public Action OnLosePlayerFocus;
-
+				//water
+				public Action OnEnterBodyOfWater;
+				public Action OnExitBodyOfWater;
 				#endregion
 
 				#region IVisible implementation
@@ -379,7 +381,14 @@ namespace Frontiers.World
 //should this be added to WIScript?
 				public float FieldOfViewMultiplier { get { return 1.0f; } }
 
-				public Vector3 Position { get { return tr.position; } }
+				public Vector3 Position {
+						get {
+								if (mDestroyed || tr == null) {
+										return Vector3.zero;
+								}
+								return tr.position;
+						}
+				}
 
 				public PlayerBase player { get { return null; } }
 

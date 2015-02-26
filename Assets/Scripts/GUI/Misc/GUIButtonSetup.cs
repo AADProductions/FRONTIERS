@@ -217,7 +217,10 @@ namespace Frontiers.GUI
 								button.tweenTarget = tweenTarget;
 								button.hover = hover;
 								button.defaultColor = defaultColor;
-								button.duration = duration;			
+								button.duration = duration;
+								if (button.collider != null) {
+										button.collider.enabled = buttonEnabled;
+								}
 						}
 				}
 

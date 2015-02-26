@@ -14,6 +14,7 @@ namespace Frontiers.GUI
 				public WorldSettings CurrentWorld = null;
 				public bool CurrentWorldConfirmed = false;
 				public bool CurrentGameConfirmed = false;
+				public bool DevLockOverride = false;
 
 				public UIButtonMessage OKWorldButton;
 				public UIButtonMessage OKNameButton;
@@ -250,7 +251,7 @@ namespace Frontiers.GUI
 						}
 
 						CurrentWorldLocked = false;
-						if (CurrentWorld.RequiresCompletedWorlds) {
+						if (CurrentWorld.RequiresCompletedWorlds && !DevLockOverride) {
 								foreach (string requiredCompletedWorld in CurrentWorld.RequiredCompletedWorlds) {
 										if (!Profile.Get.Current.CompletedWorlds.Contains(requiredCompletedWorld)) {
 												CurrentWorldLocked = true;
@@ -292,6 +293,12 @@ namespace Frontiers.GUI
 								SelectedWorldIndex = 0;
 						}
 						RefreshWorld();
+				}
+
+				public void Update(){
+						if (Input.GetKeyDown(KeyCode.F7)) {
+								DevLockOverride = true;
+						}
 				}
 
 				public override void PushEditObjectToNGUIObject()

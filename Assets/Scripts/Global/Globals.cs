@@ -125,6 +125,8 @@ public static class Globals
 		public static float AveragePurseGoldCurrency = 10;
 		[EditableDifficultySetting(0f, 100000f, "Average number of marks (lumen) in a purse")]
 		public static float AveragePurseLumenCurrency = 2;
+		[EditableDifficultySetting(0, 100, "Number of fish that a trap catches, multiplied by skill roll on set")]
+		public static int TrappingNumWaterGoodiesPerSkillRoll = 10;
 		[EditableDifficultySetting(0f, 1000f, "Number of real-time seconds before live traps check to see if they've been triggered")]
 		public static float TrappingMinimumRTCheckInterval = 30f;
 		[EditableDifficultySetting(0f, 1f, "Overall probability of an unwatched trap being triggered")]
@@ -142,13 +144,13 @@ public static class Globals
 		[EditableDifficultySetting(0f, 10f, "Damage multiplier for fall damage on the 'Realistic' setting")]
 		public static float DamageFallDamageRealisticMultiplier = 5f;
 		[EditableDifficultySetting(0f, 500f, "Maximum possible fall damage from any height on the 'Forgiving' setting")]
-		public static float DamageFallDamageForgivingImpactThreshold = 50f;
+		public static float DamageFallDamageForgivingImpactThreshold = 5f;
 		[EditableDifficultySetting(0f, 500f, "Maximum possible fall damage from any height on the 'Realistic' setting")]
-		public static float DamageFallDamageRealisticImpactThreshold = 200f;
+		public static float DamageFallDamageRealisticImpactThreshold = 2f;
 		[EditableDifficultySetting(0f, 100f, "Minimum impact required before fall damage will take effect on the 'Forgiving' setting")]
-		public static float DamageFallDamageForgivingImpactDeathThreshold = 5f;
+		public static float DamageFallDamageForgivingImpactDeathThreshold = 200f;
 		[EditableDifficultySetting(0f, 100f, "Minimum impact required before fall damage will take effect on the 'Realistic' setting")]
-		public static float DamageFallDamageRealisticImpactDeathThreshold = 2f;
+		public static float DamageFallDamageRealisticImpactDeathThreshold = 50f;
 		[EditableDifficultySetting(0f, 100f, "Minimum impact required before fall damage will cause a broken bone on the 'Forgiving' setting")]
 		public static float DamageFallDamageForgivingBrokenBoneThreshold = 5f;
 		[EditableDifficultySetting(0f, 100f, "Minimum impact required before fall damage will cause a broken bone on the 'Realistic' setting")]
@@ -241,7 +243,14 @@ public static class Globals
 		public static float RaycastSpyGlassDistanceMultiplier = 3f;
 		[EditableDifficultySetting(2f, 10f, "Multiplier for cook time that it takes to burn food items.")]
 		public static float EdibleBurnTimeMultiplier = 4f;
+		public static float BarBasePricePerRoundOfDrinks = 20f;
+		public static float BarBasePricePerDrink = 1f;
 
+		public static float DamageBodyPartEyeMultiplier = 10f;
+		public static float DamageBodyPartHeadMultiplier = 1f;
+		public static float DamageBodyPartTorsoMultiplier = 0.5f;
+		public static float DamageBodyPartLimbMultiplier = 0.25f;
+		public static float FallDamageImpactMultiplier = 100f;
 		#endregion
 
 		#region profile
@@ -465,6 +474,8 @@ public static class Globals
 		#region visual
 
 		[VisualSetting]
+		public static float FishingHoldNumFishPerRadius = 2.5f;
+		[VisualSetting]
 		public static float TerrainWindIntensity = 0.5f;
 		[VisualSetting]
 		public static float MaxAmbientLightBoost = 0.25f;
@@ -673,6 +684,7 @@ public static class Globals
 		public static float ControllerDeadZoneSizeDPadLower = 0.0f;
 		public static float ControllerDeadZoneSizeDPadUpper = 1.0f;
 		public static float ControllerSensitivityDPad = 1.0f;
+		public static float BodyPartDamageForceMultiplier = 2500f;
 		public static string ControllerDefaultActionSpriteSuffix = "XBox";
 		public const int LayerPlayer = 1 << 8;
 		public const int LayerTrigger = 1 << 9;
@@ -709,6 +721,7 @@ public static class Globals
 		public const int LayersInterface = LayerGUIRaycast | LayerGUIRaycastCustom | LayerGUIRaycastIgnore | LayerWorldItemInventory;
 		public const int LayersPlayerAndTools = LayerPlayer | LayerPlayerTool;
 		public const int LayersTerrain = LayerSolidTerrain | LayerFluidTerrain | LayerStructureTerrain | LayerObstacleTerrain;
+		public const int LayersSolidTerrain = LayerSolidTerrain | LayerStructureTerrain | LayerObstacleTerrain;
 
 		public static string DefaultMalePlayerBody = "Body_C_M_1";
 		public static string DefaultMalePlayerBodyTexture = "Body_Lrg_C_Settler_U_1";

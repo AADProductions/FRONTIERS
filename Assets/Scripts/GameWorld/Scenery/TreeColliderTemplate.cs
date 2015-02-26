@@ -9,6 +9,7 @@ namespace Frontiers.World
 {
 		public class TreeColliderTemplate : MonoBehaviour
 		{
+				public string SpawnDescription = string.Empty;
 				[BitMaskAttribute(typeof(TreeColliderFlags))]
 				public TreeColliderFlags MainColliderFlags = TreeColliderFlags.Solid;
 				public float MainRadius = 1f;

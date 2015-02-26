@@ -38,6 +38,13 @@ namespace Frontiers
 						AddAxisChange(MouseYAxis, InterfaceActionType.CursorMove);
 				}
 
+				public void SetMousePosition(int x, int y)
+				{
+						MouseSmoothX.Clear();
+						MouseSmoothY.Clear();
+						ProMouse.Instance.SetCursorPosition(x, y);
+				}
+
 				public void LateUpdate()
 				{
 						//see if the mouse is moving this frame
@@ -75,6 +82,9 @@ namespace Frontiers
 										mouseX = mouseX / MouseSmoothX.Count;
 										mouseY = mouseY / MouseSmoothY.Count;
 
+										//Debug.Log("Mouse x: " + mouseX.ToString());
+										//Debug.Log("Mouse y: " + mouseY.ToString());
+
 										ProMouse.Instance.SetCursorPosition(mouseX, mouseY);
 								}
 						}
@@ -105,6 +115,9 @@ namespace Frontiers
 
 				protected override void OnUpdate()
 				{
+						XStickX = RawInterfaceAxisX;
+						XStickY = RawInterfaceAxisY;
+
 						//TEMP TODO this is to get around the fact that mouse scroll wheel is so flakey
 						//it won't be necessary eventually...
 						if (RawScrollWheelAxis > Globals.MouseScrollSensitivity) {
@@ -113,14 +126,96 @@ namespace Frontiers
 						if (RawScrollWheelAxis < -Globals.MouseScrollSensitivity) {
 								Send(InterfaceActionType.SelectionNext, TimeStamp);
 						}
+
+						//TEMP - this is where I add 'focus update' functionality
+						if (GameManager.Is(FGameState.InGame | FGameState.GamePaused) && Player.Local.HasSpawned) {
+								bool hitKey = false;
+								//get the input string and see if it contains a cheat code
+								if (AvailableKeyDown) {
+										string nextChar = LastKey.ToString().ToLower();
+										if (nextChar.Length == 1) {
+												hitKey = true;
+												mLastTimeHitKey = WorldClock.RealTime;
+												//skip stuff like F1, shift etc
+												mCheatCodeSoFar += nextChar;
+												//Debug.Log("Cheat code so far: " + mCheatCodeSoFar);
+												if (GameManager.FocusOnCheatCode.Equals(mCheatCodeSoFar)) {
+														//Debug.Log("Entered cheat code, resetting");
+														Skills.LearnSkill("Trapping");
+														Skills.LearnSkill("Fishing");
+
+														Frontiers.World.GenericWorldItem genericTrap = new Frontiers.World.GenericWorldItem();
+														genericTrap.PackName = "Tools";
+														genericTrap.PrefabName = "Animal Trap";
+														Frontiers.World.StackItem stackItemTrap = genericTrap.ToStackItem();
+														Frontiers.World.WorldItem trap = null;
+														if (Frontiers.World.WorldItems.CloneFromStackItem(stackItemTrap, WIGroups.Get.Player, out trap)) {
+																Debug.Log("Adding animal trap");
+																trap.Props.Local.CraftedByPlayer = true;
+																trap.Initialize();
+																trap.ActiveState = WIActiveState.Active;
+																trap.Props.Local.FreezeOnStartup = false;
+																trap.tr.rotation = Quaternion.identity;
+																trap.SetMode(WIMode.World);
+																trap.tr.position = Player.Local.ItemPlacement.GrabberIdealPosition;
+																trap.LastActiveDistanceToPlayer = 0f;
+																//then force the player to carry the item
+																WIStackError error = WIStackError.None;
+																if (!Player.Local.Inventory.AddItems(trap, ref error)) {
+																		Debug.Log("Couldn't add animal trap to inventory");
+																}
+														} else {
+																Debug.Log("Couldn't add animal trap");
+														}
+
+														genericTrap.PrefabName = "Fishnet 2";
+														stackItemTrap = genericTrap.ToStackItem();
+														if (Frontiers.World.WorldItems.CloneFromStackItem(stackItemTrap, WIGroups.Get.Player, out trap)) {
+																Debug.Log("Adding fish trap");
+																trap.Props.Local.CraftedByPlayer = true;
+																trap.Initialize();
+																trap.ActiveState = WIActiveState.Active;
+																trap.Props.Local.FreezeOnStartup = false;
+																trap.tr.rotation = Quaternion.identity;
+																trap.SetMode(WIMode.World);
+																trap.tr.position = Player.Local.ItemPlacement.GrabberIdealPosition;
+																trap.LastActiveDistanceToPlayer = 0f;
+																//then force the player to carry the item
+																WIStackError error = WIStackError.None;
+																if (!Player.Local.Inventory.AddItems(trap, ref error)) {
+																		Debug.Log("Couldn't add fish trap to inventory");
+																}
+														} else {
+																Debug.Log("Couldn't add fish trap");
+														}
+
+														mCheatCodeSoFar = string.Empty;
+												} else if (!GameManager.FocusOnCheatCode.Contains(mCheatCodeSoFar)) {
+														//Debug.Log("Whoops, last char broke cheat code: " + mCheatCodeSoFar);
+														mCheatCodeSoFar = string.Empty;
+												}
+										}
+								}
+
+								if (!hitKey && WorldClock.RealTime > mLastTimeHitKey + 3) {
+										//Debug.Log("Resetting cheat code");
+										mCheatCodeSoFar = string.Empty;
+										mLastTimeHitKey = WorldClock.RealTime;
+								}
+						}
 				}
+
+				protected string mCheatCodeSoFar = string.Empty;
+				protected double mLastTimeHitKey = 0f;
+				public float XStickX;
+				public float XStickY;
 
 				public override List<ActionSetting> GenerateDefaultActionSettings()
 				{
 						MouseXAxis = InputControlType.RightStickX;
 						MouseYAxis = InputControlType.RightStickY;
-						MovementXAxis = InputControlType.LeftStickX;
-						MovementYAxis = InputControlType.LeftStickY;
+						MovementXAxis = InputControlType.DPadX;
+						MovementYAxis = InputControlType.DPadY;
 						ScrollWheelAxis = InputControlType.DPadX;
 
 						List <ActionSetting> actionSettings = new List<ActionSetting>();
@@ -165,6 +260,30 @@ namespace Frontiers
 						aSetting.AvailableKeys = DefaultAvailableKeys;
 						aSetting.Mouse = ActionSetting.MouseAction.Wheel;//read-only
 						aSetting.Axis = ActionSetting.InputAxis.ScrollWheel;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Analog;
+						aSetting.ActionDescription = "Button L / R";
+						aSetting.ActionOnX = (int)InterfaceActionType.SelectionLeft;
+						aSetting.ActionOnY = (int)InterfaceActionType.SelectionRight;
+						aSetting.Controller = InputControlType.LeftStickX;
+						aSetting.KeyX = KeyCode.LeftArrow;
+						aSetting.KeyY = KeyCode.RightArrow;
+						aSetting.AvailableControllerButtons = DefaultAvailableAxis;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.Axis = ActionSetting.InputAxis.InterfaceX;
+						actionSettings.Add(aSetting);
+
+						aSetting = ActionSetting.Analog;
+						aSetting.ActionDescription = "Button U / D";
+						aSetting.ActionOnX = (int)InterfaceActionType.SelectionDown;
+						aSetting.ActionOnY = (int)InterfaceActionType.SelectionUp;
+						aSetting.Controller = InputControlType.LeftStickY;
+						aSetting.KeyX = KeyCode.DownArrow;
+						aSetting.KeyY = KeyCode.UpArrow;
+						aSetting.AvailableControllerButtons = DefaultAvailableAxis;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						aSetting.Axis = ActionSetting.InputAxis.InterfaceY;
 						actionSettings.Add(aSetting);
 
 						aSetting = ActionSetting.Button;

@@ -389,7 +389,8 @@ namespace Frontiers
 						public bool MouseInvertYAxis = false;
 						public bool UseControllerMouse = true;
 						public bool UseCustomDeadZoneSettings = false;
-						public bool ShowControllerPrompts = true;
+						public bool ShowControllerPrompts = false;
+						public bool PromptsAlwaysInCenter = false;
 				}
 
 				[Serializable]

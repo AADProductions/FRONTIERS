@@ -39,6 +39,8 @@ namespace Frontiers.GUI
 				public bool PlacedOrder = false;
 				public GUITabs Tabs;
 				public LibraryCatalogueEntry CurrentOrder;
+				public bool HasDeliveredBooks = false;
+				public bool HasOrderedBooks = false;
 
 				public override void Start()
 				{
@@ -128,6 +130,8 @@ namespace Frontiers.GUI
 
 				public override IEnumerable <LibraryCatalogueEntry> FetchItems()
 				{
+						HasDeliveredBooks = false;
+						HasOrderedBooks = false;
 						if (!Manager.IsAwake <GUIManager>()) {
 								return null;
 						}
@@ -140,14 +144,42 @@ namespace Frontiers.GUI
 						return null;
 				}
 
+				public override void CreateDividerObjects()
+				{
+						GameObject newDivider = null;
+						GUIGenericBrowserObject dividerObject = null;
+
+						if (HasDeliveredBooks) {
+								newDivider = CreateDivider();
+								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject.name = "a_empty";
+								dividerObject.UseAsDivider = true;
+								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
+								dividerObject.Name.text = "Delivered:";
+								dividerObject.Initialize("Divider");
+						}
+						if (HasOrderedBooks) {
+								newDivider = CreateDivider();
+								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject.name = "c_empty";
+								dividerObject.UseAsDivider = true;
+								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
+								dividerObject.Name.text = "Ordered:";
+								dividerObject.Initialize("Divider");
+						}
+						newDivider = CreateDivider();
+						dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+						dividerObject.name = "d_empty";
+						dividerObject.UseAsDivider = true;
+						dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
+						dividerObject.Name.text = "Available:";
+						dividerObject.Initialize("Divider");
+				}
+
 				protected override GameObject ConvertEditObjectToBrowserObject(LibraryCatalogueEntry editObject)
 				{
 						GameObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
-						if (editObject.OrderPrice > 0) {
-								newBrowserObject.name = "b_" + editObject.OrderPrice.ToString().PadLeft(10, '0') + "_" + newBrowserObject.name;
-						} else {
-								newBrowserObject.name = "a_" + editObject.BookName;
-						}
+						newBrowserObject.name = "a_" + editObject.BookName;
 						GUIGenericBrowserObject bookBrowserObject = newBrowserObject.GetComponent <GUIGenericBrowserObject>();
 
 						bookBrowserObject.EditButton.target = this.gameObject;
@@ -163,16 +195,18 @@ namespace Frontiers.GUI
 						bookBrowserObject.MiniIconBackground.enabled = false;
 
 						if (editObject.HasBeenDelivered) {
-								newBrowserObject.name = "a_" + newBrowserObject.name;
+								HasDeliveredBooks = true;
+								newBrowserObject.name = "b_" + newBrowserObject.name;
 								bookBrowserObject.Background.color = Colors.Darken(Colors.Get.MessageSuccessColor);
 								bookBrowserObject.Name.text = editObject.BookObject.DisplayName + Colors.ColorWrap(" (Delivered)", Colors.Dim(textColor));
 						} else if (editObject.HasBeenPlaced) {
-								newBrowserObject.name = "b_" + newBrowserObject.name;
+								HasOrderedBooks = true;
+								newBrowserObject.name = "d_" + newBrowserObject.name;
 								bookBrowserObject.Background.color = Colors.Get.MessageSuccessColor;
 								bookBrowserObject.AttentionIcon.enabled = true;
 								bookBrowserObject.Name.text = editObject.BookObject.DisplayName + Colors.ColorWrap(" (Order Placed)", Colors.Dim(textColor));
 						} else {
-								newBrowserObject.name = "c_" + newBrowserObject.name;
+								newBrowserObject.name = "f_" + newBrowserObject.name;
 								bookBrowserObject.Background.color = bookColor;
 								bookBrowserObject.Name.text = editObject.BookObject.DisplayName + Colors.ColorWrap(" - " + editObject.OrderPrice.ToString(), Colors.Dim(textColor));
 						}
@@ -239,14 +273,34 @@ namespace Frontiers.GUI
 						//TODO use a string builder
 						mDescription.Add(mSelectedObject.BookObject.DisplayName);
 						mDescription.Add("_");
-						mDescription.Add("Delivery time:");
-						mDescription.Add(mSelectedObject.DeliveryTimeInHours.ToString() + " hours");
-						mDescription.Add("Price:");
-						Color affordColor = Colors.Get.MessageSuccessColor;
-						if (!Player.Local.Inventory.InventoryBank.CanAfford(mSelectedObject.OrderPrice, mSelectedObject.CurrencyType)) {
-								affordColor = Colors.Get.MessageDangerColor;
+						if (!mSelectedObject.HasBeenDelivered) {
+								Book book = null;
+								bool hasLearnedSkills = true;
+								if (Books.Get.BookByName(mSelectedObject.BookName, out book)) {
+										if (book.SkillsToLearn.Count == 0) {
+												hasLearnedSkills = false;
+										}
+										foreach (string skillName in book.SkillsToLearn) {
+												if (!Skills.Get.HasLearnedSkill(skillName)) {
+														hasLearnedSkills = false;
+														break;
+												}
+										}
+								}
+								if (hasLearnedSkills) {
+										mDescription.Add("You have already learned the skills taught by this book. However, re-reading it can still increase your aptitude.");
+										mDescription.Add("_");
+								}
+								mDescription.Add(Colors.ColorWrap("Delivery time: ", Colors.Darken(Colors.Get.MenuButtonTextColorDefault)) + mSelectedObject.DeliveryTimeInHours.ToString() + " hours");
+								mDescription.Add(Colors.ColorWrap("Price: ", Colors.Darken(Colors.Get.MenuButtonTextColorDefault)) + mSelectedObject.OrderPrice.ToString() + " " + Currency.TypeToString(mSelectedObject.CurrencyType));
+								Color affordColor = Colors.Get.MessageSuccessColor;
+								if (!Player.Local.Inventory.InventoryBank.CanAfford(mSelectedObject.OrderPrice, mSelectedObject.CurrencyType)) {
+										affordColor = Colors.Get.MessageDangerColor;
+								}
+								mDescription.Add(Colors.ColorWrap("Your Funds: ", Colors.Darken(Colors.Get.MenuButtonTextColorDefault)) + Colors.ColorWrap(Player.Local.Inventory.InventoryBank.BaseCurrencyValue.ToString() + " " + Currency.TypeToString(WICurrencyType.A_Bronze), affordColor));
+						} else {
+								mDescription.Add("(This book has been added to your log)");
 						}
-						mDescription.Add(Colors.ColorWrap(mSelectedObject.OrderPrice.ToString() + " " + Currency.TypeToString(mSelectedObject.CurrencyType), affordColor));
 						BookDescriptionLabel.text = mDescription.JoinToString("\n");
 						DopplegangerProps.CopyFrom(mSelectedObject.BookObject);
 						BookDoppleganger = WorldItems.GetDoppleganger(DopplegangerProps, BookDopplegangerParent, BookDoppleganger, WIMode.Stacked);
@@ -263,7 +317,7 @@ namespace Frontiers.GUI
 						if (PlacedOrder | ReceivedOrder) {
 								//if (string.IsNullOrEmpty(library.LibrarianCharacterName)) {
 								//Debug.Log("Setting defaults in catalogue");
-										library.SetDefaults();
+								library.SetDefaults();
 								//}
 								Character character = null;
 								if (Characters.Get.SpawnedCharacter(library.LibrarianCharacterName, out character)) {

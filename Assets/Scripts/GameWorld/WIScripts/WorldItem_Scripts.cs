@@ -560,6 +560,12 @@ namespace Frontiers.World
 						}
 				}
 
+				public bool UseAsContainerInInventory {
+						get {
+								return IsStackContainer && Props.Local.UseAsContainerInInventory;
+						}
+				}
+
 				public bool IsStackContainer {
 						get {
 								if (Is <Container>()) {
@@ -681,23 +687,16 @@ namespace Frontiers.World
 								} else {
 										//states handle colliders and renderers
 										//if we don't have one, add them to the renderers array here
-										if (worlditem.renderer != null) {
-												worlditem.Renderers.Add(worlditem.renderer);
-										} else {
-												Renderer[] renderers = tr.GetComponentsInChildren <Renderer>(true);
-												for (int i = 0; i < renderers.Length; i++) {
-														if (renderers[i].particleSystem == null) {
-																worlditem.Renderers.Add(renderers[i]);
-														}
+										Renderer[] renderers = tr.GetComponentsInChildren <Renderer>(true);
+										for (int i = 0; i < renderers.Length; i++) {
+												//particles aren't counted - scenery layers are considered 'custom'
+												if (renderers[i].particleSystem == null && renderers[i].gameObject.layer != Globals.LayerNumScenery) {
+														worlditem.Renderers.Add(renderers[i]);
 												}
 										}
-										if (worlditem.collider != null) {
-												worlditem.Colliders.Add(worlditem.collider);
-										} else {
-												Collider[] colliders = tr.GetComponentsInChildren <Collider>(true);
-												for (int i = 0; i < colliders.Length; i++) {
-														worlditem.Colliders.Add(colliders[i]);
-												}
+										Collider[] colliders = tr.GetComponentsInChildren <Collider>(true);
+										for (int i = 0; i < colliders.Length; i++) {
+												worlditem.Colliders.Add(colliders[i]);
 										}
 								}
 
@@ -1025,6 +1024,10 @@ namespace Frontiers.World
 								newStackItem.Props.CopyLocal(Props);
 								newStackItem.Props.CopyName(Props);
 								newStackItem.GlobalProps = Props.Global;
+
+								if (newStackItem.Props.Local.Mode == WIMode.Frozen) {
+									newStackItem.Props.Local.FreezeOnStartup = true;
+								}
 
 								newStackItem.Name = Props.Name.FileName;
 								newStackItem.SaveState = GetSaveState(false);

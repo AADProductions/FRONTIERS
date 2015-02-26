@@ -117,7 +117,7 @@ namespace Frontiers.World.BaseWIScripts
 				{
 						mInitiatingConversation = true;
 						if (!worlditem.HasPlayerAttention) {
-								Debug.Log("We don't have player's attention");
+								//Debug.Log("We don't have player's attention");
 								mInitiatingConversation = false;
 								yield break;
 						}
@@ -130,7 +130,7 @@ namespace Frontiers.World.BaseWIScripts
 						yield return StartCoroutine(mTalkMotileAction.WaitForActionToStart(0f));
 
 						if (mTalkMotileAction.IsFinished) {
-								Debug.Log("Talk motile action got finished for some reason, quitting");
+								//Debug.Log("Talk motile action got finished for some reason, quitting");
 								mInitiatingConversation = false;
 								yield break;
 						}
@@ -141,7 +141,7 @@ namespace Frontiers.World.BaseWIScripts
 								if (Mods.Get.Runtime.LoadMod(ref speech, "Speech", State.DTSSpeechName)) {
 										SayDTS(speech);
 								}
-								Debug.Log("Defaulting to DTS");
+								//Debug.Log("Defaulting to DTS");
 								mInitiatingConversation = false;
 								yield break;
 						}
@@ -158,12 +158,12 @@ namespace Frontiers.World.BaseWIScripts
 								//this will load the conversation without hitches
 								//now we may just have a dts - in which case the conversation won't be in progress
 								if (!Conversation.ConversationInProgress) {
-										Debug.Log("Conversation not in progress, must have defaulted to DTS");
+										//Debug.Log("Conversation not in progress, must have defaulted to DTS");
 										mInitiatingConversation = false;
 										yield break;
 								}
 						} else if (!string.IsNullOrEmpty(DTSOverride)) {
-								Debug.Log("We have a dts override: " + DTSOverride);
+								//Debug.Log("We have a dts override: " + DTSOverride);
 								//whoa we have a DTS override
 								State.DTSSpeechName = DTSOverride;
 								mInitiatingConversation	= false;
@@ -174,7 +174,7 @@ namespace Frontiers.World.BaseWIScripts
 								mInitiatingConversation = false;
 								yield break;
 						} else {
-								Debug.Log("Couldn't get the conversation, canceling");
+								//Debug.Log("Couldn't get the conversation, canceling");
 								//aw shit we never got the conversation
 								mInitiatingConversation = false;
 								yield break;
@@ -231,9 +231,14 @@ namespace Frontiers.World.BaseWIScripts
 
 				public void GiveSpeech(Speech speech, ActionNode dispatcher)
 				{
+						if (speech == null) {
+								Debug.Log("Speech was null, returning");
+						}
+
 						if (mSpeech != null && speech.Name == mSpeech.speech.Name) {//we already have it
 								return;
 						}
+
 						foreach (DispatchedSpeech existingSpeech in mNewSpeeches) {
 								if (speech.Name == existingSpeech.speech.Name) {//we already have it
 										return;
@@ -248,6 +253,10 @@ namespace Frontiers.World.BaseWIScripts
 
 				protected IEnumerator StartSpeech(DispatchedSpeech speech)
 				{
+						if (speech.speech == null) {
+								Debug.Log("Speech is null, breaking");
+						}
+
 						State.LastSpeechName = speech.speech.Name;
 						State.LastSpeechStarted = WorldClock.AdjustedRealTime;
 						State.LastSpeechPage	= -1;
@@ -275,20 +284,33 @@ namespace Frontiers.World.BaseWIScripts
 								mSpeechMotileAction.IdleAnimation = GameWorld.Get.FlagByName("IdleAnimation", "Talking");
 								//we want normal because we want to reach the action node first
 								motile.PushMotileAction(mSpeechMotileAction, MotileActionPriority.Next);
+						} else {
+								listenerTarget = worlditem.tr;
 						}
 
 						//create speech bubble
-						GameObject speechBubbleGameObject = gameObject.CreateChild("SpeechBubble " + speech.speech.Name).gameObject;
-						mSpeechBubble = speechBubbleGameObject.AddComponent <SpeechBubble>();
-						mSpeechBubble.ParentSpeech = speech.speech;
-						mSpeechBubble.Dispatcher = speech.dispatcher;
-						mSpeechBubble.Speaker = this;
-						mSpeechBubble.ListenerTarget = listenerTarget;
+						mSpeechBubble = CreateSpeechBubble(speech.speech, speech.dispatcher, listenerTarget);
 						yield break;
+				}
+
+				protected SpeechBubble CreateSpeechBubble(Speech speech, ActionNode dispatcher, Transform listenerTarget)
+				{
+						GameObject speechBubbleGameObject = gameObject.CreateChild("SpeechBubble " + speech.Name).gameObject;
+						SpeechBubble speechBubble = speechBubbleGameObject.AddComponent <SpeechBubble>();
+						speechBubble.ParentSpeech = speech;
+						speechBubble.Dispatcher = dispatcher;
+						speechBubble.Speaker = this;
+						speechBubble.ListenerTarget = listenerTarget;
+						return speechBubble;
 				}
 
 				protected IEnumerator FinishSpeech(DispatchedSpeech speech)
 				{
+						if (speech.speech == null) {
+								Debug.Log("Speech was null, breaking without finishing");
+								yield break;
+						}
+
 						State.LastSpeechFinished = WorldClock.AdjustedRealTime;
 						//update the speech data and save it to disk
 						//note: this might be a problem since multiple NPCs will be giving speeches...
@@ -298,7 +320,9 @@ namespace Frontiers.World.BaseWIScripts
 						}
 						speech.speech.FinishSpeech(worlditem.FileName);
 						mSpeechBubble.FinishSpeech();
-						speech.dispatcher.OnFinishSpeech();
+						if (speech.dispatcher != null) {
+								speech.dispatcher.OnFinishSpeech();
+						}
 						Mods.Get.Runtime.SaveMod <Speech>(speech.speech, "Speech", speech.speech.Name);
 						//if the speech has messages and we have listeners, send message now
 						mSpeechBubble = null;
@@ -329,11 +353,15 @@ namespace Frontiers.World.BaseWIScripts
 
 				protected IEnumerator GiveSpeechesOverTime()
 				{
-						mGivingSpeeches	= false;
+						mGivingSpeeches	= true;
 						while (mNewSpeeches.Count > 0 || mSpeech != null) {	//if we already have a speech and it's not finished
 								if (mSpeech == null) {
 										mSpeech = mNewSpeeches.Dequeue();
 										yield return StartCoroutine(StartSpeech(mSpeech));
+								}
+								if (mSpeech.speech == null) {
+										Debug.Log("Dispatched speech was null");
+										yield break;
 								}
 								//give this speech
 								State.GivingSpeech = true;
@@ -380,6 +408,10 @@ namespace Frontiers.World.BaseWIScripts
 						string pageText = string.Empty;
 						float pageDuration	= 0.0f;
 						bool continueDTS = true;
+						if (!string.IsNullOrEmpty(mDTS.OnFinishCommand)) {
+								mSpeechBubble = CreateSpeechBubble(mDTS, null, worlditem.tr);
+						}
+						yield return null;
 						while (continueDTS) {
 								continueDTS = mDTS.GetPage(ref pageText, ref pageDuration, ref mLastDTSPage, true);
 								NGUIScreenDialog.AddSpeech(pageText, worlditem.DisplayName, pageDuration);
@@ -387,6 +419,9 @@ namespace Frontiers.World.BaseWIScripts
 								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
 										yield return null;
 								}
+						}
+						if (mSpeechBubble != null) {
+								mSpeechBubble.FinishSpeech();
 						}
 						if (!string.IsNullOrEmpty(mDTS.OnFinishMissionActivate)) {
 								if (!string.IsNullOrEmpty(mDTS.OnFinishObjectiveActivate)) {

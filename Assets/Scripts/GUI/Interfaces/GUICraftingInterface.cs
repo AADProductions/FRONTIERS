@@ -45,6 +45,24 @@ namespace Frontiers.GUI
 						}
 				}
 
+				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects)
+				{
+						/*FrontiersInterface.Widget w = new FrontiersInterface.Widget();
+						for (int i = 0; i < Squares.Count; i++) {
+								w.Collider = Squares[i].Collider;
+								w.SearchCamera = NGUICamera;
+								currentObjects.Add(w);
+						}
+						w.Collider = ResultSquare.Collider;
+						w.SearchCamera = NGUICamera;
+						currentObjects.Add(w);
+
+						//w.Collider = CraftOneButton.Collider;
+						w.SearchCamera = NGUICamera;
+						currentObjects.Add(w);
+						//Tabs.GetActiveInterfaceObjects(currentObjects);*/
+				}
+
 				public GUITabPage CraftingTabPage;
 				public GUIInventoryInterface InventoryInterface;
 				public CraftingItem CraftingWorldItem;
@@ -93,6 +111,9 @@ namespace Frontiers.GUI
 
 				public bool SkillRequirementsMet {
 						get {
+								if (mRequiredSkill == null) {
+										return false;
+								}
 								return mRequiredSkill.HasBeenLearned;
 						}
 				}

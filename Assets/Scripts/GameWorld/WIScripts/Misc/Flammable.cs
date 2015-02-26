@@ -264,6 +264,11 @@ namespace Frontiers.World.BaseWIScripts
 												State.HasCausedReputationPenalty = true;
 										}
 								}
+								//if the player is carrying this item, we have to be dropped
+								if (worlditem.Is(WIMode.Equipped)) {
+										Debug.Log("Force-carrying ignited item");
+										Player.Local.ItemPlacement.ItemForceCarry(worlditem);
+								}
 						} else {
 								//destroy the fire object
 								if (FireObject != null) {
@@ -292,20 +297,35 @@ namespace Frontiers.World.BaseWIScripts
 						    && Player.Local.Tool.worlditem.Is <Flammable>(out flammable)) {
 								options.Add(new WIListOption("Add " + flammable.worlditem.DisplayName + " to " + worlditem.DisplayName, "AddFuel"));
 						}
+						if (Player.Local.Surroundings.IsWorldItemInRange
+						    && Player.Local.Surroundings.WorldItemFocus.worlditem.Is<Flammable>(out flammable)
+						    && flammable.IsOnFire
+								&& !IsOnFire) {
+								options.Add(new WIListOption("Ignite with " + flammable.worlditem.DisplayName, "Ignite"));
+						}
 				}
 
 				public void OnPlayerUseWorldItemSecondary(object secondaryResult)
 				{
-						WIListResult dialogResult = secondaryResult as WIListResult;			
+						Flammable flammable = null;
+
+						WIListResult dialogResult = secondaryResult as WIListResult;	
 						switch (dialogResult.SecondaryResult) {
 								case "AddFuel":
 										//perform the same check
-										Flammable flammable = null;
 										if (CanAcceptFuel
 										    && worlditem.Is(WIMode.World | WIMode.Frozen | WIMode.Placed)
 										    && Player.Local.Tool.HasWorldItem
 										    && Player.Local.Tool.worlditem.Is <Flammable>(out flammable)) {
 												AddFuel(flammable);//it will take care of the rest
+										}
+										break;
+
+								case "Ignite":
+										if (Player.Local.Surroundings.IsWorldItemInRange
+										    && Player.Local.Surroundings.WorldItemFocus.worlditem.Is<Flammable>(out flammable)
+										    && flammable.IsOnFire) {
+												Ignite("Default");
 										}
 										break;
 

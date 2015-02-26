@@ -23,6 +23,10 @@ namespace Frontiers
 								return tr.position;
 						}
 						set {
+								if (mRestoringControl) {
+										Debug.Log("Attempted to set position while restoring control, ignoring");
+										return;
+								}
 								tr.position = value;
 								State.Transform.Position = value;
 						}
@@ -311,7 +315,7 @@ namespace Frontiers
 						while (WorldClock.AdjustedRealTime < timeStart + earthquakeDuration) {
 								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + UnityEngine.Random.value;
 								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
-									yield return null;
+										yield return null;
 								}
 								FPSCamera.DoBomb(Vector3.one, earthquakeIntensity, earthquakeIntensity);
 						}
@@ -380,7 +384,8 @@ namespace Frontiers
 						mZoomFOV = zoomFOV;
 				}
 
-				public void UnzoomCamera( ) {
+				public void UnzoomCamera()
+				{
 						mZoomedIn = false;
 						mZoomedInCameraSensitivity = 1f;
 						mZoomFOV = 0f;
@@ -388,6 +393,11 @@ namespace Frontiers
 
 				public void HijackControl()
 				{
+						if (mRestoringControl) {
+								Debug.Log("Already restoring control, not hijacking");
+								return;
+						}
+
 						HijackedPosition.transform.rotation = GameManager.Get.GameCamera.transform.rotation;
 						HijackedPosition.transform.position = GameManager.Get.GameCamera.transform.position;
 						HijackLookSpeed = Globals.PlayerHijackLerp;
@@ -403,35 +413,83 @@ namespace Frontiers
 				public void RestoreControl(bool keepLookDirection)
 				{
 						if (State.IsHijacked) {
-								Camera gameCamera = GameManager.Get.GameCamera;
-								gameCamera.transform.parent = FPSCameraSeat;
-								gameCamera.transform.localPosition = Vector3.zero;
-								gameCamera.fieldOfView = Profile.Get.CurrentPreferences.Video.FieldOfView;
-								//we want to take the hijacked camera rotation and apply it to the fps camera's rotation
-								//then we'll reset the game camera's rotation
-								if (keepLookDirection) {
-										//the camera's rotation needs to be pulled into the controller and the camera
-										//y rotation is pulled into the controller
-										//x / z is pulled into camera's pitch / yaw
-										//float controllerRotation = gameCamera.transform.eulerAngles.y + HijackedPosition.eulerAngles.y;
-										float pitch = gameCamera.transform.eulerAngles.x;
-										float yaw = HijackedPosition.rotation.eulerAngles.y;//gameCamera.transform.eulerAngles.z;
-										tr.localRotation = Quaternion.Euler(0f, HijackedPosition.rotation.eulerAngles.y, 0f);
-										FPSCamera.Pitch = pitch;
-										FPSCamera.Yaw = yaw;
-										//Debug.Log("Keeping look direction: c " + controllerRotation.ToString() + ", p " + pitch.ToString() + ", y " + yaw.ToString());
-								} else {
+								if (!keepLookDirection) {
+										Debug.Log("Not keeping rotation, restoring directly");
+										Camera gameCamera = GameManager.Get.GameCamera;
+										gameCamera.transform.parent = FPSCameraSeat;
 										FPSCamera.Pitch = mPitchOnHijack;
 										FPSCamera.Yaw = mYawOnHijack;
+										FPSCamera.LookAxisChanged = true;
+										gameCamera.transform.localPosition = Vector3.zero;
+										gameCamera.transform.localRotation = Quaternion.identity;
+										gameCamera.fieldOfView = Profile.Get.CurrentPreferences.Video.FieldOfView;
+										mRestoringControl = false;
+										State.IsHijacked = false;
+										Player.Get.AvatarActions.ReceiveAction(AvatarAction.ControlRestore, WorldClock.AdjustedRealTime);
+								} else if (!mRestoringControl) {
+										mRestoringControl = true;
+										StartCoroutine(RestoreControlOverTime(keepLookDirection));
 								}
-								gameCamera.transform.localRotation = Quaternion.identity;
-
-								State.IsHijacked = false;
-								Controller.enabled = true;
-
-								Player.Get.AvatarActions.ReceiveAction(AvatarAction.ControlRestore, WorldClock.AdjustedRealTime);
 						}
 				}
+
+				protected IEnumerator RestoreControlOverTime(bool keepLookDirection)
+				{
+
+						Camera gameCamera = GameManager.Get.GameCamera;
+						//gameCamera.transform.parent = null;
+						//get the start position & rotation in world space
+						//Vector3 startCameraPos = gameCamera.transform.position;
+						//Quaternion startCameraRot = gameCamera.transform.rotation;
+
+						//the camera's rotation needs to be pulled into the controller and the camera
+						//y rotation is pulled into the controller
+						float pitch = gameCamera.transform.eulerAngles.x;
+						float yaw = HijackedPosition.eulerAngles.y;
+
+						Quaternion endPlayerRot = Quaternion.Euler(0f, HijackedPosition.rotation.eulerAngles.y, 0f);
+						tr.localRotation = endPlayerRot;
+
+						//use the smooth target to get a final position and rotation in world space
+						/*
+						if (mSmoothRestoreTarget == null) { mSmoothRestoreTarget = new GameObject("SmoothRestoreTarget").transform; }
+						mSmoothRestoreTarget.parent = FPSCameraSeat;
+						mSmoothRestoreTarget.localRotation = Quaternion.identity;
+						mSmoothRestoreTarget.localPosition = Vector3.zero;
+						*/
+						//Vector3 endCameraPos = mSmoothRestoreTarget.position;
+						//Quaternion endCameraRot = mSmoothRestoreTarget.rotation;
+						float startFov = gameCamera.fieldOfView;
+						float endFov = Profile.Get.CurrentPreferences.Video.FieldOfView;
+						gameCamera.transform.parent = FPSCameraSeat;
+						/*
+						double smoothStartTime = WorldClock.RealTime;
+						while (WorldClock.RealTime < (smoothStartTime + 0.75f)) {
+							//let the controller start falling even though there won't be input
+							Controller.enabled = true;
+							//make sure these don't get changed
+							tr.localRotation = endPlayerRot;
+							//update the smooth position
+							float smoothRestoreAmount = (float)((WorldClock.RealTime - smoothStartTime) / 0.75f);
+							gameCamera.transform.localPosition = Vector3.zero;// = Vector3.Lerp(startCameraPos, endCameraPos, smoothRestoreAmount);
+							gameCamera.transform.rotation = Quaternion.Lerp(startCameraRot, endCameraRot, smoothRestoreAmount);
+							gameCamera.fieldOfView = Mathf.Lerp(startFov, endFov, smoothRestoreAmount);
+							yield return null;
+						}*/
+						tr.localRotation = endPlayerRot;
+						gameCamera.transform.localPosition = Vector3.zero;
+						gameCamera.transform.localRotation = Quaternion.identity;
+						gameCamera.fieldOfView = endFov;
+						State.IsHijacked = false;
+						FPSCamera.Pitch = pitch;
+						FPSCamera.Yaw = yaw;
+						FPSCamera.LookAxisChanged = true;
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.ControlRestore, WorldClock.AdjustedRealTime);
+						mRestoringControl = false;
+						yield break;
+				}
+
+				protected bool mRestoringControl = false;
 
 				public void SetMotionLocks(bool movement, bool camera, Transform lockSource)
 				{
@@ -462,6 +520,7 @@ namespace Frontiers
 				}
 
 				protected Transform mLockSource;
+				protected Transform mSmoothRestoreTarget;
 				protected Action mHijackCancel;
 				protected float mPitchOnHijack;
 				protected float mYawOnHijack;
@@ -505,8 +564,8 @@ namespace Frontiers
 						ReleaseGameCamera();
 						if (GameManager.Is(FGameState.InGame)) {
 								HijackControl();
-								HijackedPosition.transform.position = Position + Globals.PlayerDeathHijackedOffset;
-								HijackedLookTarget.transform.position = Position;
+								HijackedPosition.position = Position + Globals.PlayerDeathHijackedOffset;
+								HijackedLookTarget.position = Position;
 						}
 						Manager.LocalPlayerDespawn();
 						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalDespawn, WorldClock.AdjustedRealTime);
@@ -888,6 +947,12 @@ namespace Frontiers
 						if (State.IsHijacked) {
 								GroundPath.Follower.target = HijackedPosition;
 								Controller.enabled = false;
+
+								if (mRestoringControl) {
+										//no need to change the camera's position
+										return;
+								}
+
 								switch (State.HijackMode) {
 										case PlayerHijackMode.LookAtTarget:
 												HijackedPosition.LookAt(HijackedLookTarget);
@@ -900,8 +965,10 @@ namespace Frontiers
 												break;
 								}
 								//set these to lerp - stuff like tools will lag a bit behind but that's OK
+								GameManager.Get.GameCamera.transform.parent = null;
 								GameManager.Get.GameCamera.transform.rotation = Quaternion.Lerp(GameManager.Get.GameCamera.transform.rotation, HijackedPosition.transform.rotation, HijackLookSpeed);
 								GameManager.Get.GameCamera.transform.position = Vector3.Lerp(GameManager.Get.GameCamera.transform.position, HijackedPosition.transform.position, HijackLookSpeed);
+
 						} else if (!GameManager.Is(FGameState.InGame | FGameState.Cutscene) || !HasSpawned) {
 								GroundPath.Follower.target = HijackedPosition;
 								Controller.enabled = false;

@@ -21,7 +21,11 @@ namespace Frontiers
 				protected WIMaterialType receiverMaterial;
 				protected WIMaterialType receiverArmorMaterials;
 
-				public void SendDamage(DamagePackage damage)
+				public void SendDamage(DamagePackage damage) {
+						SendDamage(damage, null);
+				}
+
+				public void SendDamage(DamagePackage damage, BodyPart bodyPart)
 				{
 						damageReceiver = damage.Target;
 						damageHandler = null;
@@ -40,6 +44,16 @@ namespace Frontiers
 												damageWorldItem = damageReceiver.worlditem;
 												if (damageReceiver.worlditem.Is <Damageable>(out damageable)) {
 														damageHandler = damageable;
+												} else {
+														//if it's an instant kill, destroy it now
+														if (damage.InstantKill) {
+																Debug.Log("Instant kill in damage manager");
+																damage.HitTarget = true;
+																damage.TargetIsDead = true;
+																damage.DamageDealt = damage.DamageSent;
+																damageReceiver.worlditem.RemoveFromGame();
+																return;
+														}
 												}
 												break;
 
@@ -82,8 +96,50 @@ namespace Frontiers
 												damage.DamageSent *= Globals.DamageMaterialPenaltyMultiplier;
 										}
 								}
+								if (bodyPart != null) {
+										switch (bodyPart.Type) {
+												case BodyPartType.Eye:
+														GUI.GUIManager.PostSuccess("Inflicted eye wound");
+														damage.DamageSent = Globals.DamageBodyPartEyeMultiplier;
+														break;
+
+												case BodyPartType.Head:
+												case BodyPartType.Face:
+												case BodyPartType.Neck:
+														GUI.GUIManager.PostSuccess("Inflicted head wound");
+														damage.DamageSent *= Globals.DamageBodyPartHeadMultiplier;
+														break;
+
+												case BodyPartType.Chest:
+												case BodyPartType.Hip:
+												case BodyPartType.Segment:
+												case BodyPartType.Shoulder:
+												case BodyPartType.None:
+												default:
+														GUI.GUIManager.PostSuccess("Inflicted torso wound");
+														damage.DamageSent *= Globals.DamageBodyPartTorsoMultiplier;
+														break;
+
+												case BodyPartType.Finger:
+												case BodyPartType.Hand:
+												case BodyPartType.Wrist:
+												case BodyPartType.Arm:
+												case BodyPartType.Foot:
+												case BodyPartType.Shin:
+												case BodyPartType.Leg:
+														GUI.GUIManager.PostSuccess("Inflicted limb wound");
+														damage.DamageSent *= Globals.DamageBodyPartLimbMultiplier;
+														break;
+
+										}
+								}
 								damageHandler.LastDamageSource = damage.Source;//this has a good chance of being null
-								damage.HitTarget = damageHandler.TakeDamage(damage.SenderMaterial, damage.Point, damage.DamageSent, damage.Force, damage.SenderName, out damage.DamageDealt, out damage.TargetIsDead);
+								damageHandler.LastBodyPartHit = bodyPart;
+								if (damage.InstantKill) {
+										damageHandler.InstantKill(damage.Source);
+								} else {
+										damage.HitTarget = damageHandler.TakeDamage(damage.SenderMaterial, damage.Point, damage.DamageSent, damage.Force, damage.SenderName, out damage.DamageDealt, out damage.TargetIsDead);
+								}
 
 								if (damage.HitTarget) {
 										SpawnDamageFX(damage.Point, receiverMaterial, damage.DamageDealt);
@@ -516,6 +572,7 @@ namespace Frontiers
 				public SVector3 Origin = SVector3.zero;
 				public float DamageDealt = 0.0f;
 				public float ForceSent = 0.0f;
+				public bool InstantKill = false;
 				public bool TargetIsDead = false;
 				public bool HitTarget = false;
 				public bool HasLineOfSight = true;

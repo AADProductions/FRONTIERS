@@ -38,12 +38,17 @@ namespace Frontiers.World
 				public void OnPlayerEncounter()
 				{
 						if (CanDetect) {
-								Skill detectionSkill = null;
-								if (Skills.Get.LearnedSkill(DetectionSkillName, out detectionSkill)) {
-										//use the skill on this item
-										//if it succeeds it'll handle the rest
-										//SKILL USE
-										detectionSkill.Use(worlditem, 0);
+								if (string.IsNullOrEmpty(DetectionSkillName)) {
+										FXManager.Get.SpawnFX(worlditem.Position, "DrawAttentionToItem");
+										State.LastTimeDetected = WorldClock.AdjustedRealTime;
+								} else {
+										Skill detectionSkill = null;
+										if (Skills.Get.LearnedSkill(DetectionSkillName, out detectionSkill)) {
+												//use the skill on this item
+												//if it succeeds it'll handle the rest
+												//SKILL USE
+												detectionSkill.Use(worlditem, 0);
+										}
 								}
 						}
 				}

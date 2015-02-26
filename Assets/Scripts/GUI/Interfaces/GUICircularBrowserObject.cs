@@ -24,6 +24,7 @@ namespace Frontiers.GUI {
 		public MasterAudio.SoundType SoundType = MasterAudio.SoundType.PlayerInterface;
 		public string SoundNameSuccess = "InventoryClick";
 		public string SoundNameFailure = "ButtonClickDisabled";
+		public BoxCollider Collider = null;
 
 		public virtual void OnEnable ( )
 		{
@@ -42,6 +43,7 @@ namespace Frontiers.GUI {
 		public override void Awake ()
 		{
 			Panel = gameObject.GetComponent <UIPanel> ();
+			Collider = gameObject.GetComponent <BoxCollider>();
 
 			if (ButtonScale == null) {
 				ButtonScale = gameObject.GetComponent <UIButtonScale> ();

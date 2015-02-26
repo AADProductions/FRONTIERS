@@ -19,7 +19,7 @@ namespace Frontiers.GUI
 				public UIPanel OptionButtonsPanel;
 				public List <UIButton> OptionButtons;
 				public GUIOptionListDivider DividerPrototype = new GUIOptionListDivider();
-				public GenericWorldItem DopplegangerProps = GenericWorldItem.Empty;
+				public GenericWorldItem DopplegangerProps = new GenericWorldItem ();
 				public WIMode DopplegangerMode = WIMode.Stacked;
 				public GameObject Doppleganger;
 				public Transform DopplegangerParent;
@@ -115,6 +115,46 @@ namespace Frontiers.GUI
 												newButtonLabel.text = option.Flavors[flavorIndex];
 												newButton.name += "_" + flavorIndex.ToString();
 										}
+								}
+
+								Transform currencyTransform = newButton.transform.FindChild("Currency");
+								if (option.RequiresCurrency) {
+										Transform currencyLabelTransform = currencyTransform.Find("CurrencyLabel");
+										Transform currencyDopplegangerParent = currencyTransform.Find("CurrencyDopplegangerParent");
+										UILabel currencyLabel = currencyLabelTransform.gameObject.GetComponent <UILabel>();
+										string inventoryItemName = string.Empty;
+										GenericWorldItem currencyDopplegangerProps = null;
+										switch (option.RequiredCurrencyType) {
+												case WICurrencyType.A_Bronze:
+												default:
+														currencyDopplegangerProps = Currency.BronzeGenericWorldItem;
+														inventoryItemName = Currency.BronzeCurrencyNamePlural;
+														break;
+
+												case WICurrencyType.B_Silver:
+														currencyDopplegangerProps = Currency.SilverGenericWorldItem;
+														inventoryItemName = Currency.SilverCurrencyNamePlural;
+														break;
+
+												case WICurrencyType.C_Gold:
+														currencyDopplegangerProps = Currency.GoldIGenericWorldItem;
+														inventoryItemName = Currency.GoldCurrencyNamePlural;
+														break;
+
+												case WICurrencyType.D_Luminite:
+														currencyDopplegangerProps = Currency.LumenGenericWorldItem;
+														inventoryItemName = Currency.LumenCurrencyNamePlural;
+														break;
+
+												case WICurrencyType.E_Warlock:
+														currencyDopplegangerProps = Currency.WarlockGenericWorldItem;
+														inventoryItemName = Currency.WarlockCurrencyNamePlural;
+														break;
+										}
+										currencyLabel.text = option.CurrencyValue.ToString() + " " + inventoryItemName;
+										GameObject currencyDoppleganger = WorldItems.GetDoppleganger(currencyDopplegangerProps, currencyDopplegangerParent, null, WIMode.Stacked, 1f);
+								} else {
+										currencyTransform.gameObject.SetActive(false);
 								}
 				
 								if (option.Disabled) {

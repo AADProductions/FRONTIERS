@@ -143,8 +143,6 @@ namespace Frontiers
 										mAudioClipLookup.Add(clip.Key, clip.Clip);
 								}
 						}
-						mWaitMusic = new WaitForSeconds(mUpdateMusicInterval);
-						mWaitAmbient = new WaitForSeconds(mUpdateAmbientInterval);
 				}
 
 				public override void OnInitialized()
@@ -214,7 +212,10 @@ namespace Frontiers
 				protected IEnumerator UpdateAmbientStateOverTime()
 				{
 						while (!GameManager.Is(FGameState.Quitting)) {
-								yield return mWaitAmbient;
+								double waitUntil = WorldClock.RealTime + mUpdateAmbientInterval;
+								while (WorldClock.RealTime < waitUntil) {
+										yield return null;
+								}
 								UpdateAmbientState();
 						}
 						yield break;
@@ -223,7 +224,10 @@ namespace Frontiers
 				protected IEnumerator UpdateMusicStateOverTime()
 				{
 						while (!GameManager.Is(FGameState.Quitting)) {
-								yield return mWaitMusic;
+								double waitUntil = WorldClock.RealTime + mUpdateMusicInterval;
+								while (WorldClock.RealTime < waitUntil) {
+										yield return null;
+								}
 								UpdateMusicState();
 						}
 						yield break;
@@ -374,6 +378,7 @@ namespace Frontiers
 								yield return null;
 								if (loader == null) {
 										Debug.Log("Loader was NULL in audio manager");
+										mUpdatingMusicState = false;
 										yield break;
 								}
 						}
@@ -577,8 +582,6 @@ namespace Frontiers
 						}
 				}
 
-				protected WaitForSeconds mWaitAmbient;
-				protected WaitForSeconds mWaitMusic;
 				protected float mMasterMusicVolume = 1.0f;
 				protected Dictionary <string, AudioClip> mAudioClipLookup = new Dictionary <string, AudioClip>();
 				protected bool mUpdatingMusicState = false;

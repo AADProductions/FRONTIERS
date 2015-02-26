@@ -14,6 +14,8 @@ namespace Frontiers.World
 		{
 				public DamageableSceneryState State = new DamageableSceneryState();
 
+				public BodyPart LastBodyPartHit { get; set; }
+
 				public IItemOfInterest LastDamageSource { get; set; }
 
 				public bool IsDead { get { return false; } }
@@ -38,6 +40,17 @@ namespace Frontiers.World
 				public virtual void OnGainPlayerFocus()
 				{
 						if (State.SpawnOnDamaage) {
+								if (string.IsNullOrEmpty(State.SpawnDescription)) {
+										WICategory cat = null;
+										if (WorldItems.Get.Category(State.SpawnCategory, out cat)) {
+												cat.RefreshDisplayNames();
+												List <string> stuffInCategory = new List<string>();
+												for (int i = 0; i < cat.GenericWorldItems.Count; i++) {
+														stuffInCategory.SafeAdd(cat.GenericWorldItems[i].DisplayName);
+												}
+												State.SpawnDescription = Data.GameData.CommaJoinWithLast(stuffInCategory, "&");
+										}
+								}
 								mHasWeaponEquipped = false;
 								mHadWeaponEquippedLastFrame = false;
 								enabled = true;
@@ -54,12 +67,16 @@ namespace Frontiers.World
 						if (HasPlayerFocus) {
 								mHasWeaponEquipped = Player.Local.Tool.HasWorldItem && Player.Local.Tool.worlditem.Is <Weapon>();
 								if (mHasWeaponEquipped && !mHadWeaponEquippedLastFrame) {
-										GUIHud.Get.ShowAction (this, UserActionType.ToolUse, "Mine", Player.Local.Focus.FocusTransform, GameManager.Get.GameCamera);
+										GUIHud.Get.ShowAction(this, UserActionType.ToolUse, "Mine (" + State.SpawnDescription + ")", Player.Local.Focus.FocusTransform, GameManager.Get.GameCamera);
 								}
 								mHadWeaponEquippedLastFrame = mHasWeaponEquipped;
 						} else {
 								enabled = false;
 						}
+				}
+
+				public virtual void InstantKill (IItemOfInterest causeOfDeath) {
+						return;
 				}
 
 				public virtual bool TakeDamage(WIMaterialType materialType, Vector3 damagePoint, float attemptedDamage, Vector3 attemptedForce, string damageSource, out float actualDamage, out bool isDead)
@@ -152,6 +169,7 @@ namespace Frontiers.World
 				public float TotalDamage = 0f;
 				[FrontiersAvailableMods("Category")]
 				public string SpawnCategory = string.Empty;
+				public string SpawnDescription = string.Empty;
 				public float SpawnDamageMinimum	= 50.0f;
 				public float SpawnDamageMaximum = 0f;
 				public bool DepletedOnMaxDamage = false;

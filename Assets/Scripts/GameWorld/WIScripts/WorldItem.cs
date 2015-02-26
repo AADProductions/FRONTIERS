@@ -208,6 +208,7 @@ namespace Frontiers.World
 
 						ActiveState = WIActiveState.Active;
 						rb.isKinematic = false;
+						rb.useGravity = true;
 						rb.AddForce(force, ForceMode.Impulse);
 				}
 
@@ -714,6 +715,7 @@ namespace Frontiers.World
 				{
 						UnityEngine.GUI.color = Color.cyan;
 						GUILayout.Button("Active state: " + worlditem.ActiveState.ToString());
+						GUILayout.Button("Mode: " + worlditem.Mode.ToString());
 						GUILayout.Button("Load state: " + worlditem.LoadState.ToString());
 						if (worlditem.Is(WILoadState.Initialized)) {
 								if (worlditem.IsStackContainer) {

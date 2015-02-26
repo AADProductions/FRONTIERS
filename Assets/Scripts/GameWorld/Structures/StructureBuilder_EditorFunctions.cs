@@ -444,7 +444,8 @@ namespace Frontiers.World
 						bool foundFirst = false;
 						for (int i = 0; i < UnityEditor.Selection.gameObjects.Length; i++) {
 								GameObject existingCollider = UnityEditor.Selection.gameObjects[i];
-								Collider existingColliderCollider = existingCollider.collider;
+								Collider existingColliderCollider = existingCollider.GetComponent <Collider>();
+								existingColliderCollider.enabled = true;
 								existingCollider.layer = Globals.LayerNumStructureIgnoreCollider;
 								if (!foundFirst) {
 										bool destroyAfterUse = false;

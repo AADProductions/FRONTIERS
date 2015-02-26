@@ -16,7 +16,6 @@ public class ChunkModeChanger : MonoBehaviour
 		WorldChunk Chunk;
 		//this is what we use to determine loading steps
 		public ChunkMode StartTargetMode = ChunkMode.Unloaded;
-
 		protected WaitForSeconds mWaitAdjascent = new WaitForSeconds(0.05f);
 		protected WaitForSeconds mWaitDistant = new WaitForSeconds(0.1f);
 		protected WaitForSeconds mWaitForTerrain = new WaitForSeconds(0.5f);
@@ -235,14 +234,17 @@ public class ChunkModeChanger : MonoBehaviour
 				while (refreshTerrainTextures.MoveNext()) {
 						yield return refreshTerrainTextures.Current;
 				}
+				yield return null;
 				var refreshTerrainObjects = Chunk.RefreshTerrainObjects();
 				while (refreshTerrainObjects.MoveNext()) {
 						yield return refreshTerrainObjects.Current;
 				}
+				yield return null;
 				var addTerrainTrees = Chunk.AddTerrainTrees();
 				while (addTerrainTrees.MoveNext()) {
 						yield return addTerrainTrees.Current;
 				}
+				yield return null;
 				var addTerrainDetails = Chunk.AddTerrainDetails();
 				while (addTerrainDetails.MoveNext()) {
 						yield return addTerrainDetails.Current;
@@ -256,7 +258,12 @@ public class ChunkModeChanger : MonoBehaviour
 						yield return null;
 				}
 
-				var nextTask = Chunk.AddTerainFX(ChunkMode.Immediate);
+				var nextTask = Chunk.AddRivers(ChunkMode.Immediate);
+				while (nextTask.MoveNext()) {
+						yield return nextTask.Current;
+				}
+
+				nextTask = Chunk.AddTerainFX(ChunkMode.Immediate);
 				while (nextTask.MoveNext()) {
 						yield return nextTask.Current;
 				}
@@ -311,13 +318,8 @@ public class ChunkModeChanger : MonoBehaviour
 
 		protected IEnumerator LoadDistant()
 		{
-				var nextTask = Chunk.AddRivers(ChunkMode.Immediate);
-				while (nextTask.MoveNext()) {
-						yield return nextTask.Current;
-				}
-
 				for (int i = 0; i < Chunk.SceneryData.AboveGround.SolidTerrainPrefabsDistant.Count; i++) {
-						nextTask = Structures.LoadChunkPrefab(Chunk.SceneryData.AboveGround.SolidTerrainPrefabsDistant[i], Chunk, ChunkMode.Distant);
+						var nextTask = Structures.LoadChunkPrefab(Chunk.SceneryData.AboveGround.SolidTerrainPrefabsDistant[i], Chunk, ChunkMode.Distant);
 						while (nextTask.MoveNext()) {
 								yield return nextTask.Current;
 						}

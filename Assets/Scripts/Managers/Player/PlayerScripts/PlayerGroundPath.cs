@@ -170,6 +170,9 @@ namespace Frontiers
 
 						int activeNodes = 0;
 
+						mTerrainHit.overhangHeight = 2f;
+						mTerrainHit.groundedHeight = 2f;
+						mTerrainHit.ignoreWorldItems = true;
 						for (int i = 0; i < Nodes.Count; i++) {
 								if ((mNormalizedStartPoint >= 0.0f && mNormalizedStartPoint < 1.0f) || (mNormalizedEndPoint >= 0.0f && mNormalizedEndPoint < 1.0f)) {
 										Nodes[i].gameObject.SetActive(true);

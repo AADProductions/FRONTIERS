@@ -8,6 +8,8 @@ namespace Frontiers.World
 		{
 				public static List <string> RockClips = new List<string> { "RockFall1", "RockFall2", "RockFall3", "RockFall4" };
 
+				public BodyPart LastBodyPartHit { get; set; }
+
 				public IItemOfInterest LastDamageSource { get; set; }
 
 				public bool IsDead { get { return false; } }
@@ -75,6 +77,10 @@ namespace Frontiers.World
 						isDead = false;
 						TotalDamage += actualDamage;
 						return true;
+				}
+
+				public virtual void InstantKill (IItemOfInterest causeOfDeath) {
+						return;
 				}
 
 				#region IItemOfInterest implementation

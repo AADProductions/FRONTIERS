@@ -393,6 +393,12 @@ namespace Frontiers.World
 						}
 				}
 
+				public bool UseAsContainerInInventory {
+						get {
+								return IsStackContainer && Props.Local.UseAsContainerInInventory;
+						}
+				}
+
 				public WIStackMode StackMode {
 						get {
 								if (IsStackContainer) {

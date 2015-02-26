@@ -140,7 +140,15 @@ namespace Frontiers.World.BaseWIScripts
 						options.Add(midnight);
 
 						if (RequiresPayment) {
-								message.Add("This bed costs $" + CostOfUse.ToString() + " per night");
+								dawn.RequiredCurrencyType = WICurrencyType.A_Bronze;
+								noon.RequiredCurrencyType = WICurrencyType.A_Bronze;
+								dusk.RequiredCurrencyType = WICurrencyType.A_Bronze;
+								midnight.RequiredCurrencyType = WICurrencyType.A_Bronze;
+
+								dawn.CurrencyValue = CostOfUse;
+								noon.CurrencyValue = CostOfUse;
+								dusk.CurrencyValue = CostOfUse;
+								midnight.CurrencyValue = CostOfUse;
 						}
 				}
 

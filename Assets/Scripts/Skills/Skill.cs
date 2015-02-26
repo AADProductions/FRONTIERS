@@ -153,6 +153,7 @@ namespace Frontiers.World.Gameplay
 												GUIManager.PostGainedItem(this);
 												State.GetPlayerAttention = true;
 												State.KnowledgeState = SkillKnowledgeState.Learned;
+												Skills.MostRecentlyLearnedSkill = this;
 												Save();
 										} else {
 												GUIManager.PostWarning("You can't learn this skill yet - you need to learn " + Skills.Get.SkillDisplayName(Requirements.PrerequisiteSkillName) + " first.");
@@ -308,7 +309,7 @@ namespace Frontiers.World.Gameplay
 						OnUseFinish();
 				}
 
-				protected void UseStart(bool forceSuccess)
+				protected virtual void UseStart(bool forceSuccess)
 				{
 						State.NumTimesAttempted++;
 

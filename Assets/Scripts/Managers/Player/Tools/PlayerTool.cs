@@ -732,6 +732,8 @@ namespace Frontiers
 								mEquippable.UseSuccessfully();
 								//MasterAudio.PlaySound (mEquippable.Sounds.SoundType, ToolDoppleganger.transform, mEquippable.Sounds.SoundUseSuccessfully);
 								yield return null;
+						} else {
+								Debug.Log("Projectile was null");
 						}
 						RefreshToolDoppleganger(false);
 						yield return null;
@@ -831,6 +833,7 @@ namespace Frontiers
 						OnFinishUsing();
 				}
 
+				protected BodyPart mBodyPartToHit = null;
 				protected IItemOfInterest mThingToHit = null;
 				protected float mToolSwayAmplitude = 1.0f;
 				protected float mToolBobAmplitude = 1.0f;
@@ -847,8 +850,10 @@ namespace Frontiers
 						}
 
 						mThingToHit = null;
+						mBodyPartToHit = player.Surroundings.ClosestBodyPartInRange;;
 						if (player.Focus.IsFocusingOnSomething) {
 								mThingToHit = player.Focus.LastFocusedObject;
+
 						} else if (player.Surroundings.IsSomethingInRange) {
 								mThingToHit = player.Surroundings.ClosestObjectInRange;
 								if (player.Surroundings.IsWorldItemInRange) {
@@ -874,7 +879,7 @@ namespace Frontiers
 										damage.Target = mThingToHit;
 								}
 								damage.Source = Player.Local;
-								DamageManager.Get.SendDamage(damage);
+								DamageManager.Get.SendDamage(damage, mBodyPartToHit);
 
 								if (damage.HitTarget) {
 										//Equippable equippable = null;

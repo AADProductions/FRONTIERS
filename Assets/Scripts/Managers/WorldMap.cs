@@ -384,7 +384,7 @@ namespace Frontiers
 
 										case MapIconStyle.None:
 										default:
-												Debug.Log("Icon style was none in " + wml.IconName);
+												//Debug.Log("Icon style was none in " + wml.IconName);
 				//NONE
 												createIcon = false;
 				//does it have a label?

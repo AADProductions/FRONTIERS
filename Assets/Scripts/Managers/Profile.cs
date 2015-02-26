@@ -44,6 +44,7 @@ namespace Frontiers
 
 				public bool HasSelectedProfile = false;
 				public bool HasSelectedGame = false;
+				public bool HasControllerPluggedIn = false;//TODO move to interface manager
 
 				public override void WakeUp()
 				{
@@ -52,6 +53,17 @@ namespace Frontiers
 						HasSelectedProfile	= false;
 						HasSelectedGame = false;
 						mCurrentGame = null;
+
+						//check to see if we have a controller plugged in
+						if (Input.GetJoystickNames().Length > 0) {
+								HasControllerPluggedIn = true;
+								foreach (string joystickName in Input.GetJoystickNames()) {
+										Debug.Log("===Found attached controller device: " + joystickName);
+								}
+
+						} else {
+								HasControllerPluggedIn = false;
+						}
 				}
 
 				public void ApplyPreferences()
@@ -80,15 +92,25 @@ namespace Frontiers
 
 				public List <string> GameNames(string worldName, bool toLower)
 				{
+						Debug.Log("Getting game names for " + worldName);
 						List <string> gameNames = null;
-
 						if (HasCurrentProfile) {
-								if (!toLower) {
-										gameNames = GameData.IO.GetFolderNamesInDirectory(GameData.IO.gCurrentWorldPath);
+								string gameName = string.Empty;
+								string errorMessage = string.Empty;
+								if (HasCurrentGame) {
+										gameName = CurrentGame.Name;
+								}
+								if (!GameData.IO.InitializeLocalDataPaths(mCurrentProfile.Name, worldName, gameName, out errorMessage)) {
+										Debug.Log(errorMessage);
+										gameNames = new List<string>();
 								} else {
-										gameNames = GameData.IO.GetFolderNamesInDirectory(GameData.IO.gCurrentWorldPath);
-										for (int i = 0; i < gameNames.Count; i++) {
-												gameNames[i] = gameNames[i].ToLower();
+										if (!toLower) {
+												gameNames = GameData.IO.GetFolderNamesInDirectory(GameData.IO.gCurrentWorldPath);
+										} else {
+												gameNames = GameData.IO.GetFolderNamesInDirectory(GameData.IO.gCurrentWorldPath);
+												for (int i = 0; i < gameNames.Count; i++) {
+														gameNames[i] = gameNames[i].ToLower();
+												}
 										}
 								}
 						}
@@ -127,11 +149,19 @@ namespace Frontiers
 										//make sure these prefs are legitimate
 										//otherwise they might have wonky values
 										/*if (prefs.Version != GameManager.VersionString || !prefs.InitializedAsDefault) {
-						prefs = PlayerPreferences.Default();
-						//save the new preferences immediately
-						GameData.IO.SavePreferences(profileName, prefs);
-					}*/
+											prefs = PlayerPreferences.Default();
+											//save the new preferences immediately
+											GameData.IO.SavePreferences(profileName, prefs);
+										}*/
 										mCurrentPreferences = prefs;
+										//now's the time to detect if we have a controller plugged in
+										if (HasControllerPluggedIn) {
+												Debug.Log("===Found controller plugged in - showing controller prompts");
+												mCurrentPreferences.Controls.ShowControllerPrompts = true;
+										} else {
+												Debug.Log("===Didn't find controller plugged in - defaulting to mouse & keyboard prompts");								
+												mCurrentPreferences.Controls.ShowControllerPrompts = false;
+										}
 								} else {
 										Debug.Log("Couldn't load preferences when setting profle");
 								}
@@ -331,10 +361,6 @@ namespace Frontiers
 				public override void OnGameStart()
 				{
 						SetDifficulty(mCurrentGame.DifficultyName);
-						//check to see if we have a controller plugged in
-						if (Input.GetJoystickNames().Length > 0) {
-								CurrentPreferences.Controls.ShowControllerPrompts = true;
-						}
 						mCurrentGame.HasStarted = true;
 				}
 
@@ -358,7 +384,9 @@ namespace Frontiers
 				}
 
 				public bool ValidateNewGameName(string worldName, string gameName, out string cleanAlternative, out string error)
-				{		//TODO remove error string we don't need it any more
+				{	
+						Debug.Log("Validating new game name for " + worldName);
+						//TODO remove error string we don't need it any more
 						error = "Enter a game name:";
 						cleanAlternative = GameData.IO.CleanGameName(gameName);
 						if (string.IsNullOrEmpty(cleanAlternative) || cleanAlternative == "(Enter name)") {

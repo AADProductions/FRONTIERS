@@ -19,8 +19,24 @@ public class MovingPlatform : MonoBehaviour
 				VelocityLastFrame = Vector3.zero;
 		}
 
-		public void Update()
+		/*public void Update()
 		{
+				VelocityLastFrame = tr.position - PositionLastFrame;
+				PositionLastFrame = tr.position;
+
+				if (YOnly) {
+						VelocityLastFrame.x = 0f;
+						VelocityLastFrame.z = 0f;
+				}
+
+				//don't bother with negative y velocities
+				//controller will take care of that
+				if (VelocityLastFrame.y < 0) {
+						VelocityLastFrame.y = 0f;
+				}
+		}*/
+
+		public void LateUpdate() {
 				VelocityLastFrame = tr.position - PositionLastFrame;
 				PositionLastFrame = tr.position;
 

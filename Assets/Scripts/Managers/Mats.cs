@@ -21,6 +21,23 @@ namespace Frontiers
 				public List <Texture2D> GenericTerrainNormals = new List<Texture2D>();
 				public List <Texture2D> AtlasTextures = new List<Texture2D>();
 
+				public void SetNGUIOculusShaders(bool useOculusShaders)
+				{
+						if (useOculusShaders) {
+								ConditionIconsAtlas.spriteMaterial.shader = NGUIOculusShader;
+								IconsAtlas.spriteMaterial.shader = NGUIOculusShader;
+								MapIconsAtlas.spriteMaterial.shader = NGUIOculusShader;
+								PrimaryAtlas.spriteMaterial.shader = NGUIOculusShader;
+								FontsIAtlas.spriteMaterial.shader = NGUIOculusShader;
+						} else {
+								ConditionIconsAtlas.spriteMaterial.shader = NGUINormalShader;
+								IconsAtlas.spriteMaterial.shader = NGUINormalShader;
+								MapIconsAtlas.spriteMaterial.shader = NGUINormalShader;
+								PrimaryAtlas.spriteMaterial.shader = NGUINormalShader;
+								FontsIAtlas.spriteMaterial.shader = NGUINormalShader;
+						}
+				}
+
 				public override void OnTextureLoadStart()
 				{
 						//put in requests for ALL ground textures
@@ -214,8 +231,8 @@ namespace Frontiers
 						}
 				}
 
-				protected Color mLuminiteStencilColor;
-
+				public Shader NGUIOculusShader;
+				public Shader NGUINormalShader;
 				public Material WorldMapPathMaterial;
 				public Material CompassProjectorMaterial;
 				public Material DirectionArrowMaterial;
@@ -228,6 +245,7 @@ namespace Frontiers
 				public UIAtlas IconsAtlas;
 				public UIAtlas MapIconsAtlas;
 				public UIAtlas PrimaryAtlas;
+				public UIAtlas FontsIAtlas;
 				public UIFont DyslexiaFont;
 				public UIFont Arimo14Font;
 				public UIFont Arimo18Font;
@@ -275,5 +293,7 @@ namespace Frontiers
 						List <Material> matList = new List <Material>();
 						return matList.ToArray();
 				}
+
+				protected Color mLuminiteStencilColor;
 		}
 }

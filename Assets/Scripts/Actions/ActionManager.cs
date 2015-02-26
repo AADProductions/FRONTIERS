@@ -24,6 +24,8 @@ namespace Frontiers
 				public static float RawMovementAxisX = 0.0f;
 				public static float RawMovementAxisY = 0.0f;
 				public static float RawScrollWheelAxis = 0.0f;
+				public static float RawInterfaceAxisX = 0.0f;
+				public static float RawInterfaceAxisY = 0.0f;
 				public static int LastMouseClick = 0;
 				public static bool AvailableKeyDown = false;
 				public static KeyCode LastKey = KeyCode.None;
@@ -36,6 +38,8 @@ namespace Frontiers
 				public InputControlType MovementXAxis;
 				public InputControlType MovementYAxis;
 				public InputControlType ScrollWheelAxis;
+				public InputControlType InterfaceXAxis;
+				public InputControlType InterfaceYAxis;
 				//used for NGUI events
 				public InputControlType CursorClickAction;
 				public InputControlType CursorRightClickAction;
@@ -89,7 +93,7 @@ namespace Frontiers
 						for (int i = 0; i < DefaultActionSettings.Count; i++) {
 								bool foundInNewSettings = false;
 								for (int j = 0; j < newSettings.Count; j++) {
-										if (DefaultActionSettings[i].ActionDescription.Equals (newSettings[j].ActionDescription)) {
+										if (DefaultActionSettings[i].ActionDescription.Equals(newSettings[j].ActionDescription)) {
 												foundInNewSettings = true;
 												break;
 										}
@@ -168,6 +172,14 @@ namespace Frontiers
 												//Debug.Log("Found scroll wheel mapping");
 												ScrollWheelAxis = a.Controller;
 												break;
+
+										case ActionSetting.InputAxis.InterfaceX:
+												InterfaceXAxis = a.Controller;
+												break;
+
+										case ActionSetting.InputAxis.InterfaceY:
+												InterfaceYAxis = a.Controller;
+												break;
 								}
 
 								switch (a.Cursor) {
@@ -216,6 +228,8 @@ namespace Frontiers
 						CursorClickAction = InputControlType.None;
 						CursorRightClickAction = InputControlType.None;
 						ScrollWheelAxis = InputControlType.None;
+						InterfaceXAxis = InputControlType.None;
+						InterfaceYAxis = InputControlType.None;
 				}
 				//used by GUI to display / edit key bindings
 				public virtual List <ActionSetting> GenerateDefaultActionSettings()
@@ -244,7 +258,6 @@ namespace Frontiers
 						foreach (ActionSetting a in CurrentActionSettings) {
 								//ignore axis settings
 								if (a.IsBindable) {
-										//Debug.Log("Binding " + a.ActionDescription + " in " + name);
 										if (a.AxisSetting) {
 												//special case
 												T actionXAsEnum = ConvertToEnum(a.ActionOnX);
@@ -434,14 +447,14 @@ namespace Frontiers
 						CursorRightClickUp = Input.GetMouseButtonUp(1);
 						//custom cursor clicks
 						if (CursorClickAction != InputControlType.None && !InputFieldActive) {
-								CursorClickDown |= (Device.GetControl(CursorClickAction).WasPressed | InputManager.ActiveDevice.GetControl (CursorClickAction).WasPressed);
-								CursorClickHold |= (Device.GetControl(CursorClickAction).IsPressed | InputManager.ActiveDevice.GetControl (CursorClickAction).IsPressed);
-								CursorClickUp |= (Device.GetControl(CursorClickAction).WasReleased | InputManager.ActiveDevice.GetControl (CursorClickAction).WasReleased);
+								CursorClickDown |= (Device.GetControl(CursorClickAction).WasPressed | InputManager.ActiveDevice.GetControl(CursorClickAction).WasPressed);
+								CursorClickHold |= (Device.GetControl(CursorClickAction).IsPressed | InputManager.ActiveDevice.GetControl(CursorClickAction).IsPressed);
+								CursorClickUp |= (Device.GetControl(CursorClickAction).WasReleased | InputManager.ActiveDevice.GetControl(CursorClickAction).WasReleased);
 						}
 						if (CursorRightClickAction != InputControlType.None && !InputFieldActive) {
-								CursorRightClickDown |= (Device.GetControl(CursorRightClickAction).WasPressed | InputManager.ActiveDevice.GetControl (CursorRightClickAction).WasPressed);
-								CursorRightClickHold |= (Device.GetControl(CursorRightClickAction).IsPressed | InputManager.ActiveDevice.GetControl (CursorRightClickAction).IsPressed);
-								CursorRightClickUp |= (Device.GetControl(CursorRightClickAction).WasReleased | InputManager.ActiveDevice.GetControl (CursorRightClickAction).WasReleased);
+								CursorRightClickDown |= (Device.GetControl(CursorRightClickAction).WasPressed | InputManager.ActiveDevice.GetControl(CursorRightClickAction).WasPressed);
+								CursorRightClickHold |= (Device.GetControl(CursorRightClickAction).IsPressed | InputManager.ActiveDevice.GetControl(CursorRightClickAction).IsPressed);
+								CursorRightClickUp |= (Device.GetControl(CursorRightClickAction).WasReleased | InputManager.ActiveDevice.GetControl(CursorRightClickAction).WasReleased);
 						}
 						//left clicks take priority
 						if (CursorClickDown) {
@@ -451,27 +464,21 @@ namespace Frontiers
 						}
 
 						RawScrollWheelAxis = 0f;
+						/*
+						RawMouseAxisX = 0f;
+						RawMouseAxisY = 0f;
+						RawMovementAxisX = 0f;
+						RawMovementAxisY = 0f;
+						RawInterfaceAxisX = 0f;
+						RawInterfaceAxisY = 0f;
+						*/
 
-						if (MouseXAxis != InputControlType.None) {
-								RawMouseAxisX = (float)InputManager.ActiveDevice.GetControl(MouseXAxis).Value;
-						} else {
-								RawMouseAxisX = Input.GetAxisRaw("Mouse X");
-						}
-						if (MouseYAxis != InputControlType.None) {
-								RawMouseAxisY = (float)InputManager.ActiveDevice.GetControl(MouseYAxis).Value;
-						} else {
-								RawMouseAxisY = Input.GetAxisRaw("Mouse Y");
-						}
-						if (MovementXAxis != InputControlType.None) {
-								RawMovementAxisX = (float)InputManager.ActiveDevice.GetControl(MovementXAxis).Value;
-						} else {
-								RawMovementAxisX = Input.GetAxisRaw("Horizontal");
-						}
-						if (MovementYAxis != InputControlType.None) {
-								RawMovementAxisY = (float)InputManager.ActiveDevice.GetControl(MovementYAxis).Value;
-						} else {
-								RawMovementAxisY = Input.GetAxisRaw("Vertical");
-						}
+						CheckAxis(MouseXAxis, ref RawMouseAxisX, "Mouse X");
+						CheckAxis(MouseYAxis, ref RawMouseAxisY, "Mouse Y");
+						CheckAxis(MovementXAxis, ref RawMovementAxisX, "Horizontal");
+						CheckAxis(MovementYAxis, ref RawMovementAxisY, "Vertical");
+						CheckAxis(InterfaceXAxis, ref RawInterfaceAxisX, string.Empty);
+						CheckAxis(InterfaceYAxis, ref RawInterfaceAxisY, string.Empty);
 
 						/*if (ScrollWheelAxis != InputControlType.None) {
 								RawScrollWheelAxis = (float)Device.GetControl(ScrollWheelAxis).Value;
@@ -506,6 +513,47 @@ namespace Frontiers
 						OnUpdate();
 				}
 
+				public void CheckAxis(InputControlType axis, ref float rawAxis, string failSafe)
+				{
+						if (axis != InputControlType.None) {
+								switch (axis) {
+										case InputControlType.DPadX:
+												rawAxis = (float)InputManager.ActiveDevice.GetControl(InputControlType.DPadLeft).Value;
+												rawAxis += -(float)InputManager.ActiveDevice.GetControl(InputControlType.DPadRight).Value;
+												/*if (InputManager.ActiveDevice.GetControl(InputControlType.DPadLeft).IsPressed) {
+														rawAxis = (float)InputManager.ActiveDevice.GetControl(InputControlType.DPadLeft).Value;
+														Debug.Log("DPad left is pressed - x axis: " + rawAxis.ToString());
+												}
+												if (InputManager.ActiveDevice.GetControl(InputControlType.DPadRight).IsPressed) {
+														Debug.Log("DPad right is pressed - x axis: " + rawAxis.ToString());
+														rawAxis = (float)InputManager.ActiveDevice.GetControl(InputControlType.DPadRight).Value;
+												}*/
+												break;
+
+										case InputControlType.DPadY:
+												rawAxis = (float)InputManager.ActiveDevice.GetControl(InputControlType.DPadLeft).Value;
+												rawAxis += -(float)InputManager.ActiveDevice.GetControl(InputControlType.DPadRight).Value;
+												/*if (InputManager.ActiveDevice.GetControl(InputControlType.DPadUp).IsPressed) {
+														Debug.Log("DPad up is pressed - y axis: " + rawAxis.ToString());
+														rawAxis = (float)InputManager.ActiveDevice.GetControl(InputControlType.DPadLeft).Value;
+												}
+												if (InputManager.ActiveDevice.GetControl(InputControlType.DPadDown).IsPressed) {
+														Debug.Log("DPad down is pressed - y axis: " + rawAxis.ToString());
+														rawAxis = (float)InputManager.ActiveDevice.GetControl(InputControlType.DPadRight).Value;
+												}*/
+												break;
+
+										default:
+												rawAxis = (float)InputManager.ActiveDevice.GetControl(axis).Value;
+												break;
+								}
+						} else if (!string.IsNullOrEmpty(failSafe)) {
+								rawAxis = Input.GetAxisRaw(failSafe);
+						} else {
+								rawAxis = 0f;
+						}
+				}
+
 				protected T ConvertToEnum(int enumValue)
 				{
 						//LET ME CONSTRAIN TO TYPE ENUM C# FFS
@@ -537,7 +585,7 @@ namespace Frontiers
 						//first pass
 						while (enumerator.MoveNext()) {
 								keyMapping = enumerator.Current;
-								if (Device.GetControl(keyMapping.Key).WasPressed || InputManager.ActiveDevice.GetControl (keyMapping.Key).WasPressed) {
+								if (Device.GetControl(keyMapping.Key).WasPressed || InputManager.ActiveDevice.GetControl(keyMapping.Key).WasPressed) {
 										//Debug.Log("Key " + keyMapping.Key.ToString() + " was pressed in " + GetType().Name);
 										LastControllerAction = keyMapping.Key;
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
@@ -554,7 +602,7 @@ namespace Frontiers
 						while (enumerator.MoveNext()) {
 								//foreach (KeyValuePair<KeyCode, List<T>> keyMapping in mKeyHoldMappings) {
 								keyMapping = enumerator.Current;
-								if (Device.GetControl(keyMapping.Key).IsPressed || InputManager.ActiveDevice.GetControl (keyMapping.Key).IsPressed) {
+								if (Device.GetControl(keyMapping.Key).IsPressed || InputManager.ActiveDevice.GetControl(keyMapping.Key).IsPressed) {
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
 												Send(keyMapping.Value[i], TimeStamp);
 										}
@@ -568,7 +616,7 @@ namespace Frontiers
 						while (enumerator.MoveNext()) {
 								//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyUpMappings) {
 								keyMapping = enumerator.Current;
-								if (Device.GetControl(keyMapping.Key).WasReleased || InputManager.ActiveDevice.GetControl (keyMapping.Key).WasReleased) {
+								if (Device.GetControl(keyMapping.Key).WasReleased || InputManager.ActiveDevice.GetControl(keyMapping.Key).WasReleased) {
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
 												Send(keyMapping.Value[i], TimeStamp);
 										}
@@ -596,9 +644,10 @@ namespace Frontiers
 								//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyUpMappings) {
 								keyMapping = enumerator.Current;
 								InputControl d = InputManager.ActiveDevice.GetControl(keyMapping.Key);
-								InputControl c = Device.GetControl(keyMapping.Key);								
-								if (c.Value < 0f || d.Value < 0f) {
-										//Debug.Log("Negative mapping " + c.ToString());
+								InputControl c = Device.GetControl(keyMapping.Key);		
+								float cVal = c.Value;
+								float dVal = d.Value;			
+								if ((cVal < 0f && Mathf.Abs (cVal) > gMinAxisChange) || (dVal < 0f && Mathf.Abs (dVal) > gMinAxisChange)) {
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
 												Send(keyMapping.Value[i], TimeStamp);
 										}
@@ -611,14 +660,17 @@ namespace Frontiers
 								keyMapping = enumerator.Current;
 								InputControl d = InputManager.ActiveDevice.GetControl(keyMapping.Key);
 								InputControl c = Device.GetControl(keyMapping.Key);								
-								if (c.Value > 0f || d.Value > 0f) {
-										//Debug.Log("Positive mapping " + c.ToString());
+								float cVal = c.Value;
+								float dVal = d.Value;			
+								if ((cVal > 0f && Mathf.Abs (cVal) > gMinAxisChange) || (dVal > 0f && Mathf.Abs (dVal) > gMinAxisChange)) {
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
 												Send(keyMapping.Value[i], TimeStamp);
 										}
 								}
 						}
 				}
+
+				public static float gMinAxisChange = 0.005f;
 
 				protected virtual void OnUpdate()
 				{
@@ -722,6 +774,7 @@ namespace Frontiers
 						DefaultAvailableKeys.Add(KeyCode.Delete);
 						DefaultAvailableKeys.Add(KeyCode.Backspace);
 
+						DefaultAvailableAxis.Add(InputControlType.None);
 						DefaultAvailableAxis.Add(InputControlType.DPadX);
 						DefaultAvailableAxis.Add(InputControlType.DPadY);
 						DefaultAvailableAxis.Add(InputControlType.LeftStickX);
@@ -743,6 +796,16 @@ namespace Frontiers
 						DefaultAvailableActions.Add(InputControlType.RightStickButton);
 						DefaultAvailableActions.Add(InputControlType.Menu);
 						DefaultAvailableActions.Add(InputControlType.Start);
+						DefaultAvailableActions.Add(InputControlType.Button1);
+						DefaultAvailableActions.Add(InputControlType.Button2);
+						DefaultAvailableActions.Add(InputControlType.Button3);
+						DefaultAvailableActions.Add(InputControlType.Button4);
+						DefaultAvailableActions.Add(InputControlType.Button5);
+						DefaultAvailableActions.Add(InputControlType.Button6);
+						DefaultAvailableActions.Add(InputControlType.Button7);
+						DefaultAvailableActions.Add(InputControlType.Button8);
+						DefaultAvailableActions.Add(InputControlType.Button9);
+						DefaultAvailableActions.Add(InputControlType.Button10);
 
 						DefaultAvailableMouseButtons.Add(ActionSetting.MouseAction.None);
 						DefaultAvailableMouseButtons.Add(ActionSetting.MouseAction.Left);
@@ -756,7 +819,8 @@ namespace Frontiers
 
 				#region binding search for creating device profile
 
-				public InputControlType GetActionBinding (int action) {
+				public InputControlType GetActionBinding(int action)
+				{
 						InputControlType control = InputControlType.None;
 						for (int i = 0; i < CurrentActionSettings.Count; i++) {
 								ActionSetting a = CurrentActionSettings[i];

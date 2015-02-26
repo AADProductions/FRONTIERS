@@ -17,6 +17,15 @@ public class BodyPart : MonoBehaviour
 		public Vector3 LocalPositionBeforeRagdoll;
 		public Quaternion LocalRotationBeforeRagdoll;
 		public Rigidbody RagdollRB = null;
+		public Vector3 ForceOnConvertToRagdoll {
+				set {
+						if (RagdollRB != null) {
+								RagdollRB.AddForce(value * Globals.BodyPartDamageForceMultiplier);
+						} else {
+								mForceOnConvertToRagdoll = value;
+						}
+				}
+		}
 
 		public void ConvertToRagdoll()
 		{
@@ -29,6 +38,9 @@ public class BodyPart : MonoBehaviour
 						return;
 				}
 
+				LocalPositionBeforeRagdoll = tr.localPosition;
+				LocalRotationBeforeRagdoll = tr.localRotation;
+
 				GameObject ragdollRbObject = gameObject;//new GameObject (Type.ToString ());
 				gameObject.layer = Globals.LayerNumWorldItemActive;//make sure it collides with the ground
 
@@ -38,17 +50,17 @@ public class BodyPart : MonoBehaviour
 				RagdollRB.useGravity = true;
 				RagdollRB.velocity = Vector3.zero;
 				RagdollRB.angularVelocity = Vector3.zero;
-				RagdollRB.mass = 3f;
-				RagdollRB.drag = 0.85f;
-				RagdollRB.angularDrag = 0.85f;
-				RagdollRB.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+				RagdollRB.mass = 1f;
+				RagdollRB.drag = 0.95f;
+				RagdollRB.angularDrag = 0.95f;
+				RagdollRB.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
 				enabled = true;
 		}
 
 		public void LinkRagdollParts(WorldBody body)
 		{
-				if (Type != BodyPartType.Chest) {
+				if (Type != BodyPartType.Chest && RagdollRB != null) {
 						if (ParentPart == null) {
 								if (!body.GetBodyPart(BodyPartType.Chest, out ParentPart)) {
 										if (Type != BodyPartType.Hip) {
@@ -58,12 +70,16 @@ public class BodyPart : MonoBehaviour
 						}
 
 						if (ParentPart != null && ParentPart.RagdollRB != null) {
-								CharacterJoint joint = ParentPart.RagdollRB.gameObject.AddComponent <CharacterJoint>();
-								joint.connectedBody = RagdollRB;
+								//RagdollRB.constraints = RigidbodyConstraints.FreezeAll;
+								CharacterJoint joint = gameObject.AddComponent<CharacterJoint>();//ParentPart.RagdollRB.gameObject.AddComponent <ConfigurableJoint>();
+								joint.connectedBody = ParentPart.RagdollRB;//RagdollRB;
+								//RagdollRB.constraints = RigidbodyConstraints.FreezePosition;
+								//joint.connectedBody = RagdollRB;
 								joint.breakForce = Mathf.Infinity;
-						} else {
-								Debug.Log("Couldn't connect part " + Type.ToString() + " to parent part in ragdoll");
+								joint.enableCollision = false;
 						}
+
+						RagdollRB.WakeUp();
 				}
 		}
 
@@ -71,6 +87,10 @@ public class BodyPart : MonoBehaviour
 		{
 				if (RagdollRB != null) {
 						GameObject.Destroy(RagdollRB);
+						CharacterJoint [] joints = gameObject.GetComponents<CharacterJoint>();
+						for (int i = 0; i < joints.Length; i++) {
+								GameObject.Destroy(joints[i]);
+						}
 				}
 
 				tr.localPosition = LocalPositionBeforeRagdoll;
@@ -81,7 +101,6 @@ public class BodyPart : MonoBehaviour
 						gameObject.layer = Globals.LayerNumBodyPart;
 				}
 				PartCollider.enabled = true;
-
 				enabled = false;
 		}
 
@@ -152,15 +171,30 @@ public class BodyPart : MonoBehaviour
 				}
 		}
 
+		public void FixedUpdate(){
+
+				if (RagdollRB != null && mForceOnConvertToRagdoll != Vector3.zero) {
+						RagdollRB.AddForce (mForceOnConvertToRagdoll * Globals.BodyPartDamageForceMultiplier);
+						mForceOnConvertToRagdoll = Vector3.zero;
+				}
+		}
+
+		public void LateUpdate() {
+				/*if (Type != BodyPartType.Hip && Type != BodyPartType.Chest && RagdollRB != null && ParentPart != null) {
+						tr.localPosition = LocalPositionBeforeRagdoll;
+				}*/
+		}
+
 		public void OnDrawGizmos()
 		{
 				if (RagdollRB != null) {
 						Gizmos.color = Color.red;
-						Gizmos.DrawSphere(RagdollRB.worldCenterOfMass, 1f);
+						Gizmos.DrawSphere(RagdollRB.worldCenterOfMass, 0.1f);
 				}
 		}
 
 		protected Type mColliderType;
+		protected Vector3 mForceOnConvertToRagdoll;
 		protected static Type gCapsuleColliderType = typeof(CapsuleCollider);
 		protected static Type gBoxColliderType = typeof(BoxCollider);
 		protected static Type gSphereColliderType = typeof(SphereCollider);

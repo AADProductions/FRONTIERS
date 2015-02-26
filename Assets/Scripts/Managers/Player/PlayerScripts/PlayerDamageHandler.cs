@@ -17,6 +17,8 @@ namespace Frontiers
 
 				public IItemOfInterest LastDamageSource { get; set; }
 
+				public BodyPart LastBodyPartHit { get; set; }
+
 				public bool IsRigidBody {
 						get {
 								return false;
@@ -38,6 +40,12 @@ namespace Frontiers
 				public float DamageTaken {
 						get {
 								return (100 - (mHealthStatusKeeper.NormalizedValue * MeterValueMultiplier));
+						}
+				}
+
+				float DamageLeft {
+						get {
+								return mHealthStatusKeeper.NormalizedValue * MeterValueMultiplier;
 						}
 				}
 
@@ -73,6 +81,10 @@ namespace Frontiers
 
 				public Shield DamageAbsorber;
 
+				public virtual void InstantKill (IItemOfInterest causeOfDeath) {
+						return;
+				}
+
 				public bool TakeDamage(WIMaterialType materialType, Vector3 damagePoint, float attemptedDamage, Vector3 attemptedForce, string source, out float actualDamage, out bool isDead)
 				{
 						if (player.IsHijacked || !player.HasSpawned) {
@@ -87,30 +99,35 @@ namespace Frontiers
 								return false;
 						}
 
-						if (source != "FallDamage") {
-								//do we have a shield? if so pass the damage along to the shield
-								//other armor stuff has already been calculated by the damage manager
-								//this is the only bit that it can't know about
-								//(on characters a shield is treated as a piece of armor)
-								bool hasDamageAbsorber = false;
-								if (player.Carrier.HasWorldItem) {
-										hasDamageAbsorber = player.Carrier.worlditem.Is <Shield>(out DamageAbsorber);
-								} else if (player.Tool.HasWorldItem) {
-										hasDamageAbsorber = player.Tool.worlditem.Is <Shield>(out DamageAbsorber);
-								}
+						bool hasDamageAbsorber = false;
+						if (player.Carrier.HasWorldItem) {
+								hasDamageAbsorber = player.Carrier.worlditem.Is <Shield>(out DamageAbsorber);
+						} else if (player.Tool.HasWorldItem) {
+								hasDamageAbsorber = player.Tool.worlditem.Is <Shield>(out DamageAbsorber);
+						}
 
-								if (hasDamageAbsorber) {
-										bool absorberIsDead = false;
-										bool absorbedDamage = DamageAbsorber.worlditem.Get <Damageable>().TakeDamage(
-												                 materialType,
-												                 damagePoint,
-												                 attemptedDamage,
-												                 attemptedForce,
-												                 source,
-												                 out actualDamage,
-												                 out absorberIsDead);
-										isDead = false;//obviously since the absorber took the heat
-										return absorbedDamage;
+						//do we have a shield? if so pass the damage along to the shield
+						//other armor stuff has already been calculated by the damage manager
+						//this is the only bit that it can't know about
+						//(on characters a shield is treated as a piece of armor)
+						if (hasDamageAbsorber) {
+								bool absorberIsDead = false;
+								bool absorbedDamage = DamageAbsorber.worlditem.Get <Damageable>().TakeDamage(
+										                  materialType,
+										                  damagePoint,
+										                  attemptedDamage,
+										                  attemptedForce,
+										                  source,
+										                  out actualDamage,
+										                  out absorberIsDead);
+								isDead = false;//obviously since the absorber took the heat
+								return absorbedDamage;
+						}
+
+						if (source == "FallDamage") {
+								//fall damage can't kill you unless it's above the death threshold
+								if (DamageLeft < attemptedDamage) {
+										attemptedDamage = DamageLeft - 1f;
 								}
 						}
 
@@ -134,7 +151,7 @@ namespace Frontiers
 						}
 
 						float actualDamage;
-						float attemptedDamage = fallImpact;
+						float attemptedDamage = fallImpact * Globals.FallDamageImpactMultiplier;
 						bool isDead;
 						float impactThreshold = Mathf.Infinity;
 						float deathThreshold = Mathf.Infinity;
@@ -172,8 +189,8 @@ namespace Frontiers
 								bool breakBone = false;
 								if (actualDamage >= breakBoneThreshold) {
 										breakBone = true;
-								} else if (actualDamage >= breakBoneThreshold * 0.25f) {//TODO move these to globals
-										if (Random.value >= 0.5f) {
+								} else if (actualDamage >= breakBoneThreshold) {//TODO move these to globals
+										if (Random.value < 0.1f) {
 												breakBone = true;
 										}
 								}

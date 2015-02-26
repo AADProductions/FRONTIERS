@@ -18,13 +18,21 @@ namespace Frontiers.World
 		[Serializable]
 		public class Book : Mod
 		{
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
+				}
+
 				public string Title = string.Empty;
 				public BookStatus Status = BookStatus.Dormant;
 				public BookType TypeOfBook = BookType.Book;
 				public int PrototypeIndex = 0;
 				public bool ManualPlacementOnly = false;
 				public bool MissionRelated = false;
+				public bool Guidebook = false;
 				public bool CanonLore = false;
+				public bool Fiction = false;
 				public BookSealStatus SealStatus = BookSealStatus.None;
 				public static string gDefaultBookTitle = "(Untitled)";
 				public string DefaultTemplate = string.Empty;
@@ -35,11 +43,16 @@ namespace Frontiers.World
 				public List <string> LocationsToReveal = new List<string>();
 				public List <string> CharactersToReveal = new List<string>();
 				public List <string> SkillsRead = new List<string>();
-				public int NumChapters = 0;
+				public int NumChapters {
+						get {
+								return BookChapters.Count;
+						}
+				}
 				public int LastChapterRead = 0;
 				public int NumCopiesInExistence	= 0;
 				public int NumCopiesSpawned = 0;
 				public int NumCopiesReceived = 0;
+				[Multiline (15)]
 				public string Text = string.Empty;
 				public bool MultiChapterType {
 						get {
@@ -65,7 +78,7 @@ namespace Frontiers.World
 								BuildBookChapters();
 						}
 
-						if (chapterNumber < 0 || chapterNumber >= mBookChapters.Count) {
+						if (chapterNumber < 0 || chapterNumber >= BookChapters.Count) {
 								chapter = null;
 								return false;
 						}
@@ -74,7 +87,7 @@ namespace Frontiers.World
 								LastChapterRead = chapterNumber;
 						}
 
-						chapter = mBookChapters[chapterNumber];
+						chapter = BookChapters[chapterNumber];
 
 						if (chapter.MissionsToActivate.Count > 0) {
 								if (chapter.MissionsToActivate.Count > 1) {
@@ -128,34 +141,42 @@ namespace Frontiers.World
 						return true;
 				}
 
-				protected void BuildBookChapters()
-				{	//this takes the raw book data and interprets it as actual chapters
+				public void BuildBookChapters()
+				{		//this takes the raw book data and interprets it as actual chapters
 						//i do this in game instead of on import to keep the system flexible
 						//modders may be able to supply their own chapter-building functions, etc.
-						mBookChapters.Clear();
+						BookChapters.Clear();
 						//split the text into pages using chapter break
-						Text = Text.Replace("[bookend]", "");
-						string[] chapters = Text.Split(new string [] { gChapterBreakSeparator }, StringSplitOptions.RemoveEmptyEntries);
-						for (int i = 1; i < chapters.Length; i++) {
+						string text = Text.Replace("[bookend]", "");
+						string[] chapters = text.Split(new string [] { gChapterBreakSeparator }, StringSplitOptions.RemoveEmptyEntries);
+						#if UNITY_EDITOR
+						Debug.Log (Name + " - " + chapters.Length.ToString());
+						#endif
+						for (int i = 0; i < chapters.Length; i++) {
 								Chapter bookChapter = new Chapter();
 								//split the chpater into tags/content
 								string[] chapterTags = chapters[i].Split(new string [] { gChapterStartSeparator }, StringSplitOptions.RemoveEmptyEntries);
 								//anything before the chapter start will have tags
-								string[] splitChapterTags = chapterTags[0].Split(gNewlineSeparators, StringSplitOptions.RemoveEmptyEntries);
-								for (int k = 0; k < splitChapterTags.Length; k++) {
-										string[] splitFieldLine = splitChapterTags[k].Split(new string [] { "=" }, StringSplitOptions.RemoveEmptyEntries);
-										string fieldName = splitFieldLine[0].Replace(gTagSeparator, "");
-										string fieldValue = splitFieldLine[1];
-										GameData.SetField(bookChapter, fieldName, fieldValue);
+								if (chapterTags.Length > 1) {
+										string[] splitChapterTags = chapterTags[0].Split(gNewlineSeparators, StringSplitOptions.RemoveEmptyEntries);
+										for (int k = 0; k < splitChapterTags.Length; k++) {
+												string[] splitFieldLine = splitChapterTags[k].Split(new string [] { "=" }, StringSplitOptions.RemoveEmptyEntries);
+												string fieldName = splitFieldLine[0].Replace(gTagSeparator, "");
+												if (splitFieldLine.Length > 1) {
+														string fieldValue = splitFieldLine[1];
+														GameData.SetField(bookChapter, fieldName, fieldValue);
+												}
+										}
+										//anything after the chapter start tag will be content
+										bookChapter.Contents = chapterTags[1].Replace("\n", "");
+										if (!string.IsNullOrEmpty(bookChapter.Contents)) {
+												BookChapters.Add(bookChapter);
+										}
 								}
-								//anything after the chapter start tag will be content
-								bookChapter.Contents = chapterTags[1].Replace("\n", "");//.Split [i].Split (gNewlineSeparators, StringSplitOptions.RemoveEmptyEntries);
-								if (!string.IsNullOrEmpty(bookChapter.Contents)) {
-										mBookChapters.Add(bookChapter);
-								}
+								#if UNITY_EDITOR
+								bookChapter.EditorFormattedContents = bookChapter.FormattedContents;
+								#endif
 						}
-						//refesh the page count
-						NumChapters = mBookChapters.Count;
 						mHasGeneratedChapters	= true;
 				}
 
@@ -173,7 +194,8 @@ namespace Frontiers.World
 						Status |= BookStatus.FullyRead;
 				}
 
-				protected List <Chapter> mBookChapters = new List <Chapter>();
+				[XmlIgnore]
+				public List <Chapter> BookChapters = new List <Chapter>();
 				protected bool mHasGeneratedChapters = false;
 				protected static string[] gNewlineSeparators = new string [] { "\n", "\n\r" };
 				protected static string gChapterBreakSeparator = "[chapterbreak]";
@@ -196,12 +218,22 @@ namespace Frontiers.World
 						StructuresToAquire = new List <string>();
 						FontName = "Default";
 				}
-
+				[Multiline (5)]
 				public string Contents;
+				#if UNITY_EDITOR
+				[Multiline (15)]
+				public string EditorFormattedContents;
+				public static PlayerCharacter gTempCharacter = PlayerCharacter.Default();
+				#endif
 				public string Language;
 
 				public string FormattedContents {
 						get {
+								#if UNITY_EDITOR
+								if (!Application.isPlaying) {
+										return FormatString(GameData.InterpretScripts(Contents, gTempCharacter, null));
+								}
+								#endif
 								return FormatString(GameData.InterpretScripts(Contents, Profile.Get.CurrentGame.Character, null));
 						}
 				}

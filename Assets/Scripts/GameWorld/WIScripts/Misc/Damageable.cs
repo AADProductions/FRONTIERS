@@ -8,7 +8,8 @@ using Frontiers.World;
 namespace Frontiers.World.BaseWIScripts
 {
 		public class Damageable : WIScript, IDamageable
-		{		//what most WorldItems will use to take damage
+		{
+				//what most WorldItems will use to take damage
 				//implements IDamageable which is what the damage manager uses to apply damage
 				//other WIScripts subscribe to its actions to make noise, play animations, explode, whatever
 				public DamageableState State = new DamageableState();
@@ -20,6 +21,8 @@ namespace Frontiers.World.BaseWIScripts
 				public bool ApplyForceAutomatically = true;
 
 				public IItemOfInterest LastDamageSource { get; set; }
+
+				public BodyPart LastBodyPartHit { get; set; }
 
 				public WIMaterialType BaseMaterialType {
 						get {
@@ -68,6 +71,14 @@ namespace Frontiers.World.BaseWIScripts
 						State.DamageTaken = 0f;
 				}
 
+				public void InstantKill(IItemOfInterest causeOfDeath) {
+						Debug.Log("Instant kill in damageable");
+						State.LastDamageTaken = Mathf.Clamp((State.Durability - State.DamageTaken), 0f, Mathf.Infinity);
+						State.LastDamagePoint = transform.position;
+						State.LastDamageMaterial = WIMaterialType.None;
+						OnDieResult();
+				}
+
 				public void InstantKill(string causeOfDeath)
 				{
 						State.LastDamageTaken = Mathf.Clamp((State.Durability - State.DamageTaken), 0f, Mathf.Infinity);
@@ -102,6 +113,9 @@ namespace Frontiers.World.BaseWIScripts
 								actualDamage = 0.0f;
 								isDead = true;
 								worlditem.ApplyForce(attemptedForce, damagePoint);
+								if (LastBodyPartHit != null) {
+										LastBodyPartHit.ForceOnConvertToRagdoll = attemptedForce;
+								}
 								return false;
 						}
 
@@ -112,6 +126,7 @@ namespace Frontiers.World.BaseWIScripts
 						} else if (Flags.Check((uint)State.MaterialBonuses, (uint)materialType, Flags.CheckType.MatchAny)) {
 								actualDamage *= Globals.DamageMaterialPenaltyMultiplier;//apply the penalty to this source
 						}
+
 						if (State.SourcePenalties.Contains(sourceName)) {
 								actualDamage *= Globals.DamageMaterialBonusMultiplier;//apply the bonus to this source
 						} else if (State.SourceBonuses.Contains(sourceName)) {
@@ -136,6 +151,20 @@ namespace Frontiers.World.BaseWIScripts
 				
 								State.LastDamageTaken = actualDamage;
 								State.DamageTaken += actualDamage;
+
+								//see if the force exceeds our 'throw' threshold
+								if (attemptedForce.magnitude > State.MinimumForceThreshold) {
+										if (ApplyForceAutomatically) {
+												worlditem.ApplyForce(attemptedForce, damagePoint);
+										} else {
+												OnForceApplied.SafeInvoke();
+										}
+								}
+								if (LastBodyPartHit != null) {
+										LastBodyPartHit.ForceOnConvertToRagdoll = attemptedForce;
+								}
+
+								//now that we've set everything up, send the damage messages
 								OnTakeDamage.SafeInvoke();
 				
 								if (actualDamage >= State.OverkillDamageThreshold) {
@@ -146,15 +175,6 @@ namespace Frontiers.World.BaseWIScripts
 										State.LastDamageTaken = actualDamage * State.CriticalDamageMultiplier;
 										State.DamageTaken += actualDamage * State.CriticalDamageMultiplier;
 										OnTakeCriticalDamage.SafeInvoke();
-								}
-
-								//see if the force exceeds our 'throw' threshold
-								if (attemptedForce.magnitude > State.MinimumForceThreshold) {
-										if (ApplyForceAutomatically) {
-												worlditem.ApplyForce(attemptedForce, damagePoint);
-										} else {
-												OnForceApplied.SafeInvoke();
-										}
 								}
 
 								//now check to see if we're dead
@@ -172,6 +192,7 @@ namespace Frontiers.World.BaseWIScripts
 
 				protected void OnDieResult()
 				{
+						State.TimeKilled = WorldClock.AdjustedRealTime;
 						OnDie.SafeInvoke();
 						switch (State.Result) {
 								case DamageableResult.None:
@@ -189,11 +210,14 @@ namespace Frontiers.World.BaseWIScripts
 								case DamageableResult.State:
 										if (!string.IsNullOrEmpty(State.StateResult)) {
 												worlditem.State = State.StateResult;
+										} else {
+												Debug.Log("State was empty in damageable, setting to removed from game");
+												worlditem.SetMode(WIMode.RemovedFromGame);
 										}
 										break;
 						}
 				}
-		
+
 				protected static Character mCheckOwner;
 		}
 
@@ -209,6 +233,7 @@ namespace Frontiers.World.BaseWIScripts
 				public float Durability = 10.0f;
 				public float DamageTaken = 0.0f;
 				public float MinimumForceThreshold = 1f;
+				public double TimeKilled = 0f;
 
 				public virtual float NormalizedDamage {
 						get {

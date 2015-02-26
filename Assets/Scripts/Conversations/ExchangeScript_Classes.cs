@@ -485,17 +485,13 @@ namespace Frontiers.Story.Conversations
 														worlditem.Props.Name.QuestName = questItem.State.QuestName;
 														worlditem.Props.Name.QuestName = QuestName;
 												}
-												if (!Player.Local.Inventory.AddItems(worlditem, ref error)) {
-														break;
-												}
+												Player.Local.Inventory.TryToEquip(worlditem);
 										}
 								}
 						} else {
 								//we don't care, just instantiate it as a stack item
 								for (int i = 0; i < NumItems; i++) {
-										if (!Player.Local.Inventory.AddItems(stackItem.GetDuplicate(false), ref error)) {
-												break;
-										}
+										Player.Local.Inventory.TryToEquip(stackItem.GetDuplicate(false));
 								}
 						}
 				}
@@ -807,16 +803,8 @@ namespace Frontiers.Story.Conversations
 								//so get that now
 								ConversationName = SubstituteConversation.Substitution(conversation.Props.Name, ConversationName);
 						}
-
-						bool result = false;
-						if (RequireAll) {
-								result = true;
-						}
-
 						string conversationName = ConversationName;
-
-						Debug.Log("Require exchanges concluded in " + ConversationName);
-
+						List<bool> results = new List<bool>();
 						foreach (string exchangeName in Exchanges) {
 								string finalExchangeName = exchangeName;
 								if (exchangeName.Contains(":")) {
@@ -832,24 +820,29 @@ namespace Frontiers.Story.Conversations
 								}
 								bool completedThis = Frontiers.Conversations.Get.HasCompletedExchange(conversationName, finalExchangeName);
 								//do we want them completed or not completed?
-								Debug.Log("Require " + exchangeName + " - result " + completedThis.ToString());
 								if (RequireConcluded) {
-										//we WANT them to be concluded
-										if (RequireAllExchanges) {
-												//AND this result, to include failures
-												result &= completedThis;
-										} else {
-												result |= completedThis;
-										}
+										results.Add(completedThis);
 								} else {
-										//we DON'T WANT them to be completed
-										if (RequireAllExchanges) {
-												//if any of them ARE completed, we're boned
-												result &= (!completedThis);
-										} else {
-												result |= (!completedThis);
-										}
+										results.Add(!completedThis);
 
+								}
+						}
+						bool result = true;
+						if (RequireAll) {
+								result = true;//clarity
+								foreach (bool r in results) {
+										if (!r) {
+												result = false;
+												break;
+										}
+								}
+						} else {
+								result = false;
+								foreach (bool r in results) {
+										if (r) {
+												result = true;
+												break;
+										}
 								}
 						}
 						return result;

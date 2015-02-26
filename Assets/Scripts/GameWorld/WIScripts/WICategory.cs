@@ -107,6 +107,18 @@ namespace Frontiers.World
 						mInitialized = true;
 				}
 
+				public void RefreshDisplayNames()
+				{
+						for (int i = 0; i < GenericWorldItems.Count; i++) {
+								if (string.IsNullOrEmpty(GenericWorldItems[i].DisplayName)) {
+										WorldItem prefab = null;
+										if (WorldItems.Get.PackPrefab(GenericWorldItems[i].PackName, GenericWorldItems[i].PrefabName, out prefab)) {
+												GenericWorldItems[i].DisplayName = prefab.DisplayName;
+										}
+								}
+						}
+				}
+
 				public bool IsEmpty {
 						get {
 								return GenericWorldItems.Count == 0 || indexTable.Count == 0;

@@ -1296,6 +1296,9 @@ namespace Frontiers.World
 						} else {
 								worlditem.Props.Name.DisplayName = worlditem.DisplayNamer(0);
 						}
+						if (worlditem.IsStackContainer && worlditem.StackContainer.IsEmpty) {
+								return worlditem.Props.Name.DisplayName + " (Empty)";
+						}
 						return worlditem.Props.Name.DisplayName;
 				}
 
@@ -1349,16 +1352,32 @@ namespace Frontiers.World
 
 				public static bool GetIOIFromCollider(Collider other, out IItemOfInterest ioi)
 				{
-						return GetIOIFromCollider(other, true, out ioi);
+						return GetIOIFromCollider(other, true, out ioi, out mBodyPartCheck);
 				}
 
-				public static bool GetIOIFromCollider(Collider other, bool ignoreTrigger, out IItemOfInterest ioi)
+				public static bool GetIOIFromCollider(Collider other, out IItemOfInterest ioi, out BodyPart bodyPart)
+				{
+						return GetIOIFromCollider(other, true, out ioi, out bodyPart);
+				}
+
+				public static bool GetIOIFromCollider(Collider other, bool ignoreTrigger, out IItemOfInterest ioi) {
+						return GetIOIFromCollider(other, ignoreTrigger, out ioi, out mBodyPartCheck);
+				}
+
+				public static bool GetIOIFromCollider(Collider other, bool ignoreTrigger, out IItemOfInterest ioi, out BodyPart bodyPart)
 				{
 						ioi = null;
+						bodyPart = null;
 						if (other.isTrigger && ignoreTrigger) {
 								return false;
 						}
-
+						//this would be the feet collider or the body collider
+						//simple case so return it right away
+						if (other.gameObject.layer == Globals.LayerNumPlayer) {
+								ioi = Player.Local;
+								return true;
+						}
+						//otherwise we have to deal with the rigidbody
 						mIoiRBCheck = other.attachedRigidbody;
 						if (mIoiRBCheck != null && !mIoiRBCheck.CompareTag(Globals.TagNonInteractive)) {
 								ioi = (IItemOfInterest)mIoiRBCheck.GetComponent(typeof(IItemOfInterest));
@@ -1366,12 +1385,17 @@ namespace Frontiers.World
 										return true;
 								}
 						}
-						return GetIOIFromGameObject(other.collider.gameObject, out ioi);
+						return GetIOIFromGameObject(other.collider.gameObject, out ioi, out bodyPart);
 				}
 
-				public static bool GetIOIFromGameObject(GameObject go, out IItemOfInterest ioi)
+				public static bool GetIOIFromGameObject(GameObject go, out IItemOfInterest ioi) {
+						return GetIOIFromGameObject(go, out ioi, out mBodyPartCheck);
+				}
+
+				public static bool GetIOIFromGameObject(GameObject go, out IItemOfInterest ioi, out BodyPart bodyPart)
 				{
 						ioi = null;
+						bodyPart = null;
 						if (go.CompareTag(Globals.TagColliderFluid)) {
 								//collider fluid objects are immediately parented under worlidtem
 								ioi = (IItemOfInterest)go.transform.parent.GetComponent(typeof(IItemOfInterest));
@@ -1381,8 +1405,8 @@ namespace Frontiers.World
 						           || go.CompareTag(Globals.TagBodyTorso)
 						           || go.CompareTag(Globals.TagBodyGeneral)) {
 								//body parts are kept separate - they store a link to their worlditem
-								if (go.HasComponent <BodyPart>(out mBodyPartCheck)) {
-										ioi = mBodyPartCheck.Owner;
+								if (go.HasComponent <BodyPart>(out bodyPart)) {
+										ioi = bodyPart.Owner;
 								}
 						} else if (go.CompareTag(Globals.TagStateChild)) {
 								//state child objects are immediately parented under worlditem

@@ -10,6 +10,14 @@ namespace Frontiers.World
 				public Transform Bullseye;
 				public float BullseyeRange = 1.0f;
 
+				public override void OnInitialized()
+				{
+						Damageable damageable = null;
+						if (worlditem.Is<Damageable>(out damageable)) {
+								damageable.ApplyForceAutomatically = false;
+						}
+				}
+
 				public void OnHitByProjectile(Projectile projectile, Vector3 hitPoint)
 				{ 
 						if (Vector3.Distance(hitPoint, Bullseye.position) <= BullseyeRange) {

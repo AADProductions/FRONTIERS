@@ -7,6 +7,11 @@ namespace Frontiers
 {
 		namespace World
 		{
+				public interface IBodyOfWater {
+
+						float WaterHeightAtPosition(Vector3 position);
+				}
+
 				public interface IMeleeWeapon
 				{
 						float ImpactTime { get; }
@@ -70,7 +75,7 @@ namespace Frontiers
 
 						double TimeSet { get; }
 
-						float SkillOnSet { get; }
+						float SkillOnSet { get; set; }
 
 						WorldItem Owner { get; }
 
@@ -82,9 +87,15 @@ namespace Frontiers
 
 						bool SkillUpdating { get; set; }
 
+						bool LastTriggerWasSuccessful { get; set; }
+
+						bool RequiresMinimumPlayerDistance { get; }
+
 						List <string> CanCatch { get; }
 
 						List <string> Exceptions { get; }
+
+						void OnCatchTarget(float skillRoll);
 
 						List <ICreatureDen> IntersectingDens { get; }
 				}
@@ -102,6 +113,8 @@ namespace Frontiers
 						void SpawnCreatureCorpse(Vector3 position, string causeOfDeath, float timeSinceDeath);
 
 						bool BelongsToPack(WorldItem worlditem);
+
+						bool TrapsSpawnCorpse { get; }
 
 						void CallForHelp(WorldItem creatureInNeed, IItemOfInterest sourceOfTrouble);
 
@@ -238,11 +251,15 @@ namespace Frontiers
 
 						WIMaterialType BaseMaterialType	{ get; }
 
-						WIMaterialType ArmorMaterialTypes	{ get; }
+						WIMaterialType ArmorMaterialTypes { get; }
 
-						IItemOfInterest LastDamageSource	{ get; set; }
+						IItemOfInterest LastDamageSource { get; set; }
+
+						BodyPart LastBodyPartHit { get; set; }
 
 						int ArmorLevel(WIMaterialType materialType);
+
+						void InstantKill(IItemOfInterest source);
 				}
 
 
@@ -361,6 +378,8 @@ namespace Frontiers
 						bool UnloadWhenStacked { get; }
 
 						bool IsStackContainer { get; }
+
+						bool UseAsContainerInInventory { get; }
 
 						WIStackContainer StackContainer { get; }
 

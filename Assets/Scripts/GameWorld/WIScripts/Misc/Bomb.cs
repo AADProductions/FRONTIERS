@@ -109,6 +109,7 @@ namespace Frontiers.World
 
 				protected IEnumerator ExplodeOverTime()
 				{
+						WorldItems.SetActiveStateOverride(worlditem.Position, ExplosionRadius);
 						//create an explosion trigger
 						//wait for it to deplete
 						//die

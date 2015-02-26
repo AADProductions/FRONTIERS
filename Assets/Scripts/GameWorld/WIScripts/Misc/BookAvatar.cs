@@ -26,9 +26,17 @@ namespace Frontiers.World.BaseWIScripts
 
 				public override void OnInitialized()
 				{
+						worlditem.OnGainPlayerFocus += OnGainPlayerFocus;
 						State.TemplateName = worlditem.Props.Local.Subcategory;
 						State.BookName = worlditem.Props.Name.StackName;
+						if (string.IsNullOrEmpty(State.BookTitle)) {
+								State.BookTitle = Books.Get.BookTitle(State.BookName);
+						}
 						RefreshAppearance();
+				}
+
+				public void OnGainPlayerFocus () {
+						worlditem.Props.Global.ExamineInfo.OverrideDescriptionName = State.BookTitle;
 				}
 
 				public override void PopulateOptionsList(List <WIListOption> options, List <string> message)
@@ -54,7 +62,9 @@ namespace Frontiers.World.BaseWIScripts
 						Book book = null;
 						if (Books.Get.BookByName(State.BookName, out book)) {
 								WIExamineInfo examineInfo = new WIExamineInfo();
+								worlditem.Props.Global.ExamineInfo.OverrideDescriptionName = book.CleanTitle;
 								examineInfo.StaticExamineMessage = book.ContentsSummary;
+								examineInfo.OverrideDescriptionName = book.CleanTitle;
 								examine.Add(examineInfo);
 						}
 				}

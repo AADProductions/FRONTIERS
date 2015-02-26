@@ -32,7 +32,7 @@ namespace Frontiers.World {
 							packageCopy.Point = itemOfInterest.Position;
 							packageCopy.Origin = transform.position;
 							packageCopy.Target = itemOfInterest;
-							Debug.Log("Force: " + packageCopy.Force.ToString());
+								//Debug.Log("Force: " + packageCopy.Force.ToString());
 							DamageManager.Get.SendDamage(packageCopy);
 							//characters and creatures are automatically stunned
 							if (itemOfInterest.IOIType == ItemOfInterestType.WorldItem) {

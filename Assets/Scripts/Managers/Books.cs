@@ -309,6 +309,8 @@ namespace Frontiers
 						order.ARTOrderedTime = WorldClock.AdjustedRealTime;
 						//just in case
 						order.ARTPickUpTime = -1f;
+						//small rep boost
+						Profile.Get.CurrentGame.Character.Rep.GainGlobalReputation(1);
 						Mods.Get.Runtime.SaveMod <Library>(order.Library, "Library", order.Library.Name);
 						return true;
 				}
@@ -549,6 +551,11 @@ namespace Frontiers
 												mBookItem.Subcategory = template.Name;
 												StackItem avatarStackItem = mBookItem.ToStackItem();
 												avatarStackItems.Add(avatarStackItem);
+										} else {
+												mBookItem.StackName = book.Name;
+												mBookItem.Subcategory = "GenericBook";
+												StackItem avatarStackItem = mBookItem.ToStackItem();
+												avatarStackItems.Add(avatarStackItem);
 										}
 								}
 						}
@@ -663,6 +670,8 @@ namespace Frontiers
 								Mods.Get.Runtime.SaveMod <Book>(book, "Book", bookName);
 								GUIManager.PostGainedItem(book);
 								Player.Get.AvatarActions.ReceiveAction(AvatarAction.BookAquire, WorldClock.AdjustedRealTime);
+						} else {
+								Debug.Log("Couldn't find book");
 						}
 				}
 
@@ -740,6 +749,9 @@ namespace Frontiers
 				#region editor functions
 
 				#if UNITY_EDITOR
+				public List <Book> EditorBooks = new List<Book>();
+				public string EditorBookFilter = string.Empty;
+				public bool FilterOutBooks = true;
 				public List <BookTemplate> SkillSubgroupTemplates = new List<BookTemplate>();
 				public List <Book> SkillSubgroupBooks = new List<Book>();
 
@@ -817,6 +829,20 @@ namespace Frontiers
 								foreach (LibraryCatalogueEntry entry in Libraries [0].CatalogueEntries) {
 										index++;
 										DrawCatalogueEntry(entry, index);
+								}
+						}
+
+						UnityEngine.GUI.color = Color.yellow;
+						EditorBookFilter = GUILayout.TextField(EditorBookFilter);
+						if (GUILayout.Button("Load all books")) {
+								EditorLoadBooks();
+						}
+						if (GUILayout.Button("Save all books")) {
+								EditorSaveBooks();
+						}
+						if (GUILayout.Button("Refresh all books")) {
+								foreach (Book book in EditorBooks) {
+										book.BuildBookChapters();
 								}
 						}
 				}
@@ -1055,6 +1081,58 @@ namespace Frontiers
 												Mods.Get.Editor.SaveMod <Book>(newBook, "Book", existingBookName);
 										}
 								}
+						}
+				}
+
+				public void EditorLoadBooks()
+				{
+						if (!Manager.IsAwake <Mods>()) {
+								Manager.WakeUp <Mods>("__MODS");
+								Mods.Get.Editor.InitializeEditor();
+						}
+
+						EditorBooks.Clear();
+						List <string> availableBooks = Mods.Get.Editor.Available("Book");
+						foreach (string availableBook in availableBooks) {
+								Book bt = null;
+								if (!string.IsNullOrEmpty(EditorBookFilter)) {
+										if (FilterOutBooks) {
+												if (availableBook.ToLower().Contains(EditorBookFilter.ToLower())) {
+														continue;
+												}
+										} else {
+												if (!availableBook.ToLower().Contains(EditorBookFilter.ToLower())) {
+														continue;
+												}
+										}
+								}
+								if (Mods.Get.Editor.LoadMod <Book>(ref bt, "Book", availableBook)) {
+										bt.BuildBookChapters();
+										EditorBooks.Add(bt);
+								}
+						}
+				}
+
+				public void EditorSaveBooks()
+				{
+						if (!Manager.IsAwake <Mods>()) {
+								Manager.WakeUp <Mods>("__MODS");
+								Mods.Get.Editor.InitializeEditor();
+						}
+
+						foreach (Book book in EditorBooks) {
+								if (!string.IsNullOrEmpty(EditorBookFilter)) {
+										if (FilterOutBooks) {
+												if (book.Name.ToLower().Contains(EditorBookFilter.ToLower())) {
+														continue;
+												}
+										} else {
+												if (!book.Name.ToLower().Contains(EditorBookFilter.ToLower())) {
+														continue;
+												}
+										}
+								}
+								Mods.Get.Editor.SaveMod <Book>(book, "Book", book.Name);
 						}
 				}
 

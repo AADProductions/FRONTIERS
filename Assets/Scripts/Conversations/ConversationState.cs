@@ -14,11 +14,18 @@ namespace Frontiers.Story.Conversations
 		[Serializable]
 		public class ConversationProps : Mod
 		{
+				public override bool IgnoreProfileDataIfOutdated {
+						get {
+								return true;
+						}
+				}
+
 				public bool IsGeneric = false;
 				public AvailabilityBehavior Availability = AvailabilityBehavior.Always;
 				public int MaxTimesInitiated = 0;
 				public Exchange DefaultOpeningExchange = new Exchange();
 				public List <Exchange> Exchanges = new List <Exchange>();
+
 				public int GetWordCount()
 				{
 						return DefaultOpeningExchange.GetWordCount();

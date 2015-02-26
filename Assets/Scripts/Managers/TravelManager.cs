@@ -23,12 +23,13 @@ namespace Frontiers
 				public FastTravelState State = FastTravelState.None;
 				public float TimeScaleTravel = 1.0f;
 				public float MaxFastTravelWaitRadius = 3f;
+				public float MovementThreshold = 0.1f;
 				public GUIFastTravelInterface FastTravelInterface;
 				public PathMarkerType DesiredLocationTypes;
 				public StatusKeeper StrengthStatusKeeper;
-
 				public List<FastTravelChoice> AvailablePathMarkers = new List <FastTravelChoice>();
 				public FastTravelChoice CurrentChoice;
+
 				public int StartMarkerIndex {
 						get {
 								if (CurrentChoice != null) {
@@ -37,6 +38,7 @@ namespace Frontiers
 								return 0;
 						}
 				}
+
 				public int EndMarkerIndex {
 						get {
 								if (CurrentChoice != null) {
@@ -45,6 +47,7 @@ namespace Frontiers
 								return 0;
 						}
 				}
+
 				public PathDirection CurrentDirection {
 						get {
 								if (CurrentChoice != null) {
@@ -127,8 +130,9 @@ namespace Frontiers
 
 						if (Player.Local.IsHijacked) {
 								mTerrainHit.feetPosition = CurrentPosition;
-								CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit) + 0.25f;//just in case, pad it out
+								CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit) + 0.05f;//just in case, pad it out
 								//WorldClock.Get.SetTargetSpeed (1.0f);
+								Player.Local.HijackedPosition.position = CurrentPosition + Player.Local.Height;
 								Player.Local.Position = CurrentPosition;
 								Player.Local.RestoreControl(true);
 						}
@@ -229,6 +233,7 @@ namespace Frontiers
 						mTerrainHit.feetPosition = CurrentPosition;
 						mTerrainHit.overhangHeight = 2f;
 						mTerrainHit.groundedHeight = 2f;
+						mTerrainHit.ignoreWorldItems = false;
 						CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit) + Player.Local.Height.y;
 
 						//Debug.Log("We're now at " + PathCurrentMeters.ToString());
@@ -280,19 +285,50 @@ namespace Frontiers
 						mNextChoiceWaitStartTime = WorldClock.AdjustedRealTime;
 						AvailablePathMarkers.Clear();
 						Paths.GetAllNeighbors(LastChosenPathMarker, DesiredLocationTypes, AvailablePathMarkers);
-						if (Player.Local.IsHijacked) {
-								//let the player walk around again
-								mTerrainHit.feetPosition = CurrentPosition;
-								CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit) + 0.25f;//just in case, pad it out
-								Player.Local.Position = CurrentPosition;
-								Player.Local.RestoreControl(true);
+						//see if the player is holding down the forward key - if they are, keep moving
+						bool canSkipNextJunction = AvailablePathMarkers.Count > 1;
+						Vector3 currentDirection = Player.Local.ForwardVector;
+						FastTravelChoice bestChoiceSoFar = AvailablePathMarkers[0];
+						if ((Mathf.Abs(UserActionManager.RawMovementAxisX) > MovementThreshold || Math.Abs(UserActionManager.RawMovementAxisY) > MovementThreshold) && canSkipNextJunction) {
+								Debug.Log("Skipping junction");
+								if (AvailablePathMarkers.Count == 2) {
+										//choose the one opposite us
+										if (bestChoiceSoFar.ConnectingPath == LastChosenPath) {
+												bestChoiceSoFar = AvailablePathMarkers[1];
+										}
+								} else {
+										float smallestDotSoFar = Mathf.Infinity;
+										foreach (FastTravelChoice choice in AvailablePathMarkers) {
+												Vector3 nextDirection = choice.StartMarker.Position - choice.FirstInDirection.Position;
+												float dot = Vector3.Dot(currentDirection.normalized, nextDirection.normalized);
+												if (dot < smallestDotSoFar) {
+														smallestDotSoFar = dot;
+														bestChoiceSoFar = choice;
+												}
+										}
+								}
+								MakeChoice(bestChoiceSoFar);
+						} else {
+								if (Player.Local.IsHijacked) {
+										//let the player walk around again
+										mTerrainHit.feetPosition = CurrentPosition;
+										mTerrainHit.overhangHeight = 2f;
+										mTerrainHit.groundedHeight = 3f;
+										mTerrainHit.ignoreWorldItems = true;
+										CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit) + 0.0125f;//just in case, pad it out
+										Player.Local.Position = CurrentPosition;
+										Debug.Log(CurrentPosition.y.ToString());
+										Player.Local.RestoreControl(true);
+								}
+								Player.Local.Projections.ShowFastTravelChoices(LastChosenPathMarker, AvailablePathMarkers);
+								FastTravelInterface.Maximize();
+								State = FastTravelState.WaitingForNextChoice;
 						}
-						Player.Local.Projections.ShowFastTravelChoices(LastChosenPathMarker, AvailablePathMarkers);
-						FastTravelInterface.Maximize();
-						State = FastTravelState.WaitingForNextChoice;
 				}
 
 				protected double mNextChoiceWaitStartTime = 0f;
+				protected double mLastTimePressedForward = 0f;
+				protected double mPressedForwardInterval = 0.5f;
 
 				[Serializable]
 				public class FastTravelChoice

@@ -19,6 +19,7 @@ namespace Frontiers.GUI
 				public float PositionScale = 1f;
 				public GUIButtonHover ButtonHover;
 				public GameObject ActiveObjectsParent;
+				public BoxCollider Collider;
 				public Transform tr;
 				public GUIStatusKeeper Neighbor;
 
@@ -85,6 +86,7 @@ namespace Frontiers.GUI
 						ButtonHover = gameObject.GetOrAdd <GUIButtonHover>();
 						ButtonHover.OnButtonHover += OnButtonHover;
 						tr = transform;
+						Collider = gameObject.GetComponent <BoxCollider>();
 				}
 
 				public void OnButtonHover()
