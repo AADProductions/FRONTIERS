@@ -277,8 +277,11 @@ namespace Frontiers
 								}
 						}
 						GUIInventoryInterface.Get.ClothingInterface.Initialize();
-						GUIInventoryInterface.Get.ClothingInterface.RefreshClothing += RefreshClothing;
+						Debug.Log("Initialized clothing interface");
+						Debug.Log("Refreshing clothing");
+						RefreshClothing();
 						GUIInventoryInterface.Get.ClothingInterface.Refresh();
+						GUIInventoryInterface.Get.ClothingInterface.RefreshClothing += RefreshClothing;
 				}
 
 				public void RefreshClothing()

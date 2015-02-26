@@ -134,22 +134,26 @@ namespace Frontiers.GUI
 						//update the size based on the urgency
 						TargetScale = Mathf.Lerp(TargetScaleMin, TargetScaleMax, Keeper.NormalizedUrgency);
 
-						tr.localPosition = Vector3.Lerp(tr.localPosition, TargetPosition, 0.125f);
+						if (TargetPosition != tr.localPosition) {
+								tr.localPosition = Vector3.Lerp(tr.localPosition, TargetPosition, 0.125f);
+						}
 						if (GUIManager.Get.ActiveButton != ButtonHover) {
-								tr.localScale = Vector3.Lerp(tr.localScale, Vector3.one * TargetScale, 0.25f);
+								if (tr.localScale.x != TargetScale) {
+										tr.localScale = Vector3.Lerp(tr.localScale, Vector3.one * TargetScale, 0.25f);
+								}
 						}
 
 						mUpdatePing++;
 						mUpdateSymptoms++;
 						mUpdateFlows++;
 
-						UpdateColor();
 						if (mUpdatePing > 5) {
 								UpdatePing();
 								mUpdatePing = 0;
 						}
 						if (mUpdateSymptoms > 10) {
 								UpdateSymptoms();
+								UpdateColor();
 								mUpdateSymptoms = 0;
 						}
 						if (mUpdateFlows > 30) {

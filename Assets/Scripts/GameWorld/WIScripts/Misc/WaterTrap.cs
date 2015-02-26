@@ -16,16 +16,26 @@ namespace Frontiers.World
 
 				public override int OnRefreshHud(int lastHudPriority)
 				{
+						container = worlditem.Get <Container>();
+
 						lastHudPriority++;
 						if (Mode == TrapMode.Set) {
 								GUI.GUIHud.Get.ShowProgressBar(Colors.Get.GenericHighValue, Colors.Get.GenericLowValue, NormalizedChanceOfSuccess);
 						}
 						if (worlditem.StackContainer.IsEmpty) {
+								container.CanOpen = false;
+								container.CanUseToOpen = false;
 								GUI.GUIHud.Get.ShowActions(worlditem, UserActionType.ItemUse, UserActionType.ItemInteract, "Pick up (Empty)", "Interact", worlditem.HudTarget, GameManager.Get.GameCamera);
 						} else if (worlditem.StackContainer.IsFull) {
 								GUI.GUIHud.Get.ShowActions(worlditem, UserActionType.ItemUse, UserActionType.ItemInteract, "Pick up (Full)", "Interact", worlditem.HudTarget, GameManager.Get.GameCamera);
+								container.CanOpen = true;
+								container.CanUseToOpen = true;
+								container.OpenText = "Open Trap";
 						} else {
 								GUI.GUIHud.Get.ShowActions(worlditem, UserActionType.ItemUse, UserActionType.ItemInteract, "Pick up " + worlditem.StackContainer.NumItems.ToString() + " item(s)", "Interact", worlditem.HudTarget, GameManager.Get.GameCamera);
+								container.CanOpen = true;
+								container.CanUseToOpen = true;
+								container.OpenText = "Open Trap";
 						}
 						return lastHudPriority;
 				}

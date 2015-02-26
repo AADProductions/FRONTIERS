@@ -61,55 +61,6 @@ namespace Frontiers.GUI
 						base.WakeUp();
 				}
 
-				public void Update()
-				{
-						Screen.showCursor = GUIManager.ShowCursor;			
-						if (!Screen.showCursor) {
-								LockCursor();
-						} else {
-								ReleaseCursor();
-						}
-
-						if (Input.GetKeyDown(KeyCode.UpArrow)) {
-								Debug.Log("Search up");
-								ScreenSearchOrigin = Input.mousePosition;//SearchCamera.ScreenToWorldPoint(Input.mousePosition);
-								ScreenSearchOrigin.z = 0f;
-								WorldSearchOrigin = SearchCamera.ScreenToWorldPoint(Input.mousePosition);
-								DoSearch(SearchDirection.Up);
-						}
-						if (Input.GetKeyDown(KeyCode.DownArrow)) {
-								Debug.Log("Search down");
-								ScreenSearchOrigin = Input.mousePosition;//SearchCamera.ScreenToWorldPoint(Input.mousePosition);
-								ScreenSearchOrigin.z = 0f;
-								WorldSearchOrigin = SearchCamera.ScreenToWorldPoint(Input.mousePosition);
-								DoSearch(SearchDirection.Down);
-						}
-						if (Input.GetKeyDown(KeyCode.LeftArrow)) {
-								Debug.Log("Search left");
-								ScreenSearchOrigin = Input.mousePosition;//SearchCamera.ScreenToWorldPoint(Input.mousePosition);
-								ScreenSearchOrigin.z = 0f;
-								WorldSearchOrigin = SearchCamera.ScreenToWorldPoint(Input.mousePosition);
-								DoSearch(SearchDirection.Left);
-						}
-						if (Input.GetKeyDown(KeyCode.RightArrow)) {
-								Debug.Log("Search right");
-								ScreenSearchOrigin = Input.mousePosition;//SearchCamera.ScreenToWorldPoint(Input.mousePosition);
-								ScreenSearchOrigin.z = 0f;
-								WorldSearchOrigin = SearchCamera.ScreenToWorldPoint(Input.mousePosition);
-								DoSearch(SearchDirection.Right);
-						}
-				}
-
-				protected void LockCursor()
-				{
-						Screen.lockCursor = true;
-				}
-
-				protected void ReleaseCursor()
-				{
-						Screen.lockCursor = false;
-				}
-
 				public bool SelectionRight(double timeStamp)
 				{
 						if (WorldClock.RealTime > mLastInput + mPressInterval) {
@@ -184,99 +135,100 @@ namespace Frontiers.GUI
 										SetCurrentWidget(UICamera.hoveredObject.GetComponent <BoxCollider>(), GUIManager.Get.ActiveCamera);
 								}
 						}
-
+						//disabling smart search for now since we're actually getting better results with raw search
+						//i may come back to this later as i improve navigation
 						/*if (!CurrentWidget.IsEmpty) {
-				if (CurrentWidget.Collider.CompareTag(Globals.TagBrowserObject)) {
-					Debug.Log("Found browser object");
-					GameObject nextBrowserObject = null;
-					switch (direction) {
-						case SearchDirection.Up:
-							if (GUIBrowserObject.GetPrevBrowserObject(CurrentWidget.Collider.gameObject, out nextBrowserObject)) {
-								Debug.Log("Got prev browser object " + nextBrowserObject.name);
-							}
-							break;
-
-						case SearchDirection.Down:
-							if (GUIBrowserObject.GetNextBrowserObject(CurrentWidget.Collider.gameObject, out nextBrowserObject)) {
-								Debug.Log("Got prev browser object " + nextBrowserObject.name);														
-							}
-							break;
-
-						default:
-						case SearchDirection.Left:
-						case SearchDirection.Right:
-														//if we've already selected a browser object we don't want to select another one
-							break;
-					}
-
-					if (nextBrowserObject != null) {
-						SetCurrentWidget(nextBrowserObject.GetComponent <BoxCollider>(), GUIManager.Get.ActiveCamera);
-						return true;
-					} else {
-						Debug.Log("Couldn't get browser object");
-					}
-
-				} else if (CurrentWidget.Collider.gameObject.HasComponent <GUITabButton>(out mTabButtonCheck)) {
-					GUITabButton nextButton = null;
-					if (mTabButtonCheck.TabParent.HorizontalButtons) {
-						switch (direction) {
-							case SearchDirection.Left:
-								mTabButtonCheck.TabParent.GetPrevButton(mTabButtonCheck, out nextButton);
-								break;
-
-							case SearchDirection.Right:
-								mTabButtonCheck.TabParent.GetNextButton(mTabButtonCheck, out nextButton);
-								break;
-
-							case SearchDirection.Down:
-								if (mTabButtonCheck.TabParent.HasSubTabs) {
-									Debug.Log("Has sub-tabs");
-									GUITabs subTabs = null;
-									bool foundButton = false;
-									int maxTries = 100;
-									int numTries = 0;
-									while (nextButton == null && numTries < maxTries) {
-										if (mTabButtonCheck.TabParent.GetNextSubTab(null, out subTabs)) {
-											//get the first button in the sub tabs
-											subTabs.GetNextButton(null, out nextButton);
+							if (CurrentWidget.Collider.CompareTag(Globals.TagBrowserObject)) {
+								Debug.Log("Found browser object");
+								GameObject nextBrowserObject = null;
+								switch (direction) {
+									case SearchDirection.Up:
+										if (GUIBrowserObject.GetPrevBrowserObject(CurrentWidget.Collider.gameObject, out nextBrowserObject)) {
+											Debug.Log("Got prev browser object " + nextBrowserObject.name);
 										}
-										numTries++;
+										break;
+
+									case SearchDirection.Down:
+										if (GUIBrowserObject.GetNextBrowserObject(CurrentWidget.Collider.gameObject, out nextBrowserObject)) {
+											Debug.Log("Got prev browser object " + nextBrowserObject.name);														
+										}
+										break;
+
+									default:
+									case SearchDirection.Left:
+									case SearchDirection.Right:
+																	//if we've already selected a browser object we don't want to select another one
+										break;
+								}
+
+								if (nextBrowserObject != null) {
+									SetCurrentWidget(nextBrowserObject.GetComponent <BoxCollider>(), GUIManager.Get.ActiveCamera);
+									return true;
+								} else {
+									Debug.Log("Couldn't get browser object");
+								}
+
+							} else if (CurrentWidget.Collider.gameObject.HasComponent <GUITabButton>(out mTabButtonCheck)) {
+								GUITabButton nextButton = null;
+								if (mTabButtonCheck.TabParent.HorizontalButtons) {
+									switch (direction) {
+										case SearchDirection.Left:
+											mTabButtonCheck.TabParent.GetPrevButton(mTabButtonCheck, out nextButton);
+											break;
+
+										case SearchDirection.Right:
+											mTabButtonCheck.TabParent.GetNextButton(mTabButtonCheck, out nextButton);
+											break;
+
+										case SearchDirection.Down:
+											if (mTabButtonCheck.TabParent.HasSubTabs) {
+												Debug.Log("Has sub-tabs");
+												GUITabs subTabs = null;
+												bool foundButton = false;
+												int maxTries = 100;
+												int numTries = 0;
+												while (nextButton == null && numTries < maxTries) {
+													if (mTabButtonCheck.TabParent.GetNextSubTab(null, out subTabs)) {
+														//get the first button in the sub tabs
+														subTabs.GetNextButton(null, out nextButton);
+													}
+													numTries++;
+												}
+											}
+											break;
+
+										case SearchDirection.Up:
+											if (mTabButtonCheck.TabParent.HasParentTabs) {
+												mTabButtonCheck.TabParent.ParentTabs.GetNextButton(null, out nextButton);
+											}
+											break;
+									}
+								} else {
+									switch (direction) {
+										case SearchDirection.Up:
+											if (!mTabButtonCheck.TabParent.GetPrevButton(mTabButtonCheck, out nextButton)) {
+												if (mTabButtonCheck.TabParent.HasParentTabs) {
+													mTabButtonCheck.TabParent.ParentTabs.GetNextButton(null, out nextButton);
+												}
+											}
+											break;
+
+										case SearchDirection.Down:
+											mTabButtonCheck.TabParent.GetNextButton(mTabButtonCheck, out nextButton);
+											break;
+
+										default:
+											break;
 									}
 								}
-								break;
 
-							case SearchDirection.Up:
-								if (mTabButtonCheck.TabParent.HasParentTabs) {
-									mTabButtonCheck.TabParent.ParentTabs.GetNextButton(null, out nextButton);
+								if (nextButton != null) {
+									SetCurrentWidget(nextButton.GetComponent <BoxCollider>(), GUIManager.Get.ActiveCamera);
+									return true;
 								}
-								break;
+							}
 						}
-					} else {
-						switch (direction) {
-							case SearchDirection.Up:
-								if (!mTabButtonCheck.TabParent.GetPrevButton(mTabButtonCheck, out nextButton)) {
-									if (mTabButtonCheck.TabParent.HasParentTabs) {
-										mTabButtonCheck.TabParent.ParentTabs.GetNextButton(null, out nextButton);
-									}
-								}
-								break;
-
-							case SearchDirection.Down:
-								mTabButtonCheck.TabParent.GetNextButton(mTabButtonCheck, out nextButton);
-								break;
-
-							default:
-								break;
-						}
-					}
-
-					if (nextButton != null) {
-						SetCurrentWidget(nextButton.GetComponent <BoxCollider>(), GUIManager.Get.ActiveCamera);
-						return true;
-					}
-				}
-			}
-			*/
+						*/
 						return false;
 				}
 
@@ -554,6 +506,58 @@ namespace Frontiers.GUI
 						}
 				}
 				#endif
+
+				public void Update()
+				{
+						Screen.showCursor = GUIManager.ShowCursor;			
+						if (!Screen.showCursor) {
+								LockCursor();
+						} else {
+								ReleaseCursor();
+						}
+
+						#if UNITY_EDITOR
+						//i use these for testing
+						if (Input.GetKeyDown(KeyCode.UpArrow)) {
+								Debug.Log("Search up");
+								ScreenSearchOrigin = Input.mousePosition;//SearchCamera.ScreenToWorldPoint(Input.mousePosition);
+								ScreenSearchOrigin.z = 0f;
+								WorldSearchOrigin = SearchCamera.ScreenToWorldPoint(Input.mousePosition);
+								DoSearch(SearchDirection.Up);
+						}
+						if (Input.GetKeyDown(KeyCode.DownArrow)) {
+								Debug.Log("Search down");
+								ScreenSearchOrigin = Input.mousePosition;//SearchCamera.ScreenToWorldPoint(Input.mousePosition);
+								ScreenSearchOrigin.z = 0f;
+								WorldSearchOrigin = SearchCamera.ScreenToWorldPoint(Input.mousePosition);
+								DoSearch(SearchDirection.Down);
+						}
+						if (Input.GetKeyDown(KeyCode.LeftArrow)) {
+								Debug.Log("Search left");
+								ScreenSearchOrigin = Input.mousePosition;//SearchCamera.ScreenToWorldPoint(Input.mousePosition);
+								ScreenSearchOrigin.z = 0f;
+								WorldSearchOrigin = SearchCamera.ScreenToWorldPoint(Input.mousePosition);
+								DoSearch(SearchDirection.Left);
+						}
+						if (Input.GetKeyDown(KeyCode.RightArrow)) {
+								Debug.Log("Search right");
+								ScreenSearchOrigin = Input.mousePosition;//SearchCamera.ScreenToWorldPoint(Input.mousePosition);
+								ScreenSearchOrigin.z = 0f;
+								WorldSearchOrigin = SearchCamera.ScreenToWorldPoint(Input.mousePosition);
+								DoSearch(SearchDirection.Right);
+						}
+						#endif
+				}
+
+				protected void LockCursor()
+				{
+						Screen.lockCursor = true;
+				}
+
+				protected void ReleaseCursor()
+				{
+						Screen.lockCursor = false;
+				}
 
 				protected double mLastInput = -1f;
 				protected double mPressInterval = 0.35f;
