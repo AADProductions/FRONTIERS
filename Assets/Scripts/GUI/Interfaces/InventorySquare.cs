@@ -16,6 +16,11 @@ namespace Frontiers.GUI
 				public bool RequiresEnabler = true;
 				//making this opt-in instead of figuring it out on the fly
 				public bool AllowShiftClick = false;
+				public override bool CanSplitStack {
+						get {
+								return IsEnabled && mStack.NumItems > 1;
+						}
+				}
 
 				public bool HasEnabler {
 						get {
@@ -118,11 +123,11 @@ namespace Frontiers.GUI
 						//skill usage
 						bool useSkillToRemove = false;
 						//left clicking can pick up, split, or quick-add
-						if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) {//TODO move this into UserActions or InterfaceActions
+						if (InterfaceActionManager.Get.IsKeyDown (InterfaceActionType.StackSplit)) {
 								splitStack = true;
-						} else if (AllowShiftClick && Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {//TODO move this into UserActions or InterfaceActions
+						}/* else if (AllowShiftClick && InterfaceActionManager.Get.IsKeyDown (InterfaceActionType.StackQuickAdd)) {
 								quickAdd = true;
-						}
+						}*/
 
 						mRemoveItemSkillNames.Clear();
 

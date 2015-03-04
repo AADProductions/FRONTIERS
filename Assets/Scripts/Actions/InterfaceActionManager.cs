@@ -355,6 +355,15 @@ namespace Frontiers
 						aSetting.AvailableKeys = DefaultAvailableKeys;
 						actionSettings.Add(aSetting);
 
+						aSetting = ActionSetting.Button;
+						aSetting.Action = (int)InterfaceActionType.StackSplit;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence(InterfaceActionType.StackSplit.ToString());
+						aSetting.Controller = InputControlType.RightTrigger;
+						aSetting.Key = KeyCode.LeftControl;
+						aSetting.AvailableControllerButtons = DefaultAvailableActions;
+						aSetting.AvailableKeys = DefaultAvailableKeys;
+						actionSettings.Add(aSetting);
+
 						return actionSettings;
 				}
 

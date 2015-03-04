@@ -191,6 +191,8 @@ namespace Frontiers
 				CursorRightClick = 268435456,
 				//28
 				InterfaceHide = 536870912,
+				//29
+				StackSplit = 1073741824,
 
 				FlagsTogglePrimary = ToggleInventory | ToggleStatus | ToggleMap | ToggleLog,
 				FlagsSelectionNextPrev = SelectionNext | SelectionPrev,

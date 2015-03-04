@@ -77,7 +77,7 @@ namespace Frontiers.World
 
 				public override int OnRefreshHud(int lastHudPriority)
 				{
-						if (Mode == TrapMode.Set) {
+						if (Mode == TrapMode.Set && Skills.Get.HasLearnedSkill ("Trapping")) {
 								GUI.GUIHud.Get.ShowProgressBar(Colors.Get.GenericHighValue, Colors.Get.GenericLowValue, NormalizedChanceOfSuccess);
 						}
 						return lastHudPriority;
@@ -150,10 +150,14 @@ namespace Frontiers.World
 										break;
 
 								case TrapMode.Set:
-										if (IntersectingDens.Count > 0) {
-												examine.Add(new WIExamineInfo("It has been set with " + Skill.MasteryAdjective(State.SkillOnSet) + " skill. The odds of it catching something are " + Skill.MasteryAdjective(NormalizedChanceOfSuccess)));
+										if (Skills.Get.HasLearnedSkill("Trapping")) {
+												if (IntersectingDens.Count > 0) {
+														examine.Add(new WIExamineInfo("It has been set with " + Skill.MasteryAdjective(State.SkillOnSet) + " skill. The odds of it catching something are " + Skill.MasteryAdjective(NormalizedChanceOfSuccess)));
+												} else {
+														examine.Add(new WIExamineInfo("It has been set with " + Skill.MasteryAdjective(State.SkillOnSet) + " skill. There is no chance it will catch something because there are no animals nearby."));
+												}
 										} else {
-												examine.Add(new WIExamineInfo("It has been set with " + Skill.MasteryAdjective(State.SkillOnSet) + " skill. There is no chance it will catch something because there are no animals nearby."));
+												examine.Add(new WIExamineInfo("It has been set."));
 										}
 										break;
 

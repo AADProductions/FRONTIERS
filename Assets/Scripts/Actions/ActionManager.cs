@@ -329,6 +329,19 @@ namespace Frontiers
 						}
 				}
 
+				//use this function sparingly
+				public bool IsKeyDown (T action)
+				{
+						InputControlType control = GetActionBinding(Convert.ToInt32 (action));
+						#if UNITY_EDITOR
+						bool isDown = Device.GetControl(control).IsPressed || InputManager.ActiveDevice.GetControl(control).IsPressed;
+						Debug.Log("Input control:  " + control.ToString() + " is down? " + isDown.ToString());
+						return isDown;
+						#else
+						return Device.GetControl(control).IsPressed || InputManager.ActiveDevice.GetControl(control).IsPressed;
+						#endif
+				}
+
 				public void AddMapping(InputControlType input, ActionSettingType actionType, T action)
 				{
 

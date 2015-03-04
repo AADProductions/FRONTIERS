@@ -51,7 +51,7 @@ public class AvatarActionReceiver : ActionFilter <PlayerAvatarAction>
 }
 
 [Serializable]
-public struct PlayerAvatarAction : IEqualityComparer <PlayerAvatarAction>
+public struct PlayerAvatarAction : IEqualityComparer <PlayerAvatarAction>, IConvertible, IComparable, IFormattable
 {
 		public PlayerAvatarAction(PlayerIDFlag playerID, AvatarActionType type, AvatarAction action)
 		{
@@ -67,16 +67,6 @@ public struct PlayerAvatarAction : IEqualityComparer <PlayerAvatarAction>
 				ActionType	= type;
 				Action = action;
 				Target = target;
-		}
-
-		public bool Equals(PlayerAvatarAction pa1, PlayerAvatarAction pa2)
-		{
-				return (pa1.Action == pa2.Action && Flags.Check((uint)pa1.PlayerID, (uint)pa2.PlayerID, Flags.CheckType.MatchAny));
-		}
-
-		public int GetHashCode(PlayerAvatarAction a)
-		{
-				return (int)a.ActionType + (int)a.Action;
 		}
 
 		public PlayerAvatarAction(AvatarAction action, GameObject target)
@@ -107,6 +97,88 @@ public struct PlayerAvatarAction : IEqualityComparer <PlayerAvatarAction>
 		public AvatarActionType ActionType;
 		public AvatarAction Action;
 		public GameObject Target;
+
+		#region interfaces
+		//more nonsense to get around C#'s enum restrictions
+		public Boolean ToBoolean (IFormatProvider provider) {
+				return false;
+		}
+		public Byte ToByte (IFormatProvider provider) {
+				return 0;
+		}
+		public SByte ToSByte (IFormatProvider provider) {
+				return 0;
+		}
+		public Char ToChar (IFormatProvider provider) {
+				return '0';
+		}
+		public DateTime ToDateTime (IFormatProvider provider) {
+				return DateTime.Now;
+		}
+		public Single ToSingle (IFormatProvider provider) {
+				return 0.0f;
+		}
+		public Decimal ToDecimal (IFormatProvider provider) {
+				return 0.0m;
+		}
+		public Double ToDouble (IFormatProvider provider) {
+				return 0.0;
+		}
+		public Int16 ToInt16 (IFormatProvider provider) {
+				return 0;
+		}
+		public Int32 ToInt32 (IFormatProvider provider) {
+				return 0;
+		}
+		public Int64 ToInt64 (IFormatProvider provider) {
+				return (int)Action;
+		}
+		public System.Object ToType (System.Type type, IFormatProvider provider) {
+				return type;
+		}
+		public UInt16 ToUInt16 (IFormatProvider provider) {
+				return 0;
+		}
+		public UInt32 ToUInt32 (IFormatProvider provider) {
+				return (uint)Action;
+		}
+		public UInt64 ToUInt64 (IFormatProvider provider) {
+				return (uint)Action;
+		}
+		public String ToString (string s, IFormatProvider provider) {
+				return ToString();
+		}
+		public String ToString (IFormatProvider provider) {
+				return ToString();
+		}
+		public TypeCode GetTypeCode ( ) {
+				return TypeCode.UInt32;
+		}
+
+		public int CompareTo(PlayerAvatarAction o)
+		{
+				return Action.CompareTo (o.Action);
+		}
+
+		public int CompareTo(System.Object o)
+		{
+				PlayerAvatarAction other = (PlayerAvatarAction)o;
+				if (o == null) {
+						return 0;
+				}
+				return Action.CompareTo (other.Action);
+		}
+
+		public bool Equals(PlayerAvatarAction pa1, PlayerAvatarAction pa2)
+		{
+				return (pa1.Action == pa2.Action && Flags.Check((uint)pa1.PlayerID, (uint)pa2.PlayerID, Flags.CheckType.MatchAny));
+		}
+
+		public int GetHashCode(PlayerAvatarAction a)
+		{
+				return (int)a.ActionType + (int)a.Action;
+		}
+		#endregion
 
 		public static void LinkTypes()
 		{

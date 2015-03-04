@@ -245,6 +245,11 @@ public class ChunkModeChanger : MonoBehaviour
 						yield return addTerrainTrees.Current;
 				}
 				yield return null;
+				var addRivers = Chunk.AddRivers(ChunkMode.Immediate);
+				while (addRivers.MoveNext()) {
+						yield return addRivers.Current;
+				}
+				yield return null;
 				var addTerrainDetails = Chunk.AddTerrainDetails();
 				while (addTerrainDetails.MoveNext()) {
 						yield return addTerrainDetails.Current;
@@ -258,12 +263,7 @@ public class ChunkModeChanger : MonoBehaviour
 						yield return null;
 				}
 
-				var nextTask = Chunk.AddRivers(ChunkMode.Immediate);
-				while (nextTask.MoveNext()) {
-						yield return nextTask.Current;
-				}
-
-				nextTask = Chunk.AddTerainFX(ChunkMode.Immediate);
+				var nextTask = Chunk.AddTerainFX(ChunkMode.Immediate);
 				while (nextTask.MoveNext()) {
 						yield return nextTask.Current;
 				}

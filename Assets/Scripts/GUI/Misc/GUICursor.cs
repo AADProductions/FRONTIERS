@@ -12,8 +12,8 @@ namespace Frontiers.GUI
 				public static GUICursor Get;
 				public static bool gUseMouseLock = true;
 				public Texture2D CursorTexture;
-				public Texture2D SplitStackTexture;
-				public Texture2D SwapStackTexture;
+				public Texture2D StackSplitTexture;
+				public Texture2D StackQuickAddTexture;
 				public float TargetOpacity = 1.0f;
 				public float FadeTime = 1.0f;
 				public float Alpha = 0.0f;
@@ -52,6 +52,8 @@ namespace Frontiers.GUI
 						Subscribe(InterfaceActionType.SelectionUp, SelectionUp);
 						Subscribe(InterfaceActionType.SelectionDown, SelectionDown);
 						Behavior = PassThroughBehavior.PassThrough;
+
+						SetCursorTexture("Default");
 				}
 
 				public override void WakeUp()
@@ -557,6 +559,23 @@ namespace Frontiers.GUI
 				protected void ReleaseCursor()
 				{
 						Screen.lockCursor = false;
+				}
+
+				public void SetCursorTexture (string cursorName) {
+						//TODO put textures in a list
+						switch (cursorName.ToLower()) {
+								case "stacksplit":
+										Cursor.SetCursor(StackSplitTexture, Vector2.zero, CursorMode.Auto);
+										break;
+
+								case "stackquickadd":
+										Cursor.SetCursor(StackQuickAddTexture, Vector2.zero, CursorMode.Auto);
+										break;
+
+								default:
+										Cursor.SetCursor(CursorTexture, Vector2.zero, CursorMode.Auto);
+										break;
+						}
 				}
 
 				protected double mLastInput = -1f;

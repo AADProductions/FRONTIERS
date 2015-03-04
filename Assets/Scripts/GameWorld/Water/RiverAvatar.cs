@@ -103,13 +103,11 @@ namespace Frontiers.World
 
 				public void Update()
 				{
-						if (!ParentChunk.Is(ChunkMode.Immediate | ChunkMode.Primary | ChunkMode.Adjascent)) {
+						if (ParentChunk.Is(ChunkMode.Unloaded)) {
 								MasterSpline.enabled = false;
-								MasterSplineMesh.enabled = false;
 								return;
 						} else {
 								MasterSpline.enabled = true;
-								MasterSplineMesh.enabled = true;
 						}
 
 						if (!Mathf.Approximately(Props.TargetWaterLevel, Props.CurrentWaterLevel)) {

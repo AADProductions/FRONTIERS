@@ -28,6 +28,15 @@ namespace Frontiers.World
 				public float SpawnDamageMaximum = 0f;
 				public bool DepletedOnMaxDamage = false;
 				public string IntrospectionOnDepleted;
+
+				public bool HasLowQualitySubstitute {
+						get {
+								return !string.IsNullOrEmpty(SubstituteOnLowQuality);
+						}
+				}
+				[FrontiersAvailablePlants]
+				public string SubstituteOnLowQuality = string.Empty;
+
 				#if UNITY_EDITOR
 				public void OnDrawGizmos()
 				{

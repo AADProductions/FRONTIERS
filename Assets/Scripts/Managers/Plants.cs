@@ -28,6 +28,20 @@ namespace Frontiers
 				public Material AtsBarkMaterial;
 				public Material AtsLeavesMaterial;
 
+				public string[] AvailablePlantNames {
+						get {
+								if (mAvailablePlantNames == null) {
+										mAvailablePlantNames = new string [TreePrototypes.Count];
+										for (int i = 0; i < mAvailablePlantNames.Length; i++) {
+												mAvailablePlantNames[i] = TreePrototypes[i].name;
+										}
+								}
+								return mAvailablePlantNames;
+						}
+				}
+
+				protected string [] mAvailablePlantNames = null;
+
 				public List <Plant> KnownPlants(ClimateType climate, TimeOfYear seasonality, bool aboveGround, bool requireRevealed)
 				{
 						mKnownPlantsResult.Clear();

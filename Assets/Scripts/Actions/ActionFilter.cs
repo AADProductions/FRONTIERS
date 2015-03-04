@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Frontiers
 {
-		public class ActionFilter <T> : MonoBehaviour
+		public class ActionFilter <T> : MonoBehaviour where T : struct, IConvertible, IComparable, IFormattable
 		{
 				public T Filter;
 				public T FilterExceptions;

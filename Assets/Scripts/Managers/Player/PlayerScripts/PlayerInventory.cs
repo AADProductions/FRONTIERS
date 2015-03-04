@@ -603,7 +603,7 @@ namespace Frontiers
 
 				//we can use anything for the quickslot enabler
 				//but for other enablers, check this first
-				if (item.UseAsContainerInInventory) {
+				if (item.UseAsContainerInInventory || item.StackContainer.NumItems > 0) {
 					//if we've gotten this far then quickslots are full
 					//so check the remaining enablers to see if they need containers
 					for (int i = 0; i < InventoryEnablers.Count; i++) {

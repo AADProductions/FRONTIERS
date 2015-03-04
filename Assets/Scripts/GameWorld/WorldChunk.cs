@@ -221,7 +221,7 @@ namespace Frontiers.World
 			Mods.Get.Runtime.LoadMod <ChunkTerrainData>(ref TerrainData, chunkDirectoryName, "Terrain");
 
 			for (int i = 0; i < SceneryData.AboveGround.RiverNames.Count; i++) {
-				////Debug.Log ("Loading river " + SceneryData.AboveGround.RiverNames [i]);
+				Debug.Log ("Loading river " + SceneryData.AboveGround.RiverNames [i]);
 				River river = null;
 				if (Mods.Get.Runtime.LoadMod <River>(ref river, "River", SceneryData.AboveGround.RiverNames[i])) {
 					Rivers.Add(river);
@@ -643,6 +643,7 @@ namespace Frontiers.World
 
 		protected void CreateRiver(River river)
 		{
+			Debug.Log("Creating river " + river.Name);
 			Transform agRivers = Transforms.AboveGroundRivers;
 			GameObject riverAvatarObject = GameObject.Instantiate(GameWorld.Get.RiverPrefab) as GameObject;
 			riverAvatarObject.transform.parent = Transforms.AboveGroundRivers;

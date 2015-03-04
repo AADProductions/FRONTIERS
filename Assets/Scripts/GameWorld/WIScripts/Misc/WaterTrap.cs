@@ -19,7 +19,7 @@ namespace Frontiers.World
 						container = worlditem.Get <Container>();
 
 						lastHudPriority++;
-						if (Mode == TrapMode.Set) {
+						if (Mode == TrapMode.Set && Skills.Get.HasLearnedSkill("Fishing")) {
 								GUI.GUIHud.Get.ShowProgressBar(Colors.Get.GenericHighValue, Colors.Get.GenericLowValue, NormalizedChanceOfSuccess);
 						}
 						if (worlditem.StackContainer.IsEmpty) {
@@ -88,7 +88,7 @@ namespace Frontiers.World
 
 				public void OnCatchTarget(float skillRoll)
 				{
-						Debug.Log("Caught target with skill roll " + skillRoll.ToString() + " in trap " + name);
+						//Debug.Log("Caught target with skill roll " + skillRoll.ToString() + " in trap " + name);
 						//unlike land traps fish traps just fill a container with fish items
 						//so do that now
 						Mode = TrapMode.Triggered;
@@ -136,10 +136,14 @@ namespace Frontiers.World
 										break;
 
 								case TrapMode.Set:
-										if (IntersectingDens.Count > 0) {
-												examine.Add(new WIExamineInfo("It has been set with " + Skill.MasteryAdjective(State.SkillOnSet) + " skill. The odds of it catching something are " + Skill.MasteryAdjective(NormalizedChanceOfSuccess)));
+										if (Skills.Get.HasLearnedSkill("Fishing")) {
+												if (IntersectingDens.Count > 0) {
+														examine.Add(new WIExamineInfo("It has been set with " + Skill.MasteryAdjective(State.SkillOnSet) + " skill. The odds of it catching something are " + Skill.MasteryAdjective(NormalizedChanceOfSuccess)));
+												} else {
+														examine.Add(new WIExamineInfo("It has been set with " + Skill.MasteryAdjective(State.SkillOnSet) + " skill, but there are no fish nearby to catch."));
+												}
 										} else {
-												examine.Add(new WIExamineInfo("It has been set with " + Skill.MasteryAdjective(State.SkillOnSet) + " skill. There is no chance it will catch something because it's not close enough to a fishing hole."));
+												examine.Add(new WIExamineInfo("It has been set."));
 										}
 										break;
 

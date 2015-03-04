@@ -15,6 +15,11 @@ namespace Frontiers.GUI
 				public bool ShowDoppleganger;
 				public GenericWorldItem DopplegangerProps = GenericWorldItem.Empty;
 				public WIMode DopplegangerMode = WIMode.Stacked;
+				public virtual bool CanSplitStack {
+						get {
+								return false;
+						}
+				}
 
 				public override void Awake()
 				{
