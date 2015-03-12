@@ -15,9 +15,54 @@ namespace Frontiers.GUI
 		public UIButton OptionsButton;
 		public UIButton MultiplayerButton;
 		public UIButton QuitButton;
-		public UICamera NGUIInput;
 		public UILabel ChangeLogLabel;
 		public UILabel ChangeLogTitleLabel;
+		public GameObject ChangeLog;
+		public UIPanel MainPanel;
+		public bool VRMode = false;
+		public Vector3 ContinueButtonPositionNormal;
+		public Vector3 NewButtonPositionNormal;
+		public Vector3 LoadButtonPositionNormal;
+		public Vector3 SaveButtonPositionNormal;
+		public Vector3 OptionsButtonPositionNormal;
+		public Vector3 MultiplayerButtonPositionNormal;
+		public Vector3 QuitButtonPositionNormal;
+		public Vector3 ContinueButtonPositionVR;
+		public Vector3 NewButtonPositionVR;
+		public Vector3 LoadButtonPositionVR;
+		public Vector3 SaveButtonPositionVR;
+		public Vector3 OptionsButtonPositionVR;
+		public Vector3 MultiplayerButtonPositionVR;
+		public Vector3 QuitButtonPositionVR;
+		public Vector4 MainPanelClippingNormal;
+		public Vector4 MainPanelClippingVR;
+
+		public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+		{
+			Widget w = new Widget();
+			w.SearchCamera = NGUICamera;
+
+			w.Collider = ContinueButton.gameObject.GetComponent<BoxCollider>();
+			currentObjects.Add(w); 
+
+			w.Collider = NewButton.gameObject.GetComponent<BoxCollider>();
+			currentObjects.Add(w);
+
+			w.Collider = LoadButton.gameObject.GetComponent<BoxCollider>();
+			currentObjects.Add(w);
+
+			w.Collider = SaveButton.gameObject.GetComponent<BoxCollider>();
+			currentObjects.Add(w);
+
+			w.Collider = OptionsButton.gameObject.GetComponent<BoxCollider>();
+			currentObjects.Add(w);
+
+			w.Collider = MultiplayerButton.gameObject.GetComponent<BoxCollider>();
+			currentObjects.Add(w);
+
+			w.Collider = QuitButton.gameObject.GetComponent<BoxCollider>();
+			currentObjects.Add(w);
+		}
 
 		public override bool ActionCancel(double timeStamp)
 		{
@@ -45,11 +90,6 @@ namespace Frontiers.GUI
 			GameManager.SetState(EditObject.EnterGameState);
 
 			PrimaryInterface.MinimizeAll();
-			string changeLogText = string.Empty;
-			System.DateTime changeLogTime = new System.DateTime();
-			GameData.IO.GetChangeLog(ref changeLogText, ref changeLogTime);
-			ChangeLogLabel.text = changeLogText;
-			ChangeLogTitleLabel.text = "Most recent changes: " + changeLogTime.ToString();
 
 			//since we're pulling up the start menu, which will cause a pause
 			//WHY NOT CALL THE GC?
@@ -59,7 +99,24 @@ namespace Frontiers.GUI
 				GameObject editor = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog("NGUIThisWeekFocusDialog"));
 			}
 
+			VRMode = VRManager.OculusModeEnabled;
+			RefreshChangeLog();
 			RefreshButtons();
+		}
+
+		public void RefreshChangeLog()
+		{
+			if (VRMode) {
+				ChangeLog.SetActive(false);
+				MainPanel.clipRange = MainPanelClippingVR;
+			} else {
+				string changeLogText = string.Empty;
+				System.DateTime changeLogTime = new System.DateTime();
+				GameData.IO.GetChangeLog(ref changeLogText, ref changeLogTime);
+				ChangeLog.SetActive(true);
+				ChangeLogLabel.text = changeLogText;
+				ChangeLogTitleLabel.text = "Most recent changes: " + changeLogTime.ToString();
+			}
 		}
 
 		public void RefreshButtons()
@@ -90,6 +147,41 @@ namespace Frontiers.GUI
 					MultiplayerButton.SendMessage("SetEnabled", SendMessageOptions.RequireReceiver);
 					QuitButton.SendMessage("SetEnabled", SendMessageOptions.RequireReceiver);
 					break;
+			}
+
+			if (VRMode) {
+				//make the buttons vertical
+				ContinueButton.transform.localPosition = ContinueButtonPositionVR;
+				NewButton.transform.localPosition = NewButtonPositionVR;
+				LoadButton.transform.localPosition = LoadButtonPositionVR;
+				SaveButton.transform.localPosition = SaveButtonPositionVR;
+				OptionsButton.transform.localPosition = OptionsButtonPositionVR;
+				MultiplayerButton.transform.localPosition = MultiplayerButtonPositionVR;
+				QuitButton.transform.localPosition = QuitButtonPositionVR;
+				MainPanel.clipRange = MainPanelClippingVR;
+			} else {
+				//use the normal button positions
+				ContinueButton.transform.localPosition = ContinueButtonPositionNormal;
+				NewButton.transform.localPosition = NewButtonPositionNormal;
+				LoadButton.transform.localPosition = LoadButtonPositionNormal;
+				SaveButton.transform.localPosition = SaveButtonPositionNormal;
+				OptionsButton.transform.localPosition = OptionsButtonPositionNormal;
+				MultiplayerButton.transform.localPosition = MultiplayerButtonPositionNormal;
+				QuitButton.transform.localPosition = QuitButtonPositionNormal;
+				MainPanel.clipRange = MainPanelClippingNormal;
+			}
+		}
+
+		public void Update()
+		{
+			if (mEditObject == null) {
+				return;
+			}
+
+			if (VRManager.OculusModeEnabled != VRMode) {
+				VRMode = VRManager.OculusModeEnabled;
+				RefreshChangeLog();
+				RefreshButtons();
 			}
 		}
 

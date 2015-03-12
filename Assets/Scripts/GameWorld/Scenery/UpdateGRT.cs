@@ -15,6 +15,7 @@ public class UpdateGRT : MonoBehaviour
 		public float NormalizedDistance = 0f;
 		public Transform ActualPosition;
 		public Transform tr;
+		public Renderer GRTRenderer;
 
 		public void Start()
 		{
@@ -24,9 +25,6 @@ public class UpdateGRT : MonoBehaviour
 
 		public void Update()
 		{
-				if (GameManager.Get.TestingEnvironment) {
-						return;
-				}
 				GrtDistantMaterial.SetColor("_ColorFrom", Color.Lerp(Color.Lerp(RenderSettings.fogColor, RenderSettings.ambientLight, 0.05f), Color.black, 0.05f));
 				GrtDistantMaterial.SetColor("_ColorTo", Color.Lerp(Color.Lerp(RenderSettings.fogColor, RenderSettings.ambientLight, 0.1f), Color.black, 0.1f));
 		}
@@ -35,6 +33,13 @@ public class UpdateGRT : MonoBehaviour
 		{
 				if (!GameManager.Is(FGameState.InGame) || GameManager.Get.TestingEnvironment)
 						return;
+
+				if (!GameWorld.Get.Settings.GRTVisible) {
+						GRTRenderer.enabled = false;
+						return;
+				} else {
+						GRTRenderer.enabled = true;
+				}
 
 				tr.parent = null;
 				//scale by world position

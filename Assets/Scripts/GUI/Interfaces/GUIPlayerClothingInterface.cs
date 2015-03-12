@@ -281,7 +281,7 @@ namespace Frontiers.GUI
 
 				protected InventorySquareWearable CreateWearableSquare(GameObject parentObject, Vector3 squarePosition, WearableType type, BodyPartType bodyPart, BodyOrientation orientation, WIStack stack)
 				{
-						Debug.Log("Creating wearable square: " + type.ToString() + ", " + bodyPart.ToString() + ", " + orientation.ToString());
+						//Debug.Log("Creating wearable square: " + type.ToString() + ", " + bodyPart.ToString() + ", " + orientation.ToString());
 
 						GameObject inventorySquareGameObject = NGUITools.AddChild(parentObject, GUIManager.Get.InventorySquareWearable);
 						InventorySquareWearable square = inventorySquareGameObject.GetComponent <InventorySquareWearable>();

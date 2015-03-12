@@ -191,6 +191,7 @@ namespace Frontiers
 				public void SaveCurrent(ProfileComponents components)
 				{
 						Debug.Log("PROFILE: Saving current " + components.ToString());
+						GameData.IO.LogPaths();
 						mSaveNextAvailable |= components;
 						enabled = true;
 				}
@@ -256,6 +257,8 @@ namespace Frontiers
 								}
 
 								mSaveNextAvailable = ProfileComponents.None;
+								Debug.Log("Saved components in profile");
+								GameData.IO.LogPaths();
 								enabled = false;
 						}
 				}
@@ -273,6 +276,7 @@ namespace Frontiers
 								Debug.LogError(errorMessage);
 								return false;
 						}
+						GameData.IO.LogPaths();
 
 						//if we haven't already created this game
 						if (!HasCurrentGame || CurrentGame.WorldName != worldName || CurrentGame.Name != gameName) {

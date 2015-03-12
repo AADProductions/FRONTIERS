@@ -186,10 +186,6 @@ namespace Frontiers.GUI
 						}
 						mMaximized = false;
 
-						if (DisableGameObjectOnMinimize) {
-								gameObject.SetActive(false);
-						}
-
 						MasterAudio.PlaySound(MasterAudio.SoundType.PlayerInterface, "InterfaceToggle");
 						//TODO optimize this
 						OnHide.SafeInvoke();
@@ -199,6 +195,11 @@ namespace Frontiers.GUI
 
 						mLastTimeMinimized = WorldClock.RealTime;
 						mMinimizing = false;
+
+						if (DisableGameObjectOnMinimize) {
+								gameObject.SetActive(false);
+						}
+
 						return true;
 				}
 

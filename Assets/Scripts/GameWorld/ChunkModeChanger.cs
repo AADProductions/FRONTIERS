@@ -155,6 +155,10 @@ public class ChunkModeChanger : MonoBehaviour
 		protected IEnumerator RunSequence()
 		{
 				yield return null;
+				while (!Chunk.Initialized) {
+						yield return null;
+				}
+
 				while (Chunk.CurrentMode != Chunk.TargetMode) {
 						while (!GameManager.Is(FGameState.InGame | FGameState.GameLoading | FGameState.GameStarting)) {
 								yield return null;

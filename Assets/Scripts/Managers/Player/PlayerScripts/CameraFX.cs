@@ -9,7 +9,6 @@ namespace Frontiers
 		public class CameraFX : Manager
 		{
 				public static CameraFX Get;
-				public bool OculusMode = false;
 				public AnimationCurve BrightCurve;
 				public AnimationCurve DarkCurve;
 				public AnimationCurve NormalCurve;
@@ -120,8 +119,6 @@ namespace Frontiers
 						Default.Initialize();
 						OvrLeft.Initialize();
 						OvrRight.Initialize();
-
-						SetOculudMode(false);
 				}
 
 				public override void OnGameStart()
@@ -145,9 +142,11 @@ namespace Frontiers
 						}
 
 						//enable / disable cameras based on oculus mode
-						if (OculusMode) {
+						if (VRManager.OculusModeEnabled) {
 								OvrLeft.CopyFrom(Default);
 								OvrRight.CopyFrom(Default);
+								OvrLeft.cam.farClipPlane = Default.cam.farClipPlane;
+								OvrRight.cam.farClipPlane = Default.cam.farClipPlane;
 						}
 
 						if (GameManager.Is(FGameState.InGame) && Player.Local != null) {
@@ -158,22 +157,22 @@ namespace Frontiers
 						}
 				}
 
-				public void SetOculudMode(bool enabled)
+				public void RefreshOculusMode()
 				{
-						OculusMode = enabled;
-						if (OculusMode) {
+						if (VRManager.OculusModeEnabled) {
 								Default.cam.enabled = false;
-								OvrCameraRig.enabled = true;
 								OvrLeft.cam.enabled = true;
 								OvrRight.cam.enabled = true;
 								OvrLeft.cam.cullingMask = Default.cam.cullingMask;
 								OvrRight.cam.cullingMask = Default.cam.cullingMask;
 								OvrManager.enabled = true;
+								OvrCameraRig.enabled = true;
 						} else {
 								OvrManager.enabled = false;
+								OvrCameraRig.enabled = false;
+								OvrLeft.cam.enabled = false;
+								OvrRight.cam.enabled = false;
 								Default.cam.enabled = true;
-								OvrLeft.cam.enabled = false;
-								OvrLeft.cam.enabled = false;
 						}
 				}
 
@@ -523,7 +522,7 @@ namespace Frontiers
 						Fog = cam.GetComponent <AlphaSortedGlobalFog>();
 						TimeOfDay = cam.GetComponent <TOD_Camera>();
 
-						Components = new List<Component>();
+						Components = new List<MonoBehaviour>();
 						Components.Add(BloomEffect);
 						Components.Add(Vignette);
 						Components.Add(Blur);
@@ -544,14 +543,15 @@ namespace Frontiers
 						for (int i = 0; i < sfxSet.Components.Count; i++) {
 								//TODO this is pretty absurd - we can cache the fields in the components list
 								//for now, whatever, just copy them and allocate a bunch of crap...
-								Component thisComponent = Components[i];
-								Component otherComponent = sfxSet.Components[i];
+								MonoBehaviour thisComponent = Components[i];
+								MonoBehaviour otherComponent = sfxSet.Components[i];
 								if (thisComponent != null && otherComponent != null) {
-										Type type = thisComponent.GetType();
-										System.Reflection.FieldInfo[] fields = type.GetFields(); 
-										foreach (System.Reflection.FieldInfo field in fields) {
-												field.SetValue(thisComponent, field.GetValue(otherComponent));
-										}
+										thisComponent.enabled = otherComponent.enabled;
+										/*Type type = thisComponent.GetType();
+					System.Reflection.FieldInfo[] fields = type.GetFields(); 
+					foreach (System.Reflection.FieldInfo field in fields) {
+						field.SetValue(thisComponent, field.GetValue(otherComponent));
+					}*/
 								}
 						}
 				}
@@ -570,6 +570,6 @@ namespace Frontiers
 				public AntialiasingAsPostEffect AA;
 				public AlphaSortedGlobalFog Fog;
 				public TOD_Camera TimeOfDay;
-				public List <Component> Components;
+				public List <MonoBehaviour> Components;
 		}
 }

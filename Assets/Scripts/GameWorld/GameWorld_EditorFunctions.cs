@@ -55,6 +55,7 @@ public partial class GameWorld : Manager
 
 				string errorMessage = string.Empty;
 				GameData.IO.LoadWorld(ref Settings, EditorCurrentWorldName, out errorMessage);
+				GameData.IO.SetWorldName(Settings.Name);
 				if (SaveFlags) {
 						Mods.Get.Editor.LoadAvailableMods <FlagSet>(WorldFlags, "FlagSet");
 				}
@@ -82,6 +83,8 @@ public partial class GameWorld : Manager
 				}
 				Mods.Get.EditorCurrentWorldName = EditorCurrentWorldName;
 				Mods.Get.Editor.InitializeEditor();
+
+				GameData.IO.SetWorldName(Settings.Name);
 				if (SaveFlags) {
 						Mods.Get.Editor.SaveMods <FlagSet>(WorldFlags, "FlagSet");
 				}

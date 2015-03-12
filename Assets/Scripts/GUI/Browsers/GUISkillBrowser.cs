@@ -41,11 +41,11 @@ namespace Frontiers.GUI
 				public override void CreateDividerObjects()
 				{
 						GUIGenericBrowserObject dividerObject = null;
-						GameObject newDivider = null;
+						IGUIBrowserObject newDivider = null;
 
 						if (CreateLearnedDivider) {
 								newDivider = CreateDivider();
-								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 								dividerObject.name = "a_learnedSkills";
 								dividerObject.UseAsDivider = true;
 								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -55,7 +55,7 @@ namespace Frontiers.GUI
 
 						if (CreateUnlearnedDivider) {
 								newDivider = CreateDivider();
-								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 								dividerObject.name = "c_knownSkills";
 								dividerObject.UseAsDivider = true;
 								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -102,13 +102,13 @@ namespace Frontiers.GUI
 						base.PushEditObjectToNGUIObject();
 				}
 
-				protected override GameObject ConvertEditObjectToBrowserObject(Skill editObject)
+				protected override IGUIBrowserObject ConvertEditObjectToBrowserObject(Skill editObject)
 				{
 						CreateEmptyDivider = false;
 
-						GameObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
+						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						newBrowserObject.name = editObject.Info.SkillGroup + "_" + editObject.Info.SkillSubgroup + "_" + editObject.DisplayName;
-						GUISkillBrowserObject skillBrowserObject = newBrowserObject.GetComponent <GUISkillBrowserObject>();
+						GUISkillBrowserObject skillBrowserObject = newBrowserObject.gameObject.GetComponent <GUISkillBrowserObject>();
 
 						Skill prereq = null;
 						if (editObject.RequiresPrerequisite) {

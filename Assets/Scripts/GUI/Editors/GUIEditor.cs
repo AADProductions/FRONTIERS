@@ -116,7 +116,15 @@ namespace Frontiers.GUI
 				protected ChildEditorCallback <R> mCallBack = null;
 		}
 
-		public abstract class GUIBrowser <R> : GUIEditor <IEnumerable <R>>, IGUIChildEditor <IEnumerable <R>>
+		public interface IGUIBrowser {
+				bool UsesScrollBar { get; }
+				UIScrollBar BrowserScrollBar { get; }
+				List <IGUIBrowserObject> BrowserObjectsList { get; }
+				UIDraggablePanel BrowserPagePanel { get; }
+				UIPanel BrowserClipPanel { get; }
+		}
+
+		public abstract class GUIBrowser <R> : GUIEditor <IEnumerable <R>>, IGUIChildEditor <IEnumerable <R>>, IGUIBrowser
 		{
 				public GameObject BrowserObjectPrototype;
 				public GameObject BrowserObjectsParent;
@@ -171,7 +179,7 @@ namespace Frontiers.GUI
 						}
 				}
 
-				public List <GameObject> BrowserObjectsList {
+				public List <IGUIBrowserObject> BrowserObjectsList {
 						get {
 								return mBrowserObjectsList;
 						}
@@ -195,10 +203,17 @@ namespace Frontiers.GUI
 						}
 				}
 
+				public UIScrollBar BrowserScrollBar { get { return ScrollBar; } }
+
+				public UIDraggablePanel BrowserPagePanel { get { return mBrowserPagePanel; } }
+
+				public UIPanel BrowserClipPanel { get { return mBrowserClipPanel; } }
+
 				public override void WakeUp()
 				{
 						mGrid = BrowserObjectsParent.GetComponent <UIGrid>();
 						mBrowserPagePanel = BrowserObjectsParent.GetComponent <UIDraggablePanel>();
+						mBrowserClipPanel = BrowserObjectsParent.GetComponent <UIPanel>();
 						if (mBrowserPagePanel != null) {
 								mBrowserPagePanel.enabled = false;
 						}
@@ -283,9 +298,10 @@ namespace Frontiers.GUI
 						base.Refresh();
 				}
 
-				protected GameObject CreateDivider()
+				protected IGUIBrowserObject CreateDivider()
 				{
-						GameObject newDividerObject = NGUITools.AddChild(BrowserObjectsParent, DividerObjectPrototype);
+						GameObject newDividerObjectGameObject = NGUITools.AddChild(BrowserObjectsParent, DividerObjectPrototype);
+						IGUIBrowserObject newDividerObject = (IGUIBrowserObject)newDividerObjectGameObject.GetComponent(typeof(IGUIBrowserObject));
 						mDividers.Add(newDividerObject);
 						return newDividerObject;
 				}
@@ -296,27 +312,29 @@ namespace Frontiers.GUI
 						if (IsOurBrowserObject(obj, mGUIEditorID) == false) {
 								return;
 						}
-						mSelectedObject = mEditObjectLookup[obj.transform.gameObject];
+						IGUIBrowserObject dividerObject = (IGUIBrowserObject)obj.GetComponent(typeof(IGUIBrowserObject));
+						mSelectedObject = mEditObjectLookup[dividerObject];
 				}
 
-				protected virtual GameObject ConvertEditObjectToBrowserObject(R editObject)
+				protected virtual IGUIBrowserObject ConvertEditObjectToBrowserObject(R editObject)
 				{
 						//instantiate using NGUITools
-						GameObject newBrowserObject = NGUITools.AddChild(BrowserObjectsParent, BrowserObjectPrototype);
+						GameObject newBrowserGameObject = NGUITools.AddChild(BrowserObjectsParent, BrowserObjectPrototype);
 						//rename to get ride of (clone)
+						IGUIBrowserObject newBrowserObject = (IGUIBrowserObject) newBrowserGameObject.GetComponent(typeof(IGUIBrowserObject));
 						newBrowserObject.name = BrowserObjectPrototype.name;
 
 						return newBrowserObject;
 				}
 
-				protected virtual void RefreshEditObjectToBrowserObject(R editObject, GameObject browserObject)
+				protected virtual void RefreshEditObjectToBrowserObject(R editObject, IGUIBrowserObject browserObject)
 				{
 
 				}
 
 				protected void RefreshBrowserObjects()
 				{
-						foreach (KeyValuePair <GameObject, R> editObjectBrowser in mEditObjectLookup) {
+						foreach (KeyValuePair <IGUIBrowserObject, R> editObjectBrowser in mEditObjectLookup) {
 								RefreshEditObjectToBrowserObject(editObjectBrowser.Value, editObjectBrowser.Key);
 						}
 				}
@@ -324,8 +342,8 @@ namespace Frontiers.GUI
 				protected virtual void ClearDividerObjects()
 				{
 						if (Application.isPlaying) {
-								foreach (GameObject dividerObject in mDividers) {
-										GUIManager.TrashNGUIObject(dividerObject);
+								foreach (IGUIBrowserObject dividerObject in mDividers) {
+										GUIManager.TrashNGUIObject(dividerObject.gameObject);
 								}
 
 								mDividers.Clear();
@@ -337,8 +355,8 @@ namespace Frontiers.GUI
 						//Debug.Log("Clearing browser objects");
 
 						if (Application.isPlaying) {
-								foreach (GameObject browserObject in mBrowserObjectsList) {
-										GUIManager.TrashNGUIObject(browserObject);
+								foreach (IGUIBrowserObject browserObject in mBrowserObjectsList) {
+										GUIManager.TrashNGUIObject(browserObject.gameObject);
 								}
 
 								mBrowserObjectsList.Clear();
@@ -360,9 +378,9 @@ namespace Frontiers.GUI
 						}
 
 						foreach (R editObject in mEditObject) {
-								GameObject newBrowserObject = ConvertEditObjectToBrowserObject(editObject);
+								IGUIBrowserObject newBrowserObject = ConvertEditObjectToBrowserObject(editObject);
 								gBoxColliderChildren.Clear();
-								newBrowserObject.GetComponentsInChildren<BoxCollider>(true, gBoxColliderChildren);
+								newBrowserObject.gameObject.GetComponentsInChildren<BoxCollider>(true, gBoxColliderChildren);
 								mBrowserObjectCollidersList.AddRange(gBoxColliderChildren);
 								//check for divider
 								mBrowserObjectsList.Add(newBrowserObject);
@@ -376,13 +394,13 @@ namespace Frontiers.GUI
 				protected void BrandBrowserObjects()
 				{
 						string browserNamePrefix = GetBrowserNamePrefix(mGUIEditorID);
-						foreach (GameObject browserObject in mBrowserObjectsList) {
+						foreach (IGUIBrowserObject browserObject in mBrowserObjectsList) {
 								browserObject.name = browserNamePrefix + browserObject.name;
 								foreach (Transform child in browserObject.transform) {
 										child.name = browserNamePrefix + child.name;
 								}
 						}
-						foreach (GameObject dividerObject in mDividers) {
+						foreach (IGUIBrowserObject dividerObject in mDividers) {
 								dividerObject.name = browserNamePrefix + dividerObject.name;
 						}
 				}
@@ -393,7 +411,6 @@ namespace Frontiers.GUI
 						if (UsesGrid) {
 								mGrid.repositionNow = true;
 						} else {
-								Debug.Log("Align browser objects without grid");
 								float padding = GridPadding;
 								//browserobjects are expected to either have a box collider on the base
 								//OR to have an object called 'Button' that will have a box collider
@@ -405,7 +422,7 @@ namespace Frontiers.GUI
 
 								float currentOffset = 0.0f;
 								Vector3	currentPosition = Vector3.zero;
-								foreach (GameObject browserObject in mBrowserObjectsList) {
+								foreach (IGUIBrowserObject browserObject in mBrowserObjectsList) {
 										browserObject.transform.localPosition = currentPosition;
 										currentPosition.y = currentOffset;
 										//if (browserObject.name.Contains ("DIVIDER")) {
@@ -451,14 +468,15 @@ namespace Frontiers.GUI
 				}
 
 				protected bool mResettingScrollBar = false;
-				protected Dictionary <GameObject,R> mEditObjectLookup = new Dictionary <GameObject,R>();
-				protected List <GameObject> mDividers = new List <GameObject>();
-				protected GameObject mBrowserObject = null;
-				protected List <GameObject> mBrowserObjectsList = new List <GameObject>();
+				protected Dictionary <IGUIBrowserObject,R> mEditObjectLookup = new Dictionary <IGUIBrowserObject,R>();
+				protected List <IGUIBrowserObject> mDividers = new List <IGUIBrowserObject>();
+				protected IGUIBrowserObject mBrowserObject = null;
+				protected List <IGUIBrowserObject> mBrowserObjectsList = new List <IGUIBrowserObject>();
 				protected List <BoxCollider> mBrowserObjectCollidersList = new List<BoxCollider>();
 				protected R mSelectedObject = default (R);
 				protected UIGrid mGrid = null;
 				protected UIDraggablePanel mBrowserPagePanel = null;
+				protected UIPanel mBrowserClipPanel = null;
 
 				protected class DividerProps
 				{
@@ -510,14 +528,11 @@ namespace Frontiers.GUI
 								return;
 						}
 
-						mSelectedObject	= mEditObjectLookup[obj.transform.gameObject];
-						mBrowserObject = obj;
+						mBrowserObject = (IGUIBrowserObject) obj.GetComponent (typeof(IGUIBrowserObject));
+						mSelectedObject	= mEditObjectLookup[mBrowserObject];
 
-						//Debug.Log("Selected object is " + mSelectedObject.ToString());
-
-						GUIGenericBrowserObject gbo = null;
-						if (obj.HasComponent <GUIGenericBrowserObject> (out gbo) && gbo.DeleteRequest) {
-								gbo.DeleteRequest = false;//reset the delete request
+						if (mBrowserObject.DeleteRequest) {
+								mBrowserObject.DeleteRequest = false;//reset the delete request
 								DeleteSelectedObject();
 						} else {
 								PushSelectedObjectToViewer();
@@ -562,10 +577,10 @@ namespace Frontiers.GUI
 						//then initialize the 'new' button
 						GameObject browserObjectCreate = NGUITools.AddChild(BrowserObjectsParent, BrowserObjectCreatePrototype);
 						browserObjectCreate.name = "000_" + browserObjectCreate.name;
-						GUIBrowserObjectCreate boc	= browserObjectCreate.GetComponent<GUIBrowserObjectCreate>();
+						GUIBrowserObjectCreate boc = browserObjectCreate.GetComponent<GUIBrowserObjectCreate>();
 						boc.CreateButton.target = this.gameObject;
 						//add to browser objects list
-						mBrowserObjectsList.Add(browserObjectCreate);
+						mBrowserObjectsList.Add(boc);
 
 				}
 
@@ -575,7 +590,8 @@ namespace Frontiers.GUI
 								return;
 						}
 
-						mSelectedObject = mEditObjectLookup[obj.transform.gameObject];
+						IGUIBrowserObject browserObject = (IGUIBrowserObject)obj.GetComponent(typeof(IGUIBrowserObject));
+						mSelectedObject = mEditObjectLookup[browserObject];
 						mLastSpawnedChildEditor = GUIManager.SpawnNGUIChildEditor(this.gameObject, NGUIUpdateEditObjectPrefab);
 
 						GUIManager.SendEditObjectToChildEditor<R>(this, mLastSpawnedChildEditor, mSelectedObject);

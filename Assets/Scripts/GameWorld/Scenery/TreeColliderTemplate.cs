@@ -34,7 +34,6 @@ namespace Frontiers.World
 								return !string.IsNullOrEmpty(SubstituteOnLowQuality);
 						}
 				}
-				[FrontiersAvailablePlants]
 				public string SubstituteOnLowQuality = string.Empty;
 
 				#if UNITY_EDITOR

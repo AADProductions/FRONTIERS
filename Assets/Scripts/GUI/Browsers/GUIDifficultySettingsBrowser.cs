@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using UnityEngine;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using UnityEngine;
 using System;
 using System.Reflection;
 using System.Collections;
@@ -372,10 +372,10 @@ namespace Frontiers.GUI
 						PushEditObjectToNGUIObject();
 				}
 
-				protected override GameObject ConvertEditObjectToBrowserObject(FieldInfo editObject)
+				protected override IGUIBrowserObject ConvertEditObjectToBrowserObject(FieldInfo editObject)
 				{
-						GameObject browserObject = base.ConvertEditObjectToBrowserObject(editObject);
-						GUIGenericBrowserObject uabo = browserObject.GetComponent <GUIGenericBrowserObject>();
+						IGUIBrowserObject browserObject = base.ConvertEditObjectToBrowserObject(editObject);
+						GUIGenericBrowserObject uabo = browserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 
 						uabo.EditButton.functionName = "OnClickBrowserObject";
 						uabo.EditButton.target = gameObject;
@@ -441,10 +441,10 @@ namespace Frontiers.GUI
 				public override void CreateDividerObjects()
 				{
 						GUIGenericBrowserObject dividerObject = null;
-						GameObject newDivider = null;
+						IGUIBrowserObject newDivider = null;
 
 						newDivider = CreateDivider();
-						dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+						dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 						dividerObject.name = "A_empty";
 						dividerObject.UseAsDivider = true;
 						dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -457,7 +457,7 @@ namespace Frontiers.GUI
 						dividerObject.Initialize("Divider");
 
 						newDivider = CreateDivider();
-						dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+						dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 						dividerObject.name = "C_empty";
 						dividerObject.UseAsDivider = true;
 						dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;

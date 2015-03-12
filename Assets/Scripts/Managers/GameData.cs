@@ -44,6 +44,15 @@ namespace Frontiers
 
 								#region initialize
 
+								public static void LogPaths()
+								{
+										Debug.Log(gGlobalWorldsPath);
+										Debug.Log(gGlobalProfilesPath);
+										Debug.Log(gBaseWorldPath);
+										Debug.Log(gBaseWorldModsPath);
+										Debug.Log(gCurrentWorldModsPath);
+								}
+
 								public static void GetChangeLog(ref string changeLogText, ref System.DateTime changeLogTime)
 								{
 										if (File.Exists(gGlobalChangeLogPath)) {
@@ -1019,6 +1028,8 @@ namespace Frontiers
 										FileMode mode = FileMode.Open;
 										FileShare share = FileShare.ReadWrite;
 										FileAccess access = FileAccess.ReadWrite;
+
+										//Debug.Log("Loading path " + path);
 
 										if (File.Exists(path)) {
 												try {

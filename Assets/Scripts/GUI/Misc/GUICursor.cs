@@ -11,6 +11,7 @@ namespace Frontiers.GUI
 		{
 				public static GUICursor Get;
 				public static bool gUseMouseLock = true;
+				public UISprite SoftwareCursorSprite;
 				public Texture2D CursorTexture;
 				public Texture2D StackSplitTexture;
 				public Texture2D StackQuickAddTexture;
@@ -28,13 +29,13 @@ namespace Frontiers.GUI
 
 				public Bounds CurrentWidgetBounds {
 						get {
-								return CurrentWidget.screenBounds;
+								return CurrentWidget.ScreenBounds;
 						}
 				}
 
 				public Bounds PreviousWidgetBounds {
 						get {
-								return PreviousWidget.screenBounds;
+								return PreviousWidget.ScreenBounds;
 						}
 				}
 
@@ -44,6 +45,7 @@ namespace Frontiers.GUI
 				public Vector3 LastSearchDirection;
 				public Vector3 LastMouseCursorResult;
 				public FrontiersInterface LastInterface;
+				public Bounds LastBrowserBounds;
 
 				public void Start()
 				{
@@ -152,7 +154,7 @@ namespace Frontiers.GUI
 
 									case SearchDirection.Down:
 										if (GUIBrowserObject.GetNextBrowserObject(CurrentWidget.Collider.gameObject, out nextBrowserObject)) {
-											Debug.Log("Got prev browser object " + nextBrowserObject.name);														
+											Debug.Log("Got prev browser object " + nextBrowserObject.name);
 										}
 										break;
 
@@ -243,7 +245,7 @@ namespace Frontiers.GUI
 						Vector3 widgetPos = Vector3.zero;
 						Vector3 widgetDir = Vector3.zero;
 						int maxDist = 1;
-						int primaryAxis = 0;
+						int PrimaryAxis = 0;
 						int secondaryAxis = 0;
 
 						//get all the box colliders in the interface
@@ -256,13 +258,13 @@ namespace Frontiers.GUI
 								default:
 								case SearchDirection.Up:
 								case SearchDirection.Down:
-										primaryAxis = Mathf.FloorToInt(CurrentWidgetBounds.center.y * maxDist);
+										PrimaryAxis = Mathf.FloorToInt(CurrentWidgetBounds.center.y * maxDist);
 										secondaryAxis = Mathf.FloorToInt(CurrentWidgetBounds.center.x * maxDist);
 										break;
 
 								case SearchDirection.Left:
 								case SearchDirection.Right:
-										primaryAxis = Mathf.FloorToInt(CurrentWidgetBounds.center.x * maxDist);
+										PrimaryAxis = Mathf.FloorToInt(CurrentWidgetBounds.center.x * maxDist);
 										secondaryAxis = Mathf.FloorToInt(CurrentWidgetBounds.center.y * maxDist);
 										break;
 
@@ -285,67 +287,68 @@ namespace Frontiers.GUI
 						}
 						for (int i = 0; i < CurrentObjects.Count; i++) {
 								nextObject = CurrentObjects[i];
-								if (nextObject.Collider == CurrentWidget.collider) {
+								if (nextObject.Collider == CurrentWidget.BoxCollider) {
 										//skip any we don't want
 										continue;
 								}
 								//get our search info from the object
-								search.worldBounds = nextObject.Collider.bounds;
-								widgetPos = nextObject.SearchCamera.WorldToScreenPoint(search.worldBounds.center);
+								search.WorldBounds = nextObject.Collider.bounds;
+								search.AttachedBrowser = nextObject.AttachedBrowser;
+								widgetPos = nextObject.SearchCamera.WorldToScreenPoint(search.WorldBounds.center);
 								widgetPos.z = 0f;
-								search.screenBounds = new Bounds(widgetPos, search.worldBounds.size);
+								search.ScreenBounds = new Bounds(widgetPos, search.WorldBounds.size);
 								widgetDir = (widgetPos - ScreenSearchOrigin).normalized;
 
 								switch (direction) {
 										default:
 										case SearchDirection.Up:
-												search.dot = Vector3.Dot(Vector3.up, widgetDir);
-												search.primaryAxis = Mathf.FloorToInt(widgetPos.y * maxDist) - primaryAxis;
-												search.secondaryAxis = Mathf.FloorToInt(widgetPos.x * maxDist);
-												if (search.secondaryAxis < secondaryAxis) {
-														search.secondaryAxis = secondaryAxis - search.secondaryAxis;
+												search.Dot = Vector3.Dot(Vector3.up, widgetDir);
+												search.PrimaryAxis = Mathf.FloorToInt(widgetPos.y * maxDist) - PrimaryAxis;
+												search.SecondaryAxis = Mathf.FloorToInt(widgetPos.x * maxDist);
+												if (search.SecondaryAxis < secondaryAxis) {
+														search.SecondaryAxis = secondaryAxis - search.SecondaryAxis;
 												} else {
-														search.secondaryAxis = search.secondaryAxis - secondaryAxis;
+														search.SecondaryAxis = search.SecondaryAxis - secondaryAxis;
 												}
 												break;
 
 										case SearchDirection.Down:
-												search.dot = Vector3.Dot(Vector3.down, widgetDir);
-												search.primaryAxis = primaryAxis - Mathf.FloorToInt(widgetPos.y * maxDist);
-												search.secondaryAxis = Mathf.FloorToInt(widgetPos.x * maxDist);
-												if (search.secondaryAxis < secondaryAxis) {
-														search.secondaryAxis = secondaryAxis - search.secondaryAxis;
+												search.Dot = Vector3.Dot(Vector3.down, widgetDir);
+												search.PrimaryAxis = PrimaryAxis - Mathf.FloorToInt(widgetPos.y * maxDist);
+												search.SecondaryAxis = Mathf.FloorToInt(widgetPos.x * maxDist);
+												if (search.SecondaryAxis < secondaryAxis) {
+														search.SecondaryAxis = secondaryAxis - search.SecondaryAxis;
 												} else {
-														search.secondaryAxis = search.secondaryAxis - secondaryAxis;
+														search.SecondaryAxis = search.SecondaryAxis - secondaryAxis;
 												}
 												break;
 
 										case SearchDirection.Left:
-												search.dot = Vector3.Dot(Vector3.left, widgetDir);
-												search.primaryAxis = primaryAxis - Mathf.FloorToInt(widgetPos.x * maxDist);
-												search.secondaryAxis = Mathf.FloorToInt(widgetPos.y * maxDist);
-												if (search.secondaryAxis < secondaryAxis) {
-														search.secondaryAxis = secondaryAxis - search.secondaryAxis;
+												search.Dot = Vector3.Dot(Vector3.left, widgetDir);
+												search.PrimaryAxis = PrimaryAxis - Mathf.FloorToInt(widgetPos.x * maxDist);
+												search.SecondaryAxis = Mathf.FloorToInt(widgetPos.y * maxDist);
+												if (search.SecondaryAxis < secondaryAxis) {
+														search.SecondaryAxis = secondaryAxis - search.SecondaryAxis;
 												} else {
-														search.secondaryAxis = search.secondaryAxis - secondaryAxis;
+														search.SecondaryAxis = search.SecondaryAxis - secondaryAxis;
 												}
 												break;
 
 										case SearchDirection.Right:
-												search.dot = Vector3.Dot(Vector3.right, widgetDir);
-												search.primaryAxis = Mathf.FloorToInt(widgetPos.x * maxDist) - primaryAxis;
-												search.secondaryAxis = Mathf.FloorToInt(widgetPos.y * maxDist);
-												if (search.secondaryAxis < secondaryAxis) {
-														search.secondaryAxis = secondaryAxis - search.secondaryAxis;
+												search.Dot = Vector3.Dot(Vector3.right, widgetDir);
+												search.PrimaryAxis = Mathf.FloorToInt(widgetPos.x * maxDist) - PrimaryAxis;
+												search.SecondaryAxis = Mathf.FloorToInt(widgetPos.y * maxDist);
+												if (search.SecondaryAxis < secondaryAxis) {
+														search.SecondaryAxis = secondaryAxis - search.SecondaryAxis;
 												} else {
-														search.secondaryAxis = search.secondaryAxis - secondaryAxis;
+														search.SecondaryAxis = search.SecondaryAxis - secondaryAxis;
 												}
 												break;
 
 								}
-								if (search.primaryAxis > 0) {
+								if (search.PrimaryAxis > 0) {
 										//don't include it if we're not in the right general direction
-										search.distance = Mathf.FloorToInt(Vector3.Distance(widgetPos, ScreenSearchOrigin) * maxDist);
+										search.Distance = Mathf.FloorToInt(Vector3.Distance(widgetPos, ScreenSearchOrigin) * maxDist);
 										CurrentSearches.Add(search);
 								}
 						}
@@ -373,8 +376,8 @@ namespace Frontiers.GUI
 								//move the browser object to the center of the browser
 						}
 
-						Vector3 widgetScreenPos = CurrentWidget.screenBounds.center;
-						LastMouseCursorResult = CurrentWidget.worldBounds.center;
+						Vector3 widgetScreenPos = CurrentWidget.ScreenBounds.center;
+						LastMouseCursorResult = CurrentWidget.WorldBounds.center;
 						InterfaceActionManager.Get.SetMousePosition(Mathf.FloorToInt(widgetScreenPos.x), Mathf.FloorToInt(widgetScreenPos.y));
 				}
 
@@ -393,7 +396,7 @@ namespace Frontiers.GUI
 								LastInterface = GUIManager.Get.TopInterface;
 								SearchCamera = LastInterface.NGUICamera;
 								CurrentWidget.IsEmpty = true;
-								CurrentWidget.screenBounds = new Bounds(ScreenSearchOrigin, Vector3.one * 0.1f); 
+								CurrentWidget.ScreenBounds = new Bounds(ScreenSearchOrigin, Vector3.one * 0.1f);
 								if (VRManager.OculusModeEnabled) {
 										//if oculus mode is enabled we're going to be helpful by moving the cursor around automatically
 										//TODO move mouse to first item in new interface
@@ -404,13 +407,13 @@ namespace Frontiers.GUI
 						WorldSearchOrigin = SearchCamera.ScreenToWorldPoint(ScreenSearchOrigin);
 
 						if (UICamera.hoveredObject != null) {
-								if (CurrentWidget.IsEmpty || CurrentWidget.collider.gameObject != UICamera.hoveredObject.gameObject) {
+								if (CurrentWidget.IsEmpty || CurrentWidget.BoxCollider.gameObject != UICamera.hoveredObject.gameObject) {
 										SetCurrentWidget(UICamera.hoveredObject.GetComponent <BoxCollider>(), GUIManager.Get.ActiveCamera);
 								}
 						}
 
 						if (CurrentWidget.IsEmpty) {
-								CurrentWidget.screenBounds = new Bounds(ScreenSearchOrigin, Vector3.one * 0.1f);
+								CurrentWidget.ScreenBounds = new Bounds(ScreenSearchOrigin, Vector3.one * 0.1f);
 						}
 
 						return true;
@@ -420,8 +423,8 @@ namespace Frontiers.GUI
 				{
 						WidgetSearch w = new WidgetSearch();
 						if (!w.IsEmpty) {
-								w.screenBounds = newWidgetCollider.bounds;
-								w.screenBounds.center = searchCamera.WorldToScreenPoint(w.screenBounds.center);
+								w.ScreenBounds = newWidgetCollider.bounds;
+								w.ScreenBounds.center = searchCamera.WorldToScreenPoint(w.ScreenBounds.center);
 								SetCurrentWidget(w);
 						}
 				}
@@ -432,11 +435,24 @@ namespace Frontiers.GUI
 						CurrentWidget = newWidget;
 						LastSearchDirection = CurrentWidgetBounds.center - ScreenSearchOrigin;
 						if (SearchCamera != null) {
+								//if the search has an attached scroll bar
+								//that means we need to move the scroll bar until the cursor is within the browser bounds
 								Vector3 widgetScreenPos = SearchCamera.WorldToScreenPoint(CurrentWidgetBounds.center);
+								if (newWidget.AttachedBrowser != null) {
+										//see if the attached item is visible
+										Vector3 browserPosition = newWidget.AttachedBrowser.BrowserClipPanel.transform.position;
+										Vector4 browserClipRange = newWidget.AttachedBrowser.BrowserClipPanel.clipRange;
+										Vector3 browserSize = new Vector3(browserClipRange.x, browserClipRange.w, 0f);
+										LastBrowserBounds.center = browserPosition;
+										LastBrowserBounds.size = browserSize; 
+										//that should put us in world space
+										if (!LastBrowserBounds.Contains (CurrentWidgetBounds.center)) {
+												Debug.Log("Current widget was NOT visible");
+										}
+								}
 								InterfaceActionManager.Get.SetMousePosition(Mathf.FloorToInt(widgetScreenPos.x), Mathf.FloorToInt(widgetScreenPos.y));
 						}
 				}
-
 				#if UNITY_EDITOR
 				public void OnDrawGizmos()
 				{
@@ -480,19 +496,19 @@ namespace Frontiers.GUI
 								Color searchColor = Color.green;
 								for (int i = 0; i < CurrentSearches.Count; i++) {
 										float normalizedAmount = (float)i / (float)(CurrentSearches.Count);
-										int dot = Mathf.CeilToInt(CurrentSearches[i].dot * WidgetSearch.gMaxDot);
-										if (CurrentSearches[i].primaryAxis >= 0) {
-												TextGizmo.Draw(SearchCamera, CurrentSearches[i].worldBounds.center + Vector3.up * 0.01f, dot.ToString());
-												TextGizmo.Draw(SearchCamera, CurrentSearches[i].worldBounds.center - Vector3.up * 0.02f, CurrentSearches[i].distance.ToString());
-												TextGizmo.Draw(SearchCamera, CurrentSearches[i].worldBounds.center - Vector3.up * 0.06f, CurrentSearches[i].primaryAxis.ToString());
+										int dot = Mathf.CeilToInt(CurrentSearches[i].Dot * WidgetSearch.gMaxDot);
+										if (CurrentSearches[i].PrimaryAxis >= 0) {
+												TextGizmo.Draw(SearchCamera, CurrentSearches[i].WorldBounds.center + Vector3.up * 0.01f, dot.ToString());
+												TextGizmo.Draw(SearchCamera, CurrentSearches[i].WorldBounds.center - Vector3.up * 0.02f, CurrentSearches[i].Distance.ToString());
+												TextGizmo.Draw(SearchCamera, CurrentSearches[i].WorldBounds.center - Vector3.up * 0.06f, CurrentSearches[i].PrimaryAxis.ToString());
 										} else {
-												TextGizmo.Draw(SearchCamera, CurrentSearches[i].worldBounds.center, "NEGATIVE");
+												TextGizmo.Draw(SearchCamera, CurrentSearches[i].WorldBounds.center, "NEGATIVE");
 										}
 										if (i == 0) {
 												searchColor = Color.green;
 												Gizmos.color = searchColor;
-												Gizmos.DrawWireCube(CurrentSearches[i].worldBounds.center, CurrentSearches[i].worldBounds.size * 0.98f);
-												Gizmos.DrawWireCube(CurrentSearches[i].worldBounds.center, CurrentSearches[i].worldBounds.size * 1.015f);
+												Gizmos.DrawWireCube(CurrentSearches[i].WorldBounds.center, CurrentSearches[i].WorldBounds.size * 0.98f);
+												Gizmos.DrawWireCube(CurrentSearches[i].WorldBounds.center, CurrentSearches[i].WorldBounds.size * 1.015f);
 										} else {
 												if (dot > WidgetSearch.gDotThreshold) {
 														searchColor = Colors.Alpha(Colors.BlendThree(Color.Lerp(Color.green, Color.yellow, 0.2f), Color.yellow, Color.magenta, normalizedAmount), 0.5f);
@@ -501,21 +517,34 @@ namespace Frontiers.GUI
 												}
 										}
 										Gizmos.color = searchColor;
-										Gizmos.DrawCube(CurrentSearches[i].worldBounds.center, CurrentSearches[i].worldBounds.size);
+										Gizmos.DrawCube(CurrentSearches[i].WorldBounds.center, CurrentSearches[i].WorldBounds.size);
 										Gizmos.color = Colors.Alpha(searchColor, 0.5f);
-										Gizmos.DrawWireCube(CurrentSearches[i].worldBounds.center, CurrentSearches[i].worldBounds.size * 0.99f);
+										Gizmos.DrawWireCube(CurrentSearches[i].WorldBounds.center, CurrentSearches[i].WorldBounds.size * 0.99f);
 								}
 						}
 				}
 				#endif
-
 				public void Update()
 				{
-						Screen.showCursor = GUIManager.ShowCursor;			
-						if (!Screen.showCursor) {
+						if (!GUIManager.ShowCursor) {
 								LockCursor();
 						} else {
 								ReleaseCursor();
+						}
+
+						if (VRManager.OculusModeEnabled) {
+								Screen.showCursor = false;
+								if (GUIManager.ShowCursor) {
+										SoftwareCursorSprite.enabled = true;
+										Vector3 finalPosition = GUIManager.Get.BaseCamera.ScreenToWorldPoint(Input.mousePosition);
+										finalPosition.z = -1f;
+										SoftwareCursorSprite.transform.position = finalPosition;
+								} else {
+										SoftwareCursorSprite.enabled = false;
+								}
+						} else {
+								Screen.showCursor = GUIManager.ShowCursor;
+								SoftwareCursorSprite.enabled = false;
 						}
 
 						#if UNITY_EDITOR
@@ -561,7 +590,8 @@ namespace Frontiers.GUI
 						Screen.lockCursor = false;
 				}
 
-				public void SetCursorTexture (string cursorName) {
+				public void SetCursorTexture(string cursorName)
+				{
 						//TODO put textures in a list
 						switch (cursorName.ToLower()) {
 								case "stacksplit":
@@ -594,36 +624,37 @@ namespace Frontiers.GUI
 				public struct WidgetSearch : IComparable <WidgetSearch>
 				{
 						public bool IsEmpty {
-								get { 
-										return collider == null;
+								get {
+										return BoxCollider == null;
 								}
 								set {
 										if (value) {
-												collider = null;
+												BoxCollider = null;
 										}
 								}
 						}
 
-						public Collider collider;
-						public Bounds screenBounds;
-						public Bounds worldBounds;
-						public int primaryAxis;
-						public int secondaryAxis;
-						public int distance;
-						public float dot;
+						public Collider BoxCollider;
+						public Bounds ScreenBounds;
+						public Bounds WorldBounds;
+						public IGUIBrowser AttachedBrowser;
+						public int PrimaryAxis;
+						public int SecondaryAxis;
+						public int Distance;
+						public float Dot;
 
 						public int CompareTo(WidgetSearch other)
 						{
 								//super explicit version
-								int thisDot = Mathf.CeilToInt(dot * gMaxDot);
-								int otherDot = Mathf.CeilToInt(other.dot * gMaxDot);
-								int distanceDelta = Mathf.Abs(distance - other.distance);
+								int thisDot = Mathf.CeilToInt(Dot * gMaxDot);
+								int otherDot = Mathf.CeilToInt(other.Dot * gMaxDot);
+								int distanceDelta = Mathf.Abs(Distance - other.Distance);
 								if (thisDot > gDotThreshold) {
-										if (primaryAxis < other.primaryAxis) {
+										if (PrimaryAxis < other.PrimaryAxis) {
 												//almost instant win
-												if (distance < other.distance) {
+												if (Distance < other.Distance) {
 														return -1;
-												} else if (distance == other.distance) {
+												} else if (Distance == other.Distance) {
 														//not quite a lose
 														//still closer than other dot matches
 														return 0;
@@ -636,7 +667,7 @@ namespace Frontiers.GUI
 										if (thisDot > otherDot) {
 												//we have the advantage
 												//unless we're way farther away
-												if (distance >= other.distance) {
+												if (Distance >= other.Distance) {
 														if (distanceDelta < gDistanceDeltaThreshold) {
 																return 1;
 														} else {
@@ -649,7 +680,7 @@ namespace Frontiers.GUI
 												}
 										} else if (thisDot == otherDot) {
 												//if it's the same dot distance automatically wins
-												if (distance >= other.distance) {
+												if (Distance >= other.Distance) {
 														return 1;
 												} else {
 														return -1;
@@ -657,10 +688,10 @@ namespace Frontiers.GUI
 										} else {// if (thisDot < otherDot) {
 												//if our dot is less, we may still have an advantage
 												//if the difference between distances is great enough
-												if (distance < gMinOverrideDistance) {
+												if (Distance < gMinOverrideDistance) {
 														return -1;
 												} else {
-														if (distance < other.distance) {
+														if (Distance < other.Distance) {
 																return -1;
 														} else {
 																return 1;

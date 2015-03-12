@@ -73,10 +73,10 @@ namespace Frontiers.GUI
 				public override void CreateDividerObjects()
 				{
 						GUIGenericBrowserObject dividerObject = null;
-						GameObject newDivider = null;
+						IGUIBrowserObject newDivider = null;
 
 						newDivider = CreateDivider();
-						dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+						dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 						dividerObject.name = "a_empty";
 						dividerObject.UseAsDivider = true;
 						dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -89,13 +89,13 @@ namespace Frontiers.GUI
 						dividerObject.Initialize("Divider");
 				}
 
-				protected override GameObject ConvertEditObjectToBrowserObject(WIBlueprint editObject)
+				protected override IGUIBrowserObject ConvertEditObjectToBrowserObject(WIBlueprint editObject)
 				{
 						CreateEmptyDivider = false;
 
-						GameObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
+						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						newBrowserObject.name = editObject.Name + "_" + editObject.RequiredSkill;
-						GUIGenericBrowserObject blueprintBrowserObject = newBrowserObject.GetComponent <GUIGenericBrowserObject>();
+						GUIGenericBrowserObject blueprintBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 
 						blueprintBrowserObject.EditButton.target = this.gameObject;
 						blueprintBrowserObject.EditButton.functionName = "OnClickBrowserObject";

@@ -753,6 +753,18 @@ namespace Frontiers
 										Skills.Get.MasterSkill(skillName);
 										break;
 
+								case "reveal":
+										string thingToReveal = splitCommand[1].Trim();
+										switch (thingToReveal) {
+												case "all":
+														WorldMap.RevealAll();
+														break;
+
+												default:
+														break;
+										}
+										break;
+
 								case "learn":
 										string itemType = splitCommand[1].Trim();
 										DebugConsole.Get.Log.Add("#Learning " + itemType);

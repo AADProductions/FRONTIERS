@@ -646,9 +646,34 @@ namespace Frontiers
 						//ok now that everything's ready to go
 				}
 
+				public static void RevealAll()
+				{
+						if (!mRevealingAll) {
+								mRevealingAll = true;
+								Get.StartCoroutine(Get.RevealAllOverTime());
+						}
+
+				}
+
+				protected IEnumerator RevealAllOverTime () {
+						Queue<StackItem> itemsToReveal = new Queue<StackItem>();
+						Debug.Log("Searching for items...");
+						yield return StartCoroutine(WIGroups.GetAllStackItemsByType(WIGroups.Get.World.Path, new List <string>() { "Location" }, GroupSearchType.SavedOnly, itemsToReveal));
+						Debug.Log("Adding items to revealed list...");
+						while (itemsToReveal.Count > 0) {
+								StackItem item = itemsToReveal.Dequeue();
+								if (item != null) {
+										RevealedLocations.SafeAdd(item.StaticReference);
+								}
+								yield return null;
+						}
+						Debug.Log("Done revealing");
+				}
+
 				protected static Dictionary <string, List <MobileReference>> mRevealableToShow;
 				protected bool mGatheringLocationData = false;
 				protected static bool mLoadData = true;
+				protected static bool mRevealingAll = false;
 		}
 		//this struct is constantly updated by GUIWorldMap to reflect what the player is looking at
 		//the queue sent to GetLocationsForChunks is then sorted to reflect the new priority

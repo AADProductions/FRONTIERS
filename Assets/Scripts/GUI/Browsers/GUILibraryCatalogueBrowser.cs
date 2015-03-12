@@ -146,12 +146,12 @@ namespace Frontiers.GUI
 
 				public override void CreateDividerObjects()
 				{
-						GameObject newDivider = null;
+						IGUIBrowserObject newDivider = null;
 						GUIGenericBrowserObject dividerObject = null;
 
 						if (HasDeliveredBooks) {
 								newDivider = CreateDivider();
-								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 								dividerObject.name = "a_empty";
 								dividerObject.UseAsDivider = true;
 								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -160,7 +160,7 @@ namespace Frontiers.GUI
 						}
 						if (HasOrderedBooks) {
 								newDivider = CreateDivider();
-								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 								dividerObject.name = "c_empty";
 								dividerObject.UseAsDivider = true;
 								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -168,7 +168,7 @@ namespace Frontiers.GUI
 								dividerObject.Initialize("Divider");
 						}
 						newDivider = CreateDivider();
-						dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+						dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 						dividerObject.name = "d_empty";
 						dividerObject.UseAsDivider = true;
 						dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -176,11 +176,11 @@ namespace Frontiers.GUI
 						dividerObject.Initialize("Divider");
 				}
 
-				protected override GameObject ConvertEditObjectToBrowserObject(LibraryCatalogueEntry editObject)
+				protected override IGUIBrowserObject ConvertEditObjectToBrowserObject(LibraryCatalogueEntry editObject)
 				{
-						GameObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
+						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						newBrowserObject.name = "a_" + editObject.BookName;
-						GUIGenericBrowserObject bookBrowserObject = newBrowserObject.GetComponent <GUIGenericBrowserObject>();
+						GUIGenericBrowserObject bookBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 
 						bookBrowserObject.EditButton.target = this.gameObject;
 						bookBrowserObject.EditButton.functionName = "OnClickBrowserObject";

@@ -45,10 +45,13 @@ namespace Frontiers.GUI
 				{
 						gGetColliders.Clear();
 						transform.GetComponentsInChildren <BoxCollider>(gGetColliders);
+						Widget w = new Widget();
+						w.SearchCamera = NGUICamera;
+						//the attached browser will be null for non-browser interfaces
+						//that's expected
+						w.AttachedBrowser = this as IGUIBrowser;
 						for (int i = 0; i < gGetColliders.Count; i++) {
-								Widget w = new Widget();
 								w.Collider = gGetColliders[i];
-								w.SearchCamera = NGUICamera;
 								currentObjects.Add(w);
 						}
 				}
@@ -159,6 +162,7 @@ namespace Frontiers.GUI
 				{
 						public Camera SearchCamera;
 						public BoxCollider Collider;
+	   					public IGUIBrowser AttachedBrowser;
 
 						public bool IsEmpty {
 								get {

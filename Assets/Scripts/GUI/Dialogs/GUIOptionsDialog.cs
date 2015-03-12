@@ -30,6 +30,8 @@ namespace Frontiers.GUI
 				public UISlider VideoFieldOfView;
 				public UISlider VideoLighting;
 				public UICheckbox VideoHDR;
+				public UICheckbox VideoReduceTextureVariation;
+				public UILabel VideoReduceTextureVariationLabel;
 				public UISlider SoundGeneral;
 				public UISlider SoundMusic;
 				public UISlider SoundFX;
@@ -47,6 +49,8 @@ namespace Frontiers.GUI
 				public UISlider VideoTerrainTreeBillboardDistance;
 				public UISlider VideoTerrainTreeDistance;
 				public UISlider VideoAmbientLightAtNight;
+				public UICheckbox VideoTerrainReduceTreeVariation;
+				public UILabel VideoTerrainReduceTreeVariationLabel;
 				public UISlider ImmersionCrosshairAlphaSlider;
 				public UISlider ImmersionCrosshairInactiveAlphaSlider;
 				public UISlider ImmersionPathGlowIntensitySlider;
@@ -54,6 +58,7 @@ namespace Frontiers.GUI
 				public UISlider ImmersionCameraSmoothingSlider;
 				public UICheckbox ImmersionWorldItemsOverlay;
 				public UICheckbox ImmersionWorldItemHUD;
+				public UICheckbox ImmersionWorldItemHUDInCenter;
 				public UICheckbox ImmersionSpecialObjectsOverlay;
 				public UISlider MouseSensitivityInterface;
 				public UISlider MouseSensitivityFPSCamera;
@@ -98,6 +103,7 @@ namespace Frontiers.GUI
 						TerrainDetailMin = Globals.ChunkTerrainDetailMin;
 						MouseSensitivityFPSMax = Globals.MouseSensitivityFPSMax;
 						MouseSensitivityFPSMin = Globals.MouseSensitivityFPSMin;
+						VideoTerrainReduceTreeVariation.functionName = "OnTerrainSettingChange";
 
 						SoundGeneral.functionName = "OnSoundLevelChange";
 						SoundMusic.functionName = "OnSoundLevelChange";
@@ -121,6 +127,8 @@ namespace Frontiers.GUI
 						ImmersionSpecialObjectsOverlay.eventReceiver = gameObject;
 						ImmersionWorldItemHUD.functionName = "OnImmersionSettingChange";
 						ImmersionWorldItemHUD.eventReceiver = gameObject;
+						ImmersionWorldItemHUDInCenter.functionName = "OnImmersionSettingChange";
+						ImmersionWorldItemHUDInCenter.eventReceiver = gameObject;
 						ImmersionPathGlowIntensitySlider.functionName = "OnImmersionSettingChange";
 						ImmersionPathGlowIntensitySlider.eventReceiver = gameObject;
 						ImmersionCameraSmoothingSlider.functionName = "OnImmersionSettingChange";
@@ -166,6 +174,7 @@ namespace Frontiers.GUI
 						Profile.Get.CurrentPreferences.Immersion.PathGlowIntensity = ImmersionPathGlowIntensitySlider.sliderValue;
 						Profile.Get.CurrentPreferences.Immersion.SpecialObjectsOverlay	= ImmersionSpecialObjectsOverlay.isChecked;
 						Profile.Get.CurrentPreferences.Immersion.WorldItemHUD = ImmersionWorldItemHUD.isChecked;
+						Profile.Get.CurrentPreferences.Immersion.WorldItemHUDInCenter = ImmersionWorldItemHUDInCenter.isChecked;
 						Profile.Get.CurrentPreferences.Immersion.WalkingSpeed = ImmersionWalkingSpeedSlider.sliderValue;
 						Profile.Get.CurrentPreferences.Immersion.CameraSmoothing = ImmersionCameraSmoothingSlider.sliderValue;
 				}
@@ -199,6 +208,14 @@ namespace Frontiers.GUI
 						TempVideoPrefs.TerrainGrassDistance = (GrassDistMin + ((GrassDistMax - GrassDistMin) * VideoTerrainGrassDistance.sliderValue));
 						TempVideoPrefs.TerrainTreeBillboardDistance = (TreeBillboardDistMin + ((TreeBillboardDistMax - TreeBillboardDistMin) * VideoTerrainTreeBillboardDistance.sliderValue));
 						TempVideoPrefs.TerrainTreeDistance = VideoTerrainTreeDistance.sliderValue;
+						TempVideoPrefs.TerrainReduceTreeVariation = VideoTerrainReduceTreeVariation.isChecked;
+						if (Profile.Get.HasCurrentGame && Profile.Get.CurrentGame.HasStarted) {
+								VideoTerrainReduceTreeVariationLabel.text = "(Requires restart)";
+								VideoReduceTextureVariationLabel.text = "(Requires restart)";
+						} else {
+								VideoTerrainReduceTreeVariationLabel.text = string.Empty;
+								VideoReduceTextureVariationLabel.text = string.Empty;
+						}
 
 						VideoRefresh(TempVideoPrefs);
 				}
@@ -314,6 +331,7 @@ namespace Frontiers.GUI
 						TempVideoPrefs.TerrainShadows = VideoShadowTerrain.isChecked;
 						TempVideoPrefs.StructureShadows = VideoShadowStructure.isChecked;
 						TempVideoPrefs.VSync = VideoVSync.isChecked;
+						TempVideoPrefs.StructureReduceTextureVariation = VideoReduceTextureVariation.isChecked;
 
 						VideoRefresh(TempVideoPrefs);
 				}
@@ -412,6 +430,7 @@ namespace Frontiers.GUI
 
 						VideoFullScreen.isChecked = (videoPrefs.Fullscreen);
 						VideoHDR.isChecked = true;//videoPrefs.HDR;
+						VideoReduceTextureVariation.isChecked = videoPrefs.StructureReduceTextureVariation;
 						VideoHDR.gameObject.SetActive(false);
 						VideoResolutionLabel.text = (videoPrefs.ResolutionWidth.ToString() + " x " + videoPrefs.ResolutionHeight.ToString());
 						VideoFOVLabel.text = videoPrefs.FieldOfView.ToString();
@@ -512,6 +531,12 @@ namespace Frontiers.GUI
 						VideoTerrainMaxMeshTrees.sliderValue = (float)(videoPrefs.TerrainMaxMeshTrees - MaxMeshTreesMin) / (MaxMeshTreesMax - MaxMeshTreesMin);
 						VideoTerrainTreeDistance.sliderValue = videoPrefs.TerrainTreeDistance;
 						VideoTerrainMaxMeshTreesLabel.text = "Max Mesh Trees: " + videoPrefs.TerrainMaxMeshTrees.ToString();
+						VideoTerrainReduceTreeVariation.isChecked = TempVideoPrefs.TerrainReduceTreeVariation;
+						if (Profile.Get.HasCurrentGame && Profile.Get.CurrentGame.HasStarted) {
+								VideoTerrainReduceTreeVariationLabel.text = "(Requires restart)";
+						} else {
+								VideoTerrainReduceTreeVariationLabel.text = string.Empty;
+						}
 
 						VideoPostFXBloom.isChecked = videoPrefs.PostFXBloom;
 						VideoPostFXSSAO.isChecked = videoPrefs.PostFXSSAO;
@@ -580,6 +605,7 @@ namespace Frontiers.GUI
 						ImmersionSpecialObjectsOverlay.isChecked = Profile.Get.CurrentPreferences.Immersion.SpecialObjectsOverlay;
 						ImmersionWorldItemsOverlay.isChecked = Profile.Get.CurrentPreferences.Immersion.WorldItemOverlay;
 						ImmersionWorldItemHUD.isChecked = Profile.Get.CurrentPreferences.Immersion.WorldItemHUD;
+						ImmersionWorldItemHUDInCenter.isChecked = Profile.Get.CurrentPreferences.Immersion.WorldItemHUDInCenter;
 						ImmersionWalkingSpeedSlider.sliderValue = Profile.Get.CurrentPreferences.Immersion.WalkingSpeed;
 						ImmersionCameraSmoothingSlider.sliderValue = Profile.Get.CurrentPreferences.Immersion.CameraSmoothing;
 			

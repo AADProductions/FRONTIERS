@@ -101,6 +101,7 @@ public partial class GameWorld : Manager
 
 		public bool SetPrimaryChunk(int chunkID)
 		{
+				Debug.Log("Setting primary chunk " + chunkID.ToString());
 				if (PrimaryChunk != null && PrimaryChunk.State.ID == chunkID) {
 						PrimaryChunk.TargetMode = ChunkMode.Primary;
 						return true;
@@ -219,6 +220,8 @@ public partial class GameWorld : Manager
 								Mats.Get.AFS.BillboardFadeLenght = 30f;
 								Mats.Get.AFS.BillboardStart = terrainTreeBillboardDistance;
 								Mats.Get.AFS.BillboardFadeOutLength = 50f;
+
+								WorldChunks[i].SetReducedTreeVariation(Frontiers.Profile.Get.CurrentPreferences.Video.TerrainReduceTreeVariation);
 						}
 				}
 		}
@@ -243,14 +246,18 @@ public partial class GameWorld : Manager
 		protected ChunkMode GetChunkMode(WorldChunk chunk, int chunkIndex, Vector3 position, bool setMode)
 		{
 				ChunkMode mode = ChunkMode.Unloaded;
-				float distance = Vector3.Distance(position.To2D(), chunk.ChunkBounds.center.To2D());
-				if (distance < Globals.ChunkUnloadedDistance) {
-						if (distance > Globals.ChunkAdjascentDistance) {
-								mode = ChunkMode.Distant;
-						} else if (distance > Globals.ChunkImmediateDistance) {
-								mode = ChunkMode.Adjascent;
-						} else {
-								mode = ChunkMode.Immediate;
+				if (Settings.NeverUnloadChunks) {
+						mode = ChunkMode.Immediate;
+				} else {
+						float distance = Vector3.Distance(position.To2D(), chunk.ChunkBounds.center.To2D());
+						if (distance < Globals.ChunkUnloadedDistance) {
+								if (distance > Globals.ChunkAdjascentDistance) {
+										mode = ChunkMode.Distant;
+								} else if (distance > Globals.ChunkImmediateDistance) {
+										mode = ChunkMode.Adjascent;
+								} else {
+										mode = ChunkMode.Immediate;
+								}
 						}
 				}
 				if (setMode) {
@@ -1220,7 +1227,7 @@ public partial class GameWorld : Manager
 						}
 				}
 				if (biome == null) {
-						Debug.Log("Couldn't find biome " + regionData.r.ToString() + ", using default");
+	    //Debug.Log("Couldn't find biome " + regionData.r.ToString() + ", using default");
 						biome = CurrentBiome;
 				}
 				return biome.StatusTempAverage;
@@ -1241,7 +1248,7 @@ public partial class GameWorld : Manager
 						}
 				}
 				if (biome == null) {
-						Debug.Log("Couldn't find biome " + regionData.r.ToString() + ", using default");
+	    //Debug.Log("Couldn't find biome " + regionData.r.ToString() + ", using default");
 						biome = CurrentBiome;
 				}
 				//now look up the temperature range for this time of year / this time of day

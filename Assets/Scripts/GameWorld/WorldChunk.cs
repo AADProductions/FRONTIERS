@@ -132,6 +132,7 @@ namespace Frontiers.World
 		protected bool mHasLoadedTerrainObjects;
 		protected bool mHasLoadedTerrainTextures;
 		protected bool mHasLoadedTerrainDetails;
+		protected bool mReduceTreeVariation;
 		protected bool mHasAddedTerrainTrees;
 		protected bool mHasAddedRivers;
 		protected bool mHasGeneratedTerrain;
@@ -215,13 +216,16 @@ namespace Frontiers.World
 			ChunkGroup = WIGroups.GetOrAdd(gameObject, mChunkName, WIGroups.Get.World, null);
 			ChunkGroup.Props.IgnoreOnSave = true;
 
+			//set this so we know if we're supposed to substitute tree instances
+			mReduceTreeVariation = Profile.Get.CurrentPreferences.Video.TerrainReduceTreeVariation;
+
 			Mods.Get.Runtime.LoadMod <ChunkTriggerData>(ref TriggerData, chunkDirectoryName, "Triggers");
 			Mods.Get.Runtime.LoadMod <ChunkNodeData>(ref NodeData, chunkDirectoryName, "Nodes");
 			Mods.Get.Runtime.LoadMod <ChunkSceneryData>(ref SceneryData, chunkDirectoryName, "Scenery");
 			Mods.Get.Runtime.LoadMod <ChunkTerrainData>(ref TerrainData, chunkDirectoryName, "Terrain");
 
 			for (int i = 0; i < SceneryData.AboveGround.RiverNames.Count; i++) {
-				Debug.Log ("Loading river " + SceneryData.AboveGround.RiverNames [i]);
+				Debug.Log("Loading river " + SceneryData.AboveGround.RiverNames[i]);
 				River river = null;
 				if (Mods.Get.Runtime.LoadMod <River>(ref river, "River", SceneryData.AboveGround.RiverNames[i])) {
 					Rivers.Add(river);
@@ -382,9 +386,14 @@ namespace Frontiers.World
 		public IEnumerator RefreshTerrainTextures()
 		{
 			//Debug.Log("Refreshing terrain textures");
-			PrimaryMaterial.name = Name + " Material";
-			TerrainData.MaterialSettings.ApplySettings(PrimaryMaterial);
-			TerrainData.MaterialSettings.ApplyMaps(PrimaryMaterial, Name, ChunkDataMaps);
+						try {
+							PrimaryMaterial.name = Name + " Material";
+							TerrainData.MaterialSettings.ApplySettings(PrimaryMaterial);
+							TerrainData.MaterialSettings.ApplyMaps(PrimaryMaterial, Name, ChunkDataMaps);
+						}
+						catch (Exception e) {
+								Debug.Log("Error while refreshing terrain textures, proceeding normally: " + e.ToString());
+						}
 			yield break;
 		}
 
@@ -441,26 +450,13 @@ namespace Frontiers.World
 			}
 
 			if (!GameManager.Get.NoTreesMode) {
-				TreePrototype[] treePrototypes = new TreePrototype [TerrainData.TreeTemplates.Count];
+				TreePrototype[] treePrototypes = null;
 				if (ColliderTemplates != null) {
 					Array.Clear(ColliderTemplates, 0, ColliderTemplates.Length);
 					ColliderTemplates = null;
 				}
-				ColliderTemplates = new TreeColliderTemplate [TerrainData.TreeTemplates.Count];
-				for (int i = 0; i < TerrainData.TreeTemplates.Count; i++) {
-					TerrainPrototypeTemplate ttt = TerrainData.TreeTemplates[i];
-					TreePrototype treePrototype = new TreePrototype();
-					treePrototype.bendFactor = ttt.BendFactor;
-
-					GameObject prototype = null;
-					if (Plants.Get.GetTerrainPlantPrototype(ttt.AssetName, out prototype)) {
-						//make sure to load the collider template
-						ColliderTemplates[i] = prototype.GetComponent <TreeColliderTemplate>();
-						treePrototype.prefab = prototype;
-					}
-					treePrototypes[i] = treePrototype;
-					yield return null;
-				}
+				Debug.Log("Getting tree prototypes for " + Name);
+				Plants.Get.GetTerrainPlantPrototypes(TerrainData.TreeTemplates, TreeData.TreeInstances, ref treePrototypes, ref ColliderTemplates);
 				PrimaryTerrain.terrainData.treePrototypes = treePrototypes;
 			}
 
@@ -581,6 +577,14 @@ namespace Frontiers.World
 			yield break;
 		}
 
+		public void SetReducedTreeVariation(bool reduceTreeVariation)
+		{
+			if (mReduceTreeVariation != reduceTreeVariation) {
+
+			}
+			mReduceTreeVariation = reduceTreeVariation;
+		}
+
 		public IEnumerator AddTerrainTrees()
 		{
 			if (GameManager.Get.NoTreesMode) {
@@ -589,9 +593,9 @@ namespace Frontiers.World
 			}
 
 			//sort trees into groups
-			int numPrototypes = TerrainData.TreeTemplates.Count;
+			int numPrototypes = PrimaryTerrain.terrainData.treePrototypes.Length;
 			int numAddedThisFrame = 0;
-			TreeInstanceTemplate [] trees = TreeData.TreeInstances;
+			TreeInstanceTemplate[] trees = TreeData.TreeInstances;
 			for (int p = 0; p < numPrototypes; p++) {
 				if (!gAddingTreesToChunk) {
 					gAddingTreesToChunk = true;
@@ -601,7 +605,7 @@ namespace Frontiers.World
 					}
 				}
 				for (int i = 0; i < trees.Length; i++) {
-					if (trees[i].PrototypeIndex == p) {
+					if (trees[i].FinalPrototypeIndex == p) {
 						//unfortunately this all has to be done in ONE frame
 						//otherwise unity's terrain will crash
 						PrimaryTerrain.AddTreeInstance(TreeInstances[i].ToInstance);

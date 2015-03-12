@@ -391,6 +391,35 @@ namespace Frontiers
 								}
 						}
 
+						if (GUILayout.Button("Prep Material Substitutions")) {
+								foreach (MaterialSubstitution m in Substitutions) {
+										m.OriginalMaterials.Sort(delegate(Material m1, Material m2) {
+												return m1.name.CompareTo(m2.name);
+										});
+										//sort and get rid of all duplicates across the board
+										for (int i = m.OriginalMaterials.LastIndex(); i >= 0; i--) {
+												for (int j = m.OriginalMaterials.LastIndex(); j >= 0; j--) {
+														if (j == i) {
+																continue;
+														}
+														if (m.OriginalMaterials[j] == m.OriginalMaterials[i]) {
+																m.OriginalMaterials.RemoveAt(i);
+														}
+												}
+												foreach (MaterialSubstitution otherM in Substitutions) {
+														if (m == otherM) {
+																continue;
+														}
+														foreach (Material om in otherM.OriginalMaterials) {
+																if (om == m.OriginalMaterials[i]) {
+																		m.OriginalMaterials.RemoveAt(i);
+																}
+														}
+												}
+										}
+								}
+						}
+
 						if (GUILayout.Button("Convert materials to detail shader")) {
 								foreach (UnityEngine.Object matObject in UnityEditor.Selection.objects) {
 										/*					

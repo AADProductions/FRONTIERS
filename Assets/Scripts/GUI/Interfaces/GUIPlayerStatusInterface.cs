@@ -41,6 +41,7 @@ namespace Frontiers.GUI
 				public UIPanel SurroundingsPanel;
 				public float FreezingSpriteTargetAlpha;
 				public float BurningSpriteTargetAlpha;
+				public Vector2 AnchorVROffset;
 				public Vector3 TempOffsetMin;
 				public Vector3 TempOffsetMax;
 				public Vector3 TargetTempOffset;
@@ -238,7 +239,11 @@ namespace Frontiers.GUI
 								return;
 						} else {
 								for (int i = 0; i < MasterAnchors.Count; i++) {
-										MasterAnchors[i].relativeOffset = Vector2.zero;
+										if (VRManager.OculusModeEnabled) {
+												MasterAnchors[i].relativeOffset = AnchorVROffset;
+										} else {
+												MasterAnchors[i].relativeOffset = Vector2.zero;
+										}
 								}
 								MainPanel.enabled = true;
 								TemperatureClipPanel.enabled = true;

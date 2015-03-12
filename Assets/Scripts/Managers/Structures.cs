@@ -79,6 +79,7 @@ namespace Frontiers
 				public List <ChunkPrefabObject> SceneryObjects;
 				public List <WorldItemPack> DynamicWorldItemPacks;
 				public List <StructurePack> StructurePacks;
+				public List <MaterialSubstitution> Substitutions;
 				public Transform ColliderKeeper;
 				public Mesh DefaultMeshColliderMesh;
 				public Texture2D DefaultDetailTexture;
@@ -364,6 +365,9 @@ namespace Frontiers
 										DynamicWorldItemPacks.SafeAdd(wip);
 								}
 						}
+						//create our substitution lookup in case the player wants it
+
+
 						//do this now while the player won't care
 						System.GC.Collect();
 						Resources.UnloadUnusedAssets();
@@ -371,22 +375,6 @@ namespace Frontiers
 
 				public override void Initialize()
 				{
-//						Debug.Log("------------------");
-//						List <string> groundTextures = Mods.Get.Available("GroundTexture");
-//						foreach (Material mat in SharedMaterials) {
-//								foreach (UnityEngine.Object obj in UnityEditor.EditorUtility.CollectDependencies(new UnityEngine.Object[] {mat}))
-//								{
-//										if (obj is Texture)
-//										{
-//												foreach (string groundTexture in groundTextures) {
-//														if (obj.name.Equals(groundTexture)) {
-//																Debug.Log(groundTexture + " used in " + mat.name);
-//														}
-//												}
-//										}
-//								}
-//						}
-//						Debug.Log("------------------");
 						if (Application.isPlaying) {
 								//create and initialize structure builders
 								ExteriorBuilder = gameObject.FindOrCreateChild("ExteriorBuilder").gameObject.GetOrAdd <StructureBuilder>();

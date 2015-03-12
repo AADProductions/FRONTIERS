@@ -78,11 +78,11 @@ namespace Frontiers.GUI
 				public override void CreateDividerObjects()
 				{
 						GUIGenericBrowserObject dividerObject = null;
-						GameObject newDivider = null;
+						IGUIBrowserObject newDivider = null;
 
 						if (CreateEmptyDivider) {
 								newDivider = CreateDivider();
-								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 								dividerObject.name = "a_empty";
 								dividerObject.UseAsDivider = true;
 								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -92,7 +92,7 @@ namespace Frontiers.GUI
 
 						if (CreateMissionDivider) {
 								newDivider = CreateDivider();
-								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 								dividerObject.name = "a_missionRelated";
 								dividerObject.UseAsDivider = true;
 								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -102,7 +102,7 @@ namespace Frontiers.GUI
 
 						if (CreateSkillDivider) {
 								newDivider = CreateDivider();
-								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 								dividerObject.name = "e_skillRelated";
 								dividerObject.UseAsDivider = true;
 								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -112,7 +112,7 @@ namespace Frontiers.GUI
 
 						if (CreateLoreDivider) {
 								newDivider = CreateDivider();
-								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 								dividerObject.name = "g_loreRelated";
 								dividerObject.UseAsDivider = true;
 								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -122,7 +122,7 @@ namespace Frontiers.GUI
 
 						if (CreateMiscDivider) {
 								newDivider = CreateDivider();
-								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 								dividerObject.name = "t_miscRelated";
 								dividerObject.UseAsDivider = true;
 								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -132,7 +132,7 @@ namespace Frontiers.GUI
 
 						if (CreateGuidebookDivider) {
 								newDivider = CreateDivider();
-								dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+								dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 								dividerObject.name = "x_guide";
 								dividerObject.UseAsDivider = true;
 								dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -152,12 +152,12 @@ namespace Frontiers.GUI
 						base.PushEditObjectToNGUIObject();
 				}
 
-				protected override GameObject ConvertEditObjectToBrowserObject(Book editObject)
+				protected override IGUIBrowserObject ConvertEditObjectToBrowserObject(Book editObject)
 				{
 						CreateEmptyDivider = false;
 
-						GameObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
-						GUIGenericBrowserObject bookBrowserObject = newBrowserObject.GetComponent <GUIGenericBrowserObject>();
+						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
+						GUIGenericBrowserObject bookBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 						//if the book hasn't been read yet keep it near the top
 						Color bookColor = Colors.Get.BookColorGeneric;
 						Color textColor = Color.white;
@@ -208,7 +208,7 @@ namespace Frontiers.GUI
 						return newBrowserObject;
 				}
 
-				protected override void RefreshEditObjectToBrowserObject(Book editObject, GameObject browserObject)
+				protected override void RefreshEditObjectToBrowserObject(Book editObject, IGUIBrowserObject browserObject)
 				{
 						//		GUIGenericBrowserObject missionBrowserObject = browserObject.GetComponent <GUIGenericBrowserObject> ( );
 						//		

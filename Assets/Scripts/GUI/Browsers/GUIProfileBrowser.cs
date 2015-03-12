@@ -15,11 +15,11 @@ namespace Frontiers.GUI
 						return Profile.Get.ProfileNames(false) as IEnumerable <string>;
 				}
 
-				protected override GameObject ConvertEditObjectToBrowserObject(string editObject)
+				protected override IGUIBrowserObject ConvertEditObjectToBrowserObject(string editObject)
 				{
-						GameObject browserGameObject = base.ConvertEditObjectToBrowserObject(editObject);
-						browserGameObject.name = editObject;
-						GUIGenericBrowserObject browserObject = browserGameObject.GetComponent <GUIGenericBrowserObject>();
+						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
+						newBrowserObject.name = editObject;
+						GUIGenericBrowserObject browserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 						browserObject.EditButton.target = gameObject;
 						browserObject.EditButton.functionName = "OnClickEditButton";
 
@@ -31,7 +31,7 @@ namespace Frontiers.GUI
 						button.hover = Colors.Get.GeneralHighlightColor;
 						button.pressed = Colors.Get.GeneralHighlightColor;
 
-						return browserObject.gameObject;//we're not using the base gameobject
+						return newBrowserObject;
 				}
 
 				public void OnClickEditButton(GameObject editButton)

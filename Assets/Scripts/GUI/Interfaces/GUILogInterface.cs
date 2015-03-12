@@ -29,6 +29,7 @@ namespace Frontiers.GUI
 				{
 						if (base.Minimize()) {
 								CloseButton.gameObject.SetActive(false);
+								Tabs.Hide();
 								return true;
 						}
 						return false;
@@ -38,6 +39,7 @@ namespace Frontiers.GUI
 				{
 						if (base.Maximize()) {
 								CloseButton.gameObject.SetActive(true);
+								Tabs.Show();
 						}
 						return false;
 				}

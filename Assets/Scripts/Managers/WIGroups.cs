@@ -949,7 +949,6 @@ namespace Frontiers
 				//try to load props
 				//don't bother to check for success, we do the same thing either way
 				Mods.Get.Runtime.LoadGroupProps(ref group.Props, WIGroup.GetUniqueID(WIGroup.GetChildPathName(parentGroup.Path, groupName)));
-
 				parentGroup.AddChildGroup(group);
 				group.Initialize();
 				Get.Groups.SafeAdd(group);
@@ -979,37 +978,39 @@ namespace Frontiers
 
 		public void DrawEditor()
 		{
-			var enumerator = Unloaders.GetEnumerator();
-			while (enumerator.MoveNext()) {
-				//foreach (WIGroupUnloader unloader in Unloaders) {
-				unloader = enumerator.Current;
-				switch (unloader.LoadState) {
-					case WIGroupLoadState.Loaded:
-					default:
-						UnityEngine.GUI.color = Color.green;
-						break;
+			if (Application.isPlaying) {
+				var enumerator = Unloaders.GetEnumerator();
+				while (enumerator.MoveNext()) {
+					//foreach (WIGroupUnloader unloader in Unloaders) {
+					unloader = enumerator.Current;
+					switch (unloader.LoadState) {
+						case WIGroupLoadState.Loaded:
+						default:
+							UnityEngine.GUI.color = Color.green;
+							break;
 
-					case WIGroupLoadState.Unloaded:
-						UnityEngine.GUI.color = Color.red;
-						break;
+						case WIGroupLoadState.Unloaded:
+							UnityEngine.GUI.color = Color.red;
+							break;
 
-					case WIGroupLoadState.PreparingToUnload:
-					case WIGroupLoadState.Unloading:
-						UnityEngine.GUI.color = Color.yellow;
-						break;
+						case WIGroupLoadState.PreparingToUnload:
+						case WIGroupLoadState.Unloading:
+							UnityEngine.GUI.color = Color.yellow;
+							break;
+					}
+					string rootGroup = "(NULL)";
+					if (unloader.RootGroup != null) {
+						rootGroup = unloader.RootGroup.name;
+						rootGroup += "(" + unloader.NotPreparedToUnload.Count.ToString() + " NOT PREPARED)\n";
+						rootGroup += "(" + unloader.PreparingToUnload.Count.ToString() + " PREPARING)\n";
+						rootGroup += "(" + unloader.ReadyToUnload.Count.ToString() + " READY TO UNLOAD)\n";
+						rootGroup += "(" + unloader.Unloading.Count.ToString() + " UNLOADING)\n";
+						rootGroup += "(" + unloader.FinishedUnloading.Count.ToString() + " FINISHED UNLOADING)\n";
+					}
+					UnityEngine.GUILayout.Button(rootGroup + ": " + unloader.LoadState.ToString());
 				}
-				string rootGroup = "(NULL)";
-				if (unloader.RootGroup != null) {
-					rootGroup = unloader.RootGroup.name;
-					rootGroup += "(" + unloader.NotPreparedToUnload.Count.ToString() + " NOT PREPARED)\n";
-					rootGroup += "(" + unloader.PreparingToUnload.Count.ToString() + " PREPARING)\n";
-					rootGroup += "(" + unloader.ReadyToUnload.Count.ToString() + " READY TO UNLOAD)\n";
-					rootGroup += "(" + unloader.Unloading.Count.ToString() + " UNLOADING)\n";
-					rootGroup += "(" + unloader.FinishedUnloading.Count.ToString() + " FINISHED UNLOADING)\n";
-				}
-				UnityEngine.GUILayout.Button(rootGroup + ": " + unloader.LoadState.ToString());
+				UnityEditor.EditorUtility.SetDirty(this);
 			}
-			UnityEditor.EditorUtility.SetDirty(this);
 		}
 		#endif
 	}

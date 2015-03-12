@@ -378,12 +378,14 @@ namespace Frontiers.GUI
 			}
 			LoadingCompass.animation["NGUIScaleUp"].normalizedTime = 1f;
 			LoadingCompass.animation.Sample();
-			BackgroundSprite.alpha = 1f;
-			BackgroundOverlaySprite.alpha = BackgroundSpriteAlphaMultiplier;
+			BackgroundSprite.alpha = backgroundAlphaTarget;
+			BackgroundOverlaySprite.alpha = backgroundAlphaTarget * BackgroundSpriteAlphaMultiplier;
 			yield return null;
 			//now that background sprite is 1f
 			//we can disable the camera
-			GameManager.Get.GameCamera.enabled = false;
+						if (backgroundAlphaTarget == 1f) {
+								GameManager.Get.GameCamera.enabled = false;
+						}
 			yield break;
 		}
 

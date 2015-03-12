@@ -9,6 +9,8 @@ using Frontiers.World;
 public class WIGroupEditor : Editor
 {
 		protected WIGroup group;
+		protected string GroupTest;
+		protected string UniqueIDTest;
 
 		public void Awake()
 		{
@@ -33,5 +35,16 @@ public class WIGroupEditor : Editor
 
 				DrawDefaultInspector();
 				group.DrawEditor();
+
+				GUI.color = Color.cyan;
+				EditorGUILayout.LabelField(new GUIContent("---Unique ID testing---"));
+				if (string.IsNullOrEmpty(GroupTest)) {
+						GroupTest = group.Path;
+				}
+				GroupTest = EditorGUILayout.TextField(GroupTest);
+				if (GUILayout.Button("Test Unique ID")) {
+						UniqueIDTest = ShortUrl.GetUniqueID(GroupTest);
+				}
+				EditorGUILayout.LabelField(new GUIContent(UniqueIDTest));
 		}
 }

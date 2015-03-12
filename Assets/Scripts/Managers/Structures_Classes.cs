@@ -39,16 +39,21 @@ namespace Frontiers
 										break;
 						}
 
-						if (showPrefab) {
-								rb.detectCollisions = true;
-								PrimaryRenderer.gameObject.layer = Layer;
-								LodRenderer.gameObject.layer = Layer;
-								PrimaryRenderer.castShadows = Structures.SceneryObjectShadows;
-								LodRenderer.castShadows = Structures.SceneryObjectShadows;
-						} else {
-								rb.detectCollisions = false;
-								PrimaryRenderer.gameObject.layer = Globals.LayerNumHidden;
-								LodRenderer.gameObject.layer = Globals.LayerNumHidden;
+						try {
+							if (showPrefab) {
+									rb.detectCollisions = true;
+									PrimaryRenderer.gameObject.layer = Layer;
+									LodRenderer.gameObject.layer = Layer;
+									PrimaryRenderer.castShadows = Structures.SceneryObjectShadows;
+									LodRenderer.castShadows = Structures.SceneryObjectShadows;
+							} else {
+									rb.detectCollisions = false;
+									PrimaryRenderer.gameObject.layer = Globals.LayerNumHidden;
+									LodRenderer.gameObject.layer = Globals.LayerNumHidden;
+							}
+						}
+						catch (Exception e) {
+								Debug.LogError("Error while changing chunk prefab, proceeding normally: " + e.ToString());
 						}
 				}
 
@@ -93,6 +98,12 @@ namespace Frontiers
 				//additional scripts and script states
 				public List <SceneryScript> CfSceneryScripts;
 				// = new List <SceneryScript> ( );
+		}
+
+		[Serializable]
+		public class MaterialSubstitution {
+				public Material SubstituteMaterial;
+				public List <Material> OriginalMaterials;
 		}
 
 		[Serializable]

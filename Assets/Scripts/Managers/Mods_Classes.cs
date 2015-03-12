@@ -116,7 +116,7 @@ namespace Frontiers
 						FresnelPower = fresnelSettings.y;
 						FresnelBias = fresnelSettings.z;
 
-						/*			
+						/*
 						_CustomColorMap ("Color Map (RGB)", 2D) = "white" {}
 						_TerrainNormalMap ("Terrain Normalmap", 2D) = "bump" {}
 						_Control ("SplatAlpha 0", 2D) = "red" {}
@@ -245,7 +245,7 @@ namespace Frontiers
 								atsMaterial.SetTexture("_CombinedNormal56", cn56);
 						}
 
-						/*			
+						/*
 						_CustomColorMap ("Color Map (RGB)", 2D) = "white" {}
 						_TerrainNormalMap ("Terrain Normalmap", 2D) = "bump" {}
 						_Control ("SplatAlpha 0", 2D) = "red" {}
@@ -415,7 +415,8 @@ namespace Frontiers
 				public string ControllerState;
 				public string InventoryFillCategory;
 				public string WearableFillCategory;
-				public List <string> BooksToAdd = new List<string>();// { "PlayerSurvivalGuideIndex", "PlayerSkillGuideIndex" };
+				public List <string> BooksToAdd = new List<string>();
+				// { "PlayerSurvivalGuideIndex", "PlayerSkillGuideIndex" };
 				public List <StatusKeeperValue> StatusValues = new List<StatusKeeperValue>();
 				public bool ClearRevealedLocations = false;
 				public List <CurrencyValue> CurrencyToAdd = new List<CurrencyValue>();
@@ -494,6 +495,8 @@ namespace Frontiers
 				public MobileReference DefaultHouseOfHealing = new MobileReference();
 				public int NumChunkTilesX;
 				public int NumChunkTilesZ;
+				public bool NeverUnloadChunks = false;
+				public bool GRTVisible = true;
 				[NonSerialized]
 				public List <DifficultySetting> BaseDifficultySettings = new List <DifficultySetting>();
 				//these are used the first time you enter the game
@@ -505,7 +508,9 @@ namespace Frontiers
 		[Serializable]
 		public class DifficultySetting : Mod
 		{
-				public DifficultySetting () : base () { }
+				public DifficultySetting() : base()
+				{
+				}
 
 				public bool IsDefined(string setting)
 				{
@@ -519,11 +524,11 @@ namespace Frontiers
 				public bool HasBeenCustomized = false;
 				public FallDamageStyle FallDamage = FallDamageStyle.Forgiving;
 				public DifficultyDeathStyle DeathStyle = DifficultyDeathStyle.Respawn;
-				public List <DifficultySettingGlobal> GlobalVariables = new List<DifficultySettingGlobal> ();
+				public List <DifficultySettingGlobal> GlobalVariables = new List<DifficultySettingGlobal>();
 				// = new List <DifficultySettingGlobal> ();
 				public List <string> DifficultyFlags = new List<string>();
 				// = new List <string> ();
-				public void Apply( )
+				public void Apply()
 				{
 						//set the globals to default
 						//then apply the difficulty setting on top of the default values
@@ -591,7 +596,9 @@ namespace Frontiers
 		[Serializable]
 		public class DifficultySettingGlobal
 		{
-				public DifficultySettingGlobal () { }
+				public DifficultySettingGlobal()
+				{
+				}
 
 				public string GlobalVariableName;
 				public string VariableValue;
@@ -601,7 +608,7 @@ namespace Frontiers
 		[Serializable]
 		public class ChunkTriggerData : Mod
 		{
-				public ChunkTriggerData() : base ()
+				public ChunkTriggerData() : base()
 				{
 						Type = "ChunkTriggerData";
 						Name = "Trigger Group";
@@ -1780,6 +1787,20 @@ namespace Frontiers
 				public float X;
 				public float Y;
 				public float Z;
+				[XmlIgnore]
+				public int PrototypeSubstituteIndex;
+				[XmlIgnore]
+				public bool UsePrototypeSubstitute;
+
+				public int FinalPrototypeIndex {
+						get {
+								if (UsePrototypeSubstitute) {
+										return PrototypeSubstituteIndex;
+								} else {
+										return PrototypeIndex;
+								}
+						}
+				}
 
 				public TreeInstance	ToInstance {
 						get {
@@ -1796,7 +1817,7 @@ namespace Frontiers
 								treeInstance.position = gInstancePosition;
 								treeInstance.heightScale = HeightScale;
 								treeInstance.widthScale = WidthScale;
-								treeInstance.prototypeIndex	= PrototypeIndex;
+								treeInstance.prototypeIndex = FinalPrototypeIndex;
 								return treeInstance;
 						}
 				}

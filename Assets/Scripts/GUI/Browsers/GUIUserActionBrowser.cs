@@ -54,10 +54,10 @@ namespace Frontiers.GUI
 						ControllingTabPage.OnDeselected += Hide;
 				}
 
-				protected override GameObject ConvertEditObjectToBrowserObject(ActionSetting editObject)
+				protected override IGUIBrowserObject ConvertEditObjectToBrowserObject(ActionSetting editObject)
 				{
-						GameObject browserObject = base.ConvertEditObjectToBrowserObject(editObject);
-						GUIUserActionBrowserObject uabo = browserObject.GetComponent <GUIUserActionBrowserObject>();
+						IGUIBrowserObject browserObject = base.ConvertEditObjectToBrowserObject(editObject);
+						GUIUserActionBrowserObject uabo = browserObject.gameObject.GetComponent <GUIUserActionBrowserObject>();
 						uabo.name = editObject.ActionDescription;
 						uabo.Setting = editObject;
 						return browserObject;

@@ -26,11 +26,16 @@ namespace Frontiers.World
 				public IEnumerator StartCutsceneOverTime()
 				{
 						while (!GameManager.Is(FGameState.InGame)) {
+								//Debug.Log("Waiting to start cutscene...");
 								yield return null;
 						}
 						Cutscene.CurrentCutsceneAnchor = gameObject;
+						Debug.Log("Starting cutscene!");
 						Application.LoadLevelAdditive(State.CutsceneName);
-						yield return WorldClock.WaitForRTSeconds(1.0f);
+						double waitUntil = WorldClock.RealTime + 1f;
+						while (WorldClock.RealTime < waitUntil) {
+								yield return null;
+						}
 						Finish();
 						yield break;
 				}

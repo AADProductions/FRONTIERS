@@ -80,10 +80,10 @@ namespace Frontiers.GUI
 						ControllingTabPage.OnDeselected += Hide;
 				}
 
-				protected override GameObject ConvertEditObjectToBrowserObject(ColorKey editObject)
+				protected override IGUIBrowserObject ConvertEditObjectToBrowserObject(ColorKey editObject)
 				{
-						GameObject browserObject = base.ConvertEditObjectToBrowserObject(editObject);
-						GUIGenericBrowserObject bo = browserObject.GetComponent <GUIGenericBrowserObject>();
+						IGUIBrowserObject browserObject = base.ConvertEditObjectToBrowserObject(editObject);
+						GUIGenericBrowserObject bo = browserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 						bo.EditButton.target = this.gameObject;
 						bo.EditButton.functionName = "OnClickBrowserObject";
 						bo.name = editObject.Name;
@@ -171,7 +171,7 @@ namespace Frontiers.GUI
 						ColorSprite.color = mSelectedObject.color;
 
 						try {
-								GUIGenericBrowserObject gbo = mBrowserObject.GetComponent <GUIGenericBrowserObject>();
+								GUIGenericBrowserObject gbo = mBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 								gbo.Background.color = mSelectedObject.color;
 						} catch (Exception e) {
 								Debug.Log("Non-critical error in color browser: " + e.ToString());
@@ -218,7 +218,7 @@ namespace Frontiers.GUI
 						HexInput.text = Colors.ColorToHex(CurrentColor);
 						HexInput.label.text = HexInput.text;
 						try {
-								GUIGenericBrowserObject gbo = mBrowserObject.GetComponent <GUIGenericBrowserObject>();
+								GUIGenericBrowserObject gbo = mBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 								gbo.Background.color = mSelectedObject.color;
 						} catch (Exception e) {
 								Debug.Log("Non-critical error in color browser: " + e.ToString());

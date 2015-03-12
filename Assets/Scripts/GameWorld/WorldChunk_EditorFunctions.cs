@@ -396,7 +396,7 @@ namespace Frontiers.World
 								if (prefabMr != null) {
 										ChunkPrefab chunkPrefab = new ChunkPrefab();
 										chunkPrefab.Name = prefabGo.name;
-										chunkPrefab.Transform.Position = prefabGo.transform.position;
+										chunkPrefab.Transform.Position = prefabGo.transform.localPosition;
 										chunkPrefab.Transform.Rotation = prefabGo.transform.rotation.eulerAngles;
 										chunkPrefab.Transform.Scale = prefabGo.transform.lossyScale;
 										chunkPrefab.Tag = prefabGo.tag;
@@ -910,10 +910,11 @@ namespace Frontiers.World
 
 						//draws plants and stuff
 						//really noisy, i keep it off
-						/*
 						if (Application.isPlaying) {
+								Gizmos.color = Color.white;
+								Gizmos.DrawLine(Player.Local.Position.To2D(), ChunkBounds.center.To2D());
 								Bounds colliderBounds = new Bounds(Player.Local.Position, Vector3.one * (Player.Local.ColliderRadius * 2));
-								if (mInitialized && mCurrentMode == ChunkMode.Primary) {
+								/*if (mInitialized && mCurrentMode == ChunkMode.Primary) {
 										foreach (PlantInstanceTemplate pi in PlantInstances) {
 												Gizmos.color = Colors.Alpha(Color.green, 0.25f);
 												Gizmos.DrawLine(pi.Position, pi.Position + (Vector3.up * 1));
@@ -941,9 +942,8 @@ namespace Frontiers.World
 														}
 												}
 										}
-								}
+								}*/
 						}
-						*/
 				}
 
 				protected void DrawQuadNode(QuadNode <TreeInstanceTemplate> node, Color color)

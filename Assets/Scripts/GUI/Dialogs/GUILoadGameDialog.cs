@@ -59,13 +59,13 @@ namespace Frontiers.GUI
 						return saveGames as IEnumerable <PlayerGame>;
 				}
 
-				protected override GameObject ConvertEditObjectToBrowserObject(PlayerGame editObject)
+				protected override IGUIBrowserObject ConvertEditObjectToBrowserObject(PlayerGame editObject)
 				{
-						GameObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
+						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						//we want most recent to least recent
 						TimeSpan timeSinceSaved = DateTime.Now - editObject.LastTimeSaved;
 						newBrowserObject.name = ((int)timeSinceSaved.TotalMinutes).ToString().PadLeft(10, '0');
-						GUIGenericBrowserObject gameBrowserObject = newBrowserObject.GetComponent <GUIGenericBrowserObject>();
+						GUIGenericBrowserObject gameBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 
 						gameBrowserObject.EditButton.target = this.gameObject;
 						gameBrowserObject.EditButton.functionName = "OnClickBrowserObject";

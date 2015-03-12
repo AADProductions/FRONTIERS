@@ -51,6 +51,7 @@ namespace Frontiers.GUI
 				public UISprite IconSprite;
 				public UISlicedSprite IconBackground;
 				public UISlicedSprite IconShadow;
+				public Vector3 OculusModeOffset = new Vector3(0f, -350f, 0f);
 				public Vector4 GainedSomethingIconPanelVisible = new Vector4(100f, 100f, 0f, 0f);
 				public Vector4 GainedSomethingIconInvisible = new Vector4(0.1f, 0.1f, 0f, 0f);
 				public Vector4 GainedSomethingIconPanelTarget;
@@ -117,6 +118,12 @@ namespace Frontiers.GUI
 				public new void Update()
 				{
 						base.Update();
+
+						if (VRManager.OculusModeEnabled) {
+								transform.localPosition = OculusModeOffset;
+						} else {
+								transform.localPosition = Vector3.zero;
+						}
 
 						BackgroundSprite.transform.localScale = Vector3.Lerp(BackgroundSprite.transform.localScale, ScaleTarget, 0.25f);
 						BorderSprite.transform.localScale = BackgroundSprite.transform.localScale;

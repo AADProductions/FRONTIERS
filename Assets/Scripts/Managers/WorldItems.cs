@@ -577,15 +577,18 @@ namespace Frontiers.World
 												dopMr.castShadows = false;
 												dopMr.receiveShadows = false;
 												dopGameObject.layer = Globals.LayerNumWorldItemInventory;
+												//NGUI doesn't play nice with outline shaders in VR mode
 												materials.AddRange(wiMr.sharedMaterials);
-												for (int j = 0; j < wiMr.sharedMaterials.Length; j++) {
-														if (item.Props.Global.UseCutoutShader) {
-																Material baseMat = wiMr.sharedMaterials[j];
-																Material customMat = new Material(Mats.Get.InventoryRimCutoutMaterial);
-																customMat.SetTexture("_MainTex", baseMat.GetTexture("_MainTex"));
-																materials.Add(customMat);
-														} else {
-																materials.Add(Mats.Get.InventoryRimMaterial);
+												if (!VRManager.OculusModeEnabled) {
+														for (int j = 0; j < wiMr.sharedMaterials.Length; j++) {
+																if (item.Props.Global.UseCutoutShader) {
+																		Material baseMat = wiMr.sharedMaterials[j];
+																		Material customMat = new Material(Mats.Get.InventoryRimCutoutMaterial);
+																		customMat.SetTexture("_MainTex", baseMat.GetTexture("_MainTex"));
+																		materials.Add(customMat);
+																} else {
+																		materials.Add(Mats.Get.InventoryRimMaterial);
+																}
 														}
 												}
 												break;

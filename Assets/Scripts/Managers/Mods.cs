@@ -270,15 +270,19 @@ namespace Frontiers
 								GameData.IO.SaveGame(game);
 						}
 
-						public string FullPath(string fileName, string dataType, string extension)
-						{
+						public string FullPath(string fileName, string dataType, string extension, DataType type) {
 								//TODO make this work with more than just the base
 								System.IO.DirectoryInfo directory = System.IO.Directory.GetParent(Application.dataPath);
 								string dataPath = directory.FullName;
-								dataPath = System.IO.Path.Combine(dataPath, GameData.IO.GetDataPath(DataType.Base));
+								dataPath = System.IO.Path.Combine(dataPath, GameData.IO.GetDataPath(type));
 								dataPath = System.IO.Path.Combine(dataPath, System.IO.Path.Combine(dataType, (fileName + extension)));
 								dataPath = System.IO.Path.Combine(Application.absoluteURL, dataPath);
 								return dataPath;
+						}
+
+						public string FullPath(string fileName, string dataType, string extension)
+						{
+								return FullPath(fileName, dataType, extension, DataType.Base);
 						}
 
 						public void ResetProfileData(string dataType)
@@ -727,6 +731,10 @@ namespace Frontiers
 								if (string.IsNullOrEmpty(dataName)) {
 										return;
 								}
+								if (data.BaseData) {
+										Debug.Log(dataName + " is base data, skipping");
+										return;
+								}
 								data.Name = dataName;
 								data.Type = typeof(T).ToString();
 								data.Version = GameManager.VersionString;
@@ -752,8 +760,12 @@ namespace Frontiers
 
 						public bool LoadMod <T>(ref T data, string dataType, string dataName) where T : Mod, new()
 						{
-								if (GameData.IO.LoadBaseData <T>(ref data, dataType, dataName, DataCompression.None)) {
+								if (GameData.IO.LoadWorldData <T>(ref data, dataType, dataName, DataCompression.None)) {
 										data.Name = dataName;
+										return true;
+								} else if (GameData.IO.LoadBaseData <T>(ref data, dataType, dataName, DataCompression.None)) {
+										data.Name = dataName;
+										data.BaseData = true;
 										return true;
 								}
 								return false;
@@ -762,7 +774,9 @@ namespace Frontiers
 						public void SaveMods <T>(List <T> data, string dataType) where T : Mod, new()
 						{
 								for (int i = 0; i < data.Count; i++) {
-										SaveMod <T>(data[i], dataType, data[i].Name);
+										if (!data[i].BaseData) {
+												SaveMod <T>(data[i], dataType, data[i].Name);
+										}
 								}
 						}
 
@@ -1119,6 +1133,8 @@ namespace Frontiers
 				public int DisplayOrder = 0;
 				public bool Enabled = true;
 				public bool ListInAvailable = true;
+				[XmlIgnore]
+				public bool BaseData = false;
 
 				public virtual int CompareTo(Mod other)
 				{

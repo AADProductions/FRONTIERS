@@ -227,11 +227,11 @@ namespace Frontiers.GUI
 						PushEditObjectToNGUIObject();
 				}
 
-				protected override GameObject ConvertEditObjectToBrowserObject(SkillStartupSetting editObject)
+				protected override IGUIBrowserObject ConvertEditObjectToBrowserObject(SkillStartupSetting editObject)
 				{
-						GameObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
+						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						newBrowserObject.name = editObject.SkillName;
-						GUIGenericBrowserObject skillBrowserObject = newBrowserObject.GetComponent <GUIGenericBrowserObject>();
+						GUIGenericBrowserObject skillBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 
 						skillBrowserObject.Icon.atlas = Mats.Get.IconsAtlas;
 						skillBrowserObject.Icon.spriteName = "SkillIconCraftRepairMachine";
@@ -274,7 +274,7 @@ namespace Frontiers.GUI
 								}
 						}
 						MasterAudio.PlaySound(MasterAudio.SoundType.PlayerInterface, "ButtonClickEnabled");
-						GUIGenericBrowserObject bo = mBrowserObject.GetComponent <GUIGenericBrowserObject>();
+						GUIGenericBrowserObject bo = mBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 						SetBrowserObjectColors(bo, mSelectedObject);
 				}
 

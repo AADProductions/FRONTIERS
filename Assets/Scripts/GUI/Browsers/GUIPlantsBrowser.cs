@@ -104,10 +104,10 @@ namespace Frontiers.GUI
 				public override void CreateDividerObjects()
 				{
 						GUIGenericBrowserObject dividerObject = null;
-						GameObject newDivider = null;
+						IGUIBrowserObject newDivider = null;
 
 						newDivider = CreateDivider();
-						dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+						dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 						dividerObject.name = "a_aboveGround";
 						dividerObject.UseAsDivider = true;
 						dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -115,7 +115,7 @@ namespace Frontiers.GUI
 						dividerObject.Initialize("Divider");
 
 						newDivider = CreateDivider();
-						dividerObject = newDivider.GetComponent <GUIGenericBrowserObject>();
+						dividerObject = newDivider.gameObject.GetComponent <GUIGenericBrowserObject>();
 						dividerObject.name = "c_belowGround";
 						dividerObject.UseAsDivider = true;
 						dividerObject.Name.color = Colors.Get.MenuButtonTextColorDefault;
@@ -124,11 +124,11 @@ namespace Frontiers.GUI
 
 				}
 
-				protected override GameObject ConvertEditObjectToBrowserObject (Plant editObject)
+				protected override IGUIBrowserObject ConvertEditObjectToBrowserObject (Plant editObject)
 				{
-						GameObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
+						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						newBrowserObject.name = editObject.CommonName + "_" + editObject.Seasonality.ToString();
-						GUIGenericBrowserObject plantBrowserObject = newBrowserObject.GetComponent <GUIGenericBrowserObject>();
+						GUIGenericBrowserObject plantBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 						plantBrowserObject.EditButton.target = this.gameObject;
 						plantBrowserObject.EditButton.functionName = "OnClickBrowserObject";
 

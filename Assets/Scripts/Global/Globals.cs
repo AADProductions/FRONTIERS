@@ -608,6 +608,7 @@ public static class Globals
 		public static int NumItemsPerStack = 1024;
 		//player
 		public static float PlayerPickUpRange = 3.5f;
+		public static float OculusModeCameraRotationSensitivity = 10f;
 		public static string DefaultCharacterBodyName = "Body_A_M_4";
 		public static string DefaultCharacterFaceTextureName = "Face_CC_M_A";
 		public static string DefaultCharacterBodyTextureName = "Body_Med_A_Settler_M_1";
@@ -626,6 +627,7 @@ public static class Globals
 		public static float ScreenAspectRatioSqueezeMinimum = 1.33f;
 		public static int ScreenAspectRatioMax = 1080;
 		public static int ScreenAspectRatioMin = 1280;
+		public static int ScreenAspectRatioMaxVR = 640;
 		//collision layer variables
 		public const int LayerNumDefault = 0;
 		public const int LayerNumPlayer = 8;

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Frontiers.GUI
 {
-		public class GUIBrowserObjectBase : GUIObject
+		public class GUIBrowserObjectBase : GUIObject, IGUIBrowserObject
 		{
 				public override void Awake ( ) {
 
@@ -21,6 +21,10 @@ namespace Frontiers.GUI
 
 				public float Padding = 10.0f;
 
+				public bool DeleteRequest { get; set; }
+
+				public IGUIBrowser ParentBrowser { get; set; }
+
 				public virtual float Size {
 						get {
 								return 100.0f;
@@ -28,5 +32,14 @@ namespace Frontiers.GUI
 				}
 
 				protected static List <Collider> mColliders = new List <Collider> ();//for re-use
+		}
+
+		public interface IGUIBrowserObject {
+				IGUIBrowser ParentBrowser { get; set; }
+				GameObject gameObject { get; }
+				Transform transform { get; }
+				string name { get; set; }
+				float Size { get; }
+				bool DeleteRequest { get; set; }
 		}
 }

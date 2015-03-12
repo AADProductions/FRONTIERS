@@ -18,7 +18,7 @@ namespace Frontiers.GUI
 				public bool AllowShiftClick = false;
 				public override bool CanSplitStack {
 						get {
-								return IsEnabled && mStack.NumItems > 1;
+								return IsEnabled && mStack != null && mStack.NumItems > 1;
 						}
 				}
 
