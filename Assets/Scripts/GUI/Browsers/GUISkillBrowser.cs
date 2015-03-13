@@ -25,6 +25,8 @@ namespace Frontiers.GUI
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						SubSelectionTabs = gameObject.GetComponent <GUITabs>();
 						SubSelectionTabs.OnSetSelection += OnSetSelection;
 						TabPage = gameObject.GetComponent <GUITabPage>();

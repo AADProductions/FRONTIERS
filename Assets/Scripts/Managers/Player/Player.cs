@@ -139,6 +139,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						mParentUnderManager = false;
 						DontDestroyOnLoad(transform.parent);
 						Get = this;

@@ -12,6 +12,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						//sets all vertex colors to black
 						//used to prevent rocks from being wiggly

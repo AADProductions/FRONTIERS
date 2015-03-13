@@ -132,6 +132,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						//Application.targetFrameRate = 60; yeah right
 						ExceptionHandler.SetupExceptionHandling();
 

@@ -51,6 +51,8 @@ namespace Frontiers.GUI
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						if (ControllingTabPage != null) {
 								ControllingTabPage.OnSelected += Show;
 								ControllingTabPage.OnDeselected += Hide;

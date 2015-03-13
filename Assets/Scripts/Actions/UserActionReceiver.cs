@@ -6,14 +6,14 @@ namespace Frontiers
 {
 		public class UserActionReceiver : ActionFilter <UserActionType>
 		{
-				public override void Awake()
+				public override void WakeUp()
 				{
 						mListeners = new Dictionary<UserActionType, List<ActionListener>>(EnumComparer<UserActionType>.Instance);
 						mSubscriptionAdd = new SubscriptionAdd <UserActionType>(SubscriptionAdd);
 						mSubscriptionCheck	= new SubscriptionCheck <UserActionType>(SubscriptionCheck);
 						mSubscribed = UserActionType.NoAction;
 						mDefault = UserActionType.NoAction;
-		
+
 						if ((int)Filter == 0) {
 								Filter = UserActionType.NoAction;
 						}
@@ -21,8 +21,7 @@ namespace Frontiers
 								FilterExceptions = UserActionType.NoAction;
 						}
 						mSubscribersSet = true;
-						base.Awake();
-
+						base.WakeUp();
 				}
 
 				public void SubscriptionAdd(ref UserActionType subscription, UserActionType action)

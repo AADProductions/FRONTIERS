@@ -149,6 +149,8 @@ namespace Frontiers.GUI
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						Console = GameManager.Get.GameCamera.GetComponent <DebugConsole>();
 						Missions = GameManager.Get.GameCamera.GetComponent <MissionTestingUtility>();

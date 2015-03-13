@@ -14,6 +14,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						mPotionLookup = new Dictionary <string, Potion>();
 						mPotionLookup.Clear();

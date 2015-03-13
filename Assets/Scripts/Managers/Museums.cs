@@ -29,6 +29,8 @@ namespace Frontiers
 				//we don't display shards so we don't keep active curated shards
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						ActiveMuseum = null;
 				}

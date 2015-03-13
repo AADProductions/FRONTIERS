@@ -18,11 +18,6 @@ namespace Frontiers.GUI
 				public GUIHudMiniAction MiniAction1;
 				public GUIHudMiniAction MiniAction2;
 
-				public override void WakeUp()
-				{
-
-				}
-
 				public override bool ActionCancel(double timeStamp)
 				{
 						//Debug.Log ("Action cancel in " + name);

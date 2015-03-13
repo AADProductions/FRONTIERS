@@ -29,6 +29,7 @@ namespace Frontiers
 				public override void WakeUp()
 				{
 						Get	= this;
+						base.WakeUp();
 				}
 
 				protected override void OnPushSettings ( ) {

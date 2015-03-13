@@ -110,6 +110,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						BlendLUT = CurrentLUT;
 						Default.ColorGrading.LutBlendTexture = BlendLUT;

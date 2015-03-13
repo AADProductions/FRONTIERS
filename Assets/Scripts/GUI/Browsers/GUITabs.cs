@@ -26,26 +26,22 @@ namespace Frontiers.GUI
 
 				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects)
 				{
+						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
+						w.SearchCamera = NGUICamera;
 						for (int i = 0; i < Buttons.Count; i++) {
-								FrontiersInterface.Widget w = new FrontiersInterface.Widget();
 								w.Collider = Buttons[i].Collider;
-								w.SearchCamera = NGUICamera;
 								currentObjects.Add(w);
 						}
 						for (int i = 0; i < Pages.Count; i++) {
 								if (Pages[i].Selected) {
 										//Debug.Log("Getting page " + Pages[i].name);
 										Pages[i].GetActiveInterfaceObjects(currentObjects);
-								} else {
-										//Debug.Log("Skipped page " + Pages[i].name + ", wasn't visible");
 								}
 						}
 						for (int i = 0; i < SubTabs.Count; i++) {
 								if (SubTabs[i].Visible) {
 										//Debug.Log("Getting subtab " + SubTabs[i].name);
 										SubTabs[i].GetActiveInterfaceObjects(currentObjects);
-								} else {
-										//Debug.Log("Skipped subtab " + SubTabs[i].name + ", wasn't visible");
 								}
 						}
 				}
@@ -174,6 +170,7 @@ namespace Frontiers.GUI
 						Owner = owner;
 						Owner.OnShow += Show;
 						Owner.OnHide += Hide;
+						NGUICamera = owner.NGUICamera;
 						Buttons.Clear();
 						Pages.Clear();
 
@@ -307,5 +304,7 @@ namespace Frontiers.GUI
 				Action OnShow { get; set; }
 
 				Action OnHide { get; set; }
+
+				Camera NGUICamera { get; }
 		}
 }

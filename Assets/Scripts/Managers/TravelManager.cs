@@ -15,6 +15,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						DesiredLocationTypes = PathMarkerType.PathOrigin;
 						State = FastTravelState.None;

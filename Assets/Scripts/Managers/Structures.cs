@@ -176,6 +176,8 @@ namespace Frontiers
 						if (mIsAwake)//the editor will call this sometimes
 							return;
 
+						base.WakeUp();
+
 						Get = this;
 
 						mCachedTemplateInstancesExterior = new Dictionary<string, List<Structure>>();

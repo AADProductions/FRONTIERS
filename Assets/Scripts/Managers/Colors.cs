@@ -124,6 +124,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						PathColors = gameObject.GetComponent <PathColorManager>();
 						BannerColors = gameObject.GetComponent <BannerColorManager>();
 

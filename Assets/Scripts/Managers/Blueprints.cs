@@ -17,6 +17,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						Debug.Log("Just woke up in blueprints");
 				}

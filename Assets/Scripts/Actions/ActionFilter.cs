@@ -17,7 +17,7 @@ namespace Frontiers
 
 				}
 
-				public virtual void Awake()
+				public void Awake()
 				{
 						WakeUp();
 				}

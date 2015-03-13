@@ -44,6 +44,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						mInstantiatedMissions = new Dictionary <string, Mission>();
 						mActiveQuestItems = new Dictionary <string, WorldItem>();

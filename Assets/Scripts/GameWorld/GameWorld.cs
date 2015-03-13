@@ -272,6 +272,8 @@ public partial class GameWorld : Manager
 
 		public override void WakeUp()
 		{
+				base.WakeUp();
+
 				Get = this;
 				mParentUnderManager = false;
 

@@ -19,7 +19,7 @@ namespace Frontiers.GUI
 				public UIPanel OptionButtonsPanel;
 				public List <UIButton> OptionButtons;
 				public GUIOptionListDivider DividerPrototype = new GUIOptionListDivider();
-				public GenericWorldItem DopplegangerProps = new GenericWorldItem ();
+				public GenericWorldItem DopplegangerProps = new GenericWorldItem();
 				public WIMode DopplegangerMode = WIMode.Stacked;
 				public GameObject Doppleganger;
 				public Transform DopplegangerParent;
@@ -29,6 +29,8 @@ namespace Frontiers.GUI
 
 				public override void WakeUp()
 				{			
+						base.WakeUp();
+
 						InventoryLight.intensity = 0f;
 						HideCrosshair = true;
 						UserActions.Filter = UserActionType.FlagsAll;

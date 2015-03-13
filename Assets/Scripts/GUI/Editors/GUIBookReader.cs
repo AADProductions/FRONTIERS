@@ -31,14 +31,14 @@ namespace Frontiers.GUI
 				public UIScrollBar CurrentScrollBar;
 				public float ScrollBarSensitivity = 0.05f;
 
-				public override void Awake()
+				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						SimpleMode.gameObject.SetLayerRecursively(Globals.LayerNumHidden);
 						WhiteOnBlack.gameObject.SetLayerRecursively(Globals.LayerNumHidden);
 						FormattingLabel.gameObject.SetActive(false);
 						OnLoseFocus += Finish;
-
-						base.Awake();
 				}
 
 				public override void Start()

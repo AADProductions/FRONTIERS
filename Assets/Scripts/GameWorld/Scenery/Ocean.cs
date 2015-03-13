@@ -28,6 +28,8 @@ namespace Frontiers.World
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 
 						SubmergeTrigger = OceanTopCollider.gameObject.GetOrAdd <WaterSubmergeObjects>();

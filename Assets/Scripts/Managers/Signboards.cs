@@ -11,6 +11,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						mCheckingSignboards = false;
 				}

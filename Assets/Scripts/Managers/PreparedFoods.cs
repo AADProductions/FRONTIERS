@@ -55,6 +55,8 @@ namespace Frontiers
 				#endif
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						mPreparedFoodLookup = new Dictionary <string, PreparedFood>();
 				}

@@ -29,6 +29,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						mParentUnderManager = false;
 						mARTimeScaleTarget	= 1.0f;

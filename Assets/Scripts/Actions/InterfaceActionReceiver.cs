@@ -11,7 +11,7 @@ namespace Frontiers
 				public bool ShowCursor = false;
 				public bool SuspendMessages = false;
 
-				public override void Awake()
+				public override void WakeUp()
 				{
 						mListeners = new Dictionary<InterfaceActionType, List<ActionListener>>(EnumComparer<InterfaceActionType>.Instance);
 						mSubscriptionCheck = new SubscriptionCheck <InterfaceActionType>(SubscriptionCheck);
@@ -19,7 +19,7 @@ namespace Frontiers
 						mSubscribed = InterfaceActionType.NoAction;
 						mDefault = InterfaceActionType.NoAction;
 						mSubscribersSet = true;
-						base.Awake();
+						base.WakeUp();
 				}
 
 				protected void SubscriptionAdd(ref InterfaceActionType subscription, InterfaceActionType action)

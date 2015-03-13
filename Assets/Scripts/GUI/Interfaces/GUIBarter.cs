@@ -69,8 +69,9 @@ namespace Frontiers.GUI
 
 				protected bool mPushingObjectToNGUIObjectOverTime = false;
 
-				public override void Awake()
+				public override void WakeUp()
 				{
+						base.WakeUp();
 						//create stack container displays
 						GameObject PlayerInventoryDisplayObject = NGUITools.AddChild(PlayerInventoryDisplayParent, GUIManager.Get.BarterContainerDisplay);
 						GameObject CharacterInventoryDisplayObject = NGUITools.AddChild(CharacterInventoryDisplayParent, GUIManager.Get.BarterContainerDisplay);
@@ -121,8 +122,6 @@ namespace Frontiers.GUI
 						CharacterGoodsBank.DisplayMode = GUIBank.BankDisplayMode.SmallTwoRows;
 
 						mRefreshBarterGUIAction = Refresh;
-
-						base.Awake();
 				}
 
 				protected override void OnFinish()

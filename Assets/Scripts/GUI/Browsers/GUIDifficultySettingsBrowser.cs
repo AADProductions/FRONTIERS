@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using UnityEngine;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using UnityEngine;
 using System;
 using System.Reflection;
 using System.Collections;
@@ -70,6 +70,8 @@ namespace Frontiers.GUI
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Mods.Get.Runtime.LoadAvailableMods(AvailableDifficulties, "DifficultySetting");
 
 						CurrentDifficultySetting = null;

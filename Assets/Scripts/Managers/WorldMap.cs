@@ -68,6 +68,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						WorldMapTransform = Get.gameObject.CreateChild("WorldMapTransform").transform;
 						WorldMapTransform.localScale = Vector3.one * (1 / 500f);

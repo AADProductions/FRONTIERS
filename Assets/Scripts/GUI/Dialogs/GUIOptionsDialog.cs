@@ -149,6 +149,11 @@ namespace Frontiers.GUI
 						AccessibilityRefresh();
 				}
 
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				{
+						Tabs.GetActiveInterfaceObjects(currentObjects);
+				}
+
 				#region widgets changing
 
 				public void OnChangeOculusMode()

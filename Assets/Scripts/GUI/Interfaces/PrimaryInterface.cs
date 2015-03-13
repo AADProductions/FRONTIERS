@@ -68,9 +68,10 @@ namespace Frontiers.GUI
 
 				}
 
-				public override void Awake()
+				public override void WakeUp()
 				{
-						base.Awake();
+						base.WakeUp();
+
 						if (mInterfaceLookup == null) {
 								mInterfaceLookup = new Dictionary <string, PrimaryInterface>();
 						}

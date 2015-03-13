@@ -48,6 +48,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						mParentUnderManager = false;
 						HasSelectedProfile	= false;

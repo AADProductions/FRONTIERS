@@ -16,6 +16,8 @@ namespace Frontiers.GUI
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						Tabs.NGUICamera = NGUICamera;
 				}

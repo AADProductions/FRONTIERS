@@ -43,6 +43,8 @@ namespace Frontiers.GUI
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						CurrentStartupPosition = null;
 						CurrentClothingCategory = null;
 						CurrentItemCategory = null;

@@ -7,7 +7,7 @@ using ExtensionMethods;
 
 namespace Frontiers.GUI
 {
-		public class FrontiersInterface : InterfaceActionFilter
+		public class FrontiersInterface : InterfaceActionFilter, IFrontiersInterface
 		{
 				public UICamera CameraInput { get; set; }
 
@@ -32,7 +32,8 @@ namespace Frontiers.GUI
 										}
 								}
 								return mNguiCamera;
-						} set {
+						}
+						set {
 								mNguiCamera = value;
 						}
 				}
@@ -41,18 +42,34 @@ namespace Frontiers.GUI
 				public UIAnchor.Side AnchorSide = UIAnchor.Side.Center;
 				protected Camera mNguiCamera;
 
-				public virtual void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				public static void GetActiveInterfaceObjectsInTransform(Transform startTransform, Camera searchCamera, List<Widget> currentObjects)
 				{
 						gGetColliders.Clear();
-						transform.GetComponentsInChildren <BoxCollider>(gGetColliders);
-						Widget w = new Widget();
-						w.SearchCamera = NGUICamera;
-						//the attached browser will be null for non-browser interfaces
-						//that's expected
-						w.AttachedBrowser = this as IGUIBrowser;
-						for (int i = 0; i < gGetColliders.Count; i++) {
-								w.Collider = gGetColliders[i];
+						startTransform.GetComponentsInChildren <BoxCollider>(gGetColliders);
+						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
+						IGUIBrowserObject bo = null;
+						w.SearchCamera = searchCamera;
+						for (int j = 0; j < gGetColliders.Count; j++) {
+								w.BoxCollider = gGetColliders[j];
+								if (w.BoxCollider.CompareTag(Globals.TagBrowserObject)) {
+										//if (w.Collider.transform.parent.CompareTag(Globals.TagBrowserObject)) {
+										//bo = (IGUIBrowserObject)w.Collider.GetComponent(typeof(IGUIBrowserObject));
+										//} else {
+										w.BrowserObject = (IGUIBrowserObject)w.BoxCollider.GetComponent(typeof(IGUIBrowserObject));
+								}
 								currentObjects.Add(w);
+						}
+				}
+
+				public virtual void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				{
+						//use the default method
+						GetActiveInterfaceObjectsInTransform(transform, NGUICamera, currentObjects);
+				}
+
+				public virtual FrontiersInterface.Widget FirstInterfaceObject {
+						get {
+								return new Widget();
 						}
 				}
 
@@ -158,23 +175,38 @@ namespace Frontiers.GUI
 				protected bool mDestroyed = false;
 				protected bool mFinished = false;
 
+				[Serializable]
 				public struct Widget
 				{
 						public Camera SearchCamera;
-						public BoxCollider Collider;
-	   					public IGUIBrowser AttachedBrowser;
+						public BoxCollider BoxCollider;
+						public IGUIBrowserObject BrowserObject;
 
 						public bool IsEmpty {
 								get {
-										return Collider == null || SearchCamera == null;
+										return BoxCollider == null || SearchCamera == null;
 								}
 								set {
-										Collider = null;
+										BoxCollider = null;
 										SearchCamera = null;
+								}
+						}
+
+						public bool IsBrowserObject {
+								get {
+										return BrowserObject != null;
 								}
 						}
 				}
 
-				protected static List <BoxCollider> gGetColliders = new List<BoxCollider> ();
+				protected static List <BoxCollider> gGetColliders = new List<BoxCollider>();
+				protected IBrowser mBrowser;
+		}
+
+		public interface IFrontiersInterface
+		{
+				void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects);
+
+				FrontiersInterface.Widget FirstInterfaceObject { get; }
 		}
 }

@@ -9,7 +9,7 @@ namespace Frontiers.GUI {
 		public string PrefabName = "GUIObject";
 		public string InitArgument = string.Empty;
 		public bool IsDestroyed { get { return mIsDestroyed; } }
-		public Camera NGUICamera;
+		public Camera NGUICamera { get; set; }
 
 		public virtual void Awake ( )
 		{

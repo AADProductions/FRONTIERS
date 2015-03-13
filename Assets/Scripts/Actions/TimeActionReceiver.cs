@@ -7,14 +7,14 @@ namespace Frontiers
 {
 		public class TimeActionReceiver : ActionFilter <TimeActionType>
 		{
-				public override void Awake()
+				public override void WakeUp()
 				{
 						mListeners = new Dictionary<TimeActionType, List<ActionListener>>(EnumComparer<TimeActionType>.Instance);
 						mSubscriptionAdd = new SubscriptionAdd <TimeActionType>(SubscriptionAdd);
 						mSubscriptionCheck = new SubscriptionCheck <TimeActionType>(SubscriptionCheck);
 						mSubscribed = TimeActionType.NoAction;
 						mDefault = TimeActionType.NoAction;
-		
+
 						if ((int)Filter == 0) {
 								Filter = TimeActionType.NoAction;
 						}
@@ -22,7 +22,7 @@ namespace Frontiers
 								FilterExceptions = TimeActionType.NoAction;
 						}
 						mSubscribersSet = true;
-						base.Awake();
+						base.WakeUp();
 				}
 
 				public void SubscriptionAdd(ref TimeActionType subscription, TimeActionType action)

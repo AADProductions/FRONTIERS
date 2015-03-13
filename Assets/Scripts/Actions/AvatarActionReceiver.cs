@@ -14,6 +14,7 @@ public class AvatarActionReceiver : ActionFilter <PlayerAvatarAction>
 				mSubscriptionCheck = new SubscriptionCheck <PlayerAvatarAction>(SubscriptionCheck);
 				mSubscribed = new PlayerAvatarAction(PlayerIDFlag.Local, AvatarActionType.NoAction, AvatarAction.NoAction);
 				mSubscribersSet = true;
+				base.WakeUp();
 		}
 
 		public void Subscribe(AvatarAction action, ActionListener listener)

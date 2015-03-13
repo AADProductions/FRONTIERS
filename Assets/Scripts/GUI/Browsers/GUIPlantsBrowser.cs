@@ -27,6 +27,8 @@ namespace Frontiers.GUI
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						SubSelectionTabs = gameObject.GetComponent <GUITabs>();
 						SubSelectionTabs.OnSetSelection += OnSetSelection;
 						mPlantDoppleganger.PackName = "Plants";

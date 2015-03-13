@@ -47,6 +47,8 @@ namespace Frontiers.GUI
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						SelectedWorldIndex = -1;
 						DayNightCycleSlider.sliderValue = 0.5f;//default
 						Tabs.Initialize(this);

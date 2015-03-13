@@ -34,6 +34,7 @@ namespace Frontiers.GUI
 				public override void WakeUp()
 				{
 						SelectedWorldIndex = -1;
+						base.WakeUp();
 				}
 
 				public override IEnumerable <PlayerGame> FetchItems()

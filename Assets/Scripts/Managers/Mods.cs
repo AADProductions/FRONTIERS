@@ -29,6 +29,8 @@ namespace Frontiers
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 						Editor.mods = this;
 						Runtime.mods = this;

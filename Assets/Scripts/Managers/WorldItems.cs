@@ -40,6 +40,8 @@ namespace Frontiers.World
 
 				public override void WakeUp()
 				{
+						base.WakeUp();
+
 						Get = this;
 
 						#if UNITY_EDITOR
