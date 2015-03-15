@@ -20,6 +20,7 @@ namespace Frontiers.GUI
 						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						newBrowserObject.name = editObject;
 						GUIGenericBrowserObject browserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
+						browserObject.AutoSelect = false;
 						browserObject.EditButton.target = gameObject;
 						browserObject.EditButton.functionName = "OnClickEditButton";
 

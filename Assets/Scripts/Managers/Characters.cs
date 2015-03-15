@@ -1141,13 +1141,13 @@ namespace Frontiers.World
 
 				#region updates
 
-				public Speech SpeechInResponseToDamage (float normalizedDamage, bool knowsPlayer, int characterRepWithPlayer, int characterRepInGeneral)
+				public Speech SpeechInResponseToDamage(float normalizedDamage, bool knowsPlayer, int characterRepWithPlayer, int characterRepInGeneral)
 				{
 						//TODO make this not just random
 						return DamageResponseSpeeches[UnityEngine.Random.Range(0, DamageResponseSpeeches.Count)];
 				}
 
-				protected WaitForSeconds mWaitForUpdatePilgrims = new WaitForSeconds (1f);
+				protected WaitForSeconds mWaitForUpdatePilgrims = new WaitForSeconds(1f);
 
 				public IEnumerator UpdatePilgrims()
 				{
@@ -1173,6 +1173,7 @@ namespace Frontiers.World
 												pilgrim.OnFastTravelFrame();
 										}
 								} else {
+										double waitUntil = 0;
 										//check to see if we need to spawn any more
 										System.Random random = new System.Random(Profile.Get.CurrentGame.Seed);
 										while (SpawnedPilgrims.Count < Globals.MaxSpawnedPilgrims) {
@@ -1196,9 +1197,15 @@ namespace Frontiers.World
 																}
 														}
 												}
-												yield return mWaitForUpdatePilgrims;
+												waitUntil = WorldClock.RealTime + 5f;
+												while (WorldClock.RealTime < waitUntil || !Player.Local.HasSpawned) {
+														yield return null;
+												}
 										}
-										yield return mWaitForUpdatePilgrims;
+										waitUntil = WorldClock.RealTime + 5f;
+										while (WorldClock.RealTime < waitUntil || !Player.Local.HasSpawned) {
+												yield return null;
+										}
 								}
 						}
 						mUpdatingPilgrims = false;

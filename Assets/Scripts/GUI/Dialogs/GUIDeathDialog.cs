@@ -14,7 +14,17 @@ namespace Frontiers.GUI
 				public UILabel CauseOfDeathLabel;
 				public UILabel OfLabel;
 				public UILabel TitleLabel;
+				public GUIOptionListDialog OptionListDialog;
 				public bool UsingSkillList = false;
+
+				public override Widget FirstInterfaceObject {
+						get {
+								if (OptionListDialog != null) {
+										return OptionListDialog.FirstInterfaceObject;
+								}
+								return base.FirstInterfaceObject;
+						}
+				}
 
 				public override void WakeUp()
 				{
@@ -79,8 +89,7 @@ namespace Frontiers.GUI
 						}
 						//the list can't go away unless the player makes a choice
 						optionsList.ForceChoice = true;
-						GUIOptionListDialog dialog = null;
-						if (optionsList.TryToSpawn(true, out dialog)) {
+						if (optionsList.TryToSpawn(true, out OptionListDialog)) {
 								Debug.Log("Trying to spawn options list...");
 								UsingSkillList = true;
 						}

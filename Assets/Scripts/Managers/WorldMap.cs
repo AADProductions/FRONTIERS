@@ -445,7 +445,7 @@ namespace Frontiers
 								wml.IconTransform.localScale = Vector3.one * wml.IconScale;
 								icon.alpha = 0f;
 								icon.enabled = true;
-								newWMIconGo.AddComponent <SphereCollider>();//for mouseovers
+								wml.Collider = newWMIconGo.AddComponent <SphereCollider>();//for mouseovers
 
 								if (wml.IsMarked || wml.IsNew) {
 										NGUIWorldMap.Get.CreateMarkedLocationSprite(wml);
@@ -879,6 +879,9 @@ namespace Frontiers
 								if (Attention != null) {
 										Attention.enabled = false;
 								}
+								if (Collider != null) {
+										Collider.enabled = false;
+								}
 								return;
 						} else {
 								if (LabelTransform != null) {
@@ -895,6 +898,9 @@ namespace Frontiers
 										AttentionTransform.localPosition = pos;
 										Attention.enabled = true;
 										Attention.depth = Mathf.FloorToInt(-distanceFromCamera * 1000);
+								}
+								if (Collider != null) {
+										Collider.enabled = true;
 								}
 						}
 
@@ -1002,6 +1008,7 @@ namespace Frontiers
 				public float IconScale;
 				public float IconAlpha;
 				public bool Display;
+				public SphereCollider Collider;
 				public bool SearchHit;
 				public bool IsNew;
 				public bool IsMarked;

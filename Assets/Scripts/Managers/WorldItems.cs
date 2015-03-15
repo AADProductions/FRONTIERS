@@ -581,7 +581,7 @@ namespace Frontiers.World
 												dopGameObject.layer = Globals.LayerNumWorldItemInventory;
 												//NGUI doesn't play nice with outline shaders in VR mode
 												materials.AddRange(wiMr.sharedMaterials);
-												if (!VRManager.OculusModeEnabled) {
+												if (!VRManager.VRModeEnabled) {
 														for (int j = 0; j < wiMr.sharedMaterials.Length; j++) {
 																if (item.Props.Global.UseCutoutShader) {
 																		Material baseMat = wiMr.sharedMaterials[j];

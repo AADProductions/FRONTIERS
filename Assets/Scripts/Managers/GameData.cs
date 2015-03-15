@@ -661,8 +661,8 @@ namespace Frontiers
 
 								public static string CleanGameName(string gameName)
 								{
-										if (gameName == gLiveGameFolderName) {
-												return "";
+										if (gameName == gLiveGameFolderName || string.IsNullOrEmpty (gameName)) {
+												gameName = "Game";
 										}
 
 										gameName = CleanFileOrFolderName(gameName);
@@ -671,6 +671,7 @@ namespace Frontiers
 										gameName = gameName.Replace("_", "");
 										gameName = gameName.Replace("-", "");
 										gameName = gameName.Substring(0, Mathf.Min(Globals.MaxGameNameCharacters, gameName.Length));
+
 										return gameName;
 								}
 

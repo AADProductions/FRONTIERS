@@ -29,18 +29,20 @@ namespace Frontiers.GUI
 						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
 						w.SearchCamera = NGUICamera;
 						for (int i = 0; i < Buttons.Count; i++) {
-								w.Collider = Buttons[i].Collider;
-								currentObjects.Add(w);
+								if (!Buttons[i].Disabled && Buttons [i].gameObject.layer != Globals.LayerNumGUIRaycastIgnore) {
+										w.BoxCollider = Buttons[i].Collider;
+										currentObjects.Add(w);
+								}
 						}
 						for (int i = 0; i < Pages.Count; i++) {
 								if (Pages[i].Selected) {
-										//Debug.Log("Getting page " + Pages[i].name);
+										Debug.Log("Getting page " + Pages[i].name);
 										Pages[i].GetActiveInterfaceObjects(currentObjects);
 								}
 						}
 						for (int i = 0; i < SubTabs.Count; i++) {
 								if (SubTabs[i].Visible) {
-										//Debug.Log("Getting subtab " + SubTabs[i].name);
+										Debug.Log("Getting subtab " + SubTabs[i].name);
 										SubTabs[i].GetActiveInterfaceObjects(currentObjects);
 								}
 						}

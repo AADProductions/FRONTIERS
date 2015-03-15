@@ -234,6 +234,7 @@ namespace Frontiers.GUI
 						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						newBrowserObject.name = editObject.SkillName;
 						GUIGenericBrowserObject skillBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
+						skillBrowserObject.AutoSelect = false;
 
 						skillBrowserObject.Icon.atlas = Mats.Get.IconsAtlas;
 						skillBrowserObject.Icon.spriteName = "SkillIconCraftRepairMachine";

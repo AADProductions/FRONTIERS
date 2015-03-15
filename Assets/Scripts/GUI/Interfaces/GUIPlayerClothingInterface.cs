@@ -68,12 +68,12 @@ namespace Frontiers.GUI
 				{
 						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
 						for (int i = 0; i < Squares.Count; i++) {
-								w.Collider = Squares[i].Collider;
+								w.BoxCollider = Squares[i].Collider;
 								w.SearchCamera = NGUICamera;
 								currentObjects.Add(w);
 						}
 						for (int i = 0; i < StatButtons.Count; i++) {
-								w.Collider = StatButtons[i];
+								w.BoxCollider = StatButtons[i];
 								w.SearchCamera = NGUICamera;
 								currentObjects.Add(w);
 						}
@@ -250,7 +250,7 @@ namespace Frontiers.GUI
 						CreateWearableSquare(UpperBodySquaresParent, new Vector3(325f, -250f, -50f), WearableType.Armor, BodyPartType.Arm, BodyOrientation.Left, upperBodyContainer.StackList[Wearables.UpperBodyLeftArmIndex]);//left arm
 						CreateWearableSquare(UpperBodySquaresParent, new Vector3(75f, -250f, -50f), WearableType.Armor, BodyPartType.Arm, BodyOrientation.Right, upperBodyContainer.StackList[Wearables.UpperBodyRightArmIndex]);//right arm
 						CreateWearableSquare(UpperBodySquaresParent, new Vector3(400f, -50f, -50f), WearableType.Jewelry, BodyPartType.Neck, BodyOrientation.None, upperBodyContainer.StackList[Wearables.UpperBodyNeckIndex]);//neck
-						CreateWearableSquare(UpperBodySquaresParent, new Vector3(200f, -175f, -50f), WearableType.Armor, BodyPartType.Chest, BodyOrientation.None, upperBodyContainer.StackList[Wearables.UpperBodyChestIndex]);//chest
+						CreateWearableSquare(UpperBodySquaresParent, new Vector3(200f, -150f, -50f), WearableType.Armor, BodyPartType.Chest, BodyOrientation.None, upperBodyContainer.StackList[Wearables.UpperBodyChestIndex]);//chest
 						CreateWearableSquare(UpperBodySquaresParent, new Vector3(350f, -350f, -50f), WearableType.Armor | WearableType.Clothing, BodyPartType.Hand, BodyOrientation.Left, upperBodyContainer.StackList[Wearables.UpperBodyLeftHandIndex]);//left hand
 						CreateWearableSquare(UpperBodySquaresParent, new Vector3(50f, -350f, -50f), WearableType.Armor | WearableType.Clothing, BodyPartType.Hand, BodyOrientation.Right, upperBodyContainer.StackList[Wearables.UpperBodyRightHandIndex]);//right hand
 
@@ -262,8 +262,8 @@ namespace Frontiers.GUI
 						CreateWearableSquare(LowerBodySquaresParent, new Vector3(150f, -650f, -50f), WearableType.Clothing, BodyPartType.Foot, BodyOrientation.Right, lowerBodyContainer.StackList[Wearables.LowerBodyRightFoodIndex]);//right foot
 						CreateWearableSquare(LowerBodySquaresParent, new Vector3(250f, -550f, -50f), WearableType.Armor, BodyPartType.Shin, BodyOrientation.Left, lowerBodyContainer.StackList[Wearables.LowerBodyLeftShinIndex]);//left shin
 						CreateWearableSquare(LowerBodySquaresParent, new Vector3(150f, -550f, -50f), WearableType.Armor, BodyPartType.Shin, BodyOrientation.Right, lowerBodyContainer.StackList[Wearables.LowerBodyRightShinIndex]);//right shin
-						CreateWearableSquare(LowerBodySquaresParent, new Vector3(400f, -500f, -50f), WearableType.Jewelry, BodyPartType.Finger, BodyOrientation.Left, lowerBodyContainer.StackList[Wearables.LowerBodyLeftFingerIndex]);//left finger
-						CreateWearableSquare(LowerBodySquaresParent, new Vector3(0f, -500f, -50f), WearableType.Jewelry, BodyPartType.Finger, BodyOrientation.Right, lowerBodyContainer.StackList[Wearables.LowerBodyRightFingerIndex]);//right finger
+						CreateWearableSquare(LowerBodySquaresParent, new Vector3(400f, -475f, -50f), WearableType.Jewelry, BodyPartType.Finger, BodyOrientation.Left, lowerBodyContainer.StackList[Wearables.LowerBodyLeftFingerIndex]);//left finger
+						CreateWearableSquare(LowerBodySquaresParent, new Vector3(0f, -475f, -50f), WearableType.Jewelry, BodyPartType.Finger, BodyOrientation.Right, lowerBodyContainer.StackList[Wearables.LowerBodyRightFingerIndex]);//right finger
 
 						StatButtons.Clear();
 						BoxCollider b = null;

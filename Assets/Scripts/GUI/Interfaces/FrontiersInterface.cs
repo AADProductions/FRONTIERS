@@ -51,11 +51,22 @@ namespace Frontiers.GUI
 						w.SearchCamera = searchCamera;
 						for (int j = 0; j < gGetColliders.Count; j++) {
 								w.BoxCollider = gGetColliders[j];
+								if (w.BoxCollider.gameObject.layer == Globals.LayerNumGUIRaycastIgnore || !w.BoxCollider.gameObject.activeSelf) {
+										continue;
+								}
+								w.BrowserObject = null;
 								if (w.BoxCollider.CompareTag(Globals.TagBrowserObject)) {
-										//if (w.Collider.transform.parent.CompareTag(Globals.TagBrowserObject)) {
-										//bo = (IGUIBrowserObject)w.Collider.GetComponent(typeof(IGUIBrowserObject));
-										//} else {
 										w.BrowserObject = (IGUIBrowserObject)w.BoxCollider.GetComponent(typeof(IGUIBrowserObject));
+										if (w.BrowserObject == null) {
+												w.BrowserObject = (IGUIBrowserObject)w.BoxCollider.transform.parent.GetComponent(typeof(IGUIBrowserObject));
+										}
+								} else if (w.BoxCollider.CompareTag(Globals.TagIgnoreTab)) {
+										continue;
+								} else if (w.BoxCollider.CompareTag(Globals.TagActiveObject)) {
+										//never use scrollbars
+										if (w.BoxCollider.gameObject.HasComponent <UIScrollBar>() || w.BoxCollider.transform.parent.gameObject.HasComponent<UIScrollBar>()) {
+												continue;
+										}
 								}
 								currentObjects.Add(w);
 						}
@@ -123,6 +134,15 @@ namespace Frontiers.GUI
 				public virtual void EnableInput()
 				{
 						gameObject.SetLayerRecursively(Globals.LayerNumGUIRaycast);
+						#if UNITY_EDITOR
+						if ((VRManager.VRModeEnabled | VRManager.VRTestingModeEnabled)) {
+								GUICursor.Get.SelectWidget(FirstInterfaceObject);
+						}
+						#else
+						if (VRManager.VRModeEnabled) {
+								GUICursor.Get.SelectWidget(FirstInterfaceObject);
+						}
+						#endif
 				}
 
 				public Action OnLoseFocus { get; set; }
@@ -179,7 +199,7 @@ namespace Frontiers.GUI
 				public struct Widget
 				{
 						public Camera SearchCamera;
-						public BoxCollider BoxCollider;
+						public Collider BoxCollider;
 						public IGUIBrowserObject BrowserObject;
 
 						public bool IsEmpty {

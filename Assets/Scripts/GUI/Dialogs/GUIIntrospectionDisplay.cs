@@ -119,7 +119,7 @@ namespace Frontiers.GUI
 				{
 						base.Update();
 
-						if (VRManager.OculusModeEnabled) {
+						if (VRManager.VRModeEnabled) {
 								transform.localPosition = OculusModeOffset;
 						} else {
 								transform.localPosition = Vector3.zero;

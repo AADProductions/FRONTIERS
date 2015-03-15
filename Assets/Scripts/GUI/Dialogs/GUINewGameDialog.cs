@@ -39,6 +39,20 @@ namespace Frontiers.GUI
 				public GUITabPage ControllingTabPage;
 				public UISlider DayNightCycleSlider;
 
+				public override Widget FirstInterfaceObject {
+						get {
+								Widget w = new Widget();
+								w.SearchCamera = NGUICamera;
+								w.BoxCollider = GameNameInput.GetComponent<BoxCollider>();
+								return w;
+						}
+				}
+
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				{
+						Tabs.GetActiveInterfaceObjects(currentObjects);
+				}
+
 				public bool HasCurrentWorld {
 						get {
 								return CurrentWorld != null;
@@ -135,15 +149,14 @@ namespace Frontiers.GUI
 			
 						mRefreshingGameName = true;
 			
-						string error = string.Empty;
 						string cleanAlternative = string.Empty;
-						if (!CurrentWorldLocked && Profile.Get.ValidateNewGameName(AvailableWorlds[SelectedWorldIndex], GameNameInput.text, out cleanAlternative, out error)) {
+						if (!CurrentWorldLocked && Profile.Get.ValidateNewGameName(AvailableWorlds[SelectedWorldIndex], GameNameInput.text, out cleanAlternative)) {
 								OKNameButton.SendMessage("SetEnabled");
 						} else {
 								OKNameButton.SendMessage("SetDisabled");
 						}
-						GameNameLabel.text = error;
 						GameNameInput.text = cleanAlternative;
+						GameNameInput.label.text = cleanAlternative;
 			
 						mRefreshingGameName = false;
 				}

@@ -88,13 +88,12 @@ namespace Frontiers.GUI
 						ValidNewGame = false;
 						ValidExistingGame = false;
 
-						string createError = string.Empty;
 						string cleanAlternative = string.Empty;
 
-						if (Profile.Get.ValidateNewGameName(Profile.Get.CurrentGame.WorldName, GameCreateResult.text, out cleanAlternative, out createError)) {
+						if (Profile.Get.ValidateNewGameName(Profile.Get.CurrentGame.WorldName, GameCreateResult.text, out cleanAlternative)) {
 								ValidNewGame = true;
 								Message.text = string.Empty;
-						} else if (Profile.Get.ValidateExistingGameName(Profile.Get.CurrentGame.WorldName, GameCreateResult.text, out createError)) {
+						} else if (Profile.Get.ValidateExistingGameName(Profile.Get.CurrentGame.WorldName, GameCreateResult.text)) {
 								ValidExistingGame = true;
 								Message.text = "This will override existing game " + GameCreateResult.text;
 						}

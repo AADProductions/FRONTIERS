@@ -319,7 +319,7 @@ namespace Frontiers.GUI
 
 						PrimaryCamera.enabled = PrimaryInterfacesEnabled;
 
-						if (VRManager.OculusModeEnabled) {
+						if (VRManager.VRModeEnabled) {
 								NGUIPrimaryRoot.manualHeight = Globals.ScreenAspectRatioMaxVR;
 								NGUISecondaryRoot.manualHeight = Globals.ScreenAspectRatioMaxVR;
 								NGUIBaseRoot.manualHeight = Globals.ScreenAspectRatioMaxVR;

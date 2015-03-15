@@ -31,11 +31,14 @@ namespace Frontiers.GUI
 
 				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects)
 				{
-						for (int i = 0; i < Panels.Count; i++) {
-								FrontiersInterface.GetActiveInterfaceObjectsInTransform (Panels[i].transform, NGUICamera, currentObjects);
-						}
 						if (HasSubTabs) {
 								SubTabs.GetActiveInterfaceObjects(currentObjects);
+						} else {
+								for (int i = 0; i < Panels.Count; i++) {
+										if (Panels[i].gameObject.layer != Globals.LayerNumGUIRaycastIgnore) {
+												FrontiersInterface.GetActiveInterfaceObjectsInTransform(Panels[i].transform, NGUICamera, currentObjects);
+										}
+								}
 						}
 				}
 

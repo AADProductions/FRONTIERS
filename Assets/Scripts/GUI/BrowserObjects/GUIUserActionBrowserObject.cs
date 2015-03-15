@@ -270,6 +270,15 @@ namespace Frontiers.GUI
 						MouseBinding.text = mSetting.Mouse.ToString().Replace("None", "");
 				}
 
+				public override bool AutoSelect {
+						get {
+								return false;
+						}
+						set {
+								return;
+						}
+				}
+
 				protected ActionSetting mSetting;
 				public static GUIUserActionBrowserObject gActiveObject = null;
 		}

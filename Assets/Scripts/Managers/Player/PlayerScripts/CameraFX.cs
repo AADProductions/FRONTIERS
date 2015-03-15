@@ -144,7 +144,7 @@ namespace Frontiers
 						}
 
 						//enable / disable cameras based on oculus mode
-						if (VRManager.OculusModeEnabled) {
+						if (VRManager.VRModeEnabled) {
 								OvrLeft.CopyFrom(Default);
 								OvrRight.CopyFrom(Default);
 								OvrLeft.cam.farClipPlane = Default.cam.farClipPlane;
@@ -161,7 +161,7 @@ namespace Frontiers
 
 				public void RefreshOculusMode()
 				{
-						if (VRManager.OculusModeEnabled) {
+						if (VRManager.VRModeEnabled) {
 								Default.cam.enabled = false;
 								OvrLeft.cam.enabled = true;
 								OvrRight.cam.enabled = true;

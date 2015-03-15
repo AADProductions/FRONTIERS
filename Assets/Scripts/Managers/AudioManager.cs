@@ -355,7 +355,7 @@ namespace Frontiers
 
 						//see if we're still needed
 						if (CurrentMusic != music) {
-								Debug.Log("AUDIOMANAGER: whoops, we got changed in the meantime, no longer trying to play " + music.ToString());
+								//Debug.Log("AUDIOMANAGER: whoops, we got changed in the meantime, no longer trying to play " + music.ToString());
 								yield break;
 						}
 						//start updating!
@@ -389,12 +389,7 @@ namespace Frontiers
 						//if it has a clip destroy it to prevent memory leaks
 						if (FadingInAudio.clip != null && FadingInAudio.clip.name != fileName) {
 								FadingInAudio.Stop();
-								Debug.Log("Destroying clip " + FadingInAudio.clip.name + " because it doesn't match " + fileName);
-								if (FadingOutAudio != null && FadingOutAudio.clip != null) {
-										Debug.Log("Fading out audio clip: " + FadingOutAudio.clip.name);
-								} else {
-										Debug.Log("Fading out audio clip was null");
-								}
+								//Debug.Log("Destroying clip " + FadingInAudio.clip.name + " because it doesn't match " + fileName);
 								GameObject.Destroy(FadingInAudio.clip);
 								FadingInAudio.clip = null;
 						}
@@ -445,7 +440,7 @@ namespace Frontiers
 								}
 						}
 						if (!FadingInAudio.isPlaying) {
-								Debug.Log("AUDIO MANAGER: Playing audio clip " + FadingInAudio.clip.name);
+								//Debug.Log("AUDIO MANAGER: Playing audio clip " + FadingInAudio.clip.name);
 								FadingInAudio.Play();
 						}
 

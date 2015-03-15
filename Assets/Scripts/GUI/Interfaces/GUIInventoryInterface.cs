@@ -66,20 +66,17 @@ namespace Frontiers.GUI
 						}
 						QuickslotsDisplay.GetActiveInterfaceObjects(currentObjects);
 						InventoryTabs.GetActiveInterfaceObjects(currentObjects);
-						ClothingInterface.GetActiveInterfaceObjects(currentObjects);
-						CraftingInterface.GetActiveInterfaceObjects(currentObjects);
-
-						if (StackContainerInterface.Visible) {
-								StackContainerInterface.GetActiveInterfaceObjects(currentObjects);
-						}
+						//ClothingInterface.GetActiveInterfaceObjects(currentObjects);
+						//CraftingInterface.GetActiveInterfaceObjects(currentObjects);
+						StackContainerInterface.GetActiveInterfaceObjects(currentObjects);
 
 						Widget w = new Widget();
 						w.SearchCamera = NGUICamera;
 
-						w.Collider = QuickslotsCarrySquare.Collider;
+						w.BoxCollider = QuickslotsCarrySquare.Collider;
 						currentObjects.Add(w);
 
-						w.Collider = CloseButton.GetComponent <BoxCollider>();
+						w.BoxCollider = CloseButton.GetComponent <BoxCollider>();
 						currentObjects.Add(w);
 				}
 
@@ -154,6 +151,7 @@ namespace Frontiers.GUI
 				{	
 						CreateContainerDisplays();
 						CraftingInterface.Initialize(string.Empty);
+						StackContainerInterface.NGUICamera = NGUICamera;
 						InventoryTabs.Initialize(this);
 						ShowQuickslots = true;
 						mInitialized = true;
@@ -314,7 +312,7 @@ namespace Frontiers.GUI
 
 				public void CloseStackContainer()
 				{
-						//		StackContainerInterface.Close ( );
+						//StackContainerInterface.Close ( );
 				}
 
 				public void SetActiveQuickslots(int activeQuickslot)

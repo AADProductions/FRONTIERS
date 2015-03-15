@@ -6,32 +6,41 @@ using System;
 
 namespace Frontiers.GUI
 {
-	public class GUIFocusOnDialog : GUIEditor<MessageCancelDialogResult>
-	{
-		public UICheckbox DontShowUntilNextUpdate;
-		public UICheckbox NeverShowAgain;
-
-		public override bool ActionCancel(double timeStamp)
+		public class GUIFocusOnDialog : GUIEditor<MessageCancelDialogResult>
 		{
-			if (DontShowUntilNextUpdate.isChecked) {
-				Profile.Get.CurrentPreferences.HideDialogs.Add(GameManager.FocusOnSubject);
-			}
-			if (NeverShowAgain.isChecked) {
-				Profile.Get.CurrentPreferences.HideDialogs.Add("HideAllFocusUpdates");
-			}
-			//save our checkbox prefs
-			Profile.Get.SaveCurrent(ProfileComponents.Preferences);
-			return base.ActionCancel(timeStamp);
-		}
+				public UICheckbox DontShowUntilNextUpdate;
+				public UICheckbox NeverShowAgain;
 
-		public override void PushEditObjectToNGUIObject()
-		{
-			return;
-		}
+				public override Widget FirstInterfaceObject {
+						get {
+								Widget w = new Widget();
+								w.SearchCamera = NGUICamera;
+								w.BoxCollider = DontShowUntilNextUpdate.GetComponent<BoxCollider>();
+								return w;
+						}
+				}
 
-		public void OnClickCancelButton()
-		{
-			ActionCancel(WorldClock.AdjustedRealTime);
+				public override bool ActionCancel(double timeStamp)
+				{
+						if (DontShowUntilNextUpdate.isChecked) {
+								Profile.Get.CurrentPreferences.HideDialogs.Add(GameManager.FocusOnSubject);
+						}
+						if (NeverShowAgain.isChecked) {
+								Profile.Get.CurrentPreferences.HideDialogs.Add("HideAllFocusUpdates");
+						}
+						//save our checkbox prefs
+						Profile.Get.SaveCurrent(ProfileComponents.Preferences);
+						return base.ActionCancel(timeStamp);
+				}
+
+				public override void PushEditObjectToNGUIObject()
+				{
+						return;
+				}
+
+				public void OnClickCancelButton()
+				{
+						ActionCancel(WorldClock.AdjustedRealTime);
+				}
 		}
-	}
 }

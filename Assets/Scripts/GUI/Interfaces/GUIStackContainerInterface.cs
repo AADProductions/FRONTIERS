@@ -20,19 +20,20 @@ namespace Frontiers.GUI
 
 				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects)
 				{
+						ContainerDisplay.NGUICamera = NGUICamera;
 						ContainerDisplay.GetActiveInterfaceObjects(currentObjects);
 						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
 						w.SearchCamera = NGUICamera;
 
 						if (TakeAllButton != null && TakeContainerButton != null) {
-								w.Collider = TakeContainerButton.GetComponent <BoxCollider>();
+								w.BoxCollider = TakeContainerButton.GetComponent <BoxCollider>();
 								currentObjects.Add(w);
 
-								w.Collider = TakeAllButton.GetComponent <BoxCollider>();
+								w.BoxCollider = TakeAllButton.GetComponent <BoxCollider>();
 								currentObjects.Add(w);
 						}
 
-						w.Collider = ShowHideButton.GetComponent <BoxCollider>();
+						w.BoxCollider = ShowHideButton.GetComponent <BoxCollider>();
 						currentObjects.Add(w);
 				}
 

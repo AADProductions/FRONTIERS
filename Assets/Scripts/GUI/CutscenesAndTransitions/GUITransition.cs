@@ -7,7 +7,7 @@ namespace Frontiers.GUI
 {
 		public class GUITransition : MonoBehaviour
 		{
-				public string OnFinishedMessage = string.Empty;
+				public string OnFinishedMessage = "OnFinishScaleUp";
 				public string OnProceedMessage = string.Empty;
 
 				public double TransitionSpeed {

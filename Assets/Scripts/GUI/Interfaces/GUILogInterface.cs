@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Frontiers.GUI
 {
@@ -9,9 +10,19 @@ namespace Frontiers.GUI
 				public UIButtonMessage CloseButton;
 				public GUITabs Tabs;
 
-				public override void GetActiveInterfaceObjects(System.Collections.Generic.List<Widget> currentObjects)
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
 				{
 						Tabs.GetActiveInterfaceObjects(currentObjects);
+						GUIDetailsPage.Get.GetActiveInterfaceObjects(currentObjects);
+				}
+
+				public override Widget FirstInterfaceObject {
+						get {
+								Widget w = new Widget();
+								w.BoxCollider = Tabs.Buttons[0].gameObject.GetComponent <BoxCollider>();
+								w.SearchCamera = NGUICamera;
+								return w;
+						}
 				}
 
 				public override void WakeUp()

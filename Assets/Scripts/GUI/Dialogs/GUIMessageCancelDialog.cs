@@ -12,6 +12,15 @@ namespace Frontiers.GUI
 				public UILabel CancelButtonLabel;
 				public UILabel MessageLabel;
 
+				public override Widget FirstInterfaceObject {
+						get {
+								Widget w = new Widget();
+								w.SearchCamera = NGUICamera;
+								w.BoxCollider = CancelButton.GetComponent<BoxCollider>();
+								return w;
+						}
+				}
+
 				public override bool ActionCancel(double timeStamp)
 				{
 						if (mEditObject != null) {

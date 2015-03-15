@@ -26,6 +26,7 @@ namespace Frontiers.GUI
 				{
 						//this will get everything on all tabs
 						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects);
+						base.GetActiveInterfaceObjects(currentObjects);
 				}
 
 				public override void WakeUp()
@@ -160,6 +161,7 @@ namespace Frontiers.GUI
 
 						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						GUIGenericBrowserObject bookBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
+						bookBrowserObject.AutoSelect = false;
 						//if the book hasn't been read yet keep it near the top
 						Color bookColor = Colors.Get.BookColorGeneric;
 						Color textColor = Color.white;

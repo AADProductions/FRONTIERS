@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using Frontiers.World;
+using System.Collections.Generic;
 
 namespace Frontiers.GUI
 {
@@ -18,6 +19,7 @@ namespace Frontiers.GUI
 				public Vector4 ClippingOpen;
 				public Vector4 ClippingTarget;
 				public GenericWorldItem DopplegangerProps = GenericWorldItem.Empty;
+				public GameObject CloseButton;
 				public GameObject Doppleganger;
 				public GameObject DopplegangerButton;
 				public UILabel DopplegangerButtonLabel;
@@ -29,6 +31,20 @@ namespace Frontiers.GUI
 				public float DopplegangerScale = 1f;
 				public Collider DopplegangerBoundsCollider;
 				FrontiersInterface LastUser;
+
+				public void GetActiveInterfaceObjects(List<Frontiers.GUI.FrontiersInterface.Widget> currentObjects)
+				{
+						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
+						w.SearchCamera = GUILogInterface.Get.NGUICamera;
+						w.BoxCollider = ScrollBar.foreground.GetComponent <BoxCollider>();
+						currentObjects.Add(w);
+						if (DopplegangerButton.activeSelf) {
+								w.BoxCollider = DopplegangerButton.GetComponent <BoxCollider>();
+								currentObjects.Add(w);
+						}
+						w.BoxCollider = CloseButton.GetComponent <BoxCollider>();
+						currentObjects.Add(w);
+				}
 
 				public void Start()
 				{

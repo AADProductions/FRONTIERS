@@ -29,6 +29,17 @@ namespace Frontiers.GUI
 						}
 				}
 
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				{
+						Tabs.GetActiveInterfaceObjects(currentObjects);
+				}
+
+				public override Widget FirstInterfaceObject {
+						get {
+								return ProfileBrowser.FirstInterfaceObject;
+						}
+				}
+
 				public void OnSetSelection()
 				{
 						if (Tabs.SelectedTab == "Create") {

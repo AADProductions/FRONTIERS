@@ -59,7 +59,7 @@ namespace Frontiers.GUI
 						FrontiersInterface.Widget w = new Widget();
 						w.SearchCamera = NGUICamera;
 						for (int i = 0; i < StatusMeters.Count; i++) {
-								w.Collider = StatusMeters[i].Collider;
+								w.BoxCollider = StatusMeters[i].Collider;
 						}
 				}
 
@@ -241,7 +241,7 @@ namespace Frontiers.GUI
 								return;
 						} else {
 								for (int i = 0; i < MasterAnchors.Count; i++) {
-										if (VRManager.OculusModeEnabled) {
+										if (VRManager.VRModeEnabled) {
 												MasterAnchors[i].relativeOffset = AnchorVROffset;
 										} else {
 												MasterAnchors[i].relativeOffset = Vector2.zero;

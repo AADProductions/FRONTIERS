@@ -8,618 +8,707 @@ using System;
 #pragma warning disable 0219//TODO get rid of this crap
 namespace Frontiers.GUI
 {
-	public abstract class GUIEditor <R> : SecondaryInterface, IGUIChildEditor <R>, IGUIChildEditor
-	{
-		public GUIEditor()
+		public abstract class GUIEditor <R> : SecondaryInterface, IGUIChildEditor <R>, IGUIChildEditor
 		{
-			mGUIEditorID = GUIManager.GetNextGUIID();
-		}
-
-		public ulong GUIEditorID {
-			get {
-				return mGUIEditorID;
-			}
-		}
-
-		public R EditObject {
-			get {
-				return mEditObject;
-			}
-		}
-
-		public bool HasEditObject {
-			get {
-				return mEditObject != null;
-			}
-		}
-
-		public GameObject NGUIObject {
-			get;
-			set;
-		}
-
-		public GameObject NGUIParentObject {
-			get;
-			set;
-		}
-
-		public virtual bool IsFinished {
-			get {
-				return mFinished;
-			}
-		}
-
-		public void ReceiveFromParentEditor(R editObject)
-		{
-			ReceiveFromParentEditor(editObject, null);
-		}
-
-		public virtual void ReceiveFromParentEditor(R editObject, ChildEditorCallback <R> callBack)
-		{
-			mEditObject = editObject;
-			if (callBack != null) {
-				//this will preserve the callback
-				//if we call this again to reset items
-				mCallBack = callBack;
-			}
-
-			if (Manager.IsAwake <GUIManager>()) {
-				GUIManager.Get.GetFocus(this);
-			}
-			//if it's a generic dialog result subscribe to the refresh action
-			GenericDialogResult gdr = mEditObject as GenericDialogResult;
-			if (gdr != null) {
-				gdr.RefreshAction += Refresh;
-			}
-			PushEditObjectToNGUIObject();
-			if (!Visible) {
-				Show();
-			}
-		}
-
-		public virtual void Refresh()
-		{
-			PushEditObjectToNGUIObject();
-		}
-
-		protected override void OnFinish()
-		{
-			if (mFinished) {
-				return;
-			}
-
-			//if the edit object inherits from GenericDialogResult set its EditorFinished property here
-			GenericDialogResult gdr = mEditObject as GenericDialogResult;
-			if (gdr != null) {
-				gdr.EditorFinished = true;
-				gdr.RefreshAction -= Refresh;
-			}
-
-			if (mCallBack != null) {
-				//if the callback isn't null, then the parent will take care of the transition
-				mCallBack(mEditObject, this);
-			}
-
-			base.OnFinish();
-		}
-
-		public abstract void PushEditObjectToNGUIObject();
-
-		protected virtual void OnEditObjectChange()
-		{
-
-		}
-
-		protected ulong mGUIEditorID = 0;
-		protected GameObject mNGUIObject = null;
-		protected R mEditObject = default (R);
-		protected ChildEditorCallback <R> mCallBack = null;
-	}
-
-	public interface IGUIBrowser
-	{
-		bool UsesScrollBar { get; }
-
-		UIScrollBar BrowserScrollBar { get; }
-
-		List <IGUIBrowserObject> BrowserObjectsList { get; }
-
-		UIDraggablePanel BrowserPagePanel { get; }
-
-		UIPanel BrowserClipPanel { get; }
-	}
-
-	public abstract class GUIBrowser <R> : GUIEditor <IEnumerable <R>>, IGUIChildEditor <IEnumerable <R>>, IGUIBrowser
-	{
-		public GameObject BrowserObjectPrototype;
-		public GameObject BrowserObjectsParent;
-		public GameObject DividerObjectPrototype;
-		public UIScrollBar ScrollBar;
-		public float GridPadding = 0f;
-		public float ScrollBarSensitivity = 0.05f;
-
-		public virtual IEnumerable <R> FetchItems()
-		{
-			return null;
-		}
-
-		public override void Hide()
-		{
-			if (!Visible)
-				return;
-
-			ClearAll();
-			if (mBrowserPagePanel != null) {
-				mBrowserPagePanel.enabled = false;
-			}
-			base.Hide();
-		}
-
-		public override void Show()
-		{
-			if (Visible)
-				return;
-
-			base.Show();
-			if (mBrowserPagePanel != null) {
-				mBrowserPagePanel.enabled = true;
-			}
-			IEnumerable <R> items = FetchItems();
-			if (items != null) {
-				ReceiveFromParentEditor(items);
-			} else {
-				Refresh();
-			}
-		}
-
-		public List <IGUIBrowserObject> BrowserObjectsList {
-			get {
-				return mBrowserObjectsList;
-			}
-		}
-
-		public R SelectedObject {
-			get {
-				return mSelectedObject;
-			}
-		}
-
-		public bool UsesGrid {
-			get {
-				return mGrid != null;
-			}
-		}
-
-		public bool UsesScrollBar {
-			get { 
-				return ScrollBar != null;
-			}
-		}
-
-		public UIScrollBar BrowserScrollBar { get { return ScrollBar; } }
-
-		public UIDraggablePanel BrowserPagePanel { get { return mBrowserPagePanel; } }
-
-		public UIPanel BrowserClipPanel { get { return mBrowserClipPanel; } }
-
-		public override void WakeUp()
-		{
-			base.WakeUp();
-
-			mBrowser = this;
-			mGrid = BrowserObjectsParent.GetComponent <UIGrid>();
-			mBrowserPagePanel = BrowserObjectsParent.GetComponent <UIDraggablePanel>();
-			mBrowserClipPanel = BrowserObjectsParent.GetComponent <UIPanel>();
-			if (mBrowserPagePanel != null) {
-				mBrowserPagePanel.enabled = false;
-			}
-			Debug.Log("Wake up in editor browser");
-			Debug.Log("Browser page panel null: " + (BrowserPagePanel == null).ToString());
-			Debug.Log("Browser clip panel null: " + (BrowserClipPanel == null).ToString());
-			Debug.Log("Grid null: " + (mGrid == null).ToString());
-		}
-
-		public virtual void ClearItems()
-		{
-			mEditObject = null;
-		}
-
-		public virtual void ClearAll()
-		{
-			//Debug.Log("Clear all in GUIEditor " + name);
-			ClearItems();
-			ClearBrowserObjects();
-			ClearDividerObjects();
-
-			UIDraggablePanel draggablePanel = null;
-			if (UsesGrid && mGrid.gameObject.HasComponent <UIDraggablePanel>(out draggablePanel)) {
-				if (draggablePanel.verticalScrollBar != null) {
-					draggablePanel.verticalScrollBar.scrollValue = 0f;
-				}
-				draggablePanel.ResetPosition();
-			}
-		}
-
-		public void AddItems(IEnumerable <R> items)
-		{
-			if (items == null) {
-				//			////Debug.Log ("ITEMS WAS NULL");
-				return;
-			}
-
-			if (mEditObject == null) {
-				mEditObject = items;
-			} else {
-				mEditObject = Enumerable.Concat <R>(mEditObject, items);
-			}
-		}
-
-		public void AddItems(IEnumerable <R> items, string dividerText, Color dividerColor)
-		{
-			int dividerIndex = 0;
-
-			if (items == null) {
-				return;
-			}
-
-			if (mEditObject == null) {
-				mEditObject = items;
-			} else {
-				foreach (R r in mEditObject) {
-					//this is terrible!
-					//using because IEnumerable doesn't have a Count property
-					//consider switching to ICollection
-					dividerIndex++;
-				}
-				mEditObject = Enumerable.Concat <R>(mEditObject, items);
-			}
-		}
-
-		public override void PushEditObjectToNGUIObject()
-		{
-			ClearBrowserObjects();
-			ClearDividerObjects();
-			CreateBrowserObjects();
-			CreateDividerObjects();
-			BrandBrowserObjects();
-			SetGridProperties();
-			AlignBrowserObjects();
-		}
-
-		public virtual void CreateDividerObjects()
-		{
-			//divider objects are created & added to divider array
-		}
-
-		public override void Refresh()
-		{
-			RefreshBrowserObjects();
-			AlignBrowserObjects();
-			base.Refresh();
-		}
-
-		protected IGUIBrowserObject CreateDivider()
-		{
-			GameObject newDividerObjectGameObject = NGUITools.AddChild(BrowserObjectsParent, DividerObjectPrototype);
-			IGUIBrowserObject newDividerObject = (IGUIBrowserObject)newDividerObjectGameObject.GetComponent(typeof(IGUIBrowserObject));
-			newDividerObject.ParentBrowser = this;
-			mDividers.Add(newDividerObject);
-			return newDividerObject;
-		}
-
-		public virtual void OnClickBrowserObject(GameObject obj)
-		{
-			Debug.Log("Clicked browser object " + obj.name);
-			if (IsOurBrowserObject(obj, mGUIEditorID) == false) {
-				return;
-			}
-			IGUIBrowserObject dividerObject = (IGUIBrowserObject)obj.GetComponent(typeof(IGUIBrowserObject));
-			mSelectedObject = mEditObjectLookup[dividerObject];
-		}
-
-		protected virtual IGUIBrowserObject ConvertEditObjectToBrowserObject(R editObject)
-		{
-			//instantiate using NGUITools
-			GameObject newBrowserGameObject = NGUITools.AddChild(BrowserObjectsParent, BrowserObjectPrototype);
-			//rename to get ride of (clone)
-			IGUIBrowserObject newBrowserObject = (IGUIBrowserObject)newBrowserGameObject.GetComponent(typeof(IGUIBrowserObject));
-			newBrowserObject.ParentBrowser = this;
-			newBrowserObject.name = BrowserObjectPrototype.name;
-
-			return newBrowserObject;
-		}
-
-		protected virtual void RefreshEditObjectToBrowserObject(R editObject, IGUIBrowserObject browserObject)
-		{
-
-		}
-
-		protected void RefreshBrowserObjects()
-		{
-			foreach (KeyValuePair <IGUIBrowserObject, R> editObjectBrowser in mEditObjectLookup) {
-				RefreshEditObjectToBrowserObject(editObjectBrowser.Value, editObjectBrowser.Key);
-			}
-		}
-
-		protected virtual void ClearDividerObjects()
-		{
-			if (Application.isPlaying) {
-				foreach (IGUIBrowserObject dividerObject in mDividers) {
-					GUIManager.TrashNGUIObject(dividerObject.gameObject);
+				public GUIEditor()
+				{
+						mGUIEditorID = GUIManager.GetNextGUIID();
 				}
 
-				mDividers.Clear();
-			}
-		}
-
-		protected virtual void ClearBrowserObjects()
-		{
-			//Debug.Log("Clearing browser objects");
-
-			if (Application.isPlaying) {
-				foreach (IGUIBrowserObject browserObject in mBrowserObjectsList) {
-					GUIManager.TrashNGUIObject(browserObject.gameObject);
+				public ulong GUIEditorID {
+						get {
+								return mGUIEditorID;
+						}
 				}
 
-				mBrowserObjectsList.Clear();
-				mEditObjectLookup.Clear();
-				mBrowserObjectCollidersList.Clear();
-				//reset the grid
-				mGrid = BrowserObjectsParent.GetComponent <UIGrid>();
-				if (UsesGrid) {
-					mGrid.Reposition();
+				public R EditObject {
+						get {
+								return mEditObject;
+						}
 				}
-			}
-		}
 
-		protected virtual void CreateBrowserObjects()
-		{
-			if (mEditObject == null) {
-				Debug.Log("Edit object is null");
-				return;
-			}
-
-			foreach (R editObject in mEditObject) {
-				IGUIBrowserObject newBrowserObject = ConvertEditObjectToBrowserObject(editObject);
-				gBoxColliderChildren.Clear();
-				newBrowserObject.gameObject.GetComponentsInChildren<BoxCollider>(true, gBoxColliderChildren);
-				mBrowserObjectCollidersList.AddRange(gBoxColliderChildren);
-				//check for divider
-				mBrowserObjectsList.Add(newBrowserObject);
-				mEditObjectLookup.Add(newBrowserObject, editObject);
-			}
-		}
-
-		protected static List <BoxCollider> gBoxColliderChildren = new List<BoxCollider>();
-		protected static List <GUIButtonSetup> gButtonChildren = new List<GUIButtonSetup>();
-
-		protected void BrandBrowserObjects()
-		{
-			string browserNamePrefix = GetBrowserNamePrefix(mGUIEditorID);
-			foreach (IGUIBrowserObject browserObject in mBrowserObjectsList) {
-				browserObject.name = browserNamePrefix + browserObject.name;
-				foreach (Transform child in browserObject.transform) {
-					child.name = browserNamePrefix + child.name;
+				public bool HasEditObject {
+						get {
+								return mEditObject != null;
+						}
 				}
-			}
-			foreach (IGUIBrowserObject dividerObject in mDividers) {
-				dividerObject.name = browserNamePrefix + dividerObject.name;
-			}
-		}
 
-		protected void AlignBrowserObjects()
-		{
-			mGrid = BrowserObjectsParent.GetComponent <UIGrid>();
-			if (UsesGrid) {
-				mGrid.repositionNow = true;
-			} else {
-				float padding = GridPadding;
-				//browserobjects are expected to either have a box collider on the base
-				//OR to have an object called 'Button' that will have a box collider
-				BoxCollider bc = BrowserObjectPrototype.GetComponent <BoxCollider>();
-				if (bc == null) {
-					bc = BrowserObjectPrototype.FindOrCreateChild("Button").GetComponent <BoxCollider>();
+				public GameObject NGUIObject {
+						get;
+						set;
 				}
-				float objectHeight = bc.size.y + padding;
 
-				float currentOffset = 0.0f;
-				Vector3	currentPosition = Vector3.zero;
-				foreach (IGUIBrowserObject browserObject in mBrowserObjectsList) {
-					browserObject.transform.localPosition = currentPosition;
-					currentPosition.y = currentOffset;
-					//if (browserObject.name.Contains ("DIVIDER")) {
-					//	currentOffset -= dividerHeight;
-					//} else {
-					currentOffset -= objectHeight;
-					//}
+				public GameObject NGUIParentObject {
+						get;
+						set;
 				}
-			}
 
-			if (UsesScrollBar && !mResettingScrollBar) {
-				ScrollBar.scrollValue = 0f;
-				mResettingScrollBar = true;
-				//this will be required if the gameobject is active
-				if (gameObject.activeSelf) {
-					StartCoroutine(ResetScrollBar());
+				public virtual bool IsFinished {
+						get {
+								return mFinished;
+						}
 				}
-			}
-		}
 
-		protected void SetGridProperties()
-		{
-			if (UsesGrid) {
-				float padding = 20.0f;
-				if (GridPadding > 0f) {
-					padding = GridPadding;
+				public void ReceiveFromParentEditor(R editObject)
+				{
+						ReceiveFromParentEditor(editObject, null);
 				}
-				BoxCollider bc = BrowserObjectPrototype.GetComponent <BoxCollider>();
-				if (bc == null) {
-					bc = BrowserObjectPrototype.FindOrCreateChild("Button").GetComponent <BoxCollider>();
+
+				public virtual void ReceiveFromParentEditor(R editObject, ChildEditorCallback <R> callBack)
+				{
+						mEditObject = editObject;
+						if (callBack != null) {
+								//this will preserve the callback
+								//if we call this again to reset items
+								mCallBack = callBack;
+						}
+
+						if (Manager.IsAwake <GUIManager>()) {
+								GUIManager.Get.GetFocus(this);
+						}
+						//if it's a generic dialog result subscribe to the refresh action
+						GenericDialogResult gdr = mEditObject as GenericDialogResult;
+						if (gdr != null) {
+								gdr.RefreshAction += Refresh;
+						}
+						PushEditObjectToNGUIObject();
+						if (!Visible) {
+								Show();
+						}
 				}
-				//set grid Y dimensions to the browser object Y dimensions
-				mGrid.cellHeight = bc.size.y + padding;
-				mGrid.cellWidth = bc.size.x + padding;
-			}
+
+				public virtual void Refresh()
+				{
+						PushEditObjectToNGUIObject();
+				}
+
+				protected override void OnFinish()
+				{
+						if (mFinished) {
+								return;
+						}
+
+						//if the edit object inherits from GenericDialogResult set its EditorFinished property here
+						GenericDialogResult gdr = mEditObject as GenericDialogResult;
+						if (gdr != null) {
+								gdr.EditorFinished = true;
+								gdr.RefreshAction -= Refresh;
+						}
+
+						if (mCallBack != null) {
+								//if the callback isn't null, then the parent will take care of the transition
+								mCallBack(mEditObject, this);
+						}
+
+						base.OnFinish();
+				}
+
+				public abstract void PushEditObjectToNGUIObject();
+
+				protected virtual void OnEditObjectChange()
+				{
+
+				}
+
+				protected ulong mGUIEditorID = 0;
+				protected GameObject mNGUIObject = null;
+				protected R mEditObject = default (R);
+				protected ChildEditorCallback <R> mCallBack = null;
 		}
 
-		protected IEnumerator ResetScrollBar()
+		public interface IBrowser : IFrontiersInterface
 		{
-			yield return null;
-			ScrollBar.scrollValue = 0f;
-			mResettingScrollBar = false;
+				bool UsesScrollBar { get; }
+
+				UIScrollBar BrowserScrollBar { get; }
+
+				List <IGUIBrowserObject> BrowserObjectsList { get; }
+
+				UIDraggablePanel BrowserPagePanel { get; }
+
+				UIPanel BrowserClipPanel { get; }
+
+				Bounds FocusOn(IGUIBrowserObject browserObject);
+
+				bool IsBrowserObjectVisible(IGUIBrowserObject browserObject, float normalizedRange, out Bounds browserBounds);
 		}
 
-		protected bool mResettingScrollBar = false;
-		protected Dictionary <IGUIBrowserObject,R> mEditObjectLookup = new Dictionary <IGUIBrowserObject,R>();
-		protected List <IGUIBrowserObject> mDividers = new List <IGUIBrowserObject>();
-		protected IGUIBrowserObject mBrowserObject = null;
-		protected List <IGUIBrowserObject> mBrowserObjectsList = new List <IGUIBrowserObject>();
-		protected List <BoxCollider> mBrowserObjectCollidersList = new List<BoxCollider>();
-		protected R mSelectedObject = default (R);
-		protected UIGrid mGrid = null;
-		protected UIDraggablePanel mBrowserPagePanel = null;
-		protected UIPanel mBrowserClipPanel = null;
-
-		protected class DividerProps
+		public abstract class GUIBrowser <R> : GUIEditor <IEnumerable <R>>, IGUIChildEditor <IEnumerable <R>>, IBrowser
 		{
-			public DividerProps(int index, string dividerText, Color dividerColor)
-			{
-				Index = index;
-				DividerText = dividerText;
-				DividerColor = dividerColor;
-			}
+				public GameObject BrowserObjectPrototype;
+				public GameObject BrowserObjectsParent;
+				public GameObject DividerObjectPrototype;
+				public UIScrollBar ScrollBar;
+				public float GridPadding = 0f;
+				public float ScrollBarSensitivity = 0.05f;
 
-			public int Index;
-			public string DividerText;
-			public Color	DividerColor;
+				public override Widget FirstInterfaceObject {
+						get {
+								Widget w = new Widget();
+								if (mBrowserObjectsList.Count > 0) {
+										w.SearchCamera = NGUICamera;
+										w.BrowserObject = mBrowserObjectsList[0];
+										w.BoxCollider = w.BrowserObject.gameObject.GetComponent <BoxCollider>();
+								}
+								return w;
+						}
+				}
+
+				public virtual IEnumerable <R> FetchItems()
+				{
+						return null;
+				}
+
+				public override void Hide()
+				{
+						if (!Visible)
+								return;
+
+						ClearAll();
+						if (mBrowserPagePanel != null) {
+								mBrowserPagePanel.enabled = false;
+						}
+						base.Hide();
+				}
+
+				public override void Show()
+				{
+						if (Visible)
+								return;
+
+						base.Show();
+						if (mBrowserPagePanel != null) {
+								mBrowserPagePanel.enabled = true;
+						}
+						IEnumerable <R> items = FetchItems();
+						if (items != null) {
+								ReceiveFromParentEditor(items);
+						} else {
+								Refresh();
+						}
+				}
+
+				public List <IGUIBrowserObject> BrowserObjectsList {
+						get {
+								return mBrowserObjectsList;
+						}
+				}
+
+				public virtual Widget GetFirstInterfaceObject()
+				{
+						Widget w = new Widget();
+						w.SearchCamera = NGUICamera;
+						w.BrowserObject = mBrowserObjectsList[0];
+						w.BoxCollider = w.BrowserObject.gameObject.GetComponent <BoxCollider>();
+						return w;
+				}
+
+				public bool IsBrowserObjectVisible (IGUIBrowserObject browserObject, float normalizedRange, out Bounds browserBounds) {
+						//this is a crapton of vector3s getting allocated all at once
+						//but we only use it once in a while and it helps me keep things straight
+						//get the bounds of the browser's clipping area
+						Vector3 browserPosition = BrowserClipPanel.transform.position;
+						Vector3 browserObjectPosition = browserObject.transform.position;
+						Vector4 browserClipRange = BrowserClipPanel.clipRange;
+						Vector3 browserScale = BrowserClipPanel.transform.lossyScale;
+						browserPosition.x = browserPosition.x + (browserClipRange.x * browserScale.x);
+						browserPosition.y = browserPosition.y + (browserClipRange.y * browserScale.y);
+						//make the clip range just slightly smaller than the real range
+						Vector3 browserSize = new Vector3(browserClipRange.z * browserScale.x, (browserClipRange.w * normalizedRange) * browserScale.y, 100f);
+						browserBounds = new Bounds(browserPosition, browserSize);
+						Vector3 browserPanelLocalPosition = BrowserClipPanel.transform.localPosition;
+						//move the object to the center of the clipping bounds
+						return browserBounds.Contains(browserObjectPosition);
+				}
+
+				public virtual Bounds FocusOn(IGUIBrowserObject browserObject)
+				{		
+						Bounds browserBounds;
+						if (!IsBrowserObjectVisible (browserObject, 0.7f, out browserBounds)) {
+								Vector3 targetPosition = browserBounds.center;
+								targetPosition.y = targetPosition.y + (browserBounds.size.y / 2);
+								targetPosition = BrowserClipPanel.transform.InverseTransformPoint(browserBounds.center);
+								//move the background by the amount of space it would take to reach the object
+								Vector3 relativeDifference = targetPosition - browserObject.transform.localPosition;
+								relativeDifference.z = 0f;
+								relativeDifference.x = 0f;//should we really do this...?
+								mBrowserPagePanel.MoveRelative(relativeDifference, true);
+								if (UsesScrollBar) {
+										mBrowserPagePanel.UpdateScrollbars(true, true);
+								}
+						}
+						return browserBounds;
+				}
+
+				public R SelectedObject {
+						get {
+								return mSelectedObject;
+						}
+				}
+
+				public bool UsesGrid {
+						get {
+								return mGrid != null;
+						}
+				}
+
+				public bool UsesScrollBar {
+						get { 
+								return ScrollBar != null;
+						}
+				}
+
+				public UIScrollBar BrowserScrollBar { get { return ScrollBar; } }
+
+				public UIDraggablePanel BrowserPagePanel { get { return mBrowserPagePanel; } }
+
+				public UIPanel BrowserClipPanel { get { return mBrowserClipPanel; } }
+
+				public override void WakeUp()
+				{
+						base.WakeUp();
+
+						mBrowser = this;
+						mGrid = BrowserObjectsParent.GetComponent <UIGrid>();
+						mBrowserPagePanel = BrowserObjectsParent.GetComponent <UIDraggablePanel>();
+						mBrowserClipPanel = BrowserObjectsParent.GetComponent <UIPanel>();
+						if (mBrowserPagePanel != null) {
+								//reset panel position to zero so we know the first bo starts at 0
+								mBrowserPageStartupOffset = mBrowserPagePanel.transform.localPosition;
+								if (!Mathf.Approximately(mBrowserPageStartupOffset.y, 0f)) {
+										Vector3 difference = Vector3.zero - mBrowserPageStartupOffset;
+										BrowserPagePanel.MoveRelative(difference);
+										/*browserPagePanelPosition.y = 0;
+										mBrowserPagePanel.transform.localPosition = browserPagePanelPosition;
+										Vector4 adjustedClipping = BrowserClipPanel.clipRange;
+										adjustedClipping.y = adjustedClipping.y + difference;
+										BrowserClipPanel.clipRange = adjustedClipping;*/
+								}
+								mBrowserPagePanel.enabled = false;
+						}
+				}
+
+				public virtual void ClearItems()
+				{
+						mEditObject = null;
+				}
+
+				public virtual void ClearAll()
+				{
+						//Debug.Log("Clear all in GUIEditor " + name);
+						ClearItems();
+						ClearBrowserObjects();
+						ClearDividerObjects();
+
+						UIDraggablePanel draggablePanel = null;
+						if (UsesGrid && mGrid.gameObject.HasComponent <UIDraggablePanel>(out draggablePanel)) {
+								if (draggablePanel.verticalScrollBar != null) {
+										draggablePanel.verticalScrollBar.scrollValue = 0f;
+								}
+								draggablePanel.ResetPosition();
+						}
+				}
+
+				public void AddItems(IEnumerable <R> items)
+				{
+						if (items == null) {
+								//			////Debug.Log ("ITEMS WAS NULL");
+								return;
+						}
+
+						if (mEditObject == null) {
+								mEditObject = items;
+						} else {
+								mEditObject = Enumerable.Concat <R>(mEditObject, items);
+						}
+				}
+
+				public void AddItems(IEnumerable <R> items, string dividerText, Color dividerColor)
+				{
+						int dividerIndex = 0;
+
+						if (items == null) {
+								return;
+						}
+
+						if (mEditObject == null) {
+								mEditObject = items;
+						} else {
+								foreach (R r in mEditObject) {
+										//this is terrible!
+										//using because IEnumerable doesn't have a Count property
+										//consider switching to ICollection
+										dividerIndex++;
+								}
+								mEditObject = Enumerable.Concat <R>(mEditObject, items);
+						}
+				}
+
+				public override void PushEditObjectToNGUIObject()
+				{
+						ClearBrowserObjects();
+						ClearDividerObjects();
+						CreateBrowserObjects();
+						CreateDividerObjects();
+						BrandBrowserObjects();
+						SetGridProperties();
+						AlignBrowserObjects();
+				}
+
+				public virtual void CreateDividerObjects()
+				{
+						//divider objects are created & added to divider array
+				}
+
+				public override void Refresh()
+				{
+						RefreshBrowserObjects();
+						AlignBrowserObjects();
+						base.Refresh();
+				}
+
+				protected IGUIBrowserObject CreateDivider()
+				{
+						GameObject newDividerObjectGameObject = NGUITools.AddChild(BrowserObjectsParent, DividerObjectPrototype);
+						IGUIBrowserObject newDividerObject = (IGUIBrowserObject)newDividerObjectGameObject.GetComponent(typeof(IGUIBrowserObject));
+						newDividerObject.ParentBrowser = this;
+						mDividers.Add(newDividerObject);
+						return newDividerObject;
+				}
+
+				public virtual void OnClickBrowserObject(GameObject obj)
+				{
+						Debug.Log("Clicked browser object " + obj.name);
+						if (IsOurBrowserObject(obj, mGUIEditorID) == false) {
+								return;
+						}
+						IGUIBrowserObject dividerObject = (IGUIBrowserObject)obj.GetComponent(typeof(IGUIBrowserObject));
+						mSelectedObject = mEditObjectLookup[dividerObject];
+				}
+
+				protected virtual IGUIBrowserObject ConvertEditObjectToBrowserObject(R editObject)
+				{
+						//instantiate using NGUITools
+						GameObject newBrowserGameObject = NGUITools.AddChild(BrowserObjectsParent, BrowserObjectPrototype);
+						//rename to get ride of (clone)
+						IGUIBrowserObject newBrowserObject = (IGUIBrowserObject)newBrowserGameObject.GetComponent(typeof(IGUIBrowserObject));
+						newBrowserObject.ParentBrowser = this;
+						newBrowserObject.name = BrowserObjectPrototype.name;
+
+						return newBrowserObject;
+				}
+
+				protected virtual void RefreshEditObjectToBrowserObject(R editObject, IGUIBrowserObject browserObject)
+				{
+
+				}
+
+				protected void RefreshBrowserObjects()
+				{
+						foreach (KeyValuePair <IGUIBrowserObject, R> editObjectBrowser in mEditObjectLookup) {
+								RefreshEditObjectToBrowserObject(editObjectBrowser.Value, editObjectBrowser.Key);
+						}
+				}
+
+				protected virtual void ClearDividerObjects()
+				{
+						if (Application.isPlaying) {
+								foreach (IGUIBrowserObject dividerObject in mDividers) {
+										GUIManager.TrashNGUIObject(dividerObject.gameObject);
+								}
+
+								mDividers.Clear();
+						}
+				}
+
+				protected virtual void ClearBrowserObjects()
+				{
+						//Debug.Log("Clearing browser objects");
+
+						if (Application.isPlaying) {
+								foreach (IGUIBrowserObject browserObject in mBrowserObjectsList) {
+										GUIManager.TrashNGUIObject(browserObject.gameObject);
+								}
+
+								mBrowserObjectsList.Clear();
+								mEditObjectLookup.Clear();
+								mBrowserObjectCollidersList.Clear();
+								//reset the grid
+								mGrid = BrowserObjectsParent.GetComponent <UIGrid>();
+								if (UsesGrid) {
+										mGrid.Reposition();
+								}
+						}
+				}
+
+				protected virtual void CreateBrowserObjects()
+				{
+						if (mEditObject == null) {
+								Debug.Log("Edit object is null");
+								return;
+						}
+
+						foreach (R editObject in mEditObject) {
+								IGUIBrowserObject newBrowserObject = ConvertEditObjectToBrowserObject(editObject);
+								gBoxColliderChildren.Clear();
+								newBrowserObject.gameObject.GetComponentsInChildren<BoxCollider>(true, gBoxColliderChildren);
+								mBrowserObjectCollidersList.AddRange(gBoxColliderChildren);
+								//check for divider
+								mBrowserObjectsList.Add(newBrowserObject);
+								mEditObjectLookup.Add(newBrowserObject, editObject);
+						}
+						mBrowserObjectsList.Sort();
+				}
+
+				protected static List <BoxCollider> gBoxColliderChildren = new List<BoxCollider>();
+				protected static List <GUIButtonSetup> gButtonChildren = new List<GUIButtonSetup>();
+
+				protected void BrandBrowserObjects()
+				{
+						string browserNamePrefix = GetBrowserNamePrefix(mGUIEditorID);
+						foreach (IGUIBrowserObject browserObject in mBrowserObjectsList) {
+								browserObject.name = browserNamePrefix + browserObject.name;
+								foreach (Transform child in browserObject.transform) {
+										child.name = browserNamePrefix + child.name;
+								}
+						}
+						foreach (IGUIBrowserObject dividerObject in mDividers) {
+								dividerObject.name = browserNamePrefix + dividerObject.name;
+						}
+				}
+
+				protected void AlignBrowserObjects()
+				{
+						mGrid = BrowserObjectsParent.GetComponent <UIGrid>();
+						if (UsesGrid) {
+								mGrid.repositionNow = true;
+						} else {
+								float padding = GridPadding;
+								//browserobjects are expected to either have a box collider on the base
+								//OR to have an object called 'Button' that will have a box collider
+								BoxCollider bc = BrowserObjectPrototype.GetComponent <BoxCollider>();
+								if (bc == null) {
+										bc = BrowserObjectPrototype.FindOrCreateChild("Button").GetComponent <BoxCollider>();
+								}
+								float objectHeight = bc.size.y + padding;
+
+								float currentOffset = 0.0f;
+								Vector3	currentPosition = Vector3.zero;
+								foreach (IGUIBrowserObject browserObject in mBrowserObjectsList) {
+										browserObject.transform.localPosition = currentPosition;
+										currentPosition.y = currentOffset;
+										//if (browserObject.name.Contains ("DIVIDER")) {
+										//	currentOffset -= dividerHeight;
+										//} else {
+										currentOffset -= objectHeight;
+										//}
+								}
+						}
+
+						if (UsesScrollBar && !mResettingScrollBar) {
+								ScrollBar.scrollValue = 0f;
+								mResettingScrollBar = true;
+								//this will be required if the gameobject is active
+								if (gameObject.activeSelf) {
+										StartCoroutine(ResetScrollBar());
+								}
+						}
+				}
+
+				protected void SetGridProperties()
+				{
+						if (UsesGrid) {
+								float padding = 20.0f;
+								if (GridPadding > 0f) {
+										padding = GridPadding;
+								}
+								BoxCollider bc = BrowserObjectPrototype.GetComponent <BoxCollider>();
+								if (bc == null) {
+										bc = BrowserObjectPrototype.FindOrCreateChild("Button").GetComponent <BoxCollider>();
+								}
+								//set grid Y dimensions to the browser object Y dimensions
+								mGrid.cellHeight = bc.size.y + padding;
+								mGrid.cellWidth = bc.size.x + padding;
+								mGrid.offset = mBrowserPageStartupOffset;
+						}
+				}
+
+				protected IEnumerator ResetScrollBar()
+				{
+						yield return null;
+						ScrollBar.scrollValue = 0f;
+						mResettingScrollBar = false;
+				}
+
+				protected bool mResettingScrollBar = false;
+				protected Vector3 mBrowserPageStartupOffset;
+				protected Dictionary <IGUIBrowserObject,R> mEditObjectLookup = new Dictionary <IGUIBrowserObject,R>();
+				protected List <IGUIBrowserObject> mDividers = new List <IGUIBrowserObject>();
+				protected IGUIBrowserObject mBrowserObject = null;
+				protected List <IGUIBrowserObject> mBrowserObjectsList = new List <IGUIBrowserObject>();
+				protected List <BoxCollider> mBrowserObjectCollidersList = new List<BoxCollider>();
+				protected R mSelectedObject = default (R);
+				protected UIGrid mGrid = null;
+				protected UIDraggablePanel mBrowserPagePanel = null;
+				protected UIPanel mBrowserClipPanel = null;
+
+				protected class DividerProps
+				{
+						public DividerProps(int index, string dividerText, Color dividerColor)
+						{
+								Index = index;
+								DividerText = dividerText;
+								DividerColor = dividerColor;
+						}
+
+						public int Index;
+						public string DividerText;
+						public Color	DividerColor;
+				}
+
+				protected static string GetBrowserNamePrefix(ulong guiEditorID)
+				{
+						return ("BO_" + guiEditorID.ToString() + "_");
+				}
+
+				protected static bool IsOurBrowserObject(GameObject browserObject, ulong guiEditorID)
+				{
+						return browserObject.name.Contains(GetBrowserNamePrefix(guiEditorID));
+				}
 		}
 
-		protected static string GetBrowserNamePrefix(ulong guiEditorID)
+		public abstract class GUIBrowserSelectView <R> : GUIBrowser <R>
 		{
-			return ("BO_" + guiEditorID.ToString() + "_");
+				public GameObject SelectedObjectViewer;
+
+				public override Bounds FocusOn(IGUIBrowserObject browserObject)
+				{
+						if (browserObject.AutoSelect) {
+								mBrowserObject = browserObject;
+								mSelectedObject	= mEditObjectLookup[mBrowserObject];
+
+								if (mBrowserObject.DeleteRequest) {
+										mBrowserObject.DeleteRequest = false;//reset the delete request
+										DeleteSelectedObject();
+								} else {
+										PushSelectedObjectToViewer();
+								}
+						}
+
+						return base.FocusOn(browserObject);
+				}
+
+				public virtual bool PushToViewerAutomatically {
+						get {
+								return true;
+						}
+				}
+
+				public override void PushEditObjectToNGUIObject()
+				{
+						base.PushEditObjectToNGUIObject();
+
+						if (mSelectedObject != null && PushToViewerAutomatically) {
+								PushSelectedObjectToViewer();
+						}
+				}
+
+				public override void OnClickBrowserObject(GameObject obj)
+				{
+						if (!IsOurBrowserObject(obj, mGUIEditorID)) {
+								return;
+						}
+
+						mBrowserObject = (IGUIBrowserObject)obj.GetComponent(typeof(IGUIBrowserObject));
+						mSelectedObject	= mEditObjectLookup[mBrowserObject];
+
+						if (mBrowserObject.DeleteRequest) {
+								mBrowserObject.DeleteRequest = false;//reset the delete request
+								DeleteSelectedObject();
+						} else {
+								PushSelectedObjectToViewer();
+						}
+				}
+
+				public virtual void DeleteSelectedObject()
+				{
+
+				}
+
+				public virtual void PushSelectedObjectToViewer()
+				{
+						//update the browser object viewer
+				}
 		}
 
-		protected static bool IsOurBrowserObject(GameObject browserObject, ulong guiEditorID)
+		public abstract class GUIBrowserCreateUpdateDelete<R> : GUIBrowser<R>, IGUIParentEditor<R> where R : new()
 		{
-			return browserObject.name.Contains(GetBrowserNamePrefix(guiEditorID));
+				public GameObject BrowserObjectCreatePrototype;
+				public GameObject NGUICreateEditObjectPrefab;
+				public GameObject NGUIUpdateEditObjectPrefab;
+				public GameObject NGUIDeleteEditObjectPrefab;
+
+				public virtual void ReceiveFromChildEditor(R editObject, IGUIChildEditor<R> childEditor)
+				{
+						//clear everything and start over
+						PushEditObjectToNGUIObject();
+						//as the parent, we are responsible for initiating transitions
+						GUIManager.ScaleUpEditor(this.gameObject).Proceed();
+						GUIManager.ScaleDownEditor(mLastSpawnedChildEditor).Proceed();
+						//retire the GUI - it'll be destroyed after the transition is complete
+						GUIManager.RetireGUIChildEditor(mLastSpawnedChildEditor);
+
+						mLastSpawnedChildEditor = null;
+				}
+
+				protected override void CreateBrowserObjects()
+				{
+						//create the browser objects normally
+						base.CreateBrowserObjects();
+
+						//then initialize the 'new' button
+						GameObject browserObjectCreate = NGUITools.AddChild(BrowserObjectsParent, BrowserObjectCreatePrototype);
+						browserObjectCreate.name = "000_" + browserObjectCreate.name;
+						GUIBrowserObjectCreate boc = browserObjectCreate.GetComponent<GUIBrowserObjectCreate>();
+						boc.CreateButton.target = this.gameObject;
+						//add to browser objects list
+						mBrowserObjectsList.Add(boc);
+
+				}
+
+				public override void OnClickBrowserObject(GameObject obj)
+				{
+						if (IsOurBrowserObject(obj, mGUIEditorID) == false) {
+								return;
+						}
+
+						IGUIBrowserObject browserObject = (IGUIBrowserObject)obj.GetComponent(typeof(IGUIBrowserObject));
+						mSelectedObject = mEditObjectLookup[browserObject];
+						mLastSpawnedChildEditor = GUIManager.SpawnNGUIChildEditor(this.gameObject, NGUIUpdateEditObjectPrefab);
+
+						GUIManager.SendEditObjectToChildEditor<R>(this, mLastSpawnedChildEditor, mSelectedObject);
+				}
+
+				public virtual void OnClickCreateEditObject(GameObject obj)
+				{
+						if (IsOurBrowserObject(obj, mGUIEditorID) == false) {
+								return;
+						}
+
+						mSelectedObject = new R();
+						mLastSpawnedChildEditor = GUIManager.SpawnNGUIChildEditor(this.gameObject, NGUICreateEditObjectPrefab);
+
+						GUIManager.SendEditObjectToChildEditor<R>(this, mLastSpawnedChildEditor, mSelectedObject);
+
+						//mEditObject.Add (mSelectedObject);
+				}
+
+				public virtual void OnClickDeleteEditObject(GameObject obj)
+				{
+						//R editObject = mEditObjectsList[Mathf.FloorToInt(browserObjectIndex)];
+						//mDeleteEditObject (editObject);
+				}
+
+				protected GameObject mLastSpawnedChildEditor;
 		}
-	}
-
-	public abstract class GUIBrowserSelectView <R> : GUIBrowser <R>
-	{
-		public GameObject SelectedObjectViewer;
-
-		public virtual bool PushToViewerAutomatically {
-			get {
-				return true;
-			}
-		}
-
-		public override void PushEditObjectToNGUIObject()
-		{
-			base.PushEditObjectToNGUIObject();
-
-			if (mSelectedObject != null && PushToViewerAutomatically) {
-				PushSelectedObjectToViewer();
-			}
-		}
-
-		public override void OnClickBrowserObject(GameObject obj)
-		{
-			if (!IsOurBrowserObject(obj, mGUIEditorID)) {
-				return;
-			}
-
-			mBrowserObject = (IGUIBrowserObject)obj.GetComponent(typeof(IGUIBrowserObject));
-			mSelectedObject	= mEditObjectLookup[mBrowserObject];
-
-			if (mBrowserObject.DeleteRequest) {
-				mBrowserObject.DeleteRequest = false;//reset the delete request
-				DeleteSelectedObject();
-			} else {
-				PushSelectedObjectToViewer();
-			}
-		}
-
-		public virtual void DeleteSelectedObject()
-		{
-
-		}
-
-		public virtual void PushSelectedObjectToViewer()
-		{
-			//update the browser object viewer
-		}
-	}
-
-	public abstract class GUIBrowserCreateUpdateDelete<R> : GUIBrowser<R>, IGUIParentEditor<R> where R : new()
-	{
-		public GameObject BrowserObjectCreatePrototype;
-		public GameObject NGUICreateEditObjectPrefab;
-		public GameObject NGUIUpdateEditObjectPrefab;
-		public GameObject NGUIDeleteEditObjectPrefab;
-
-		public virtual void ReceiveFromChildEditor(R editObject, IGUIChildEditor<R> childEditor)
-		{
-			//clear everything and start over
-			PushEditObjectToNGUIObject();
-			//as the parent, we are responsible for initiating transitions
-			GUIManager.ScaleUpEditor(this.gameObject).Proceed();
-			GUIManager.ScaleDownEditor(mLastSpawnedChildEditor).Proceed();
-			//retire the GUI - it'll be destroyed after the transition is complete
-			GUIManager.RetireGUIChildEditor(mLastSpawnedChildEditor);
-
-			mLastSpawnedChildEditor = null;
-		}
-
-		protected override void CreateBrowserObjects()
-		{
-			//create the browser objects normally
-			base.CreateBrowserObjects();
-
-			//then initialize the 'new' button
-			GameObject browserObjectCreate = NGUITools.AddChild(BrowserObjectsParent, BrowserObjectCreatePrototype);
-			browserObjectCreate.name = "000_" + browserObjectCreate.name;
-			GUIBrowserObjectCreate boc = browserObjectCreate.GetComponent<GUIBrowserObjectCreate>();
-			boc.CreateButton.target = this.gameObject;
-			//add to browser objects list
-			mBrowserObjectsList.Add(boc);
-
-		}
-
-		public override void OnClickBrowserObject(GameObject obj)
-		{
-			if (IsOurBrowserObject(obj, mGUIEditorID) == false) {
-				return;
-			}
-
-			IGUIBrowserObject browserObject = (IGUIBrowserObject)obj.GetComponent(typeof(IGUIBrowserObject));
-			mSelectedObject = mEditObjectLookup[browserObject];
-			mLastSpawnedChildEditor = GUIManager.SpawnNGUIChildEditor(this.gameObject, NGUIUpdateEditObjectPrefab);
-
-			GUIManager.SendEditObjectToChildEditor<R>(this, mLastSpawnedChildEditor, mSelectedObject);
-		}
-
-		public virtual void OnClickCreateEditObject(GameObject obj)
-		{
-			if (IsOurBrowserObject(obj, mGUIEditorID) == false) {
-				return;
-			}
-
-			mSelectedObject = new R();
-			mLastSpawnedChildEditor = GUIManager.SpawnNGUIChildEditor(this.gameObject, NGUICreateEditObjectPrefab);
-
-			GUIManager.SendEditObjectToChildEditor<R>(this, mLastSpawnedChildEditor, mSelectedObject);
-
-			//mEditObject.Add (mSelectedObject);
-		}
-
-		public virtual void OnClickDeleteEditObject(GameObject obj)
-		{
-			//R editObject = mEditObjectsList[Mathf.FloorToInt(browserObjectIndex)];
-			//mDeleteEditObject (editObject);
-		}
-
-		protected GameObject mLastSpawnedChildEditor;
-	}
 }

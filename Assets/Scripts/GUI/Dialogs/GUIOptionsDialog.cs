@@ -9,6 +9,7 @@ namespace Frontiers.GUI
 		public class GUIOptionsDialog : GUIEditor <PlayerPreferences>
 		{
 				public GameObject VideoApplyButton;
+				public GameObject VideoCancelButton;
 				public UILabel VideoResolutionLabel;
 				public UILabel VideoTextureResolutionLabel;
 				public UILabel VideoLODDistanceBiasLabel;
@@ -66,6 +67,8 @@ namespace Frontiers.GUI
 				public UICheckbox ControllerCursorCheckbox;
 				public UICheckbox CustomDeadZonesCheckbox;
 				public UICheckbox OculusModeCheckbox;
+				public UILabel OculusModeLabelEnabled;
+				public UILabel OculusModeLabelDisabled;
 				public UICheckbox ControllerPrompts;
 				public UISlider AccessibilityTextSpeed;
 				public float VideoFovMin = 60.0f;
@@ -88,6 +91,15 @@ namespace Frontiers.GUI
 				// = PlayerPreferences.VideoPrefs.Default;
 				public GUITabs Tabs;
 				public bool Initialized = false;
+
+				public override Widget FirstInterfaceObject {
+						get {
+								Widget w = new Widget();
+								w.SearchCamera = NGUICamera;
+								w.BoxCollider = Tabs.Buttons[0].Collider;
+								return w;
+						}
+				}
 
 				public override void PushEditObjectToNGUIObject()
 				{
@@ -152,6 +164,14 @@ namespace Frontiers.GUI
 				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
 				{
 						Tabs.GetActiveInterfaceObjects(currentObjects);
+						if (VideoApplyButton.layer != Globals.LayerNumGUIRaycastIgnore) {
+								Widget w = new Widget();
+								w.SearchCamera = NGUICamera;
+								w.BoxCollider = VideoApplyButton.GetComponent<BoxCollider>();
+								currentObjects.Add(w);
+								w.BoxCollider = VideoCancelButton.GetComponent<BoxCollider>();
+								currentObjects.Add(w);
+						}
 				}
 
 				#region widgets changing
@@ -165,6 +185,18 @@ namespace Frontiers.GUI
 						mMadeVideoChanges = true;
 
 						TempVideoPrefs.OculusMode = OculusModeCheckbox.isChecked;
+				}
+
+				public void Update ( ) {
+						if (VRManager.VRDeviceAvailable) {
+								OculusModeCheckbox.gameObject.SendMessage("SetEnabled");
+								OculusModeLabelEnabled.enabled = true;
+								OculusModeLabelDisabled.enabled = false;
+						} else {
+								OculusModeCheckbox.gameObject.SendMessage("SetDisabled");
+								OculusModeLabelEnabled.enabled = false;
+								OculusModeLabelDisabled.enabled = true;
+						}
 				}
 
 				public void OnImmersionSettingChange()

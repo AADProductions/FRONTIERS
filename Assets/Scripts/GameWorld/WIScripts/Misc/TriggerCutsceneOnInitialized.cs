@@ -32,10 +32,6 @@ namespace Frontiers.World
 						Cutscene.CurrentCutsceneAnchor = gameObject;
 						Debug.Log("Starting cutscene!");
 						Application.LoadLevelAdditive(State.CutsceneName);
-						double waitUntil = WorldClock.RealTime + 1f;
-						while (WorldClock.RealTime < waitUntil) {
-								yield return null;
-						}
 						Finish();
 						yield break;
 				}

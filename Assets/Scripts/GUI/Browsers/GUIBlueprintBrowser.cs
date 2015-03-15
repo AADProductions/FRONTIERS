@@ -17,6 +17,13 @@ namespace Frontiers.GUI
 				public string SkillDisplayName;
 				public bool CreateEmptyDivider;
 
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				{
+						//this will get everything on all tabs
+						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects);
+						base.GetActiveInterfaceObjects(currentObjects);
+				}
+
 				public override void WakeUp()
 				{
 						base.WakeUp();

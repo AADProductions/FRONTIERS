@@ -27,6 +27,17 @@ namespace Frontiers.GUI
 				protected float StartPosition = 25.0f;
 				protected float RowSize = 55.0f;
 
+				public override Widget FirstInterfaceObject {
+						get {
+								Widget w = new Widget();
+								if (OptionButtons.Count > 0) {
+										w.SearchCamera = NGUICamera;
+										w.BoxCollider = OptionButtons[0].GetComponent<BoxCollider>();
+								}
+								return w;
+						}
+				}
+
 				public override void WakeUp()
 				{			
 						base.WakeUp();

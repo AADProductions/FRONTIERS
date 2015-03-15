@@ -193,7 +193,7 @@ namespace Frontiers
 				public void SaveCurrent(ProfileComponents components)
 				{
 						Debug.Log("PROFILE: Saving current " + components.ToString());
-						GameData.IO.LogPaths();
+						//GameData.IO.LogPaths();
 						mSaveNextAvailable |= components;
 						enabled = true;
 				}
@@ -260,7 +260,7 @@ namespace Frontiers
 
 								mSaveNextAvailable = ProfileComponents.None;
 								Debug.Log("Saved components in profile");
-								GameData.IO.LogPaths();
+								//GameData.IO.LogPaths();
 								enabled = false;
 						}
 				}
@@ -383,32 +383,22 @@ namespace Frontiers
 						mGameLoaded = true;
 				}
 
-				public bool ValidateExistingGameName(string worldName, string gameName, out string error)
-				{		//TODO remove this we don't need it any more
-						error = "Choose an existing game";
+				public bool ValidateExistingGameName(string worldName, string gameName) {
+						//TODO get rid of this
 						return true;
 				}
 
-				public bool ValidateNewGameName(string worldName, string gameName, out string cleanAlternative, out string error)
+				public bool ValidateNewGameName(string worldName, string gameName, out string cleanAlternative)
 				{	
-						Debug.Log("Validating new game name for " + worldName);
-						//TODO remove error string we don't need it any more
-						error = "Enter a game name:";
-						cleanAlternative = GameData.IO.CleanGameName(gameName);
-						if (string.IsNullOrEmpty(cleanAlternative) || cleanAlternative == "(Enter name)") {
-								return false;
-						} else {
-								if (cleanAlternative.Length < Globals.MinProfileNameCharacters) {
-										error = ("Names must be at least " + Globals.MinProfileNameCharacters.ToString() + " long");
-										return false;
-								}
-
-								List <string> gameNames = GameNames(worldName, true);
-								if (gameNames.Contains(cleanAlternative.ToLower())) {
-										error = "That game name is taken";
-										return false;
-								}
+						gameName = GameData.IO.CleanGameName(gameName);
+						List <string> gameNames = GameNames(worldName, true);
+						int increment = 1;
+						string incrementedGameName = gameName;
+						while (gameNames.Contains(incrementedGameName.ToLower())) {
+								incrementedGameName = gameName + increment.ToString();
+								increment++;
 						}
+						cleanAlternative = incrementedGameName;
 						return true;
 				}
 

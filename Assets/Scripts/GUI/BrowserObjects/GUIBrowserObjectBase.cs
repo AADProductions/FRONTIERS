@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System;
 
 namespace Frontiers.GUI
 {
@@ -23,7 +24,9 @@ namespace Frontiers.GUI
 
 				public bool DeleteRequest { get; set; }
 
-				public IGUIBrowser ParentBrowser { get; set; }
+				public virtual bool AutoSelect { get { return mAutoSelect; } set { mAutoSelect = value; } }
+
+				public IBrowser ParentBrowser { get; set; }
 
 				public virtual float Size {
 						get {
@@ -31,15 +34,21 @@ namespace Frontiers.GUI
 						}
 				}
 
+				public int CompareTo (IGUIBrowserObject other) {
+						return name.CompareTo(other.name);
+				}
+
+				protected bool mAutoSelect = true;
 				protected static List <Collider> mColliders = new List <Collider> ();//for re-use
 		}
 
-		public interface IGUIBrowserObject {
-				IGUIBrowser ParentBrowser { get; set; }
+		public interface IGUIBrowserObject : IComparable <IGUIBrowserObject> {
+				IBrowser ParentBrowser { get; set; }
 				GameObject gameObject { get; }
 				Transform transform { get; }
 				string name { get; set; }
 				float Size { get; }
 				bool DeleteRequest { get; set; }
+				bool AutoSelect { get; set; }
 		}
 }

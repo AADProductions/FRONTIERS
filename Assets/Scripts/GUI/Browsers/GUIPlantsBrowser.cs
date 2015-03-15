@@ -23,6 +23,7 @@ namespace Frontiers.GUI
 				{
 						//this will get everything on all tabs
 						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects);
+						base.GetActiveInterfaceObjects(currentObjects);
 				}
 
 				public override void WakeUp()

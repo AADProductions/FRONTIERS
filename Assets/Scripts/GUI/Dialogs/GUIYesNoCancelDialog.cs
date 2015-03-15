@@ -15,6 +15,15 @@ namespace Frontiers.GUI
 				public Vector3 CheckboxCancelOn;
 				public Vector3 CheckboxCancelOff;
 
+				public override Widget FirstInterfaceObject {
+						get {
+								Widget w = new Widget();
+								w.SearchCamera = NGUICamera;
+								w.BoxCollider = CancelButton.GetComponent<BoxCollider>();
+								return w;
+						}
+				}
+
 				public override void PushEditObjectToNGUIObject()
 				{		
 						MessageType.text = EditObject.MessageType;

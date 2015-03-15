@@ -134,6 +134,7 @@ namespace Frontiers.GUI
 						string stackNumberLabelText = string.Empty;
 						ShowDoppleganger = false;
 						MouseoverHover = false;
+						Collider.enabled = false;
 						DopplegangerProps.CopyFrom(mCraftedItemTemplate);
 
 						if (HasItemTemplate) {
@@ -141,6 +142,7 @@ namespace Frontiers.GUI
 								ShowDoppleganger = true;
 
 								if (NumItemsCrafted > 0) {
+										Collider.enabled = true;
 										DisplayMode = SquareDisplayMode.Success;
 										MouseoverHover = true;
 										DopplegangerMode = WIMode.Stacked;

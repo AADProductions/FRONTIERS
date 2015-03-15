@@ -48,6 +48,16 @@ namespace Frontiers.GUI
 						}
 						Visible = true;
 						OnShow.SafeInvoke();
+						#if UNITY_EDITOR
+						if ((VRManager.VRModeEnabled | VRManager.VRTestingModeEnabled)) {
+								Debug.Log ("Pushing widget in editor");
+								GUICursor.Get.SelectWidget(FirstInterfaceObject);
+						}
+						#else
+						if (VRManager.VRModeEnabled) {
+								GUICursor.Get.SelectWidget(FirstInterfaceObject);
+						}
+						#endif
 				}
 
 				public virtual void Hide()
@@ -106,6 +116,19 @@ namespace Frontiers.GUI
 						if (ScaleDownOnFinish) {
 								GUIManager.ScaleDownEditor(this.gameObject).Proceed(true);
 						}
+				}
+
+				public void OnFinishScaleUp () {
+						Debug.Log("On finish scaling up");
+						#if UNITY_EDITOR
+						if ((VRManager.VRModeEnabled | VRManager.VRTestingModeEnabled)) {
+								GUICursor.Get.SelectWidget(FirstInterfaceObject);
+						}
+						#else
+						if (VRManager.VRModeEnabled) {
+								GUICursor.Get.SelectWidget(FirstInterfaceObject);
+						}
+						#endif
 				}
 
 				public bool	FilterPrimaryToggleActions = false;
