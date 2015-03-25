@@ -14,6 +14,8 @@ namespace Frontiers.World.Gameplay.Story
 				public int NumCharactersPerFrame = 5;
 				public double TimePerPage = 1.5f;
 				public List <PrologueLetterPage> LetterPages = new List <PrologueLetterPage>();
+				public TextMesh LetterTextLabelNormal;
+				public TextMesh LetterTextLabelVR;
 				PrologueLetterPage CurrentPage = null;
 				public GUILetterWriter LetterWriter = null;
 				public GUICharacterCreator QuickCreateDialog;
@@ -34,8 +36,8 @@ namespace Frontiers.World.Gameplay.Story
 						"Writing5",
 						"Writing6"
 				};
-
 				public string PageTurnSound;
+				protected bool mWaitingForCameraFade = false;
 
 				public void OnQuickCreateStart()
 				{
@@ -44,7 +46,8 @@ namespace Frontiers.World.Gameplay.Story
 						QuickCreateDialog = characterCreatorDialog.GetComponent <GUICharacterCreator>();
 				}
 
-				public void OnCharacterCreated ( ){
+				public void OnCharacterCreated()
+				{
 						if (!mFinishingWritingLetter) {
 								mFinishingWritingLetter = true;
 								StartCoroutine(FinishWritingLetter());
@@ -72,7 +75,7 @@ namespace Frontiers.World.Gameplay.Story
 						} else {
 								//otherwise continue with letter
 								LetterWriter.QuickCreateMode = false;
-								LetterWriter.QuickCreateButton.SendMessage ("SetEnabled");
+								LetterWriter.QuickCreateButton.SendMessage("SetEnabled");
 						}
 				}
 
@@ -83,11 +86,19 @@ namespace Frontiers.World.Gameplay.Story
 
 				public void Start()
 				{
+						if (VRManager.VRMode) {
+								LetterTextLabel = LetterTextLabelVR;
+								LetterTextLabelNormal.gameObject.SetActive(false);
+						} else {
+								LetterTextLabel = LetterTextLabelNormal;
+								LetterTextLabelVR.gameObject.SetActive(false);
+						}
+
 						Size = new TextSize(LetterTextLabel);
 						LetterTextLabel.text = string.Empty;
 						LetterWriter.WritingLetter = true;
 						LetterWriter.OnQuickCreateStart += OnQuickCreateStart;
-						Creator.StartEditing (Profile.Get.CurrentGame.Character);
+						Creator.StartEditing(Profile.Get.CurrentGame.Character);
 						HighlightColor = Color.white;
 						HighlightColor.a = 0f;
 				}
@@ -377,25 +388,38 @@ namespace Frontiers.World.Gameplay.Story
 						yield break;
 				}
 
-				protected IEnumerator FinishWritingLetter ( ) {
+				protected IEnumerator FinishWritingLetter()
+				{
 						//fade out to make the letter disappear
 						double waitUntil = WorldClock.RealTime + 2f;
 						while (WorldClock.RealTime < waitUntil) {
 								yield return null;
 						}
-						//use the loading camera instead of fade in/out
-						GUILoading.Get.BackgroundSprite.alpha = 0f;
-						GUILoading.Get.BackgroundSprite.enabled = true;
-						GUILoading.Get.gameObject.SetActive(true);
-						GUILoading.Get.LoadingCamera.enabled = true;
 						double fadeStartTime = WorldClock.RealTime;
 						double fadeDuration = 2.0;
-						while (GUILoading.Get.BackgroundSprite.alpha < 1f) {
-								GUILoading.Get.BackgroundSprite.alpha = (float)WorldClock.Lerp (GUILoading.Get.BackgroundSprite.alpha, 1f, (WorldClock.RealTime - fadeStartTime) / fadeDuration);
-								if (GUILoading.Get.BackgroundSprite.alpha > 0.99f) {
-										GUILoading.Get.BackgroundSprite.alpha = 1f;
+						if (VRManager.VRMode) {
+								//do an actual camera fade
+								mWaitingForCameraFade = true;
+								CameraFade.StartAlphaFade(Colors.Alpha (Color.black, 1f), false, fadeDuration, 0f, () => {
+										mWaitingForCameraFade = false;
+								});
+								while (mWaitingForCameraFade) {
+										yield return null;
 								}
-								yield return null;
+						} else {
+								//use the loading screen background
+								//use the loading camera instead of fade in/out
+								GUILoading.Get.BackgroundSprite.alpha = 0f;
+								GUILoading.Get.BackgroundSprite.enabled = true;
+								GUILoading.Get.gameObject.SetActive(true);
+								GUILoading.Get.LoadingCamera.enabled = true;
+								while (GUILoading.Get.BackgroundSprite.alpha < 1f) {
+										GUILoading.Get.BackgroundSprite.alpha = (float)WorldClock.Lerp(GUILoading.Get.BackgroundSprite.alpha, 1f, (WorldClock.RealTime - fadeStartTime) / fadeDuration);
+										if (GUILoading.Get.BackgroundSprite.alpha > 0.99f) {
+												GUILoading.Get.BackgroundSprite.alpha = 1f;
+										}
+										yield return null;
+								}
 						}
 						//turn everything off and swap out the letters
 						for (int i = 0; i < LetterWriter.LetterPages.Count; i++) {
@@ -406,25 +430,42 @@ namespace Frontiers.World.Gameplay.Story
 						LetterWriter.FinalLetter.SetActive(true);
 						waitUntil = WorldClock.RealTime + 0.25f;
 						while (WorldClock.RealTime < waitUntil) {
+								if (VRManager.VRMode) {
+										CameraFade.HoldAlphaFade(Colors.Alpha (Color.black, 1f));
+								}
 								yield return null;
 						}
 						MasterAudio.PlaySound(SoundType, PageTurnSound);
 						Cutscene.CurrentCutscene.TryToFinish();
 						waitUntil = WorldClock.RealTime + 0.25f;
 						while (WorldClock.RealTime < waitUntil) {
-								yield return null;
-						}
-						fadeStartTime = WorldClock.RealTime;
-						while (GUILoading.Get.BackgroundSprite.alpha > 0f) {
-								GUILoading.Get.BackgroundSprite.alpha = (float)WorldClock.Lerp (GUILoading.Get.BackgroundSprite.alpha, 0f, (WorldClock.RealTime - fadeStartTime) / fadeDuration);
-								if (GUILoading.Get.BackgroundSprite.alpha < 0.01f) {
-										GUILoading.Get.BackgroundSprite.alpha = 0f;
+								if (VRManager.VRMode) {
+										CameraFade.HoldAlphaFade(Colors.Alpha (Color.black, 1f));
 								}
 								yield return null;
 						}
-						GUILoading.Get.BackgroundSprite.enabled = false;
-						GUILoading.Get.LoadingCamera.enabled = false;
-						GUILoading.Get.gameObject.SetActive(false);
+						fadeStartTime = WorldClock.RealTime;
+						if (VRManager.VRMode) {
+								//do an actual camera fade
+								mWaitingForCameraFade = true;
+								CameraFade.StartAlphaFade(Colors.Alpha (Color.black, 1f), true, fadeDuration, 0f, () => {
+										mWaitingForCameraFade = false;
+								});
+								while (mWaitingForCameraFade) {
+										yield return null;
+								}
+						} else {
+								while (GUILoading.Get.BackgroundSprite.alpha > 0f) {
+										GUILoading.Get.BackgroundSprite.alpha = (float)WorldClock.Lerp(GUILoading.Get.BackgroundSprite.alpha, 0f, (WorldClock.RealTime - fadeStartTime) / fadeDuration);
+										if (GUILoading.Get.BackgroundSprite.alpha < 0.01f) {
+												GUILoading.Get.BackgroundSprite.alpha = 0f;
+										}
+										yield return null;
+								}
+								GUILoading.Get.BackgroundSprite.enabled = false;
+								GUILoading.Get.LoadingCamera.enabled = false;
+								GUILoading.Get.gameObject.SetActive(false);
+						}
 						////Debug.Log ("GUI LETTER WRITER: Cutscene finished, releasing focus and destroying");
 						//GUIManager.Get.ReleaseFocus (this);
 						//GameObject.Destroy (gameObject, 0.5f);

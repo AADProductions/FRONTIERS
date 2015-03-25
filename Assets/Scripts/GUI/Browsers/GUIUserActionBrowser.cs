@@ -88,6 +88,7 @@ namespace Frontiers.GUI
 						ConfirmMessageLabel.text = "Changes saved.";
 				}
 
+				protected GameObject mControlsDialog;
 				protected List <ActionSetting> mLastUserActionSettings = new List<ActionSetting>();
 				protected List <ActionSetting> mLastInterfaceActionSettings = new List<ActionSetting>();
 				protected List <ActionSetting> mActionSettings = new List<ActionSetting> ();

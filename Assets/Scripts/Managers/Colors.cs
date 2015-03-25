@@ -422,6 +422,14 @@ namespace Frontiers
 				public Color WorldMapPathColor = Color.white;
 				[InterfaceColorAttribute]
 				public Color WorldMapActivePathColor = Color.white;
+				[InterfaceColorAttribute]
+				public Color VRIconColorOn = Color.white;
+				[InterfaceColorAttribute]
+				public Color VRIconColorOff = Color.gray;
+				[InterfaceColorAttribute]
+				public Color VRIconColorForceOn = Color.white;
+				[InterfaceColorAttribute]
+				public Color VRIconColorForceOff = Color.white;
 				public Color HairColorBlack = Color.white;
 				public Color HairColorBrown = Color.white;
 				public Color HairColorBlonde = Color.white;

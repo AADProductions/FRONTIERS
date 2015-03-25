@@ -26,6 +26,14 @@ namespace Frontiers.World
 						return;
 				}
 
+				public void OnCutsceneStart () {
+						CutsceneProp prop = gameObject.GetComponent <CutsceneProp>();
+						if (prop != null && !prop.Visible) {
+								enabled = false;
+								return;
+						}
+				}
+
 				public void Start()
 				{
 						if (CharacterName == "[Player]") {

@@ -94,11 +94,11 @@ namespace Frontiers.GUI
 								mCallBack(this);
 						}
 			
+						OnFinish();
+
 						if (!string.IsNullOrEmpty(OnFinishedMessage)) {
 								gameObject.SendMessage(OnFinishedMessage, SendMessageOptions.DontRequireReceiver);
 						}
-
-						OnFinish();
 			
 						if (mAutoRetire) {
 								Retire();

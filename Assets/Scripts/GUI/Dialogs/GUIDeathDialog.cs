@@ -84,12 +84,16 @@ namespace Frontiers.GUI
 						optionsList.PositionTarget = UICamera.currentCamera.WorldToScreenPoint(transform.position);
 						mSpawnSkills.Clear();
 						mSpawnSkills.AddRange(Skills.Get.SkillsByType <RespawnSkill>());
-						foreach (Skill spawnSkill in mSpawnSkills) {
-								optionsList.AddOption(spawnSkill.GetListOption(Player.Local));
+						if (mSpawnSkills.Count > 0) {
+								foreach (Skill spawnSkill in mSpawnSkills) {
+										optionsList.AddOption(spawnSkill.GetListOption(Player.Local));
+								}
+						} else {
+								optionsList.AddOption(new WIListOption ("Revive", "DefaultRevive"));
 						}
 						//the list can't go away unless the player makes a choice
 						optionsList.ForceChoice = true;
-						if (optionsList.TryToSpawn(true, out OptionListDialog)) {
+						if (optionsList.TryToSpawn(true, out OptionListDialog, null)) {
 								Debug.Log("Trying to spawn options list...");
 								UsingSkillList = true;
 						}
@@ -98,23 +102,28 @@ namespace Frontiers.GUI
 				public void OnSelectSpawnSkill(System.Object result)
 				{
 						WIListResult dialogResult = result as WIListResult;
-						RespawnSkill skillToUse = null;
-						foreach (Skill removeSkill in mSpawnSkills) {
-								if (removeSkill.name == dialogResult.Result) {
-										skillToUse = removeSkill as RespawnSkill;
-										break;
-								}
-						}
 
-						OfLabel.enabled = false;
-
-						if (skillToUse != null) {
-								//use this skill to respawn
-								skillToUse.Use(Player.Local, dialogResult.SecondaryResultFlavor);
-								mSpawnSkills.Clear();
-								StartCoroutine(WaitForPlayerToSpawn(skillToUse));
+						if (dialogResult.Result == "DefaultRevive") {
+								Player.Local.Spawn();
 						} else {
-								Debug.Log("SKILL TO USE NOT FOUND!");
+								RespawnSkill skillToUse = null;
+								foreach (Skill removeSkill in mSpawnSkills) {
+										if (removeSkill.name == dialogResult.Result) {
+												skillToUse = removeSkill as RespawnSkill;
+												break;
+										}
+								}
+
+								OfLabel.enabled = false;
+
+								if (skillToUse != null) {
+										//use this skill to respawn
+										skillToUse.Use(Player.Local, dialogResult.SecondaryResultFlavor);
+										mSpawnSkills.Clear();
+										StartCoroutine(WaitForPlayerToSpawn(skillToUse));
+								} else {
+										Debug.Log("SKILL TO USE NOT FOUND!");
+								}
 						}
 				}
 

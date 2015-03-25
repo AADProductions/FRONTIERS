@@ -97,7 +97,7 @@ namespace Frontiers.GUI
 
 								usable = topItem.gameObject.GetOrAdd <WorldItemUsable>();
 								usable.ShowDoppleganger = false;
-								usable.TryToSpawn(true, out mUsable);
+								usable.TryToSpawn(true, out mUsable, NGUICamera);
 								usable.ScreenTarget = transform;
 								usable.ScreenTargetCamera = NGUICamera;
 								usable.RequirePlayerFocus = false;
@@ -480,7 +480,7 @@ namespace Frontiers.GUI
 						optionsList.AddOption(new WIListOption("Cancel"));
 						optionsList.ShowDoppleganger = false;
 						GUIOptionListDialog dialog = null;
-						if (optionsList.TryToSpawn(true, out dialog)) {
+						if (optionsList.TryToSpawn(true, out dialog, NGUICamera)) {
 								UsingMenu = true;
 								optionsList.ScreenTarget = transform;
 								optionsList.ScreenTargetCamera = NGUICamera;

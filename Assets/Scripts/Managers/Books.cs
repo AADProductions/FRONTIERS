@@ -660,10 +660,8 @@ namespace Frontiers
 
 				public static void AquireBook(string bookName)
 				{
-						Debug.Log("Attempting to aquire book '" + bookName + "'");
 						Book book = null;
 						if (Mods.Get.Runtime.LoadMod <Book>(ref book, "Book", bookName)) {
-								Debug.Log("Aquiring book " + bookName);
 								Get.AquiredBooks.Add(bookName);
 								book.Status &= ~BookStatus.Dormant;
 								book.Status |= BookStatus.Received;
@@ -672,8 +670,6 @@ namespace Frontiers
 								Mods.Get.Runtime.SaveMod <Book>(book, "Book", bookName);
 								GUIManager.PostGainedItem(book);
 								Player.Get.AvatarActions.ReceiveAction(AvatarAction.BookAquire, WorldClock.AdjustedRealTime);
-						} else {
-								Debug.Log("Couldn't find book");
 						}
 				}
 

@@ -7,6 +7,10 @@ namespace Frontiers.GUI
 {
 		public class GUIHudMiniAction : MonoBehaviour
 		{
+				public void Awake() {
+						KeystrokeLabel.useDefaultLabelFont = false;
+				}
+
 				public void Reset()
 				{
 						DescriptionLabel.enabled = false;
@@ -31,6 +35,7 @@ namespace Frontiers.GUI
 						LBumperSprite.enabled = false;
 						RBumperSprite.enabled = false;
 						StartButtonSprite.enabled = false;
+						BackButtonSprite.enabled = false;
 				}
 
 				public void SetAlpha(float alpha)
@@ -57,6 +62,7 @@ namespace Frontiers.GUI
 						LBumperSprite.alpha = alpha;
 						RBumperSprite.alpha = alpha;
 						StartButtonSprite.alpha = alpha;
+						BackButtonSprite.alpha = alpha;
 				}
 
 				public bool SetKey(KeyCode key, string description)
@@ -70,7 +76,18 @@ namespace Frontiers.GUI
 
 						KeystrokeLabel.enabled = true;
 						KeystrokeSprite.enabled = true;
-						KeystrokeLabel.text = key.ToString();
+
+						KeystrokeLabel.transform.localPosition = KeystrokeLabelPosition;
+
+						bool wideFormat;
+						string text = string.Empty;
+						InterfaceActionManager.GetKeyCodeLabelText(key, false, out text, out wideFormat);
+						if (wideFormat) {
+								KeystrokeSprite.transform.localScale = WideKeystrokeScale;
+						} else {
+								KeystrokeSprite.transform.localScale = ThinKeystrokeScale;
+						}
+						KeystrokeLabel.text = text;
 
 						return true;
 				}
@@ -151,61 +168,97 @@ namespace Frontiers.GUI
 								case InputControlType.DPadLeft:
 										ControllerDPadSprite.enabled = true;
 										ControllerDPadLeft.enabled = true;
+										if (IncludeOpposingAxisByDefault) {
+												ControllerDPadRight.enabled = true;
+										}
 										break;
 
 								case InputControlType.DPadRight:
 										ControllerDPadSprite.enabled = true;
 										ControllerDPadRight.enabled = true;
+										if (IncludeOpposingAxisByDefault) {
+												ControllerDPadLeft.enabled = true;
+										}
 										break;
 
 								case InputControlType.DPadUp:
 										ControllerDPadSprite.enabled = true;
 										ControllerDPadUp.enabled = true;
+										if (IncludeOpposingAxisByDefault) {
+												ControllerDPadDown.enabled = true;
+										}
 										break;
 
 								case InputControlType.DPadDown:
 										ControllerDPadSprite.enabled = true;
 										ControllerDPadDown.enabled = true;
+										if (IncludeOpposingAxisByDefault) {
+												ControllerDPadUp.enabled = true;
+										}
 										break;
 
 								case InputControlType.DPadX:
 										ControllerDPadSprite.enabled = true;
 										ControllerDPadLeft.enabled = true;
 										ControllerDPadRight.enabled = true;
+										if (IncludeOpposingAxisByDefault) {
+												ControllerDPadUp.enabled = true;
+												ControllerDPadDown.enabled = true;
+										}
 										break;
 
 								case InputControlType.DPadY:
 										ControllerDPadSprite.enabled = true;
 										ControllerDPadUp.enabled = true;
 										ControllerDPadDown.enabled = true;
+										if (IncludeOpposingAxisByDefault) {
+												ControllerDPadLeft.enabled = true;
+												ControllerDPadRight.enabled = true;
+										}
 										break;
 
 								case InputControlType.LeftStickX:
 										LStickSprite.enabled = true;
 										ControllerArrowsHorizontal.enabled = true;
+										if (IncludeOpposingAxisByDefault) {
+												ControllerArrowsVertical.enabled = true;
+										}
 										break;
 
 								case InputControlType.LeftStickY:
 										LStickSprite.enabled = true;
 										ControllerArrowsVertical.enabled = true;
+										if (IncludeOpposingAxisByDefault) {
+												ControllerArrowsHorizontal.enabled = true;
+										}
 										break;
 
 								case InputControlType.RightStickX:
 										RStickSprite.enabled = true;
 										ControllerArrowsHorizontal.enabled = true;
+										if (IncludeOpposingAxisByDefault) {
+												ControllerArrowsVertical.enabled = true;
+										}
 										break;
 
 								case InputControlType.RightStickY:
 										RStickSprite.enabled = true;
 										ControllerArrowsVertical.enabled = true;
+										if (IncludeOpposingAxisByDefault) {
+												ControllerArrowsHorizontal.enabled = true;
+										}
 										break;
 
 								case InputControlType.Start:
 										StartButtonSprite.enabled = true;
 										break;
 
+								case InputControlType.Back:
+										BackButtonSprite.enabled = true;
+										break;
+
 								default:
-										Debug.Log("Couldn't show action");
+										Debug.Log("Couldn't show action, trued to show " + control.ToString());
 										result = false;
 										break;
 						}
@@ -216,6 +269,7 @@ namespace Frontiers.GUI
 						return result;
 				}
 
+				public bool IncludeOpposingAxisByDefault = false;
 				public UILabel DescriptionLabel;
 				public UISprite KeystrokeSprite;
 				public UILabel KeystrokeLabel;
@@ -238,5 +292,9 @@ namespace Frontiers.GUI
 				public UISprite LBumperSprite;
 				public UISprite RBumperSprite;
 				public UISprite StartButtonSprite;
+				public UISprite BackButtonSprite;
+				public static Vector3 ThinKeystrokeScale = new Vector3(25f, 25f, 1f);
+				public static Vector3 WideKeystrokeScale = new Vector3(50f, 25f, 1f);
+				public static Vector3 KeystrokeLabelPosition = new Vector3(-27f, 18f, -20f);
 		}
 }

@@ -12,6 +12,7 @@ namespace Frontiers.GUI
 
 				public override IEnumerable <string> FetchItems()
 				{
+						mSelectedObject = null;//reset this so it'll push to the viewer automatically
 						return Profile.Get.ProfileNames(false) as IEnumerable <string>;
 				}
 

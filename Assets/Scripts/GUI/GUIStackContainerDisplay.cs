@@ -42,9 +42,9 @@ namespace Frontiers.GUI
 				public GameObject InventorySlotsParent;
 				public float FrameHeight = 117.5f;
 
-				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects)
+				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects, int flag)
 				{
-						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
+						FrontiersInterface.Widget w = new FrontiersInterface.Widget(flag);
 						for (int i = 0; i < InventorySquares.Count; i++) {
 								if (InventorySquares[i].IsEnabled) {
 										w.BoxCollider = InventorySquares[i].Collider;
@@ -55,6 +55,18 @@ namespace Frontiers.GUI
 						w.BoxCollider = EnablerDisplay.Collider;
 						w.SearchCamera = NGUICamera;
 						currentObjects.Add(w);
+				}
+
+				public FrontiersInterface.Widget FirstInterfaceObject {
+						get {
+								FrontiersInterface.Widget w = new FrontiersInterface.Widget(-1);
+								if (InventorySquares.Count > 0) {
+										w.SearchCamera = NGUICamera;
+										w.BoxCollider = InventorySquares[0].Collider;
+								}
+								return w;
+						}
+
 				}
 
 				public void Show()
@@ -83,8 +95,11 @@ namespace Frontiers.GUI
 
 				public void EnableColliders(bool enable)
 				{
-						for (int i = 0; i < InventorySquares.Count; i++) {
-								InventorySquares[i].collider.enabled = enable;
+						if (mCollidersEnabled != enable) {
+								mCollidersEnabled = enable;
+								for (int i = 0; i < InventorySquares.Count; i++) {
+										InventorySquares[i].collider.enabled = enable;
+								}
 						}
 				}
 
@@ -161,6 +176,8 @@ namespace Frontiers.GUI
 						if (HasCreatedSquares)
 								return;
 
+						mCollidersEnabled = false;
+
 						if (EnablerDisplayPrefab == null) {
 								EnablerDisplayPrefab = GUIManager.Get.InventorySquareEnabler;
 						}
@@ -230,7 +247,10 @@ namespace Frontiers.GUI
 						}
 						FrameSprite.transform.localScale = new Vector3((squaresPerRow * squareDimensions.x) - mFramePadding, (2 * squareDimensions.y) - mFramePadding, 0f);
 						if (UseVisualEnabler) {
+								EnablerDisplay.NGUICamera = NGUICamera;
+								#if UNITY_EDITOR
 								EnablerDisplay.name = DisplayName + " enabler ";
+								#endif
 						}
 				}
 
@@ -261,7 +281,10 @@ namespace Frontiers.GUI
 						}
 						FrameSprite.transform.localScale = new Vector3((2 * squareDimensions.x) - mFramePadding, (2 * squareDimensions.y) - mFramePadding, 0f);
 						if (UseVisualEnabler) {
+								EnablerDisplay.NGUICamera = NGUICamera;
+								#if UNITY_EDITOR
 								EnablerDisplay.name = DisplayName + " enabler ";
+								#endif
 						}
 				}
 
@@ -289,7 +312,10 @@ namespace Frontiers.GUI
 
 						FrameSprite.transform.localScale = new Vector3((numberOfSquares * squareDimensions.x) + mFramePadding, (squareDimensions.y) + mFramePadding, 0f);
 						if (UseVisualEnabler) {
+								EnablerDisplay.NGUICamera = NGUICamera;
+								#if UNITY_EDITOR
 								EnablerDisplay.name = DisplayName + " enabler ";
+								#endif
 						}
 				}
 
@@ -323,7 +349,9 @@ namespace Frontiers.GUI
 										//but we'll see what happens...
 										List <WIStack> enablerStacks = Enabler.EnablerStacks;
 										for (int i = 0; i < InventorySquares.Count; i++) {
+												#if UNITY_EDITOR
 												InventorySquares[i].name = DisplayName + " square " + i.ToString();
+												#endif
 												InventorySquares[i].Enabler = Enabler;
 												InventorySquares[i].SetStack(enablerStacks[i]);
 												InventorySquares[i].UpdateDisplay();
@@ -331,7 +359,9 @@ namespace Frontiers.GUI
 								} else {
 										//if we're not setting them, we're dropping them
 										for (int i = 0; i < InventorySquares.Count; i++) {
+												#if UNITY_EDITOR
 												InventorySquares[i].name = DisplayName + " square " + i.ToString();
+												#endif
 												InventorySquares[i].DropStack();
 												InventorySquares[i].UpdateDisplay();
 										}
@@ -349,6 +379,7 @@ namespace Frontiers.GUI
 
 				protected WIStackEnabler mEnabler = null;
 				public float mFramePadding = 17.5f;
+				protected bool mCollidersEnabled = false;
 		}
 
 		public enum StackContainerDisplayMode

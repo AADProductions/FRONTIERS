@@ -14,8 +14,7 @@ namespace Frontiers.GUI
 
 				public override Widget FirstInterfaceObject {
 						get {
-								Widget w = new Widget();
-								w.SearchCamera = NGUICamera;
+								Widget w = base.FirstInterfaceObject;
 								w.BoxCollider = CancelButton.GetComponent<BoxCollider>();
 								return w;
 						}

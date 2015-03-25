@@ -8,6 +8,7 @@ namespace Frontiers
 		public class FrontiersIntroScene : MonoBehaviour
 		{
 				public GameObject FrontiersLogoCameraPosition;
+				public GameObject FrontiersLogoCameraPositionStatic;
 				public ChunkBiomeData Biome	= new ChunkBiomeData();
 				public TOD_CycleParameters Cycle = new TOD_CycleParameters();
 				public float FieldOfView = 50f;
@@ -44,12 +45,16 @@ namespace Frontiers
 								case FGameState.GameLoading:
 								case FGameState.Startup:
 								case FGameState.WaitingForGame:
-										if (!animation.isPlaying) {
-												animation.Play();
+										if (VRManager.VRMode) {
+												GameManager.Get.GameCamera.transform.position = FrontiersLogoCameraPositionStatic.transform.position;
+										} else {
+												if (!animation.isPlaying) {
+														animation.Play();
+												}
+												GameManager.Get.GameCamera.transform.position = FrontiersLogoCameraPosition.transform.position;
+												GameManager.Get.GameCamera.transform.rotation = FrontiersLogoCameraPosition.transform.rotation;
+												GameManager.Get.GameCamera.camera.fieldOfView = FieldOfView;
 										}
-										GameManager.Get.GameCamera.transform.position = FrontiersLogoCameraPosition.transform.position;
-										GameManager.Get.GameCamera.transform.rotation = FrontiersLogoCameraPosition.transform.rotation;
-										GameManager.Get.GameCamera.camera.fieldOfView = FieldOfView;
 										break;
 						}
 				}

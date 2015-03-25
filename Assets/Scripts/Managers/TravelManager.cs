@@ -226,8 +226,6 @@ namespace Frontiers
 								return;
 						}
 
-						//Debug.Log("Updating traveling... we're at " + PathCurrentMeters.ToString() + " and moving towards " + PathEndMeters.ToString());
-
 						CurrentSegment = Paths.ActivePath.SegmentFromMeters(PathCurrentMeters);
 						float metersToMove = (float)(TimeScaleTravel * WorldClock.RTDeltaTime);
 						PathCurrentMeters = Paths.MoveAlongPath(PathCurrentMeters, metersToMove, CurrentDirection);
@@ -237,9 +235,6 @@ namespace Frontiers
 						mTerrainHit.groundedHeight = 2f;
 						mTerrainHit.ignoreWorldItems = false;
 						CurrentPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition(ref mTerrainHit) + Player.Local.Height.y;
-
-						//Debug.Log("We're now at " + PathCurrentMeters.ToString());
-
 						if (mTerrainHit.hitWater) {
 								GUIManager.PostDanger("You can't fast travel over water");
 								CurrentPosition.y += 2f;//TEMP just to be safe
@@ -247,17 +242,29 @@ namespace Frontiers
 								return;
 						}
 
-						//make sure hijacked position is facing the right direction, etc
-						Player.Local.State.HijackMode = PlayerHijackMode.OrientToTarget;
-						Player.Local.HijackedPosition.position = CurrentPosition;
-						Player.Local.HijackedPosition.rotation = Quaternion.identity;
-						Player.Local.HijackLookSpeed = Globals.PlayerHijackLerp;
-
-
-						CurrentOrientation = Paths.ActivePath.OrientationFromMeters(PathCurrentMeters, true);
-						Player.Local.HijackedPosition.transform.Rotate(CurrentOrientation);
-						if (CurrentDirection == PathDirection.Backwards) {
-								Player.Local.HijackedPosition.transform.Rotate(0f, 180f, 0f);
+						#if UNITY_EDITOR
+						if (VRManager.VRMode | VRManager.VRTestingModeEnabled && Profile.Get.CurrentPreferences.Video.VRStaticCameraFastTravel) {
+						#else
+						if (VRManager.VRMode && Profile.Get.CurrentPreferences.Video.VRStaticCameraFastTravel) {
+						#endif
+								//if we're in vr mode and we want to use a static camera
+								//just fade out, and hold the fade, then release it once we're done
+								if (!mFadingOutOverTime) {
+										mFadingOutOverTime = true;
+										StartCoroutine (FadeOutOverTime ());
+								}
+						}
+						else {
+							//make sure hijacked position is facing the right direction, etc
+							Player.Local.State.HijackMode = PlayerHijackMode.OrientToTarget;
+							Player.Local.HijackedPosition.position = CurrentPosition;
+							Player.Local.HijackedPosition.rotation = Quaternion.identity;
+							Player.Local.HijackLookSpeed = Globals.PlayerHijackLerp;
+							CurrentOrientation = Paths.ActivePath.OrientationFromMeters(PathCurrentMeters, true);
+							Player.Local.HijackedPosition.transform.Rotate(CurrentOrientation);
+							if (CurrentDirection == PathDirection.Backwards) {
+									Player.Local.HijackedPosition.transform.Rotate(0f, 180f, 0f);
+							}
 						}
 
 						if (HasReachedOrPassedDestination) {
@@ -328,9 +335,38 @@ namespace Frontiers
 						}
 				}
 
+				protected IEnumerator FadeOutOverTime () {
+						mFadingOut = true;
+						Frontiers.GUI.CameraFade.StartAlphaFade(Colors.Alpha (Color.black, 1f), false, 0.5f, 0f, () => {
+								mFadingOut = false;
+						});
+						//once the fade out leading into the fade in is ready
+						//start the actual fade in
+						while (mFadingOut) {
+								yield return null;
+						}
+						//wait for us to arrive at our destination, or for us to cancel
+						Frontiers.GUI.CameraFade.HoldAlphaFade(Colors.Alpha (Color.black, 1f));
+						while (State == FastTravelState.Traveling) {
+								yield return null;
+						}
+						//set this to false now so we can doulbe-up on fades
+						mFadingOutOverTime = false;
+						mFadingIn = true;
+						Frontiers.GUI.CameraFade.StartAlphaFade(Colors.Alpha (Color.black, 1f), true, 0.5f, 0f, () => {
+								mFadingIn = false;
+						});
+						while (mFadingIn) {
+								yield return null;
+						}
+				}
+
 				protected double mNextChoiceWaitStartTime = 0f;
 				protected double mLastTimePressedForward = 0f;
 				protected double mPressedForwardInterval = 0.5f;
+				protected bool mFadingOutOverTime = false;
+				protected bool mFadingOut = false;
+				protected bool mFadingIn = false;
 
 				[Serializable]
 				public class FastTravelChoice

@@ -11,6 +11,9 @@ namespace Frontiers.GUI
 		public class GUIConversation : PrimaryInterface
 		{
 				public UIAnchor StatusKeepersAnchor;
+				public UIAnchor TextAnchor;
+				public Vector2 TextAnchorOffsetVR = new Vector2(0.18f, 0f);
+				public Vector2 TextAnchorOffset = Vector2.zero;
 				public GameObject PlayerDialogChoicePrototype;
 				public GameObject ConversationVariablePrefab;
 				public GameObject PlayerDialogChoicesParent;
@@ -47,12 +50,36 @@ namespace Frontiers.GUI
 				public Vector4 DialogPanelClipping;
 				public float TargetOffset = -1.0f;
 
-				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				public override bool CustomVRSettings {
+						get {
+								return true;
+						}
+				}
+
+				public override bool AxisLock {
+						get {
+								return false;
+						}
+				}
+
+				public override bool CursorLock {
+						get {
+								return false;
+						}
+				}
+
+				public override Vector3 LockOffset {
+						get {
+								return Vector3.zero;
+						}
+				}
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
+						if (flag < 0) { flag = GUIEditorID; }
 						//add the player choices but not the character's choice
-						FrontiersInterface.GetActiveInterfaceObjectsInTransform(PlayerDialogChoicesParent.transform, NGUICamera, currentObjects);
+						FrontiersInterface.GetActiveInterfaceObjectsInTransform(PlayerDialogChoicesParent.transform, NGUICamera, currentObjects, flag);
 						//also add the status keepers
-						FrontiersInterface.Widget w = new Widget();
+						FrontiersInterface.Widget w = new Widget(flag);
 						w.SearchCamera = NGUICamera;
 						for (int i = 0; i < StatusKeepers.Count; i++) {
 								w.BoxCollider = StatusKeepers[i].GetComponent <BoxCollider>();
@@ -66,7 +93,7 @@ namespace Frontiers.GUI
 
 				public override Widget FirstInterfaceObject {
 						get {
-								FrontiersInterface.Widget w = new Widget();
+								FrontiersInterface.Widget w = new Widget(-1);
 								w.SearchCamera = NGUICamera;
 								if (PlayerDialogChoicesParent.transform.childCount == 0) {
 										w.BoxCollider = LeaveButton.GetComponent <BoxCollider>();
@@ -146,6 +173,17 @@ namespace Frontiers.GUI
 										}
 										ConversationVariableParent.Reposition();
 								}
+
+								#if UNITY_EDITOR
+								if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+								#else
+								if (VRManager.VRMode) {
+								#endif
+										TextAnchor.relativeOffset = TextAnchorOffsetVR;
+								}
+								else {
+										TextAnchor.relativeOffset = TextAnchorOffset;
+								}
 						}
 				}
 
@@ -184,6 +222,7 @@ namespace Frontiers.GUI
 						ResponseBubble.FadeDelay = 0.05f;
 						ResponseBubble.EnableAutomatically = true;
 						ResponseBubble.SetProps(nextPage, Conv.SpeakingCharacter.worlditem.DisplayName, CharacterColor, CharacterTextColor, true, CharacterResponseScrollbar);
+						ResponseBubble.Text.useDefaultLabelFont = true;
 
 						if (continues) {
 								mDialogChoicesReady = true;
@@ -208,14 +247,12 @@ namespace Frontiers.GUI
 								LeaveButton.gameObject.SetActive(true);
 								ConversationFinishedLabel.enabled = true;
 								#if UNITY_EDITOR
-								if (VRManager.VRModeEnabled | VRManager.VRTestingModeEnabled) {
+								if (VRManager.VRMode | VRManager.VRTestingModeEnabled | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+								#else
+								if (VRManager.VRMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+								#endif
 										GUICursor.Get.SelectWidget (FirstInterfaceObject);
 								}
-								#else
-								if (VRManager.VRModeEnabled) {
-								GUICursor.Get.SelectWidget (FirstInterfaceObject);
-								}
-								#endif
 						}
 				}
 
@@ -282,14 +319,12 @@ namespace Frontiers.GUI
 						choices.Clear();
 						//if we're in VR mode, move the mouse to the best position
 						#if UNITY_EDITOR
-						if (VRManager.VRModeEnabled | VRManager.VRTestingModeEnabled) {
-								GUICursor.Get.SelectWidget (FirstInterfaceObject);
-						}
+						if (VRManager.VRMode | VRManager.VRTestingModeEnabled | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 						#else
-						if (VRManager.VRModeEnabled) {
-								GUICursor.Get.SelectWidget (FirstInterfaceObject);
-						}
+						if (VRManager.VRMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 						#endif
+							GUICursor.Get.SelectWidget(FirstInterfaceObject);
+						}
 						yield break;
 				}
 
@@ -386,7 +421,7 @@ namespace Frontiers.GUI
 						}
 
 						RefreshLeaveButton();
-
+					
 						SuspendMessages = true;
 
 						StatusKeepersAnchor.gameObject.SetActive(true);
@@ -398,16 +433,6 @@ namespace Frontiers.GUI
 						SendCharacterCameraToCharacter();
 
 						CharacterResponseScrollbar.scrollValue = 0.5f;
-
-						Transform lightParent = Conversation.LastInitiatedConversation.SpeakingCharacter.Body.Transforms.HeadTop;
-						Transform headLightTransform = lightParent.gameObject.CreateChild("HeadLight");
-						HeadLight = headLightTransform.gameObject.AddComponent <Light>();
-						HeadLight.type = LightType.Spot;
-						HeadLight.spotAngle = 30;
-						HeadLight.range = 10;
-						HeadLight.intensity = 1f;
-						headLightTransform.localRotation = Quaternion.Euler(70f, 200f, 200f);
-						headLightTransform.localPosition = new Vector3(0f, 2f, 1f);
 
 						CharacterColor = Colors.Saturate(Colors.ColorFromString(Conv.SpeakingCharacter.FullName, 125));
 						//set the rep color in load next exchange, since it won't change
@@ -487,14 +512,12 @@ namespace Frontiers.GUI
 				protected void SendCharacterCameraToCharacter()
 				{
 						#if UNITY_EDITOR
-						if ((VRManager.VRModeEnabled | VRManager.VRTestingModeEnabled)) {
-								return;
-						}
+						if ((VRManager.VRMode | VRManager.VRTestingModeEnabled)) {
 						#else
-						if (VRManager.VRModeEnabled) {
-								return;
-						}
+						if (VRManager.VRMode) {
 						#endif
+						return;
+						}
 
 						Transform headTransform = Conversation.LastInitiatedConversation.SpeakingCharacter.Body.Transforms.HeadConvo;
 						mCameraHelper.position = headTransform.position;
@@ -506,6 +529,18 @@ namespace Frontiers.GUI
 						Player.Local.State.HijackMode = PlayerHijackMode.LookAtTarget;
 						Player.Local.SetHijackTargets(mCameraHelper.gameObject, mCameraHelper.gameObject);
 						GameManager.Get.GameCamera.fieldOfView = 60f;
+
+						if (HeadLight == null) {
+							Transform lightParent = Conversation.LastInitiatedConversation.SpeakingCharacter.Body.Transforms.HeadTop;
+							Transform headLightTransform = lightParent.gameObject.CreateChild("HeadLight");
+							HeadLight = headLightTransform.gameObject.AddComponent <Light>();
+							HeadLight.type = LightType.Spot;
+							HeadLight.spotAngle = 30;
+							HeadLight.range = 10;
+							HeadLight.intensity = 1f;
+							headLightTransform.localRotation = Quaternion.Euler(70f, 200f, 200f);
+							headLightTransform.localPosition = new Vector3(0f, 2f, 1f);
+						}
 				}
 
 				protected Transform mFocusPoint;

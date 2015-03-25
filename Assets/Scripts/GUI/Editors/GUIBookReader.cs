@@ -30,6 +30,38 @@ namespace Frontiers.GUI
 				public GameObject FinishedReadingButton;
 				public UIScrollBar CurrentScrollBar;
 				public float ScrollBarSensitivity = 0.05f;
+				public Vector3 NormalOffset = new Vector3(0f, 0f, -200f);
+				public Vector3 VRModeOffset = new Vector3(0f, -80f, -200f);
+
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
+				{
+						if (flag < 0) { flag = GUIEditorID; }
+
+						Widget w = new Widget(flag);
+						w.SearchCamera = NGUICamera;
+						w.BoxCollider = NextChapterButton.GetComponent <BoxCollider>();
+						currentObjects.Add(w);
+						w.BoxCollider = PrevChapterButton.GetComponent <BoxCollider>();
+						currentObjects.Add(w);
+						w.BoxCollider = FinishedReadingButton.GetComponent <BoxCollider>();
+						currentObjects.Add(w);
+						w.BoxCollider = WhiteOnBlack.GetComponent <BoxCollider>();
+						currentObjects.Add(w);
+						w.BoxCollider = SimpleMode.GetComponent <BoxCollider>();
+						currentObjects.Add(w);
+				}
+
+				public override Widget FirstInterfaceObject {
+						get {
+								Widget w = base.FirstInterfaceObject;
+								if (HasEditObject && EditObject.NumChapters > 1) {
+										w.BoxCollider = NextChapterButton.GetComponent <BoxCollider>();
+								} else {
+										w.BoxCollider = FinishedReadingButton.GetComponent <BoxCollider>();
+								}
+								return w;
+						}
+				}
 
 				public override void WakeUp()
 				{
@@ -51,6 +83,19 @@ namespace Frontiers.GUI
 						CurrentScrollBar.scrollValue = 0f;
 						WhiteOnBlack.gameObject.SetActive(false);
 						SimpleMode.gameObject.SetActive(false);
+
+						Subscribe(InterfaceActionType.SelectionNext, SelectionNext);
+						Subscribe(InterfaceActionType.SelectionPrev, SelectionPrev);
+				}
+
+				public bool SelectionNext (double timeStamp) {
+						CurrentScrollBar.scrollValue += 0.1f;
+						return true;
+				}
+
+				public bool SelectionPrev (double timeStamp) {
+						CurrentScrollBar.scrollValue -= 0.1f;
+						return true;
 				}
 
 				public override void EnableInput()
@@ -277,6 +322,17 @@ namespace Frontiers.GUI
 				{
 						if (mEditObject == null)
 								return;
+
+						#if UNITY_EDITOR
+						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+						#else
+						if (VRManager.VRMode) {
+						#endif
+								transform.localPosition = VRModeOffset;
+						}
+						else {
+								transform.localPosition = NormalOffset;
+						}
 
 						SetChapterButtons();
 

@@ -22,11 +22,12 @@ namespace Frontiers.GUI
 				public bool CreateGuidebookDivider;
 				GUITabPage TabPage;
 
-				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
+						if (flag < 0) { flag = GUIEditorID; }
 						//this will get everything on all tabs
-						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects);
-						base.GetActiveInterfaceObjects(currentObjects);
+						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects, flag);
+						base.GetActiveInterfaceObjects(currentObjects, flag);
 				}
 
 				public override void WakeUp()
@@ -191,7 +192,7 @@ namespace Frontiers.GUI
 						bookBrowserObject.EditButton.target = this.gameObject;
 						bookBrowserObject.EditButton.functionName = "OnClickBrowserObject";
 						bookBrowserObject.Name.color = textColor;
-						bookBrowserObject.Name.text = Data.GameData.InterpretScripts (editObject.Title, Profile.Get.CurrentGame.Character, null) + " - " + Colors.ColorWrap(editObject.ContentsSummary, Colors.Dim (textColor));
+						bookBrowserObject.Name.text = Data.GameData.InterpretScripts(editObject.Title, Profile.Get.CurrentGame.Character, null) + " - " + Colors.ColorWrap(editObject.ContentsSummary, Colors.Dim(textColor));
 						bookBrowserObject.Icon.atlas = Mats.Get.IconsAtlas;
 						bookBrowserObject.Icon.spriteName = Mats.Get.Icons.GetIconNameFromBookType(editObject.TypeOfBook);
 						bookBrowserObject.Icon.color = Colors.Brighten(bookColor);

@@ -5,9 +5,41 @@ using System.Collections.Generic;
 
 namespace Frontiers.GUI
 {
-		public class GUIDetailsPage : MonoBehaviour
+		public class GUIDetailsPage : MonoBehaviour, IFrontiersInterface
 		{
 				public static GUIDetailsPage Get;
+
+				public int GUIEditorID {
+						get {
+								if (mGUIEditorID < 0) {
+										mGUIEditorID = GUIManager.GetNextGUIID();
+								}
+								return mGUIEditorID;
+						}
+				}
+
+				public Camera NGUICamera {
+						get {
+								if (mNguiCamera == null) {
+										mNguiCamera = GUIManager.Get.NGUIPrimaryCamera.camera;
+								}
+								return mNguiCamera;
+						}
+						set {
+								mNguiCamera = value;
+						}
+				}
+
+				public bool VRSettingsOverride { get; set; }
+
+				public bool CustomVRSettings { get { return false; } }
+
+				public Vector3 LockOffset { get { return Vector3.zero; } }
+
+				public bool CursorLock { get { return false; } }
+
+				public bool AxisLock { get { return false; } }
+
 				public UIPanel Panel;
 				public UIPanel ScrollingPanel;
 				public UIScrollBar ScrollBar;
@@ -32,9 +64,11 @@ namespace Frontiers.GUI
 				public Collider DopplegangerBoundsCollider;
 				FrontiersInterface LastUser;
 
-				public void GetActiveInterfaceObjects(List<Frontiers.GUI.FrontiersInterface.Widget> currentObjects)
+				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects, int flag)
 				{
-						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
+						if (flag < 0) { flag = GUIEditorID; }
+
+						FrontiersInterface.Widget w = new FrontiersInterface.Widget(flag);
 						w.SearchCamera = GUILogInterface.Get.NGUICamera;
 						w.BoxCollider = ScrollBar.foreground.GetComponent <BoxCollider>();
 						currentObjects.Add(w);
@@ -44,6 +78,18 @@ namespace Frontiers.GUI
 						}
 						w.BoxCollider = CloseButton.GetComponent <BoxCollider>();
 						currentObjects.Add(w);
+						//add this just so we have something to navigate to
+						w.BoxCollider = Icon.GetComponent <BoxCollider>();
+						currentObjects.Add(w);
+				}
+
+				public FrontiersInterface.Widget FirstInterfaceObject {
+						get {
+								FrontiersInterface.Widget w = new FrontiersInterface.Widget(GUIEditorID);
+								w.SearchCamera = NGUICamera;
+								w.BoxCollider = CloseButton.GetComponent <BoxCollider>();
+								return w;
+						}
 				}
 
 				public void Start()
@@ -159,11 +205,16 @@ namespace Frontiers.GUI
 
 				public void Update()
 				{
-						if ((LastUser == null || !LastUser.HasFocus)) {
+						if (VRManager.VRMode && GUICursor.Get.LastSelectedWidgetFlag != GUIEditorID) {
+								Hide();
+						} else if ((LastUser == null || !LastUser.HasFocus)) {
 								Hide();
 						} else {
 								DopplegangerParent.transform.Rotate(0f, 0.25f, 0f);
 						}
 				}
+
+				protected int mGUIEditorID = -1;
+				protected Camera mNguiCamera;
 		}
 }

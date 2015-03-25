@@ -19,6 +19,8 @@ namespace Frontiers
 				public static ActionReceiver <T> PlayerReceiver = null;
 				//global info
 				public static double TimeStamp = 0f;
+				public static bool SoftwareMouse = false;
+				public static Vector3 MousePosition;
 				public static float RawMouseAxisX = 0.0f;
 				public static float RawMouseAxisY = 0.0f;
 				public static float RawMovementAxisX = 0.0f;
@@ -108,34 +110,36 @@ namespace Frontiers
 						CurrentActionSettings.AddRange(settingsNotFound);
 
 						if (Profile.Get.CurrentPreferences.Controls.UseCustomDeadZoneSettings) {
+								//make sure the dead zones are legit
+								Profile.Get.CurrentPreferences.Controls.RefreshCustomDeadZoneSettings(Device);
 								//set the dead zones on current controllers
-								Device.GetControl(InputControlType.LeftStickX).LowerDeadZone = Globals.ControllerDeadZoneSizeLStickLower;
-								Device.GetControl(InputControlType.LeftStickX).UpperDeadZone = Globals.ControllerDeadZoneSizeLStickUpper;
-								Device.GetControl(InputControlType.LeftStickY).LowerDeadZone = Globals.ControllerDeadZoneSizeLStickLower;
-								Device.GetControl(InputControlType.LeftStickY).UpperDeadZone = Globals.ControllerDeadZoneSizeLStickUpper;
-								Device.GetControl(InputControlType.LeftStickX).Sensitivity = Globals.ControllerSensitivityLStick;
-								Device.GetControl(InputControlType.LeftStickY).Sensitivity = Globals.ControllerSensitivityLStick;
+								Device.GetControl(InputControlType.LeftStickX).LowerDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneLStickLower;
+								Device.GetControl(InputControlType.LeftStickX).UpperDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneLStickUpper;
+								Device.GetControl(InputControlType.LeftStickY).LowerDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneLStickLower;
+								Device.GetControl(InputControlType.LeftStickY).UpperDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneLStickUpper;
+								Device.GetControl(InputControlType.LeftStickX).Sensitivity = Profile.Get.CurrentPreferences.Controls.SensitivityLStick;
+								Device.GetControl(InputControlType.LeftStickY).Sensitivity = Profile.Get.CurrentPreferences.Controls.SensitivityLStick;
 
-								Device.GetControl(InputControlType.RightStickX).LowerDeadZone = Globals.ControllerDeadZoneSizeRStickLower;
-								Device.GetControl(InputControlType.RightStickX).UpperDeadZone = Globals.ControllerDeadZoneSizeRStickUpper;
-								Device.GetControl(InputControlType.RightStickY).LowerDeadZone = Globals.ControllerDeadZoneSizeRStickLower;
-								Device.GetControl(InputControlType.RightStickY).UpperDeadZone = Globals.ControllerDeadZoneSizeRStickUpper;
-								Device.GetControl(InputControlType.RightStickX).Sensitivity = Globals.ControllerSensitivityRStick;
-								Device.GetControl(InputControlType.RightStickY).Sensitivity = Globals.ControllerSensitivityRStick;
+								Device.GetControl(InputControlType.RightStickX).LowerDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneRStickLower;
+								Device.GetControl(InputControlType.RightStickX).UpperDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneRStickUpper;
+								Device.GetControl(InputControlType.RightStickY).LowerDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneRStickLower;
+								Device.GetControl(InputControlType.RightStickY).UpperDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneRStickUpper;
+								Device.GetControl(InputControlType.RightStickX).Sensitivity = Profile.Get.CurrentPreferences.Controls.SensitivityRStick;
+								Device.GetControl(InputControlType.RightStickY).Sensitivity = Profile.Get.CurrentPreferences.Controls.SensitivityRStick;
 
-								Device.GetControl(InputControlType.DPadLeft).LowerDeadZone = Globals.ControllerDeadZoneSizeDPadLower;
-								Device.GetControl(InputControlType.DPadLeft).UpperDeadZone = Globals.ControllerDeadZoneSizeDPadUpper;
-								Device.GetControl(InputControlType.DPadRight).LowerDeadZone = Globals.ControllerDeadZoneSizeDPadLower;
-								Device.GetControl(InputControlType.DPadRight).UpperDeadZone = Globals.ControllerDeadZoneSizeDPadUpper;
-								Device.GetControl(InputControlType.DPadLeft).Sensitivity = Globals.ControllerSensitivityDPad;
-								Device.GetControl(InputControlType.DPadRight).Sensitivity = Globals.ControllerSensitivityDPad;
+								Device.GetControl(InputControlType.DPadLeft).LowerDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneDPadLower;
+								Device.GetControl(InputControlType.DPadLeft).UpperDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneDPadUpper;
+								Device.GetControl(InputControlType.DPadRight).LowerDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneDPadLower;
+								Device.GetControl(InputControlType.DPadRight).UpperDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneDPadUpper;
+								Device.GetControl(InputControlType.DPadLeft).Sensitivity = Profile.Get.CurrentPreferences.Controls.SensitivityDPad;
+								Device.GetControl(InputControlType.DPadRight).Sensitivity = Profile.Get.CurrentPreferences.Controls.SensitivityDPad;
 
-								Device.GetControl(InputControlType.DPadUp).LowerDeadZone = Globals.ControllerDeadZoneSizeDPadLower;
-								Device.GetControl(InputControlType.DPadUp).UpperDeadZone = Globals.ControllerDeadZoneSizeDPadUpper;
-								Device.GetControl(InputControlType.DPadDown).LowerDeadZone = Globals.ControllerDeadZoneSizeDPadLower;
-								Device.GetControl(InputControlType.DPadDown).UpperDeadZone = Globals.ControllerDeadZoneSizeDPadUpper;
-								Device.GetControl(InputControlType.DPadUp).Sensitivity = Globals.ControllerSensitivityDPad;
-								Device.GetControl(InputControlType.DPadDown).Sensitivity = Globals.ControllerSensitivityDPad;
+								Device.GetControl(InputControlType.DPadUp).LowerDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneDPadLower;
+								Device.GetControl(InputControlType.DPadUp).UpperDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneDPadUpper;
+								Device.GetControl(InputControlType.DPadDown).LowerDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneDPadLower;
+								Device.GetControl(InputControlType.DPadDown).UpperDeadZone = Profile.Get.CurrentPreferences.Controls.DeadZoneDPadUpper;
+								Device.GetControl(InputControlType.DPadUp).Sensitivity = Profile.Get.CurrentPreferences.Controls.SensitivityDPad;
+								Device.GetControl(InputControlType.DPadDown).Sensitivity = Profile.Get.CurrentPreferences.Controls.SensitivityDPad;
 						}
 
 						//check for mouse and movement axis
@@ -448,6 +452,10 @@ namespace Frontiers
 				{
 						if (!mInitialized || (!HasInterfaceReceiver && !HasPlayerReceiver)) {
 								return;
+						}
+
+						if (!SoftwareMouse) {
+								MousePosition = Input.mousePosition;
 						}
 
 						AvailableKeyDown = false;
@@ -831,6 +839,20 @@ namespace Frontiers
 				}
 
 				#region binding search for creating device profile
+
+				public InputControlType GetActionAxis(ActionSetting.InputAxis axis)
+				{
+						Debug.Log("Getting axis " + axis.ToString());
+						InputControlType control = InputControlType.None;
+						for (int i = 0; i < CurrentActionSettings.Count; i++) {
+								ActionSetting a = CurrentActionSettings[i];
+								if (a.Axis == axis) {
+										control = a.Controller;
+										break;
+								}
+						}
+						return control;
+				}
 
 				public InputControlType GetActionBinding(int action)
 				{

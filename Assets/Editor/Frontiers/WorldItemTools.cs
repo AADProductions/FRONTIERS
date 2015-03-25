@@ -45,7 +45,15 @@ public class WorldItemTools : MonoBehaviour
 	[MenuItem ("Frontiers/Arrange Items in Grid")]
 	static void ArrangeItemsInGrid ( )
 	{
-		Vector3 position = Vector3.zero;
+				foreach (GameObject selected in UnityEditor.Selection.gameObjects) {
+						foreach (Transform child in selected.transform) {
+								Vector3 localPosition = child.localPosition;
+								localPosition.y -= 60f;
+								child.localPosition = localPosition;
+						}
+				}
+
+				/*Vector3 position = Vector3.zero;
 		float X = 0;
 		float Z = 0;
 		int numZ = Selection.gameObjects.Length / 5;
@@ -60,7 +68,7 @@ public class WorldItemTools : MonoBehaviour
 				numItems = 0;
 			}
 						X += 15.5f;
-		}	
+		}	*/
 	}
 
 	[MenuItem ("Frontiers/Randomize Y Rotation")]

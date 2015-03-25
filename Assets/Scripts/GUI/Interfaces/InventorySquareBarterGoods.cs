@@ -71,7 +71,7 @@ namespace Frontiers.GUI
 												usable = topItem.gameObject.GetOrAdd <WorldItemUsable>();
 												usable.IncludeInteract = false;
 												usable.ShowDoppleganger = false;
-												usable.TryToSpawn(true, out mUsable);
+												usable.TryToSpawn(true, out mUsable, NGUICamera);
 												usable.ScreenTarget = transform;
 												usable.ScreenTargetCamera = NGUICamera;
 												usable.RequirePlayerFocus = false;

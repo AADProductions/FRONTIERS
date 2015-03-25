@@ -64,9 +64,9 @@ namespace Frontiers.GUI
 						InfoSpriteShadow.transform.localScale = size;
 				}
 
-				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects)
+				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects, int flag)
 				{
-						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
+						FrontiersInterface.Widget w = new FrontiersInterface.Widget(flag);
 						for (int i = 0; i < Squares.Count; i++) {
 								w.BoxCollider = Squares[i].Collider;
 								w.SearchCamera = NGUICamera;

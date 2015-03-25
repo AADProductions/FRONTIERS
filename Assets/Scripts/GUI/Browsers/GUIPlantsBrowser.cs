@@ -19,11 +19,11 @@ namespace Frontiers.GUI
 				public bool SelectedAboveGround = true;
 				protected bool mRefreshingOverTime = false;
 
-				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
 						//this will get everything on all tabs
-						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects);
-						base.GetActiveInterfaceObjects(currentObjects);
+						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects, flag);
+						base.GetActiveInterfaceObjects(currentObjects, flag);
 				}
 
 				public override void WakeUp()
@@ -132,9 +132,19 @@ namespace Frontiers.GUI
 						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						newBrowserObject.name = editObject.CommonName + "_" + editObject.Seasonality.ToString();
 						GUIGenericBrowserObject plantBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
+
+						#if UNITY_EDITOR
+						if (VRManager.VRDeviceAvailable | VRManager.VRTestingModeEnabled) {
+						#else
+						if (VRManager.VRDeviceAvailable) {
+						#endif
+								plantBrowserObject.AutoSelect = false;
+						} else {
+								plantBrowserObject.AutoSelect = true;
+						}
+
 						plantBrowserObject.EditButton.target = this.gameObject;
 						plantBrowserObject.EditButton.functionName = "OnClickBrowserObject";
-
 						plantBrowserObject.Icon.atlas = Mats.Get.IconsAtlas;
 						plantBrowserObject.Icon.spriteName = "PlantIcon";
 
@@ -195,7 +205,6 @@ namespace Frontiers.GUI
 
 				public override void PushSelectedObjectToViewer()
 				{
-						Debug.Log("Pushing selected object to viewer");
 						//turn this into a string builder
 						Color plantColor = Colors.ColorFromString(mSelectedObject.CommonName, 100);
 						List <string> detailText = new List <string>();

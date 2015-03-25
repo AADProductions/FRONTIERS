@@ -56,6 +56,22 @@ namespace Frontiers.GUI
 				public List <GUIStatusFlow> Flows;
 				public List <GUIStatusCondition> SymptomDisplays = new List <GUIStatusCondition>();
 
+				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects, Camera NGUICamera, int flag)
+				{
+						FrontiersInterface.Widget w = new FrontiersInterface.Widget(flag);
+						w.SearchCamera = NGUICamera;
+						w.BoxCollider = Collider;
+						currentObjects.Add(w);
+						for (int i = 0; i < Flows.Count; i++) {
+								w.BoxCollider = Flows [i].GetComponent <BoxCollider> ();
+								currentObjects.Add(w);
+						}
+						for (int i = 0; i < SymptomDisplays.Count; i++) {
+								w.BoxCollider = SymptomDisplays [i].GetComponent <BoxCollider> ();
+								currentObjects.Add(w);
+						}
+				}
+
 				public void OnClickStatusKeeper()
 				{
 						//GUIPlayerStatusInterface.Get.PostInfo(UICamera.hoveredObject, Keeper.CurrentDescription);

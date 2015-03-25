@@ -17,10 +17,10 @@ namespace Frontiers.GUI
 				public bool CreateCompletedDivider;
 				GUITabPage TabPage;
 
-				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
 						//this will get everything on all tabs
-						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects);
+						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects, flag);
 				}
 
 				public override void WakeUp()
@@ -117,6 +117,8 @@ namespace Frontiers.GUI
 
 						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						GUIGenericBrowserObject missionBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
+
+						newBrowserObject.AutoSelect = true;
 			
 						missionBrowserObject.EditButton.target = this.gameObject;
 						missionBrowserObject.EditButton.functionName = "OnClickBrowserObject";

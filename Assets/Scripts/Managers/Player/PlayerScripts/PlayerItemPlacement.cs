@@ -346,7 +346,7 @@ namespace Frontiers
 								return true;
 						}
 						GUIOptionListDialog dialog = null;
-						usable.TryToSpawn(true, out dialog);
+						usable.TryToSpawn(true, out dialog, null);
 						return true;
 				}
 
@@ -459,7 +459,7 @@ namespace Frontiers
 						optionsList.AddOption(new WIListOption("Cancel"));
 						optionsList.ShowDoppleganger = false;
 						GUIOptionListDialog dialog = null;
-						if (optionsList.TryToSpawn(true, out dialog)) {
+						if (optionsList.TryToSpawn(true, out dialog, null)) {
 								UsingSkillList = true;
 						}
 				}

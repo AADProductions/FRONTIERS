@@ -206,7 +206,7 @@ namespace Frontiers.World.BaseWIScripts
 			optionsList.AddOption (new WIListOption ("Cancel"));
 			optionsList.ShowDoppleganger = false;
 			GUIOptionListDialog dialog = null;
-			if (optionsList.TryToSpawn (true, out dialog)) {
+						if (optionsList.TryToSpawn (true, out dialog, null)) {
 				UsingSkillList = true;
 			}
 		}

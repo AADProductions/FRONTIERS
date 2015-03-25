@@ -10,7 +10,6 @@ namespace Frontiers.GUI
 {
 		public class GUICraftingInterface : GUIObject, IStackOwner, IGUITabOwner, IGUITabPageChild
 		{
-
 				#region IStackOwner implementation
 
 				public string StackName { get { return "Crafting"; } }
@@ -20,6 +19,15 @@ namespace Frontiers.GUI
 				public string DisplayName { get { return "Crafting"; } }
 
 				public string QuestName { get { return string.Empty; } }
+
+				public int GUIEditorID {
+						get {
+								if (InventoryInterface != null) {
+										return InventoryInterface.GUIEditorID;
+								}
+								return -1;
+						}
+				}
 
 				public WISize Size { get { return WISize.Huge; } }
 
@@ -45,9 +53,9 @@ namespace Frontiers.GUI
 						}
 				}
 
-				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects)
+				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects, int flag)
 				{
-						/*FrontiersInterface.Widget w = new FrontiersInterface.Widget();
+						/*FrontiersInterface.Widget w = new FrontiersInterface.Widget(flag);
 						for (int i = 0; i < Squares.Count; i++) {
 								w.Collider = Squares[i].Collider;
 								w.SearchCamera = NGUICamera;
@@ -60,7 +68,7 @@ namespace Frontiers.GUI
 						//w.Collider = CraftOneButton.Collider;
 						w.SearchCamera = NGUICamera;
 						currentObjects.Add(w);
-						//Tabs.GetActiveInterfaceObjects(currentObjects);*/
+						//Tabs.GetActiveInterfaceObjects(currentObjects, flag);*/
 				}
 
 				public GUITabPage CraftingTabPage;

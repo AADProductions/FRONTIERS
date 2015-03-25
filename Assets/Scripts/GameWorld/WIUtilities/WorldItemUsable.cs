@@ -52,14 +52,14 @@ namespace Frontiers.World
 						}
 				}
 
-				public override bool TryToSpawn(bool forceSpawn, out GUIOptionListDialog childEditor)
+				public override bool TryToSpawn(bool forceSpawn, out GUIOptionListDialog childEditor, Camera nguiCamera)
 				{
 						childEditor = null;
 						if (IsInUse || Item.Is(WIMode.RemovedFromGame)) {
 								return false;
 						}
 						MessageType = Item.DisplayName;
-						if (base.TryToSpawn(forceSpawn, out childEditor)) {
+						if (base.TryToSpawn(forceSpawn, out childEditor, nguiCamera)) {
 								if (ShowDoppleganger) {
 										mChildEditor.DopplegangerProps.CopyFrom(Item);
 										mChildEditor.RefreshDoppleganger();
@@ -71,14 +71,14 @@ namespace Frontiers.World
 						return false;
 				}
 
-				public override bool TryToSpawn()
+				public override bool TryToSpawn(Camera nguiCamera)
 				{
 						if (IsInUse || !Item.Is(WILoadState.Initialized)) {
 								return false;
 						}
 
 						Item.Usable.MessageType = Item.StackName;
-						if (base.TryToSpawn()) {
+						if (base.TryToSpawn(nguiCamera)) {
 								if (ShowDoppleganger) {
 										mChildEditor.DopplegangerProps.CopyFrom(Item);
 										mChildEditor.RefreshDoppleganger();

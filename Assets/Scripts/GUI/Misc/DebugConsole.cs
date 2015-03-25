@@ -144,9 +144,6 @@ namespace Frontiers
 								}
 								posLabelList.Add("-----------COLOR SETTINGS----------");
 								posLabelList.Add("Active color space: " + QualitySettings.activeColorSpace.ToString());
-								posLabelList.Add("Active LUT name: " + CameraFX.Get.CurrentLUT.name);
-								posLabelList.Add("Active LUT texture format: " + CameraFX.Get.CurrentLUT.format.ToString());
-								posLabelList.Add("Active LUT texture format (3D): " + CameraFX.Get.Default.ColorGrading.LutTexture3d.format.ToString());
 								posLabelList.Add("-----------MULTIPLAYER-------------");
 								posLabelList.Add("IP: " + TNet.Tools.localAddress.ToString());
 								posLabelList.Add("Host state: " + GameManager.HostState.ToString());

@@ -53,12 +53,12 @@ namespace Frontiers.GUI
 						get {
 								if (ManuallyPaused) {
 										return true;
-								} else if (Get.HasActiveButton) {
-										return Get.ActiveButton.ShowCursor;
 								} else if (Get.HasActiveInterface) {
 										return Get.TopInterface.ShowCursor;
 								} else if (Cutscene.IsActive) {
 										return Cutscene.CurrentCutscene.ShowCursor;
+								} else if (Get.HasActiveButton) {
+										return Get.ActiveButton.ShowCursor;
 								}
 								return false;
 						}
@@ -92,6 +92,7 @@ namespace Frontiers.GUI
 				public UICamera NGUIPrimaryCamera;
 				public UIRoot NGUIPrimaryRoot;
 				public UIAnchor NGUIPrimaryCenterAnchor;
+				public UIAnchor NGUIPrimaryBottomAnchor;
 				public UICamera NGUISecondaryCamera;
 				public UIRoot NGUISecondaryRoot;
 				public UIAnchor NGUISecondaryCenterAnchor;
@@ -100,6 +101,7 @@ namespace Frontiers.GUI
 				public UICamera NGUIBaseCamera;
 				public UIRoot NGUIBaseRoot;
 				public UIAnchor NGUIBaseCenterAnchor;
+				public UIAnchor NGUIBaseBottomAnchor;
 				public UIAnchor NGUITrash;
 				public GUICrosshair Crosshair;
 				public UILabel TitleCardLabel;
@@ -146,7 +148,10 @@ namespace Frontiers.GUI
 				public DebugConsole Console;
 				public MissionTestingUtility Missions;
 				public GroupTestingUtility GroupTesting;
-
+				protected GUIControlsCheatSheetDialog mControlCheatSheet;
+				#if UNITY_EDITOR
+				public int ScreenAspectRatioMaxVR = 900;
+				#endif
 				public override void WakeUp()
 				{
 						base.WakeUp();
@@ -170,7 +175,6 @@ namespace Frontiers.GUI
 				{
 						UserActionManager.InterfaceReceiver = new ActionReceiver <UserActionType>(ReceiveUserAction);
 						InterfaceActionManager.InterfaceReceiver = new ActionReceiver <InterfaceActionType>(ReceiveInterfaceAction);
-
 						//GUITabs.InitializeAllTabs ();
 						PrimaryInterface.MinimizeAll();
 
@@ -217,6 +221,17 @@ namespace Frontiers.GUI
 								return;
 						}
 
+						if (GameManager.Is(FGameState.InGame)) {
+								if (Input.GetKeyDown(KeyCode.F3)) {
+										if (mControlCheatSheet == null) {
+												GameObject dialog = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog("NGUIControlsCheatSheetDialog"), false);
+												YesNoCancelDialogResult editObject = new YesNoCancelDialogResult();
+												GUIManager.SendEditObjectToChildEditor <YesNoCancelDialogResult>(new ChildEditorCallback <YesNoCancelDialogResult>(ControlDialogCallback), dialog, editObject);
+												mControlCheatSheet = dialog.GetComponent <GUIControlsCheatSheetDialog>();
+										}
+								}
+						}
+
 						if (Input.GetKeyDown(KeyCode.F5)) {
 								Missions.ShowEditor = !Missions.ShowEditor;
 								Missions.enabled = Missions.ShowEditor;
@@ -226,7 +241,7 @@ namespace Frontiers.GUI
 								GroupTesting.enabled = !GroupTesting.enabled;
 						}
 
-						if (Input.GetKeyDown(KeyCode.F3)) {
+						if (Input.GetKeyDown(KeyCode.F7)) {
 								Console.showWorldItems = !Console.showWorldItems;
 						}
 
@@ -318,11 +333,23 @@ namespace Frontiers.GUI
 						}
 
 						PrimaryCamera.enabled = PrimaryInterfacesEnabled;
+						VersionNumber.enabled = true;
 
-						if (VRManager.VRModeEnabled) {
-								NGUIPrimaryRoot.manualHeight = Globals.ScreenAspectRatioMaxVR;
-								NGUISecondaryRoot.manualHeight = Globals.ScreenAspectRatioMaxVR;
-								NGUIBaseRoot.manualHeight = Globals.ScreenAspectRatioMaxVR;
+						#if UNITY_EDITOR
+						if ((VRManager.VRMode | VRManager.VRTestingModeEnabled)) {
+								VersionNumber.enabled = false;
+								NGUIPrimaryRoot.manualHeight = ScreenAspectRatioMaxVR;
+								NGUISecondaryRoot.manualHeight = ScreenAspectRatioMaxVR;
+								NGUIBaseRoot.manualHeight = ScreenAspectRatioMaxVR;
+								GUILoading.Get.Root.manualHeight = ScreenAspectRatioMaxVR;
+								#else
+						if (VRManager.VRMode) {
+							VersionNumber.enabled = false;
+							NGUIPrimaryRoot.manualHeight = Globals.ScreenAspectRatioMaxVR;
+							NGUISecondaryRoot.manualHeight = Globals.ScreenAspectRatioMaxVR;
+							NGUIBaseRoot.manualHeight = Globals.ScreenAspectRatioMaxVR;
+							GUILoading.Get.Root.manualHeight = Globals.ScreenAspectRatioMaxVR;
+								#endif
 						} else {
 								if (ScreenAspectRatio < Globals.ScreenAspectRatioSqueezeMaximum) {
 										//adjust the screen to fit
@@ -330,10 +357,12 @@ namespace Frontiers.GUI
 										NGUIPrimaryRoot.manualHeight = Mathf.FloorToInt(Mathf.Lerp(Globals.ScreenAspectRatioMax, Globals.ScreenAspectRatioMin, normalizedScreenAdjust));
 										NGUISecondaryRoot.manualHeight = NGUIPrimaryRoot.manualHeight;
 										NGUIBaseRoot.manualHeight = NGUIPrimaryRoot.manualHeight;
+										GUILoading.Get.Root.manualHeight = NGUIPrimaryRoot.manualHeight;
 								} else {
 										NGUIPrimaryRoot.manualHeight = Globals.ScreenAspectRatioMax;
 										NGUISecondaryRoot.manualHeight = Globals.ScreenAspectRatioMax;
 										NGUIBaseRoot.manualHeight = Globals.ScreenAspectRatioMax;
+										GUILoading.Get.Root.manualHeight = Globals.ScreenAspectRatioMax;
 								}
 						}
 
@@ -394,6 +423,20 @@ namespace Frontiers.GUI
 						//this has to be called each frame
 						//to clear its toggle interface action
 						PrimaryInterface.ResetToggle();
+				}
+
+				protected void ControlDialogCallback(YesNoCancelDialogResult editObject, IGUIChildEditor <YesNoCancelDialogResult> childEditor)
+				{
+						GUIManager.ScaleDownEditor(childEditor.gameObject).Proceed(true);
+						//if the result is yes, open up the options dialog
+						if (editObject.Result == DialogResult.Yes) {
+								if (PrimaryInterface.MinimizeAll()) {
+										StartMenuResult result = new StartMenuResult();
+										result.ClickedOptions = true;
+										result.TabSelection = "Controls";
+										GameManager.Get.SpawnStartMenu(GameManager.State, GameManager.State, result);
+								}
+						}
 				}
 
 				protected Transform mBrowserObjectTransform;
@@ -592,8 +635,7 @@ namespace Frontiers.GUI
 														break;
 
 												case "WorldMap":
-														PrimaryInterface.MinimizeAll();//?
-														//PrimaryInterface.MaximizeInterface("Inventory");
+														PrimaryInterface.MinimizeAll();
 														break;
 
 												default:
@@ -1333,13 +1375,13 @@ namespace Frontiers.GUI
 						}
 				}
 				#endif
-				public static ulong GetNextGUIID()
+				public static int GetNextGUIID()
 				{	//do we even need this any more?
 						gGUIID++;
 						return gGUIID;
 				}
 
-				protected static ulong gGUIID = 100;
+				protected static int gGUIID = 100;
 		}
 
 		[Serializable]

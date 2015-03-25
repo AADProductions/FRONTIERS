@@ -57,6 +57,10 @@ namespace Frontiers.GUI
 						LeftBotNone,
 				}
 
+				public void Awake ( ) {
+						mPivotOnStartup = Text.pivot;
+				}
+
 				public void Start ( ) { 
 						ResetPosition = false;
 				}
@@ -267,6 +271,7 @@ namespace Frontiers.GUI
 
 				protected void RefreshSize()
 				{
+						Debug.Log("Refreshing size");
 						//update the box around the text to reflect its size
 						Transform textTrans = Text.transform;
 						Vector3 offset = textTrans.localPosition;
@@ -298,6 +303,23 @@ namespace Frontiers.GUI
 						ShadowSprite.transform.localScale = new Vector3(size.x + 25f, size.y + 25f, 1f);
 						ShadowSprite.transform.localPosition = new Vector3((size.x / 2f) + 25f, (-size.y / 2f) - 25f, 0f);
 
+						//now that we've set the sizes of things
+						//set the anchor and position
+						if (VRManager.VRMode) {
+								Vector3 positionWithOffset = textTrans.localPosition;
+								if (mPivotOnStartup == UIWidget.Pivot.TopLeft) {
+										positionWithOffset.x = (size.x / 2);
+								} else if (mPivotOnStartup == UIWidget.Pivot.TopRight) {
+										positionWithOffset.x = (size.x / 2);
+								}
+								Text.pivot = UIWidget.Pivot.Top;
+								Debug.Log("Setting position with offset: " + positionWithOffset.ToString());
+								textTrans.localPosition = positionWithOffset;
+						} else if (Text.pivot != mPivotOnStartup) {
+								Text.pivot = mPivotOnStartup;
+								//don't bother with the position it's already fine
+						}
+
 						if (ResetPosition) {
 								//Debug.Log("We've been asked to reset our position");
 								transform.localPosition = new Vector3(0f, Height / 2f, 0f);
@@ -310,5 +332,6 @@ namespace Frontiers.GUI
 				protected bool mSetPropsOnce = false;
 				protected bool mSettingProps = false;
 				protected bool mDestroying = false;
+				protected UILabel.Pivot mPivotOnStartup = UILabel.Pivot.Left;
 		}
 }

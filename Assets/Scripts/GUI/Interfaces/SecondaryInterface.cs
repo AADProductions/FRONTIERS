@@ -49,15 +49,14 @@ namespace Frontiers.GUI
 						Visible = true;
 						OnShow.SafeInvoke();
 						#if UNITY_EDITOR
-						if ((VRManager.VRModeEnabled | VRManager.VRTestingModeEnabled)) {
-								Debug.Log ("Pushing widget in editor");
-								GUICursor.Get.SelectWidget(FirstInterfaceObject);
-						}
+						if (VRManager.VRMode | VRManager.VRTestingModeEnabled | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 						#else
-						if (VRManager.VRModeEnabled) {
-								GUICursor.Get.SelectWidget(FirstInterfaceObject);
-						}
+						if (VRManager.VRMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 						#endif
+								if (mScaledUp) {
+									GUICursor.Get.SelectWidget(FirstInterfaceObject);
+								}
+						}
 				}
 
 				public virtual void Hide()
@@ -119,19 +118,18 @@ namespace Frontiers.GUI
 				}
 
 				public void OnFinishScaleUp () {
-						Debug.Log("On finish scaling up");
+						mScaledUp = true;
 						#if UNITY_EDITOR
-						if ((VRManager.VRModeEnabled | VRManager.VRTestingModeEnabled)) {
-								GUICursor.Get.SelectWidget(FirstInterfaceObject);
-						}
+						if (VRManager.VRMode | VRManager.VRTestingModeEnabled | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 						#else
-						if (VRManager.VRModeEnabled) {
+						if (VRManager.VRMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+						#endif
 								GUICursor.Get.SelectWidget(FirstInterfaceObject);
 						}
-						#endif
 				}
 
 				public bool	FilterPrimaryToggleActions = false;
 				public bool ScaleDownOnFinish = false;
+				protected bool mScaledUp = false;
 		}
 }

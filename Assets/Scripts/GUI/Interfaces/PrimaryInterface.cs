@@ -283,12 +283,15 @@ namespace Frontiers.GUI
 						}
 				}
 
-				public static void MinimizeAll()
+				public static bool MinimizeAll()
 				{
 						for (int i = 0; i < GUIManager.Get.PrimaryInterfaces.Count; i++) {
 								PrimaryInterface primaryInterface = GUIManager.Get.PrimaryInterfaces[i] as PrimaryInterface;
-								primaryInterface.Minimize();
+								if (!primaryInterface.Minimize()) {
+										return false;
+								}
 						}
+						return true;
 				}
 
 				public static void MinimizeAllBut(string interfaceName)

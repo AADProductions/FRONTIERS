@@ -99,11 +99,13 @@ namespace Frontiers
 				//26
 				ToolSwap = 134217728,
 				//27
+				CameraSetForward = 268435456,
+				//28
 				FlagsMovement = Move | MoveForward | MoveRun | MoveLeft | MoveRight | MoveJump | MoveCrouch | MoveStand | MovePlantFeet | MoveSprint | MoveWalk | MovementAxisChange,
 				FlagsItems = ItemPickUp | ItemThrow | ItemUse | ItemInteract,
 				FlagsTools = ToolUse | ToolUseHold | ToolUseRelease | ToolHolster | ToolCyclePrev | ToolCycleNext | ToolSwap,
 				FlagsActions = ActionConfirm | ActionCancel | ActionSkip,
-				FlagsAll = FlagsMovement | FlagsItems | FlagsTools | FlagsActions | LookAxisChange,
+				FlagsAll = FlagsMovement | FlagsItems | FlagsTools | FlagsActions | LookAxisChange | CameraSetForward,
 				FlagsAllButActions = FlagsMovement | FlagsItems | FlagsTools | LookAxisChange,
 				FlagsAllButMovement = FlagsItems | FlagsTools | FlagsActions | LookAxisChange,
 				FlagsAllButLookAxis = FlagsMovement | FlagsItems | FlagsTools | FlagsActions,

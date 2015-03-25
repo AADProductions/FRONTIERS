@@ -122,7 +122,7 @@ namespace Frontiers.GUI
 								optionsList.AddOption(new WIListOption("Cancel"));
 								optionsList.ShowDoppleganger = false;
 								GUIOptionListDialog dialog = null;
-								if (optionsList.TryToSpawn(true, out dialog)) {
+								if (optionsList.TryToSpawn(true, out dialog, NGUICamera)) {
 										UsingMenu = true;
 										optionsList.ScreenTarget = transform;
 										optionsList.ScreenTargetCamera = NGUICamera;

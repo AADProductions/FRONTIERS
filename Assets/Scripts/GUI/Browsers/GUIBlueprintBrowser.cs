@@ -17,11 +17,12 @@ namespace Frontiers.GUI
 				public string SkillDisplayName;
 				public bool CreateEmptyDivider;
 
-				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
+						if (flag < 0) { flag = GUIEditorID; }
 						//this will get everything on all tabs
-						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects);
-						base.GetActiveInterfaceObjects(currentObjects);
+						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects, flag);
+						base.GetActiveInterfaceObjects(currentObjects, flag);
 				}
 
 				public override void WakeUp()
@@ -105,6 +106,16 @@ namespace Frontiers.GUI
 						IGUIBrowserObject newBrowserObject = base.ConvertEditObjectToBrowserObject(editObject);
 						newBrowserObject.name = editObject.Name + "_" + editObject.RequiredSkill;
 						GUIGenericBrowserObject blueprintBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
+
+						#if UNITY_EDITOR
+						if (VRManager.VRDeviceAvailable | VRManager.VRTestingModeEnabled) {
+						#else
+						if (VRManager.VRDeviceAvailable) {
+						#endif
+								newBrowserObject.AutoSelect = false;
+						} else {
+								newBrowserObject.AutoSelect = true;
+						}
 
 						blueprintBrowserObject.EditButton.target = this.gameObject;
 						blueprintBrowserObject.EditButton.functionName = "OnClickBrowserObject";

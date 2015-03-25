@@ -14,6 +14,7 @@ namespace Frontiers
 				public AnimationCurve NormalCurve;
 				//changed on the fly
 				public AnimationCurve FinalCurve;
+				public Texture2D DefaultLUT;
 
 				public int AdjustBrightness {
 						get {
@@ -63,6 +64,7 @@ namespace Frontiers
 
 				public OVRManager OvrManager;
 				public OVRCameraRig OvrCameraRig;
+				public Camera VRTestInterfaceCamera;
 				public ScreenEffectsSet Default;
 				public ScreenEffectsSet OvrRight;
 				public ScreenEffectsSet OvrLeft;
@@ -86,25 +88,34 @@ namespace Frontiers
 
 				public Texture2D CurrentLUT {
 						get {
-								return Default.ColorGrading.LutTexture;
+								return Color3Grading.LutTexture;
 						}
 						set {
-								Default.ColorGrading.LutTexture = value;
+								Color3Grading.LutTexture = value;
 						}
 				}
 
 				public Texture2D BlendLUT {
 						get {
-								return Default.ColorGrading.LutBlendTexture;
+								return Color3Grading.LutBlendTexture;
 						}
 						set {
-								Default.ColorGrading.LutBlendTexture = value;
+								Color3Grading.LutBlendTexture = value;
 						}
 				}
 
 				public override void Awake()
 				{
 						mParentUnderManager = false;
+						#if UNITY_EDITOR
+						VRTestInterfaceCamera = Default.cam.gameObject.CreateChild("TestInterfaceCamera").gameObject.AddComponent <Camera>();
+						VRTestInterfaceCamera.clearFlags = CameraClearFlags.Depth;
+						VRTestInterfaceCamera.farClipPlane = 2f;
+						VRTestInterfaceCamera.nearClipPlane = 0.001f;
+						VRTestInterfaceCamera.cullingMask = Globals.LayerGUIHUD;
+						VRTestInterfaceCamera.depth = 5;
+						VRTestInterfaceCamera.renderingPath = RenderingPath.VertexLit;
+						#endif
 						base.Awake();
 				}
 
@@ -113,9 +124,9 @@ namespace Frontiers
 						base.WakeUp();
 
 						Get = this;
-						BlendLUT = CurrentLUT;
-						Default.ColorGrading.LutBlendTexture = BlendLUT;
-						Default.ColorGrading.BlendAmount = 0f;
+						BlendLUT = DefaultLUT;
+						Color3Grading.LutBlendTexture = BlendLUT;
+						Color3Grading.BlendAmount = 0f;
 
 						//load all the screen effects components
 						Default.Initialize();
@@ -144,12 +155,53 @@ namespace Frontiers
 						}
 
 						//enable / disable cameras based on oculus mode
-						if (VRManager.VRModeEnabled) {
-								OvrLeft.CopyFrom(Default);
-								OvrRight.CopyFrom(Default);
-								OvrLeft.cam.farClipPlane = Default.cam.farClipPlane;
-								OvrRight.cam.farClipPlane = Default.cam.farClipPlane;
+						if (VRManager.VRMode) {
+								if (GUI.GUILoading.IsLoading) {
+										//only show the loading stuff
+										if (OvrLeft.cam.cullingMask != Globals.LayerScenery) {
+												VRManager.Get.RefreshSettings(false);
+										}
+										OvrLeft.cam.cullingMask = Globals.LayerScenery;
+										OvrRight.cam.cullingMask = Globals.LayerScenery;
+										OvrLeft.cam.clearFlags = CameraClearFlags.SolidColor;
+										OvrRight.cam.clearFlags = CameraClearFlags.SolidColor;
+										OvrLeft.cam.backgroundColor = Color.black;
+										OvrRight.cam.backgroundColor = Color.black;
+										OvrLeft.TimeOfDay.enabled = true;
+										Default.TimeOfDay.enabled = false;
+								} else {
+										if (OvrLeft.cam.cullingMask != OvrLeft.CullingMask) {
+												VRManager.Get.RefreshSettings(false);
+										}
+										OvrLeft.cam.cullingMask = OvrLeft.CullingMask;
+										OvrRight.cam.cullingMask = OvrRight.CullingMask;
+										OvrLeft.TimeOfDay.enabled = false;
+										Default.TimeOfDay.enabled = true;
+										OvrLeft.CopyFrom(Default);
+										OvrRight.CopyFrom(Default);
+								}
+						} else {
+								if (GUI.GUILoading.IsLoading && GUI.GUILoading.CurrentMode == Frontiers.GUI.GUILoading.Mode.FullScreenBlack) {
+										Default.cam.cullingMask = 0;
+								} else {
+										Default.cam.cullingMask = Default.CullingMask;
+								}
 						}
+
+						#if UNITY_EDITOR
+						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+								Default.cam.fieldOfView = 90f;
+								VRTestInterfaceCamera.fieldOfView = 90f;
+								if (GUI.GUILoading.IsLoading) {
+										Default.cam.cullingMask = 0;
+										Default.cam.clearFlags = CameraClearFlags.SolidColor;
+										Default.cam.backgroundColor = Color.black;
+								} else {
+										Default.cam.cullingMask = Default.CullingMask;
+										Default.cam.clearFlags = CameraClearFlags.Depth;
+								}
+						}
+						#endif
 
 						if (GameManager.Is(FGameState.InGame) && Player.Local != null) {
 								UpdateBlackout();
@@ -161,7 +213,29 @@ namespace Frontiers
 
 				public void RefreshOculusMode()
 				{
-						if (VRManager.VRModeEnabled) {
+						#if UNITY_EDITOR
+						VRTestInterfaceCamera.enabled = false;
+						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+								#else
+						if (VRManager.VRMode) {
+								#endif
+								#if UNITY_EDITOR
+								//keep the default cam enabled
+								//we'll render the ovr interface here
+								if (VRManager.VRTestingModeEnabled) {
+										Default.cam.enabled = true;
+										VRTestInterfaceCamera.enabled = true;
+										OvrCameraRig.gameObject.SetLayerRecursively(Globals.LayerNumGUIHUD);
+								} else {
+										Default.cam.enabled = false;
+										OvrLeft.cam.enabled = true;
+										OvrRight.cam.enabled = true;
+										OvrLeft.cam.cullingMask = Default.cam.cullingMask;
+										OvrRight.cam.cullingMask = Default.cam.cullingMask;
+										OvrManager.enabled = true;
+										OvrCameraRig.enabled = true;
+								}
+								#else
 								Default.cam.enabled = false;
 								OvrLeft.cam.enabled = true;
 								OvrRight.cam.enabled = true;
@@ -169,6 +243,7 @@ namespace Frontiers
 								OvrRight.cam.cullingMask = Default.cam.cullingMask;
 								OvrManager.enabled = true;
 								OvrCameraRig.enabled = true;
+								#endif
 						} else {
 								OvrManager.enabled = false;
 								OvrCameraRig.enabled = false;
@@ -189,32 +264,26 @@ namespace Frontiers
 
 				public float LUTBlendAmount {
 						get {
-								return Default.ColorGrading.BlendAmount;
+								return Color3Grading.BlendAmount;
 						}
 						set {
-								//Debug.Log ("Setting blend amount to " + value.ToString ());
-								Default.ColorGrading.BlendAmount = value;
+								Color3Grading.BlendAmount = value;
 						}
 				}
 
 				public void SetLUT(Texture2D NewLUT)
 				{
-						//Debug.Log ("Setting LUT to " + NewLUT.name);
-//			if (CurrentLUT.name == "Normal") {
-//				CurrentLUT = NewLUT;
-//				LUTBlendAmount = 0f;
-//				return;
-//			}
+						if (CurrentLUT == null) {
+								CurrentLUT = DefaultLUT;
+						}
 						if (mIsBlending) {
 								if (BlendLUT.name != NewLUT.name) {
-										//Debug.Log ("Well blend to " + NewLUT.name + " once we're done with current blend");
 										BackburnerLUT = NewLUT;
 								}
 						} else {
 								if (CurrentLUT.name != NewLUT.name) {
 										BlendLUT = NewLUT;
 										mIsBlending = true;
-										//Debug.Log ("Beginning blend from " + CurrentLUT.name + " to " + NewLUT.name);
 										StartCoroutine(BlendLUTOverTime(Globals.LUTBlendSpeed));
 								}
 						}
@@ -222,7 +291,6 @@ namespace Frontiers
 
 				protected IEnumerator BlendLUTOverTime(float blendDuration)
 				{
-
 						if (!GameManager.Is(FGameState.InGame)) {
 								//for cutscenes / loading / etc. we want to cut to the chase
 								blendDuration = 0.01f;
@@ -232,14 +300,12 @@ namespace Frontiers
 						float endTime = startTime + blendDuration;
 						float normalizedBlend = 0f;
 
-
 						LUTBlendAmount = 0f;
 						while (normalizedBlend < 1f) {
 								normalizedBlend = (Time.time - startTime) / (endTime - startTime);
 								LUTBlendAmount = normalizedBlend;
 								yield return null;
 						}
-						//Debug.Log ("Done blending from " + Default.ColorGrading.LutTexture.name + " to " + Default.ColorGrading.LutBlendTexture.name);
 						//now that we're done blending, move the blended LUT to the primary LUT and set the blend back to zero
 						CurrentLUT = BlendLUT;
 						LUTBlendAmount = 0f;
@@ -324,7 +390,6 @@ namespace Frontiers
 								return;
 						}
 						mBlackingOut = true;
-						//Debug.Log ("Blackout! " + duration.ToString ());
 						mBlackoutTargetIntensity = intensity;
 						mBlackoutDuration = duration;
 						mBlackoutStart = WorldClock.AdjustedRealTime;
@@ -351,9 +416,7 @@ namespace Frontiers
 				public void AddDamageOverlay(float intensity)
 				{
 						Default.Overlay.texture = DamageOverlayTexture;
-						//		Overlay.blendMode 		= ScreenOverlay.OverlayBlendMode.Additive;
 						Default.Overlay.intensity = 0.0f;
-
 						Default.Overlay.intensity = Mathf.Clamp((Default.Overlay.intensity + intensity * mDamageIntensityMultiplier), 0.0f, mDamageIntenistyMax);
 				}
 
@@ -429,7 +492,6 @@ namespace Frontiers
 								Default.Vignette.intensity = 5f;
 								Default.Vignette.chromaticAberration = 5f;
 						} else if (mGoingBlind) {
-								//Debug.Log ("We're going blind!");
 								//ramp up vingette intensity to max over time
 								Default.Vignette.enabled = true;
 								Default.Vignette.intensity = Mathf.Lerp(Default.Vignette.intensity, 1000f, 0.001f);
@@ -442,7 +504,6 @@ namespace Frontiers
 										Default.Vignette.enabled = false;
 										mBlackingOut = false;
 								} else {
-										//Debug.Log ("Blackout! " + mBlackoutTargetIntensity.ToString ());
 										if (!Default.Vignette.enabled) {
 												Default.Vignette.enabled = true;
 												Default.Vignette.intensity = 0f;
@@ -486,7 +547,6 @@ namespace Frontiers
 						yield break;
 				}
 
-				public int existingCullingMask = 0;
 				protected int mAdjustBrightness = 50;
 				protected bool mIsBlending = false;
 				protected GameObject mWaitingForFadeOut = null;
@@ -508,63 +568,85 @@ namespace Frontiers
 		[Serializable]
 		public class ScreenEffectsSet
 		{
-				public void Initialize()
-				{
-						BloomEffect = cam.GetComponent <SENaturalBloomAndDirtyLens>();
-						Vignette = cam.GetComponent <Vignetting>();
-						Blur = cam.GetComponent <BlurEffect>();
-						ColorGrading = cam.GetComponent <Color3Grading>();
-						Overlay = cam.GetComponent <ScreenOverlay>();
-						HallucinationSharpen = cam.GetComponent <ContrastEnhance>();
-						SunShaftsEffect = cam.GetComponent <SunShafts>();
-						SSAO = cam.GetComponent <SSAOPro>();
-						Grain = cam.GetComponent <NoiseAndGrain>();
-						CC = cam.GetComponent <ColorCorrectionCurves>();
-						AA = cam.GetComponent <AntialiasingAsPostEffect>();
-						Fog = cam.GetComponent <AlphaSortedGlobalFog>();
-						TimeOfDay = cam.GetComponent <TOD_Camera>();
-
-						Components = new List<MonoBehaviour>();
-						Components.Add(BloomEffect);
-						Components.Add(Vignette);
-						Components.Add(Blur);
-						Components.Add(ColorGrading);
-						Components.Add(Overlay);
-						Components.Add(HallucinationSharpen);
-						Components.Add(SunShaftsEffect);
-						Components.Add(SSAO);
-						Components.Add(Grain);
-						Components.Add(CC);
-						Components.Add(AA);
-						Components.Add(Fog);
-						//skip TOD_Camera
-				}
-
-				public void CopyFrom(ScreenEffectsSet sfxSet)
-				{		//instead of setting values on fx etc. 3 times (left / right / normal) we just copy / paste from the default camera
-						for (int i = 0; i < sfxSet.Components.Count; i++) {
-								//TODO this is pretty absurd - we can cache the fields in the components list
-								//for now, whatever, just copy them and allocate a bunch of crap...
-								MonoBehaviour thisComponent = Components[i];
-								MonoBehaviour otherComponent = sfxSet.Components[i];
-								if (thisComponent != null && otherComponent != null) {
-										thisComponent.enabled = otherComponent.enabled;
-										/*Type type = thisComponent.GetType();
-					System.Reflection.FieldInfo[] fields = type.GetFields(); 
-					foreach (System.Reflection.FieldInfo field in fields) {
-						field.SetValue(thisComponent, field.GetValue(otherComponent));
-					}*/
-								}
+				public bool Initialized {
+						get {
+								return mInitialized; 
 						}
 				}
 
+				public void Initialize()
+				{
+						CullingMask = cam.cullingMask;
+						mInitialized = true;
+				}
+
+				public void CopyFrom(ScreenEffectsSet s)
+				{
+						cam.farClipPlane = s.cam.farClipPlane;
+						cam.nearClipPlane = s.cam.nearClipPlane;
+						BloomEffect.enabled = s.BloomEffect.enabled;
+						BloomEffect.bloomIntensity = s.BloomEffect.bloomIntensity;
+						BloomEffect.lensDirtIntensity = s.BloomEffect.lensDirtIntensity;
+						BloomEffect.lensDirtTexture = s.BloomEffect.lensDirtTexture;
+
+						Vignette.enabled = s.Vignette.enabled;
+						Vignette.intensity = s.Vignette.intensity;
+						Vignette.blur = s.Vignette.blur;
+						Vignette.chromaticAberration = s.Vignette.chromaticAberration;
+
+						Blur.enabled = s.Blur.enabled;
+
+						ColorGrading.enabled = s.ColorGrading.enabled;
+
+						Overlay.enabled = s.Overlay.enabled;
+						Overlay.intensity = s.Overlay.intensity;
+						Overlay.blendMode = s.Overlay.blendMode;
+						Overlay.texture = s.Overlay.texture;
+
+						Hallucination.enabled = s.Hallucination.enabled;
+
+						SunShaftsEffect.enabled = s.SunShaftsEffect.enabled;
+						SunShaftsEffect.resolution = s.SunShaftsEffect.resolution;
+						SunShaftsEffect.screenBlendMode = s.SunShaftsEffect.screenBlendMode;
+						SunShaftsEffect.sunTransform = s.SunShaftsEffect.sunTransform;
+						SunShaftsEffect.radialBlurIterations = s.SunShaftsEffect.radialBlurIterations;
+						SunShaftsEffect.sunColor = s.SunShaftsEffect.sunColor;
+						SunShaftsEffect.sunShaftBlurRadius = s.SunShaftsEffect.sunShaftBlurRadius;
+						SunShaftsEffect.sunShaftIntensity = s.SunShaftsEffect.sunShaftIntensity;
+						SunShaftsEffect.useSkyBoxAlpha = s.SunShaftsEffect.useSkyBoxAlpha;
+						SunShaftsEffect.maxRadius = s.SunShaftsEffect.maxRadius;
+						SunShaftsEffect.useDepthTexture = s.SunShaftsEffect.useDepthTexture;
+
+						SSAO.enabled = s.SSAO.enabled;
+
+						Grain.enabled = s.Grain.enabled;
+
+						CC.enabled = s.CC.enabled;
+						CC.redChannel.keys = s.CC.redChannel.keys;
+						CC.greenChannel.keys = s.CC.greenChannel.keys;
+						CC.blueChannel.keys = s.CC.blueChannel.keys;
+						CC.UpdateTextures();
+
+						AA.enabled = s.AA.enabled;
+
+						Fog.enabled = s.Fog.enabled;
+						Fog.bEnableFog = s.Fog.bEnableFog;
+						Fog.fogMode = s.Fog.fogMode;
+						Fog.globalDensity = s.Fog.globalDensity;
+						Fog.globalFogColor = s.Fog.globalFogColor;
+						Fog.height = s.Fog.height;
+						Fog.heightScale = s.Fog.heightScale;
+						Fog.startDistance = s.Fog.startDistance;
+				}
+
+				public LayerMask CullingMask;
 				public Camera cam;
 				public SENaturalBloomAndDirtyLens BloomEffect;
 				public Vignetting Vignette;
-				public BlurEffect Blur;
+				public Blur Blur;
 				public Color3Grading ColorGrading;
 				public ScreenOverlay Overlay;
-				public ContrastEnhance HallucinationSharpen;
+				public ContrastEnhance Hallucination;
 				public SunShafts SunShaftsEffect;
 				public SSAOPro SSAO;
 				public NoiseAndGrain Grain;
@@ -572,6 +654,6 @@ namespace Frontiers
 				public AntialiasingAsPostEffect AA;
 				public AlphaSortedGlobalFog Fog;
 				public TOD_Camera TimeOfDay;
-				public List <MonoBehaviour> Components;
+				protected bool mInitialized = false;
 		}
 }

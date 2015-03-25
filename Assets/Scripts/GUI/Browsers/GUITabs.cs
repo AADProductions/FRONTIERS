@@ -16,6 +16,15 @@ namespace Frontiers.GUI
 				public float TabButtonWidth = 100f;
 				public float TabButtonHeight = 50f;
 
+				public int GUIEditorID {
+						get {
+								if (mInitialized) {
+										return Owner.GUIEditorID;
+								}
+								return -1;
+						}
+				}
+
 				public Action OnShow { get; set; }
 
 				public Action OnHide { get; set; }
@@ -24,9 +33,11 @@ namespace Frontiers.GUI
 
 				public bool HasParentTabs { get { return ParentTabs != null; } }
 
-				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects)
+				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects, int flag)
 				{
-						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
+						if (flag < 0) { flag = GUIEditorID; }
+
+						FrontiersInterface.Widget w = new FrontiersInterface.Widget(flag);
 						w.SearchCamera = NGUICamera;
 						for (int i = 0; i < Buttons.Count; i++) {
 								if (!Buttons[i].Disabled && Buttons [i].gameObject.layer != Globals.LayerNumGUIRaycastIgnore) {
@@ -36,14 +47,12 @@ namespace Frontiers.GUI
 						}
 						for (int i = 0; i < Pages.Count; i++) {
 								if (Pages[i].Selected) {
-										Debug.Log("Getting page " + Pages[i].name);
-										Pages[i].GetActiveInterfaceObjects(currentObjects);
+										Pages[i].GetActiveInterfaceObjects(currentObjects, flag);
 								}
 						}
 						for (int i = 0; i < SubTabs.Count; i++) {
 								if (SubTabs[i].Visible) {
-										Debug.Log("Getting subtab " + SubTabs[i].name);
-										SubTabs[i].GetActiveInterfaceObjects(currentObjects);
+										SubTabs[i].GetActiveInterfaceObjects(currentObjects, flag);
 								}
 						}
 				}
@@ -299,6 +308,8 @@ namespace Frontiers.GUI
 
 		public interface IGUITabOwner
 		{
+				int GUIEditorID { get; }
+
 				bool Visible { get; }
 
 				bool CanShowTab(string tabName, GUITabs tabs);

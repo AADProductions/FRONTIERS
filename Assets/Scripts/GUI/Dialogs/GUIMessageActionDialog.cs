@@ -91,14 +91,14 @@ namespace Frontiers.GUI
 								EditObject.Prompt1 = GUIHud.GetBindings(EditObject.Prompt1);
 								GameObject miniAction1GameObject = NGUITools.AddChild(MiniActionParent1, MiniActionPrefab);
 								MiniAction1 = miniAction1GameObject.GetComponent <GUIHudMiniAction>();
-								EditObject.Prompt1 = GUIHud.RefreshHudAction(EditObject.Prompt1, MiniAction1, mode);
+								EditObject.Prompt1 = GUIHud.RefreshHudAction(EditObject.Prompt1, MiniAction1, mode, false);
 						}
 
 						if (EditObject.Prompt2.Visible) {
 								EditObject.Prompt2 = GUIHud.GetBindings(EditObject.Prompt2);
 								GameObject miniAction2GameObject = NGUITools.AddChild(MiniActionParent2, MiniActionPrefab);
 								MiniAction2 = miniAction2GameObject.GetComponent <GUIHudMiniAction>();
-								EditObject.Prompt2 = GUIHud.RefreshHudAction(EditObject.Prompt2, MiniAction2, mode);
+								EditObject.Prompt2 = GUIHud.RefreshHudAction(EditObject.Prompt2, MiniAction2, mode, false);
 						}
 
 						if (!EditObject.Prompt2.Visible && EditObject.Prompt1.Visible) {

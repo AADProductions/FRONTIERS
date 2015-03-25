@@ -10,17 +10,6 @@ namespace Frontiers.GUI
 {
 		public abstract class GUIEditor <R> : SecondaryInterface, IGUIChildEditor <R>, IGUIChildEditor
 		{
-				public GUIEditor()
-				{
-						mGUIEditorID = GUIManager.GetNextGUIID();
-				}
-
-				public ulong GUIEditorID {
-						get {
-								return mGUIEditorID;
-						}
-				}
-
 				public R EditObject {
 						get {
 								return mEditObject;
@@ -110,10 +99,13 @@ namespace Frontiers.GUI
 
 				}
 
-				protected ulong mGUIEditorID = 0;
 				protected GameObject mNGUIObject = null;
 				protected R mEditObject = default (R);
 				protected ChildEditorCallback <R> mCallBack = null;
+		}
+
+		public interface IGUIEditor {
+
 		}
 
 		public interface IBrowser : IFrontiersInterface
@@ -144,7 +136,7 @@ namespace Frontiers.GUI
 
 				public override Widget FirstInterfaceObject {
 						get {
-								Widget w = new Widget();
+								Widget w = new Widget(GUIEditorID);
 								if (mBrowserObjectsList.Count > 0) {
 										w.SearchCamera = NGUICamera;
 										w.BrowserObject = mBrowserObjectsList[0];
@@ -196,48 +188,21 @@ namespace Frontiers.GUI
 
 				public virtual Widget GetFirstInterfaceObject()
 				{
-						Widget w = new Widget();
+						Widget w = new Widget(mGUIEditorID);
 						w.SearchCamera = NGUICamera;
 						w.BrowserObject = mBrowserObjectsList[0];
 						w.BoxCollider = w.BrowserObject.gameObject.GetComponent <BoxCollider>();
 						return w;
 				}
 
-				public bool IsBrowserObjectVisible (IGUIBrowserObject browserObject, float normalizedRange, out Bounds browserBounds) {
-						//this is a crapton of vector3s getting allocated all at once
-						//but we only use it once in a while and it helps me keep things straight
-						//get the bounds of the browser's clipping area
-						Vector3 browserPosition = BrowserClipPanel.transform.position;
-						Vector3 browserObjectPosition = browserObject.transform.position;
-						Vector4 browserClipRange = BrowserClipPanel.clipRange;
-						Vector3 browserScale = BrowserClipPanel.transform.lossyScale;
-						browserPosition.x = browserPosition.x + (browserClipRange.x * browserScale.x);
-						browserPosition.y = browserPosition.y + (browserClipRange.y * browserScale.y);
-						//make the clip range just slightly smaller than the real range
-						Vector3 browserSize = new Vector3(browserClipRange.z * browserScale.x, (browserClipRange.w * normalizedRange) * browserScale.y, 100f);
-						browserBounds = new Bounds(browserPosition, browserSize);
-						Vector3 browserPanelLocalPosition = BrowserClipPanel.transform.localPosition;
-						//move the object to the center of the clipping bounds
-						return browserBounds.Contains(browserObjectPosition);
+				public bool IsBrowserObjectVisible (IGUIBrowserObject browserObject, float normalizedRange, out Bounds browserBounds)
+				{
+						return IsClipPanelPositionVisible(browserObject.transform.position, BrowserClipPanel, normalizedRange, out browserBounds);
 				}
 
 				public virtual Bounds FocusOn(IGUIBrowserObject browserObject)
 				{		
-						Bounds browserBounds;
-						if (!IsBrowserObjectVisible (browserObject, 0.7f, out browserBounds)) {
-								Vector3 targetPosition = browserBounds.center;
-								targetPosition.y = targetPosition.y + (browserBounds.size.y / 2);
-								targetPosition = BrowserClipPanel.transform.InverseTransformPoint(browserBounds.center);
-								//move the background by the amount of space it would take to reach the object
-								Vector3 relativeDifference = targetPosition - browserObject.transform.localPosition;
-								relativeDifference.z = 0f;
-								relativeDifference.x = 0f;//should we really do this...?
-								mBrowserPagePanel.MoveRelative(relativeDifference, true);
-								if (UsesScrollBar) {
-										mBrowserPagePanel.UpdateScrollbars(true, true);
-								}
-						}
-						return browserBounds;
+						return FocusClipPanelOnPosition(browserObject.transform.position, BrowserClipPanel, mBrowserPagePanel, 0.7f, mBrowserPageStartupOffset.y);
 				}
 
 				public R SelectedObject {
@@ -378,7 +343,9 @@ namespace Frontiers.GUI
 
 				public virtual void OnClickBrowserObject(GameObject obj)
 				{
+						#if UNITY_EDITOR
 						Debug.Log("Clicked browser object " + obj.name);
+						#endif
 						if (IsOurBrowserObject(obj, mGUIEditorID) == false) {
 								return;
 						}
@@ -465,7 +432,7 @@ namespace Frontiers.GUI
 
 				protected void BrandBrowserObjects()
 				{
-						string browserNamePrefix = GetBrowserNamePrefix(mGUIEditorID);
+						string browserNamePrefix = GetBrowserNamePrefix(GUIEditorID);
 						foreach (IGUIBrowserObject browserObject in mBrowserObjectsList) {
 								browserObject.name = browserNamePrefix + browserObject.name;
 								foreach (Transform child in browserObject.transform) {
@@ -566,12 +533,12 @@ namespace Frontiers.GUI
 						public Color	DividerColor;
 				}
 
-				protected static string GetBrowserNamePrefix(ulong guiEditorID)
+				protected static string GetBrowserNamePrefix(int guiEditorID)
 				{
 						return ("BO_" + guiEditorID.ToString() + "_");
 				}
 
-				protected static bool IsOurBrowserObject(GameObject browserObject, ulong guiEditorID)
+				protected static bool IsOurBrowserObject(GameObject browserObject, int guiEditorID)
 				{
 						return browserObject.name.Contains(GetBrowserNamePrefix(guiEditorID));
 				}
@@ -616,17 +583,23 @@ namespace Frontiers.GUI
 				public override void OnClickBrowserObject(GameObject obj)
 				{
 						if (!IsOurBrowserObject(obj, mGUIEditorID)) {
+								Debug.Log("Not our browser object in " + name + ", returning");
 								return;
 						}
 
 						mBrowserObject = (IGUIBrowserObject)obj.GetComponent(typeof(IGUIBrowserObject));
-						mSelectedObject	= mEditObjectLookup[mBrowserObject];
+						R newSelectedObject = mEditObjectLookup[mBrowserObject];
+						if (!EqualityComparer<R>.Equals (newSelectedObject, mBrowserObject)) {
+						//generics weirdness
+						//if (newSelectedObject != mSelectedObject) {
+								mSelectedObject	= mEditObjectLookup[mBrowserObject];
 
-						if (mBrowserObject.DeleteRequest) {
-								mBrowserObject.DeleteRequest = false;//reset the delete request
-								DeleteSelectedObject();
-						} else {
-								PushSelectedObjectToViewer();
+								if (mBrowserObject.DeleteRequest) {
+										mBrowserObject.DeleteRequest = false;//reset the delete request
+										DeleteSelectedObject();
+								} else {
+										PushSelectedObjectToViewer();
+								}
 						}
 				}
 

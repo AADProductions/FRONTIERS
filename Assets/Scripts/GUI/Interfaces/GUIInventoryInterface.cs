@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 using System;
+using ExtensionMethods;
 
 namespace Frontiers.GUI
 {
@@ -22,7 +23,7 @@ namespace Frontiers.GUI
 				public UIAnchor QuickslotsAnchor;
 				public UIAnchor InventoryTabsAnchor;
 				public UIPanel QuickslotsPanel;
-				public GameObject QuickslotsParent;
+				public Transform QuickslotsParent;
 				public List <GUIStackContainerDisplay> StackContainerDisplays = new List <GUIStackContainerDisplay>();
 				public Vector3 QuickslotTarget = new Vector3(0f, 0f, 0f);
 				public Vector2 QuickslotsAnchorHiddenOffset = new Vector2(0f, -1f);
@@ -39,12 +40,23 @@ namespace Frontiers.GUI
 				public GameObject SelectedStackDoppleganger;
 				public GameObject SelectedStackDisplayOffset;
 				public Transform SelectedStackDisplayOffsetTransform;
+				//vr focus stuff
+				public bool VRFocusOnTabs = false;
+				public Vector3 VRTabsFocusTabsPosition = new Vector3(830f, 0f, 0f);
+				public Vector3 VRTabsFocusContainersPosition = new Vector3(540f, 0f, 0f);
+				public Vector3 VRTabsFocusQuickslotsPosition = new Vector3(0f, 117.5f, 0f);
+				public Vector3 VRContainersFocusTabsPosition = new Vector3(830f, 0f, 0f);
+				public Vector3 VRContainersFocusContainersPosition = new Vector3(540f, 0f, 0f);
+				public Vector3 VRContainersFocusQuickslotsPosition = new Vector3(830f, 117.5f, 0f);
+				public Transform VRTabsTransform;
+				public Transform VRContainersTransform;
 				//container interface
 				public GUIStackContainerInterface StackContainerInterface;
 				public Transform StackContainerInterfaceTransform;
 				public Vector3 StackContainerInterfaceTarget;
 				public Vector3 StackContainerInterfaceHidden;
 				public Vector3 StackContainerInterfaceVisible;
+				public Vector3 QuickslotsContainerOffset;
 				//inventory containers
 				public Transform ContainerDisplayParentTransform;
 				public Vector3 ContainerDisplayTarget;
@@ -53,31 +65,58 @@ namespace Frontiers.GUI
 				public Vector3 ContainerDisplayVisible;
 				public static InventorySquareDisplay MouseOverSquare = null;
 				public UIButton CloseButton;
+				//flags
+				int TabsEditorID;
+				int ContainersEditorID;
+				int QuickslotsEditorID;
 
 				public void OnClickCloseButton()
 				{
 						ActionCancel(WorldClock.RealTime);
 				}
 
-				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
-						for (int i = 0; i < StackContainerDisplays.Count; i++) {
-								StackContainerDisplays[i].GetActiveInterfaceObjects(currentObjects);
+						int tabsEditorID = flag;
+						int containersEditorID = flag;
+						int quickslotsEditorID = flag;
+						int genericFlag = flag;
+
+						if (flag < 0) {
+								tabsEditorID = TabsEditorID;
+								containersEditorID = ContainersEditorID;
+								quickslotsEditorID = QuickslotsEditorID;
+								genericFlag = GUIEditorID;
 						}
-						QuickslotsDisplay.GetActiveInterfaceObjects(currentObjects);
-						InventoryTabs.GetActiveInterfaceObjects(currentObjects);
-						//ClothingInterface.GetActiveInterfaceObjects(currentObjects);
-						//CraftingInterface.GetActiveInterfaceObjects(currentObjects);
-						StackContainerInterface.GetActiveInterfaceObjects(currentObjects);
 
-						Widget w = new Widget();
+						for (int i = 0; i < StackContainerDisplays.Count; i++) {
+								StackContainerDisplays[i].GetActiveInterfaceObjects(currentObjects, containersEditorID);
+						}
+						StackContainerInterface.GetActiveInterfaceObjects(currentObjects, containersEditorID);
+						InventoryTabs.GetActiveInterfaceObjects(currentObjects, tabsEditorID);
+						QuickslotsDisplay.GetActiveInterfaceObjects(currentObjects, quickslotsEditorID);
+
+						Widget w = new Widget(quickslotsEditorID);
 						w.SearchCamera = NGUICamera;
-
 						w.BoxCollider = QuickslotsCarrySquare.Collider;
 						currentObjects.Add(w);
 
+						w.Flag = genericFlag;
 						w.BoxCollider = CloseButton.GetComponent <BoxCollider>();
 						currentObjects.Add(w);
+				}
+
+				public override Widget FirstInterfaceObject {
+						get {
+								Widget w = base.FirstInterfaceObject;
+								if (StackContainerInterface.Visible) {
+										w = StackContainerInterface.ContainerDisplay.FirstInterfaceObject;
+								} else {
+										w = QuickslotsDisplay.FirstInterfaceObject;
+								}
+								w.Flag = ContainersEditorID;
+								return w;
+						}
 				}
 
 				public override bool Minimize()
@@ -145,6 +184,10 @@ namespace Frontiers.GUI
 						CraftingInterface.NGUICamera = NGUICamera;
 
 						Subscribe(InterfaceActionType.ToggleInventorySecondary, ToggleInventorySecondary);
+
+						TabsEditorID = GUIManager.GetNextGUIID();
+						ContainersEditorID = GUIManager.GetNextGUIID();
+						QuickslotsEditorID = GUIManager.GetNextGUIID();
 				}
 
 				public void Initialize()
@@ -155,6 +198,9 @@ namespace Frontiers.GUI
 						InventoryTabs.Initialize(this);
 						ShowQuickslots = true;
 						mInitialized = true;
+
+						VRContainersTransform = transform;//move the whole interface
+						VRTabsTransform = InventoryTabs.transform;//move all the tabs
 				}
 
 				public new void Update()
@@ -164,8 +210,56 @@ namespace Frontiers.GUI
 						if (!mInitialized)
 								return;
 
-						bool quickslotsVisible = true;
+						UpdateQuickslotsDisplay();
+						UpdateStackContainerDisplay();
+						UpdateSelectedStackDisplay();
+						UpdateMouseOver();
 
+						#if UNITY_EDITOR
+						UpdateVRFocusOffsets(VRManager.VRMode | VRManager.VRTestingModeEnabled);
+						#else
+			UpdateVRFocusOffsets (VRManager.VRMode);
+						#endif
+				}
+
+				#region update functions
+
+				protected void UpdateStackContainerDisplay()
+				{
+						//set the container targets based on whether the container interface is open
+						if (Maximized) {
+								if (StackContainerInterface.Visible) {
+										StackContainerInterfaceTarget = StackContainerInterfaceVisible;
+										ContainerDisplayTarget = ContainerDisplayContainerOpen;
+										StackContainerInterface.ContainerDisplay.EnableColliders(true);
+								} else {
+										StackContainerInterfaceTarget = StackContainerInterfaceHidden;
+										ContainerDisplayTarget = ContainerDisplayVisible;
+										StackContainerInterface.ContainerDisplay.EnableColliders(false);
+								}
+						} else {
+								ContainerDisplayTarget = ContainerDisplayHidden;
+								if (StackContainerInterface.Visible) {
+										StackContainerInterfaceTarget = StackContainerInterfaceVisible;
+										StackContainerInterface.ContainerDisplay.EnableColliders(true);
+								} else {
+										StackContainerInterfaceTarget = StackContainerInterfaceHidden;
+										StackContainerInterface.ContainerDisplay.EnableColliders(false);
+								}
+						}
+
+						if (StackContainerInterfaceTransform.localPosition != StackContainerInterfaceTarget) {
+								StackContainerInterfaceTransform.localPosition = Vector3.Lerp(StackContainerInterfaceTransform.localPosition, StackContainerInterfaceTarget, 0.5f);
+						}
+
+						if (ContainerDisplayParentTransform.localPosition != ContainerDisplayTarget) {
+								ContainerDisplayParentTransform.localPosition = Vector3.Lerp(ContainerDisplayParentTransform.localPosition, ContainerDisplayTarget, 0.5f);
+						}
+				}
+
+				protected void UpdateQuickslotsDisplay()
+				{
+						bool quickslotsVisible = true;
 						if (GameManager.Is(FGameState.Cutscene)
 						 || !Profile.Get.HasCurrentGame
 						 || !PrimaryInterface.PrimaryShowQuickslots) {
@@ -197,7 +291,7 @@ namespace Frontiers.GUI
 										} else {
 												QuickslotHighlight.color = Colors.Get.GeneralHighlightColor;
 										}
-										QuickslotHighlightParent.localPosition = Vector3.Lerp(QuickslotHighlightParent.localPosition, mQuickslotHighlightTarget, 0.75f);
+										//QuickslotHighlightParent.localPosition = Vector3.Lerp(QuickslotHighlightParent.localPosition, mQuickslotHighlightTarget, 0.75f);
 								}
 								if (QuickslotsAnchor.relativeOffset != QuickslotsAnchorVisibleOffset) {
 										QuickslotsAnchor.relativeOffset = QuickslotsAnchorVisibleOffset;
@@ -208,45 +302,11 @@ namespace Frontiers.GUI
 								}
 						}
 
-						if (Player.Local.Inventory.SelectedStack.HasTopItem) {
-								SelectedStackDisplayTransform.position = NGUICamera.camera.ScreenToWorldPoint(Input.mousePosition);
-								SelectedStackDoppleganger = WorldItems.GetDoppleganger(Player.Local.Inventory.SelectedStack.TopItem, SelectedStackDisplayOffsetTransform, SelectedStackDoppleganger, WIMode.Selected);
-								StackNumberLabel.enabled = true;
-						} else {
-								if (SelectedStackDoppleganger != null) {
-										GameObject.Destroy(SelectedStackDoppleganger);
-										SelectedStackDoppleganger = null;
-								}
-								StackNumberLabel.enabled = false;
-						}
 
-						//set the container targets based on whether the container interface is open
-						if (Maximized) {
-								if (StackContainerInterface.Visible) {
-										StackContainerInterfaceTarget = StackContainerInterfaceVisible;
-										ContainerDisplayTarget = ContainerDisplayContainerOpen;
-								} else {
-										StackContainerInterfaceTarget = StackContainerInterfaceHidden;
-										ContainerDisplayTarget = ContainerDisplayVisible;
-								}
-						} else {
-								ContainerDisplayTarget = ContainerDisplayHidden;
-								if (StackContainerInterface.Visible) {
-										StackContainerInterfaceTarget = StackContainerInterfaceVisible;
-								} else {
-										StackContainerInterfaceTarget = StackContainerInterfaceHidden;
-								}
-						}
+				}
 
-						if (StackContainerInterfaceTransform.localPosition != StackContainerInterfaceTarget) {
-								StackContainerInterfaceTransform.localPosition = Vector3.Lerp(StackContainerInterfaceTransform.localPosition, StackContainerInterfaceTarget, 0.5f);
-						}
-
-						if (ContainerDisplayParentTransform.localPosition != ContainerDisplayTarget) {
-								ContainerDisplayParentTransform.localPosition = Vector3.Lerp(ContainerDisplayParentTransform.localPosition, ContainerDisplayTarget, 0.5f);
-						}
-
-
+				protected void UpdateMouseOver()
+				{
 						if (Maximized) {
 								if (Player.Local.ItemPlacement.PlacementModeEnabled) {
 										MouseoverItemLabel.text = "Placement Mode (F)";
@@ -282,6 +342,96 @@ namespace Frontiers.GUI
 						}
 				}
 
+				protected void UpdateSelectedStackDisplay()
+				{
+						if (Player.Local.Inventory.SelectedStack.HasTopItem) {
+								SelectedStackDisplayTransform.position = NGUICamera.camera.ScreenToWorldPoint(Input.mousePosition);
+								SelectedStackDoppleganger = WorldItems.GetDoppleganger(Player.Local.Inventory.SelectedStack.TopItem, SelectedStackDisplayOffsetTransform, SelectedStackDoppleganger, WIMode.Selected);
+								StackNumberLabel.enabled = true;
+						} else {
+								if (SelectedStackDoppleganger != null) {
+										GameObject.Destroy(SelectedStackDoppleganger);
+										SelectedStackDoppleganger = null;
+								}
+								StackNumberLabel.enabled = false;
+						}
+				}
+
+				protected void UpdateVRFocusOffsets(bool vrMode)
+				{
+						if (!Maximized) {
+								VRFocusOnTabs = false;
+						} else {
+								//see which widget we focuse on last
+								if (HasFocus) {
+										int lastSelectedFlag = GUICursor.Get.LastSelectedWidgetFlag;
+										if (lastSelectedFlag == QuickslotsEditorID || lastSelectedFlag == ContainersEditorID) {
+												VRFocusOnTabs = false;
+										} else {
+												VRFocusOnTabs = true;
+										}
+								}
+						}
+
+						if (vrMode) {
+								//FUUUGLY
+								if (VRFocusOnTabs) {
+										if (VRTabsTransform.localPosition.IsApproximately(VRTabsFocusTabsPosition, 0.01f)) {
+												GUICursor.Get.StopFollowingCurrentWidget(TabsEditorID);
+										} else {
+												VRTabsTransform.localPosition = Vector3.Lerp(VRTabsTransform.localPosition, VRTabsFocusTabsPosition, 0.25f);
+												GUICursor.Get.TryToFollowCurrentWidget(TabsEditorID);
+										}
+										if (VRContainersTransform.localPosition.IsApproximately(VRTabsFocusContainersPosition, 0.01f)) {
+												GUICursor.Get.StopFollowingCurrentWidget(ContainersEditorID);
+										} else {
+												VRContainersTransform.localPosition = Vector3.Lerp(VRContainersTransform.localPosition, VRTabsFocusContainersPosition, 0.25f);
+												GUICursor.Get.TryToFollowCurrentWidget(ContainersEditorID);
+										}
+										if (Maximized) {
+												if (QuickslotsParent.localPosition.IsApproximately(VRTabsFocusQuickslotsPosition, 0.01f)) {
+														GUICursor.Get.StopFollowingCurrentWidget(QuickslotsEditorID);
+												} else {
+														QuickslotsParent.localPosition = Vector3.Lerp(QuickslotsParent.localPosition, VRTabsFocusQuickslotsPosition, 0.25f);
+														GUICursor.Get.TryToFollowCurrentWidget(QuickslotsEditorID);
+												}
+										} else {
+												if (QuickslotsParent.localPosition.IsApproximately(VRContainersFocusQuickslotsPosition, 0.01f)) {
+														GUICursor.Get.StopFollowingCurrentWidget(QuickslotsEditorID);
+												} else {
+														QuickslotsParent.localPosition = Vector3.Lerp(QuickslotsParent.localPosition, VRContainersFocusQuickslotsPosition, 0.25f);
+														GUICursor.Get.TryToFollowCurrentWidget(QuickslotsEditorID);
+												}
+										}
+								} else {
+										if (VRTabsTransform.localPosition.IsApproximately(VRContainersFocusTabsPosition, 0.01f)) {
+												GUICursor.Get.StopFollowingCurrentWidget(TabsEditorID);
+										} else {
+												VRTabsTransform.localPosition = Vector3.Lerp(VRTabsTransform.localPosition, VRContainersFocusTabsPosition, 0.25f);
+												GUICursor.Get.TryToFollowCurrentWidget(TabsEditorID);
+										}
+										if (VRContainersTransform.localPosition.IsApproximately(VRContainersFocusContainersPosition, 0.01f)) {
+												GUICursor.Get.StopFollowingCurrentWidget(ContainersEditorID);
+										} else {
+												VRContainersTransform.localPosition = Vector3.Lerp(VRContainersTransform.localPosition, VRContainersFocusContainersPosition, 0.25f);
+												GUICursor.Get.TryToFollowCurrentWidget(ContainersEditorID);
+										}
+										if (QuickslotsParent.localPosition.IsApproximately(VRContainersFocusQuickslotsPosition, 0.01f)) {
+												GUICursor.Get.StopFollowingCurrentWidget(QuickslotsEditorID);
+										} else {
+												QuickslotsParent.localPosition = Vector3.Lerp(QuickslotsParent.localPosition, VRContainersFocusQuickslotsPosition, 0.25f);
+												GUICursor.Get.TryToFollowCurrentWidget(QuickslotsEditorID);
+										}
+								}
+						} else {
+								VRTabsTransform.localPosition = Vector3.zero;
+								VRContainersTransform.localPosition = Vector3.zero;
+								QuickslotsParent.localPosition = QuickslotsContainerOffset;
+						}
+				}
+
+				#endregion
+
 				public void RefreshContainers()
 				{
 						QuickslotsDisplay.Refresh();
@@ -307,7 +457,10 @@ namespace Frontiers.GUI
 				public void OpenStackContainer(IWIBase newEditObject)
 				{
 						Maximize();
+						//we want to look at the containers
+						VRFocusOnTabs = false;
 						StackContainerInterface.OpenStackContainer(newEditObject);
+						GUICursor.Get.SelectWidget(StackContainerInterface.ContainerDisplay.FirstInterfaceObject);
 				}
 
 				public void CloseStackContainer()
@@ -321,21 +474,21 @@ namespace Frontiers.GUI
 								InventorySquare square = QuickslotsDisplay.InventorySquares[activeQuickslot];
 								QuickslotHighlightParent.parent = square.transform;
 								QuickslotHighlightParent.localPosition = Vector3.zero;
-								QuickslotHighlightParent.parent = QuickslotsDisplay.transform;
-								mQuickslotHighlightTarget = QuickslotHighlightParent.localPosition;
-								mQuickslotHighlightTarget.z -= 50f;
+								//QuickslotHighlightParent.parent = QuickslotsDisplay.transform;
+								//mQuickslotHighlightTarget = QuickslotHighlightParent.localPosition;
+								//mQuickslotHighlightTarget.z -= 50f;
 						}
 				}
 
 				public void OnSelectedStackChanged(WIStack stack)
 				{
-						//		////Debug.Log ("Selected stack changed - inventory");
+						//Debug.Log ("Selected stack changed - inventory");
 				}
 
 				public void UpdateDisplay()
 				{
 						SetInventoryStackNumber();
-						//		SetMouseoverItemLabelText (ActiveQuickslotStack);
+						//SetMouseoverItemLabelText (ActiveQuickslotStack);
 				}
 
 				public void SetInventoryStackNumber()
@@ -403,7 +556,7 @@ namespace Frontiers.GUI
 
 				protected void CreateContainerDisplays()
 				{
-						if (QuickslotsDisplay == null) {	//don't build stuff twice!
+						if (QuickslotsDisplay == null) {//don't build stuff twice!
 								GameObject instantiatedContainerDisplay = null;
 								GameObject instantiatedCarryDisplay = null;
 								GUIStackContainerDisplay containerDisplay = null;
@@ -418,14 +571,14 @@ namespace Frontiers.GUI
 										containerDisplay.Refresh();
 								}
 
-								instantiatedContainerDisplay = NGUITools.AddChild(QuickslotsParent, GUIManager.Get.StackContainerDisplay);
+								instantiatedContainerDisplay = NGUITools.AddChild(QuickslotsParent.gameObject, GUIManager.Get.StackContainerDisplay);
 								containerDisplay = instantiatedContainerDisplay.GetComponent <GUIStackContainerDisplay>();
 								containerDisplay.NGUICamera = NGUICamera;
 								containerDisplay.transform.localPosition = Vector3.zero;
 								QuickslotsDisplay = containerDisplay;
 								containerDisplay.Refresh();
 
-								instantiatedCarryDisplay = NGUITools.AddChild(QuickslotsParent, GUIManager.Get.InventorySquare);
+								instantiatedCarryDisplay = NGUITools.AddChild(QuickslotsParent.gameObject, GUIManager.Get.InventorySquare);
 								carrySquare = instantiatedCarryDisplay.GetComponent <InventorySquare>();
 								carrySquare.NGUICamera = NGUICamera;
 								carrySquare.RequiresEnabler = false;
@@ -448,6 +601,6 @@ namespace Frontiers.GUI
 
 				protected bool mRefreshNextFrame = false;
 				protected bool mInitialized = false;
-				protected Vector3 mQuickslotHighlightTarget = Vector3.zero;
+				//protected Vector3 mQuickslotHighlightTarget = Vector3.zero;
 		}
 }

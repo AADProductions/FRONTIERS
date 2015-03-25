@@ -581,7 +581,11 @@ namespace Frontiers.World
 												dopGameObject.layer = Globals.LayerNumWorldItemInventory;
 												//NGUI doesn't play nice with outline shaders in VR mode
 												materials.AddRange(wiMr.sharedMaterials);
-												if (!VRManager.VRModeEnabled) {
+												#if UNITY_EDITOR
+												if (!(VRManager.VRMode | VRManager.VRTestingModeEnabled)) {
+														#else
+														if (!VRManager.VRMode) {
+														#endif
 														for (int j = 0; j < wiMr.sharedMaterials.Length; j++) {
 																if (item.Props.Global.UseCutoutShader) {
 																		Material baseMat = wiMr.sharedMaterials[j];
@@ -861,6 +865,7 @@ namespace Frontiers.World
 
 				public static StringBuilder gDopplegangerNameBuilder = new StringBuilder();
 				public static string gDopplegangerName = string.Empty;
+				public static Vector3 gRandomPosition;
 
 				#endregion
 
@@ -878,7 +883,8 @@ namespace Frontiers.World
 
 						if (Get.PackPrefab(stackItem.PackName, stackItem.PrefabName, out prefab)) {
 								//instantiate with a random offset to prevent too many pairs from intersecting
-								GameObject newWorldItemGameObject = GameObject.Instantiate(prefab.tr.gameObject, Globals.WorldItemInstantiationOffset * (5f + UnityEngine.Random.value), Quaternion.identity) as GameObject;
+								gRandomPosition = UnityEngine.Random.onUnitSphere * 1000f;
+								GameObject newWorldItemGameObject = GameObject.Instantiate(prefab.tr.gameObject, Globals.WorldItemInstantiationOffset + gRandomPosition, Quaternion.identity) as GameObject;
 								newWorldItemGameObject.name = stackItem.Props.Name.FileName;
 								if (!newWorldItemGameObject.HasComponent <WorldItem>(out worlditem)) {
 										DynamicPrefab dp = null;
@@ -1301,9 +1307,10 @@ namespace Frontiers.World
 						} else {
 								worlditem.Props.Name.DisplayName = worlditem.DisplayNamer(0);
 						}
+						/*
 						if (worlditem.IsStackContainer && worlditem.StackContainer.IsEmpty) {
 								return worlditem.Props.Name.DisplayName + " (Empty)";
-						}
+						}*/
 						return worlditem.Props.Name.DisplayName;
 				}
 

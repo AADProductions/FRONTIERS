@@ -29,14 +29,16 @@ namespace Frontiers.GUI
 						}
 				}
 
-				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects)
+				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects, int flag)
 				{
+						if (flag < 0) { flag = TabParent.Owner.GUIEditorID; }
+
 						if (HasSubTabs) {
-								SubTabs.GetActiveInterfaceObjects(currentObjects);
+								SubTabs.GetActiveInterfaceObjects(currentObjects, flag);
 						} else {
 								for (int i = 0; i < Panels.Count; i++) {
 										if (Panels[i].gameObject.layer != Globals.LayerNumGUIRaycastIgnore) {
-												FrontiersInterface.GetActiveInterfaceObjectsInTransform(Panels[i].transform, NGUICamera, currentObjects);
+												FrontiersInterface.GetActiveInterfaceObjectsInTransform(Panels[i].transform, NGUICamera, currentObjects, flag);
 										}
 								}
 						}

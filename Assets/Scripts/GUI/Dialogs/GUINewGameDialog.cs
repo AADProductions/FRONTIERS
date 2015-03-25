@@ -41,16 +41,17 @@ namespace Frontiers.GUI
 
 				public override Widget FirstInterfaceObject {
 						get {
-								Widget w = new Widget();
-								w.SearchCamera = NGUICamera;
+								Widget w = base.FirstInterfaceObject;
 								w.BoxCollider = GameNameInput.GetComponent<BoxCollider>();
 								return w;
 						}
 				}
 
-				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
-						Tabs.GetActiveInterfaceObjects(currentObjects);
+						if (flag < 0) { flag = GUIEditorID; }
+
+						Tabs.GetActiveInterfaceObjects(currentObjects, flag);
 				}
 
 				public bool HasCurrentWorld {

@@ -8,6 +8,31 @@ namespace Frontiers.GUI
 {
 		public class GUICharacterCreator : GUIEditor <CharacterCreator>
 		{
+				public override bool CustomVRSettings {
+						get {
+								return true;
+						}
+				}
+
+				public override bool AxisLock {
+						get {
+								return false;
+						}
+				}
+
+				public override bool CursorLock {
+						get {
+								return false;
+						}
+				}
+
+				public override Vector3 LockOffset {
+						get {
+								return CustomLockOffset;
+						}
+				}
+
+				public Vector3 CustomLockOffset = new Vector3(5f, 0f, 0f);
 				public GameObject FinishedButton;
 				public GameObject CancelButton;
 				public UIInput CharacterName;
@@ -276,7 +301,7 @@ namespace Frontiers.GUI
 								Debug.Log("Loaded " + EditObject.Character.HairTextureName + ", applying to hair material");
 								hairMaterial.SetTexture("_MainTex", hairTexture);
 								//now apply the hair color - we use a full red texture to color the whole texture
-								hairMaterial.SetColor("_EyeColor", Colors.Get.HairColor (EditObject.Character.HairColor));
+								hairMaterial.SetColor("_EyeColor", Colors.Get.HairColor(EditObject.Character.HairColor));
 						} else {
 								Debug.Log("Couldn't load hair texture " + EditObject.Character.FaceTextureName);
 						}

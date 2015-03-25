@@ -162,11 +162,6 @@ namespace Frontiers
 						//(removed rest)
 				}
 
-				public void SetOculusMode(bool oculusMode)
-				{
-
-				}
-
 				public IEnumerator UpdateState()
 				{		//the equvialent of main
 						gState = FGameState.Startup;
@@ -302,6 +297,7 @@ namespace Frontiers
 						yield return StartCoroutine(Manager.WakeUpAndInitialize <LightManager>("Initializing Lights"));
 						yield return StartCoroutine(Manager.WakeUpAndInitialize <DarkrotManager>("Initializing Darkrot"));
 						yield return StartCoroutine(Manager.WakeUpAndInitialize <SpawnManager>("Initializing Spawn Manager"));
+						yield return StartCoroutine(Manager.WakeUpAndInitialize <VRManager>("Initializing VR Manager"));
 						yield return StartCoroutine(Manager.WakeUpAndInitialize <Player>("Initializing Player"));
 
 						Manager.FinishedInitializing();
@@ -511,16 +507,19 @@ namespace Frontiers
 
 				public override void OnCutsceneFinished()
 				{
-						GameObject.DestroyImmediate(Cutscene.CurrentCutscene.gameObject);
+						GameObject.Destroy(Cutscene.CurrentCutscene.gameObject, 0.1f);
 						Cutscene.CurrentCutscene = null;
-						Get.StartCoroutine(Get.UnloadUnusedAssets());
-						GC.Collect();
+						Get.StartCoroutine(Get.UnloadUnusedAssets(0.11f));
 				}
 
-				protected IEnumerator UnloadUnusedAssets()
+				protected IEnumerator UnloadUnusedAssets(double waitUntil)
 				{	//wait a tick
-						yield return null;
+						waitUntil = WorldClock.RealTime + waitUntil;
+						while (WorldClock.RealTime < waitUntil) {
+								yield return null;
+						}
 						Resources.UnloadUnusedAssets();
+						GC.Collect();
 				}
 				//TODO make this ia function not a property
 				public static bool ReadyToQuit {
@@ -804,9 +803,17 @@ namespace Frontiers
 						yield break;
 				}
 
+				public void SpawnStartMenu(FGameState enterGameState, FGameState exitGameState, StartMenuResult result)
+				{
+						GameObject startMenuChildEditor = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.NGUIStartMenu, false);
+						//GUIStartMenu startMenu = startMenuChildEditor.GetComponent <GUIStartMenu> ();
+						result.EnterGameState = enterGameState;
+						result.ExitGameState = exitGameState;
+						GUIManager.SendEditObjectToChildEditor <StartMenuResult>(startMenuChildEditor, result);
+				}
+
 				public void SpawnStartMenu(FGameState enterGameState, FGameState exitGameState)
 				{
-
 						GameObject startMenuChildEditor = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.NGUIStartMenu, false);
 						//GUIStartMenu startMenu = startMenuChildEditor.GetComponent <GUIStartMenu> ();
 						StartMenuResult result = new StartMenuResult();

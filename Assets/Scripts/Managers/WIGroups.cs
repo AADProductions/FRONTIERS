@@ -590,26 +590,26 @@ namespace Frontiers
 						WIGroup currentGroup = Get.World;
 						if (Frontiers.Player.Local.HasSpawned) {
 								if (Frontiers.Player.Local.Surroundings.IsInsideStructure) {
-										Debug.Log("Inside structure, returning structure group");
+										//Debug.Log("Inside structure, returning structure group");
 										currentGroup = Frontiers.Player.Local.Surroundings.LastStructureEntered.StructureGroup;
 								} else if (Frontiers.Player.Local.Surroundings.IsVisitingLocation) {
-										Debug.Log("Not inside structure, returning first outside structure group");
+										//Debug.Log("Not inside structure, returning first outside structure group");
 										//make sure we don't return the structure group of the structure we're visiting
 										for (int i = 0; i < Frontiers.Player.Local.Surroundings.VisitingLocations.Count; i++) {
 												Frontiers.World.BaseWIScripts.Location location = Frontiers.Player.Local.Surroundings.VisitingLocations[i];
 												currentGroup = location.LocationGroup;
 												if (!location.worlditem.Is<Frontiers.World.BaseWIScripts.Structure>()) {
-														Debug.Log("Location group is NOT shingle, calling this good");
+														//Debug.Log("Location group is NOT shingle, calling this good");
 														break;
 												} else {
-														Debug.Log("Location was a structure, continuing till we find something better");
+														//Debug.Log("Location was a structure, continuing till we find something better");
 												}
 										}
 								} else { 
 										currentGroup = GameWorld.Get.PrimaryChunk.AboveGroundGroup;
 								}
 						}
-						Debug.Log("Final result: " + currentGroup.Path);
+						//Debug.Log("Final result: " + currentGroup.Path);
 						return currentGroup;
 				}
 
@@ -673,7 +673,7 @@ namespace Frontiers
 
 				protected IEnumerator GetAllStackItemsByTypeOverTime(string groupPath, List <string> wiScriptTypes, GroupSearchType searchType, Queue <StackItem> stackItemQueue)
 				{	//start by getting all the paths to search for
-						Debug.Log("Getting all stack items by type");
+						//Debug.Log("Getting all stack items by type");
 						Queue <string> groupPathsQueue = new Queue <string>();
 						yield return StartCoroutine(GetAllPaths(groupPath, searchType, groupPathsQueue));
 						//once we've got all the paths, start searching them for stack items

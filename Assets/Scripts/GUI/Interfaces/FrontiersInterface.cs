@@ -9,6 +9,15 @@ namespace Frontiers.GUI
 {
 		public class FrontiersInterface : InterfaceActionFilter, IFrontiersInterface
 		{
+				public int GUIEditorID {
+						get {
+								if (mGUIEditorID < 0) {
+										mGUIEditorID = GUIManager.GetNextGUIID();
+								}
+								return mGUIEditorID;
+						}
+				}
+
 				public UICamera CameraInput { get; set; }
 
 				public Camera NGUICamera {
@@ -41,12 +50,63 @@ namespace Frontiers.GUI
 				public UserActionReceiver UserActions;
 				public UIAnchor.Side AnchorSide = UIAnchor.Side.Center;
 				protected Camera mNguiCamera;
+				protected int mGUIEditorID = -1;
+				protected bool mVRSettingsOverride = false;
 
-				public static void GetActiveInterfaceObjectsInTransform(Transform startTransform, Camera searchCamera, List<Widget> currentObjects)
+				public virtual bool VRSettingsOverride {
+						get {
+								return mVRSettingsOverride;
+						} set {
+								mVRSettingsOverride = value;
+						}
+				}
+
+				public virtual bool CustomVRSettings {
+						get {
+								return mCustomVRSettings;
+						}
+						set {
+								mCustomVRSettings = value;
+						}
+				}
+
+				public virtual bool CursorLock {
+						get {
+								return mCursorLock;
+						}
+						set {
+								mCursorLock = value;
+						}
+				}
+
+				public virtual bool AxisLock {
+						get {
+								return mAxisLock;
+						}
+						set {
+								mAxisLock = value;
+						}
+				}
+
+				public virtual Vector3 LockOffset {
+						get {
+								return mLockOffset;
+						}
+						set {
+								mLockOffset = value;
+						}
+				}
+
+				protected Vector3 mLockOffset = Vector3.zero;
+				protected bool mAxisLock = false;
+				protected bool mCursorLock = false;
+				protected bool mCustomVRSettings = false;
+
+				public static void GetActiveInterfaceObjectsInTransform(Transform startTransform, Camera searchCamera, List<Widget> currentObjects, int flag)
 				{
 						gGetColliders.Clear();
-						startTransform.GetComponentsInChildren <BoxCollider>(gGetColliders);
-						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
+						startTransform.GetComponentsInChildren <Collider>(gGetColliders);
+						FrontiersInterface.Widget w = new FrontiersInterface.Widget(flag);
 						IGUIBrowserObject bo = null;
 						w.SearchCamera = searchCamera;
 						for (int j = 0; j < gGetColliders.Count; j++) {
@@ -72,15 +132,52 @@ namespace Frontiers.GUI
 						}
 				}
 
-				public virtual void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				public static bool IsClipPanelPositionVisible (Vector3 worldPosition, UIPanel clipPanel, float normalizedRange, out Bounds browserBounds) {
+						//this is a crapton of vector3s getting allocated all at once
+						//but we only use it once in a while and it helps me keep things straight
+						//get the bounds of the browser's clipping area
+						Vector3 browserPosition = clipPanel.transform.position;
+						Vector4 browserClipRange = clipPanel.clipRange;
+						Vector3 browserScale = clipPanel.transform.lossyScale;
+						browserPosition.x = browserPosition.x + (browserClipRange.x * browserScale.x);
+						browserPosition.y = browserPosition.y + (browserClipRange.y * browserScale.y);
+						//make the clip range just slightly smaller than the real range
+						Vector3 browserSize = new Vector3(browserClipRange.z * browserScale.x, (browserClipRange.w * normalizedRange) * browserScale.y, 100f);
+						browserBounds = new Bounds(browserPosition, browserSize);
+						Vector3 browserPanelLocalPosition = clipPanel.transform.localPosition;
+						//move the object to the center of the clipping bounds
+						return browserBounds.Contains(worldPosition);
+				}
+
+				public static Bounds FocusClipPanelOnPosition (Vector3 worldPosition, UIPanel clipPanel, UIDraggablePanel dragPanel, float normalizedRange, float minBrowserPosition) {
+						Bounds browserBounds;
+						if (!IsClipPanelPositionVisible(worldPosition, clipPanel, normalizedRange, out browserBounds)) {
+								Vector3 targetPosition = browserBounds.center;
+								targetPosition.y = targetPosition.y + (browserBounds.size.y / 2);
+								targetPosition = clipPanel.transform.InverseTransformPoint(browserBounds.center);
+								//move the background by the amount of space it would take to reach the object
+								Vector3 relativeDifference = targetPosition - clipPanel.transform.InverseTransformPoint(worldPosition);
+								relativeDifference.z = 0f;
+								relativeDifference.x = 0f;//should we really do this...?
+								dragPanel.MoveRelative(relativeDifference, true, minBrowserPosition);
+								dragPanel.UpdateScrollbars(true, true);
+								Debug.Log("world position " + worldPosition.ToString() + " was NOT visible in clip panel " + clipPanel.name + ", moving " + relativeDifference.y.ToString());
+						}
+						return browserBounds;
+				}
+
+				public virtual void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
+						if (flag < 0) { flag = GUIEditorID; }
 						//use the default method
-						GetActiveInterfaceObjectsInTransform(transform, NGUICamera, currentObjects);
+						GetActiveInterfaceObjectsInTransform(transform, NGUICamera, currentObjects, flag);
 				}
 
 				public virtual FrontiersInterface.Widget FirstInterfaceObject {
 						get {
-								return new Widget();
+								Widget w = new Widget(GUIEditorID);
+								w.SearchCamera = NGUICamera;
+								return w;
 						}
 				}
 
@@ -135,11 +232,11 @@ namespace Frontiers.GUI
 				{
 						gameObject.SetLayerRecursively(Globals.LayerNumGUIRaycast);
 						#if UNITY_EDITOR
-						if ((VRManager.VRModeEnabled | VRManager.VRTestingModeEnabled)) {
+						if ((VRManager.VRMode | VRManager.VRTestingModeEnabled)) {
 								GUICursor.Get.SelectWidget(FirstInterfaceObject);
 						}
 						#else
-						if (VRManager.VRModeEnabled) {
+						if (VRManager.VRMode) {
 								GUICursor.Get.SelectWidget(FirstInterfaceObject);
 						}
 						#endif
@@ -198,9 +295,17 @@ namespace Frontiers.GUI
 				[Serializable]
 				public struct Widget
 				{
+						public Widget (int flag) {
+								Flag = flag;
+								SearchCamera = null;
+								BoxCollider = null;
+								BrowserObject = null;
+						}
+
 						public Camera SearchCamera;
 						public Collider BoxCollider;
 						public IGUIBrowserObject BrowserObject;
+						public int Flag;
 
 						public bool IsEmpty {
 								get {
@@ -217,15 +322,39 @@ namespace Frontiers.GUI
 										return BrowserObject != null;
 								}
 						}
+
+						public bool Equals(Widget other) {
+								if (IsEmpty) {
+										return false;
+								}
+								if (other.IsEmpty) {
+										return false;
+								}
+								return BoxCollider == other.BoxCollider;
+						}
 				}
 
-				protected static List <BoxCollider> gGetColliders = new List<BoxCollider>();
+				protected static List <Collider> gGetColliders = new List<Collider>();
 				protected IBrowser mBrowser;
 		}
 
 		public interface IFrontiersInterface
 		{
-				void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects);
+				int GUIEditorID { get; }
+
+				bool VRSettingsOverride { get; set; }
+
+				bool CustomVRSettings { get; }
+
+				Vector3 LockOffset { get; }
+
+				bool CursorLock { get; }
+
+				bool AxisLock { get; }
+
+				Camera NGUICamera { get; set; }
+
+				void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects, int flag);
 
 				FrontiersInterface.Widget FirstInterfaceObject { get; }
 		}

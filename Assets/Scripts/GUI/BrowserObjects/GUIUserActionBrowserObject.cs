@@ -260,11 +260,16 @@ namespace Frontiers.GUI
 				public void Refresh()
 				{
 						ActionName.text = mSetting.ActionDescription;
+						string text = string.Empty;
+						bool wideFormat = false;
 						if (mSetting.AxisSetting) {
-								KeyAxis1Binding.text = mSetting.KeyX.ToString().Replace("None", "");
-								KeyAxis2Binding.text = mSetting.KeyY.ToString().Replace("None", "");
+								InterfaceActionManager.GetKeyCodeLabelText(mSetting.KeyX, true, out text, out wideFormat);
+								KeyAxis1Binding.text = text.Replace("None", "");
+								InterfaceActionManager.GetKeyCodeLabelText(mSetting.KeyY, true, out text, out wideFormat);
+								KeyAxis2Binding.text = text.Replace("None", "");
 						} else {
-								KeyBinding.text = mSetting.Key.ToString().Replace("None", "");
+								InterfaceActionManager.GetKeyCodeLabelText(mSetting.Key, true, out text, out wideFormat);
+								KeyBinding.text = text.Replace("None", "");
 						}
 						ControllerBinding.text = mSetting.Controller.ToString().Replace("None", "");
 						MouseBinding.text = mSetting.Mouse.ToString().Replace("None", "");

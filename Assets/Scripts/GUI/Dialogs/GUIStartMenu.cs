@@ -13,6 +13,7 @@ namespace Frontiers.GUI
 				public UIButton LoadButton;
 				public UIButton SaveButton;
 				public UIButton OptionsButton;
+				public UIButton ControlsButton;
 				public UIButton MultiplayerButton;
 				public UIButton QuitButton;
 				public UILabel ChangeLogLabel;
@@ -20,27 +21,31 @@ namespace Frontiers.GUI
 				public GameObject ChangeLog;
 				public UIPanel MainPanel;
 				public bool VRMode = false;
+
 				public Vector3 ContinueButtonPositionNormal;
 				public Vector3 NewButtonPositionNormal;
 				public Vector3 LoadButtonPositionNormal;
 				public Vector3 SaveButtonPositionNormal;
 				public Vector3 OptionsButtonPositionNormal;
 				public Vector3 MultiplayerButtonPositionNormal;
+				public Vector3 ControlsButtonNormal;
 				public Vector3 QuitButtonPositionNormal;
+
 				public Vector3 ContinueButtonPositionVR;
 				public Vector3 NewButtonPositionVR;
 				public Vector3 LoadButtonPositionVR;
 				public Vector3 SaveButtonPositionVR;
 				public Vector3 OptionsButtonPositionVR;
 				public Vector3 MultiplayerButtonPositionVR;
+				public Vector3 ControlsButtonVR;
 				public Vector3 QuitButtonPositionVR;
+
 				public Vector4 MainPanelClippingNormal;
 				public Vector4 MainPanelClippingVR;
 
 				public override Widget FirstInterfaceObject {
 						get {
-								Widget w = new Widget();
-								w.SearchCamera = NGUICamera;
+								Widget w = base.FirstInterfaceObject;
 								if (EditObject.EnableContinueButton) {
 										w.BoxCollider = ContinueButton.GetComponent <BoxCollider>();
 								} else {
@@ -50,9 +55,11 @@ namespace Frontiers.GUI
 						}
 				}
 
-				public override void GetActiveInterfaceObjects(List<Widget> currentObjects)
+				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
-						Widget w = new Widget();
+						if (flag < 0) { flag = GUIEditorID; }
+
+						Widget w = new Widget(flag);
 						w.SearchCamera = NGUICamera;
 
 						w.BoxCollider = ContinueButton.gameObject.GetComponent<BoxCollider>();
@@ -71,6 +78,9 @@ namespace Frontiers.GUI
 						currentObjects.Add(w);
 
 						w.BoxCollider = MultiplayerButton.gameObject.GetComponent<BoxCollider>();
+						currentObjects.Add(w);
+
+						w.BoxCollider = ControlsButton.gameObject.GetComponent<BoxCollider>();
 						currentObjects.Add(w);
 
 						w.BoxCollider = QuitButton.gameObject.GetComponent<BoxCollider>();
@@ -112,9 +122,22 @@ namespace Frontiers.GUI
 								GameObject editor = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog("NGUIThisWeekFocusDialog"));
 						}
 
-						VRMode = VRManager.VRModeEnabled;
+						#if UNITY_EDITOR
+						VRMode = VRManager.VRMode | VRManager.VRTestingModeEnabled;
+						#else
+						VRMode = VRManager.VRMode;
+						#endif
 						RefreshChangeLog();
 						RefreshButtons();
+
+						//now see if the edit object asked for any clicks or tabs
+						if (EditObject.ClickedOptions) {
+								if (!string.IsNullOrEmpty(EditObject.TabSelection)) {
+										GUIOptionsDialog optionsDialog = OnClickOptionsButton();
+										optionsDialog.Tabs.DefaultPanel = EditObject.TabSelection;
+										optionsDialog.Tabs.SetSelection(EditObject.TabSelection);
+								}
+						}
 				}
 
 				public void RefreshChangeLog()
@@ -148,6 +171,7 @@ namespace Frontiers.GUI
 										SaveButton.SendMessage("SetEnabled", SendMessageOptions.RequireReceiver);
 										OptionsButton.SendMessage("SetEnabled", SendMessageOptions.RequireReceiver);
 										MultiplayerButton.SendMessage("SetEnabled", SendMessageOptions.RequireReceiver);
+										ControlsButton.SendMessage("SetEnabled", SendMessageOptions.RequireReceiver);
 										QuitButton.SendMessage("SetEnabled", SendMessageOptions.RequireReceiver);
 										break;
 
@@ -158,6 +182,7 @@ namespace Frontiers.GUI
 										SaveButton.SendMessage("SetDisabled", SendMessageOptions.RequireReceiver);
 										OptionsButton.SendMessage("SetEnabled", SendMessageOptions.RequireReceiver);
 										MultiplayerButton.SendMessage("SetEnabled", SendMessageOptions.RequireReceiver);
+										ControlsButton.SendMessage("SetEnabled", SendMessageOptions.RequireReceiver);
 										QuitButton.SendMessage("SetEnabled", SendMessageOptions.RequireReceiver);
 										break;
 						}
@@ -170,6 +195,7 @@ namespace Frontiers.GUI
 								SaveButton.transform.localPosition = SaveButtonPositionVR;
 								OptionsButton.transform.localPosition = OptionsButtonPositionVR;
 								MultiplayerButton.transform.localPosition = MultiplayerButtonPositionVR;
+								ControlsButton.transform.localPosition = ControlsButtonVR;
 								QuitButton.transform.localPosition = QuitButtonPositionVR;
 								MainPanel.clipRange = MainPanelClippingVR;
 						} else {
@@ -180,6 +206,7 @@ namespace Frontiers.GUI
 								SaveButton.transform.localPosition = SaveButtonPositionNormal;
 								OptionsButton.transform.localPosition = OptionsButtonPositionNormal;
 								MultiplayerButton.transform.localPosition = MultiplayerButtonPositionNormal;
+								ControlsButton.transform.localPosition = ControlsButtonNormal;
 								QuitButton.transform.localPosition = QuitButtonPositionNormal;
 								MainPanel.clipRange = MainPanelClippingNormal;
 						}
@@ -191,8 +218,12 @@ namespace Frontiers.GUI
 								return;
 						}
 
-						if (VRManager.VRModeEnabled != VRMode) {
-								VRMode = VRManager.VRModeEnabled;
+						#if UNITY_EDITOR
+						if ((VRManager.VRMode | VRManager.VRTestingModeEnabled) != VRMode) {
+						#else
+						if (VRManager.VRMode != VRMode) {
+						#endif
+								VRMode = VRManager.VRMode;
 								RefreshChangeLog();
 								RefreshButtons();
 						}
@@ -294,21 +325,47 @@ namespace Frontiers.GUI
 						GUIManager.ScaleDownEditor(childEditor.gameObject).Proceed(true);
 				}
 
+				public void OnClickControlsButton () {
+						GameObject dialog = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.Dialog ("NGUIControlsCheatSheetDialog"), false);
+						YesNoCancelDialogResult editObject = new YesNoCancelDialogResult();
+						GUIManager.SendEditObjectToChildEditor <YesNoCancelDialogResult>(new ChildEditorCallback <YesNoCancelDialogResult>(ControlDialogCallback), dialog, editObject);
+						DisableInput();
+				}
+
+				protected void ControlDialogCallback(YesNoCancelDialogResult editObject, IGUIChildEditor <YesNoCancelDialogResult> childEditor)
+				{
+						if (mDestroyed) {
+								return;
+						}
+
+						GUIManager.ScaleDownEditor(childEditor.gameObject).Proceed(true);
+						//if the result is yes, open up the options dialog
+						if (editObject.Result == DialogResult.Yes) {
+								GUIOptionsDialog optionsDialog = OnClickOptionsButton();
+								optionsDialog.Tabs.DefaultPanel = "Controls";
+								optionsDialog.Tabs.SetSelection("Controls");
+						} else {
+								EnableInput();
+						}
+				}
+
 				public void OnClickQuitButton()
 				{
 						Application.Quit();
 						//GameManager.Quit ();
 				}
 
-				public void OnClickOptionsButton()
+				public GUIOptionsDialog OnClickOptionsButton()
 				{
 						if (mDestroyed) {
-								return;
+								return null;
 						}
 
 						GameObject dialog = GUIManager.SpawnNGUIChildEditor(gameObject, GUIManager.Get.NGUIOptionsDialog, false);
 						GUIManager.SendEditObjectToChildEditor <PlayerPreferences>(new ChildEditorCallback <PlayerPreferences>(OptionsDialogCallback), dialog, Profile.Get.CurrentPreferences);
+						GUIOptionsDialog optionsDialog = dialog.GetComponent <GUIOptionsDialog>();
 						DisableInput();
+						return optionsDialog;
 				}
 
 				protected void OptionsDialogCallback(PlayerPreferences editObject, IGUIChildEditor <PlayerPreferences> childEditor)
@@ -349,5 +406,6 @@ namespace Frontiers.GUI
 				public bool ClickedMultiplayer = false;
 				public bool	ClickedReturn = false;
 				public bool	ClickedQuit = false;
+				public string TabSelection = string.Empty;
 		}
 }

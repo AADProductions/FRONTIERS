@@ -122,6 +122,16 @@ namespace Frontiers.GUI
 						CharacterGoodsBank.DisplayMode = GUIBank.BankDisplayMode.SmallTwoRows;
 
 						mRefreshBarterGUIAction = Refresh;
+
+						#if UNITY_EDITOR
+						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+						#else
+						if (VRManager.VRMode) {
+						#endif
+								Vector3 localPosition = transform.localPosition;
+								localPosition.y = -75f;
+								transform.localPosition = localPosition;
+						}
 				}
 
 				protected override void OnFinish()

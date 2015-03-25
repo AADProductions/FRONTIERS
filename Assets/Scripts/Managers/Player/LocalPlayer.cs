@@ -75,19 +75,27 @@ namespace Frontiers
 
 				public override Vector3 HeadPosition {
 						get {
-								return FPSCameraSeat.position;
+								if (VRManager.VRMode) {
+										return VRManager.Get.FocusTransform.position;
+								} else {
+										return FPSCameraSeat.position;
+								}
 						}
 				}
 
 				public override Vector3 FocusVector {
 						get {
-								return FPSCameraSeat.forward;
+								if (VRManager.VRMode) {
+										return VRManager.Get.FocusTransform.forward;
+								} else {
+										return FPSCameraSeat.forward;
+								}
 						}
 				}
 
 				public override Vector3 RightVector {
 						get {
-								if (VRManager.VRModeEnabled) {
+								if (VRManager.VRMode) {
 										return VRManager.Get.DirectionTransform.right;
 								} else {
 										return base.RightVector;
@@ -97,7 +105,7 @@ namespace Frontiers
 
 				public override Vector3 ForwardVector {
 						get {
-								if (VRManager.VRModeEnabled) {
+								if (VRManager.VRMode) {
 										return VRManager.Get.DirectionTransform.forward;
 								} else {
 										return base.ForwardVector;
@@ -187,8 +195,14 @@ namespace Frontiers
 				{
 						enabled = true;
 						Player.Get.UserActions.Subscribe(UserActionType.ActionCancel, new ActionListener(ActionCancel));
+						Player.Get.UserActions.Subscribe(UserActionType.CameraSetForward, new ActionListener(CameraSetForward));
 						Scripts.OnGameStart();
 						Spawn();
+				}
+
+				protected bool CameraSetForward (double timeStamp) {
+						VRManager.Get.ResetCameraForward();
+						return true;
 				}
 
 				public override void OnLocalPlayerSpawn()
@@ -357,6 +371,7 @@ namespace Frontiers
 						//if they're the same object, put one slightly ahead of the other
 						if (hijackedPosition == hijackedLookTarget) {
 								HijackedLookTarget.position = hijackedLookTarget.position + hijackedLookTarget.forward;
+								HijackedPosition.rotation = hijackedPosition.rotation;
 						}
 				}
 
@@ -367,8 +382,26 @@ namespace Frontiers
 
 				public void SnapToHijackedPosition()
 				{
-						GameManager.Get.GameCamera.transform.rotation = HijackedPosition.transform.rotation;
-						GameManager.Get.GameCamera.transform.position = HijackedPosition.transform.position;
+						#if UNITY_EDITOR
+						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+						#else
+						if (VRManager.VRMode) {
+						#endif
+								//if we're in vr mode, orient the camera to face the hijack targets by orienting the body
+								float cameraSeatRotation = HijackedPosition.eulerAngles.y;
+								//store our position so we can revert to it when we restore control
+								Debug.Log ("Snapping to hijacked position in vr mode - storing current position " + tr.position.ToString () + " and rotation to " + cameraSeatRotation.ToString());
+								State.Transform.Position = tr.position;
+								State.Transform.Rotation.y = cameraSeatRotation;
+								//then set our position to the hijacked position - since our controller is off
+								//even if we intersect with floors and stuff we'll stand still
+								tr.position = HijackedPosition.position - Height;
+								VRManager.Get.ResetCameraOrientation(cameraSeatRotation);
+						} else {
+								//otherwise just move the game camera
+								GameManager.Get.GameCamera.transform.rotation = HijackedPosition.rotation;
+								GameManager.Get.GameCamera.transform.position = HijackedPosition.position;
+						}
 				}
 
 				public void SetHijackCancel(Action cancelHijack)
@@ -434,7 +467,7 @@ namespace Frontiers
 
 				public void RestoreControl(bool keepLookDirection)
 				{
-						if (State.IsHijacked) {
+						if (IsHijacked) {
 								if (!keepLookDirection) {
 										Debug.Log("Not keeping rotation, restoring directly");
 										Camera gameCamera = GameManager.Get.GameCamera;
@@ -452,12 +485,17 @@ namespace Frontiers
 										mRestoringControl = true;
 										StartCoroutine(RestoreControlOverTime(keepLookDirection));
 								}
+
+								if (VRManager.VRMode) {
+										//restore the last position we were at before snapping to position
+										Debug.Log("Reverting to stored position " + State.Transform.Position.ToString());
+										tr.position = State.Transform.Position;
+								}
 						}
 				}
 
 				protected IEnumerator RestoreControlOverTime(bool keepLookDirection)
 				{
-
 						Camera gameCamera = GameManager.Get.GameCamera;
 						//gameCamera.transform.parent = null;
 						//get the start position & rotation in world space
@@ -798,6 +836,13 @@ namespace Frontiers
 						}
 				}
 
+				public override Vector3 Height {
+						get {
+								mHeight.y = FPSCameraSeat.position.y - tr.position.y;
+								return mHeight;
+						}
+				}
+
 				public override bool IsGrounded { get { return Controller.isGrounded; } }
 
 				public override bool IsCrouching { get { return FPSController.IsCrouching; } }
@@ -966,7 +1011,7 @@ namespace Frontiers
 								return;
 						}
 
-						if (State.IsHijacked) {
+						if (IsHijacked) {
 								GroundPath.Follower.target = HijackedPosition;
 								Controller.enabled = false;
 
@@ -975,48 +1020,41 @@ namespace Frontiers
 										return;
 								}
 
-								switch (State.HijackMode) {
-										case PlayerHijackMode.LookAtTarget:
-												HijackedPosition.LookAt(HijackedLookTarget);
-												HijackedLookTarget.rotation = HijackedPosition.rotation;
-												break;
+								if (!VRManager.VRMode) {
+										switch (State.HijackMode) {
+												case PlayerHijackMode.LookAtTarget:
+														HijackedPosition.LookAt(HijackedLookTarget);
+														HijackedLookTarget.rotation = HijackedPosition.rotation;
+														break;
 
-										case PlayerHijackMode.OrientToTarget:
-										default:
-												HijackedLookTarget.rotation = HijackedPosition.rotation;
-												break;
+												case PlayerHijackMode.OrientToTarget:
+												default:
+														HijackedLookTarget.rotation = HijackedPosition.rotation;
+														break;
+										}
+										//set these to lerp - stuff like tools will lag a bit behind but that's OK
+										GameManager.Get.GameCamera.transform.parent = null;
+										GameManager.Get.GameCamera.transform.rotation = Quaternion.Lerp(GameManager.Get.GameCamera.transform.rotation, HijackedPosition.transform.rotation, HijackLookSpeed);
+										GameManager.Get.GameCamera.transform.position = Vector3.Lerp(GameManager.Get.GameCamera.transform.position, HijackedPosition.transform.position, HijackLookSpeed);
 								}
-								//set these to lerp - stuff like tools will lag a bit behind but that's OK
-								GameManager.Get.GameCamera.transform.parent = null;
-								GameManager.Get.GameCamera.transform.rotation = Quaternion.Lerp(GameManager.Get.GameCamera.transform.rotation, HijackedPosition.transform.rotation, HijackLookSpeed);
-								GameManager.Get.GameCamera.transform.position = Vector3.Lerp(GameManager.Get.GameCamera.transform.position, HijackedPosition.transform.position, HijackLookSpeed);
-
 						} else if (!GameManager.Is(FGameState.InGame | FGameState.Cutscene) || !HasSpawned) {
 								GroundPath.Follower.target = HijackedPosition;
 								Controller.enabled = false;
 						} else {
 								GroundPath.Follower.target = tr;
 								Controller.enabled = true;
+								//doesn't hurt to set main camera fov, even in vr mode
 								if (mZoomedIn) {
 										GameManager.Get.GameCamera.fieldOfView = mZoomFOV;
 								} else {
 										GameManager.Get.GameCamera.fieldOfView = Profile.Get.CurrentPreferences.Video.FieldOfView;
 										mZoomedInCameraSensitivity = 1f;
 								}
-						}
 
-						if (VRManager.VRModeEnabled) {
-								//find a cleaner way to do this
-								//update the camera seat rotation so the player tool matches
-								CameraFX.Get.OvrCameraRig.transform.parent = tr;
-								FPSCameraSeat.rotation = CameraFX.Get.OvrCameraRig.centerEyeAnchor.rotation;
-								GameManager.Get.GameCamera.transform.localRotation = Quaternion.identity; 
-								CameraFX.Get.OvrCameraRig.transform.parent = GameManager.Get.GameCamera.transform;
-								//use the input manager's x axis to rotate the camera
-								if (Mathf.Abs(UserActionManager.RawMovementAxisX) > 0.01f) {
-										Vector3 cameraRotation = FPSCameraSeat.localRotation.eulerAngles;
-										cameraRotation.y = cameraRotation.y + UserActionManager.RawMovementAxisX * Globals.OculusModeCameraRotationSensitivity;
-										FPSCameraSeat.localRotation = Quaternion.Euler(cameraRotation);
+								if (VRManager.VRMode) {
+										//rotate the tool & carrier's rotation pivots to match the camera's rotation
+										FPSWeapon.RotationTransform.rotation = VRManager.Get.FocusTransform.rotation;
+										FPSWeaponCarry.RotationTransform.rotation = VRManager.Get.FocusTransform.rotation;
 								}
 						}
 				}

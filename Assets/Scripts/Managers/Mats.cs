@@ -14,7 +14,14 @@ namespace Frontiers
 				public SetupAdvancedFoliageShader AFS;
 				public Cubemap FoliageShaderDiffuseMap;
 				public Cubemap FoliageShaderSpecMap;
-				public Vector3 DefaultLabelFontSize = new Vector3(30f, 30f, 1f);
+				public static float DefaultLabelFontSize { 
+						get {
+								if (Get != null) {
+										return Get.DefaultLabelFont.preferredSize;
+								}
+								return 30f;
+						}
+				}
 				//set on startup
 				public UIFont DefaultLabelFont;
 				public List <Texture2D> TerrainGrassTextures = new List<Texture2D>();
@@ -24,6 +31,7 @@ namespace Frontiers
 
 				public void SetNGUIOculusShaders(bool useOculusShaders)
 				{
+						//TODO we now handle most of this within ngui panel, move it all back into that class
 						if (useOculusShaders) {
 								ConditionIconsAtlas.spriteMaterial.shader = NGUIOculusShader;
 								IconsAtlas.spriteMaterial.shader = NGUIOculusShader;
@@ -125,6 +133,16 @@ namespace Frontiers
 						AFS.afsUpdateTreeAndBillboardShaders();
 						AFS.afsUpdateGrassTreesBillboards();
 						AFS.afsSetupCameraLayerCulling();
+
+						//set the preferred size of each font based on the default size & default font
+						PrintingPress40Font.preferredSize = 30f;//TODO move to globals
+						Arimo14Font.preferredSize = 25f;
+						Arimo18Font.preferredSize = 25f;
+						Arimo20Font.preferredSize = 25f;
+						SloppyHandwriting48Font.preferredSize = 18f;
+						DyslexiaFont.preferredSize = DyslexiaFont.size;
+						BlackChancery32Font.preferredSize = 30f;
+						CleanHandwriting42Font.preferredSize = 18f;
 
 						mInitialized = true;
 				}

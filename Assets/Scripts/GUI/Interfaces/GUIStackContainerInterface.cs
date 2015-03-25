@@ -18,23 +18,25 @@ namespace Frontiers.GUI
 				public UILabel ContainerName;
 				public bool Visible = false;
 
-				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects)
+				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects, int flag)
 				{
-						ContainerDisplay.NGUICamera = NGUICamera;
-						ContainerDisplay.GetActiveInterfaceObjects(currentObjects);
-						FrontiersInterface.Widget w = new FrontiersInterface.Widget();
-						w.SearchCamera = NGUICamera;
+						if (Visible) {
+								ContainerDisplay.NGUICamera = NGUICamera;
+								ContainerDisplay.GetActiveInterfaceObjects(currentObjects, flag);
+								FrontiersInterface.Widget w = new FrontiersInterface.Widget(flag);
+								w.SearchCamera = NGUICamera;
 
-						if (TakeAllButton != null && TakeContainerButton != null) {
-								w.BoxCollider = TakeContainerButton.GetComponent <BoxCollider>();
-								currentObjects.Add(w);
+								if (TakeAllButton != null && TakeContainerButton != null) {
+										w.BoxCollider = TakeContainerButton.GetComponent <BoxCollider>();
+										currentObjects.Add(w);
 
-								w.BoxCollider = TakeAllButton.GetComponent <BoxCollider>();
+										w.BoxCollider = TakeAllButton.GetComponent <BoxCollider>();
+										currentObjects.Add(w);
+								}
+
+								w.BoxCollider = ShowHideButton.GetComponent <BoxCollider>();
 								currentObjects.Add(w);
 						}
-
-						w.BoxCollider = ShowHideButton.GetComponent <BoxCollider>();
-						currentObjects.Add(w);
 				}
 
 				public bool HasEnabler {

@@ -86,7 +86,7 @@ namespace Frontiers
 
 				public virtual Vector3 Height {
 						get {
-								mHeight.y = Body.Transforms.HeadTop.position.y - transform.position.y;
+								mHeight.y = Body.Transforms.HeadTop.position.y - tr.position.y;
 								return mHeight;
 						}
 				}

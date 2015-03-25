@@ -645,7 +645,7 @@ namespace Frontiers
 						usable.RequirePlayerFocus = false;
 						usable.ShowDoppleganger = true;
 						Frontiers.GUI.GUIOptionListDialog dialog = null;
-						usable.TryToSpawn(true, out dialog);
+						usable.TryToSpawn(true, out dialog, null);
 						yield break;
 				}
 
