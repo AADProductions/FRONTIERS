@@ -6,17 +6,17 @@ using System;
 using Frontiers.GUI;
 using System.Collections.Generic;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class Container : WIScript
 		{
 				public bool UseAsContainerInInterface = true;
 				public string OpenText = "Open";
-//changed by whatever uses it
+				//changed by whatever uses it
 				public bool CanOpen = true;
-//whether it can be opened at all
+				//whether it can be opened at all
 				public bool CanUseToOpen = true;
-//whether OnPlayerUse opens it automatically
+				//whether OnPlayerUse opens it automatically
 				public override bool CanBeCarried {
 						get {
 								return State.Type != ContainerType.ShopGoods;
@@ -110,6 +110,23 @@ namespace Frontiers.World
 				}
 
 				protected static GenericWorldItem gDefaultContainerGenericWorldItem;
+
+				public static int CalculateLocalPrice (int basePrice, IWIBase item) {
+						if (item == null) {
+								Debug.Log("Local price in container null, returning");
+								return basePrice;
+						}
+
+						if (item.IsStackContainer) {
+								for (int i = 0; i < item.StackContainer.StackList.Count; i++) {
+										for (int j = 0; j < item.StackContainer.StackList[i].Items.Count; j++) {
+												basePrice += Mathf.CeilToInt (item.StackContainer.StackList[i].Items[j].BaseCurrencyValue);
+										}
+								}
+						}
+
+						return basePrice;
+				}
 		}
 
 		[Serializable]
@@ -117,6 +134,6 @@ namespace Frontiers.World
 		{
 				public ContainerType Type = ContainerType.PersonalEffects;
 				public int ReputationChangeOnOpen = 0;
-//for coffins mainly
+				//for coffins mainly
 		}
 }

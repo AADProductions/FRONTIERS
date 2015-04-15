@@ -184,6 +184,10 @@ namespace Frontiers.GUI
 						enabled = true;
 						RefreshDoppleganger();
 
+						/*if (VRManager.VRMode) {
+								GUICursor.Get.SelectWidget(FirstInterfaceObject);
+						}*/
+
 						gameObject.SetActive(true);
 				}
 
@@ -205,11 +209,10 @@ namespace Frontiers.GUI
 
 				public void Update()
 				{
-						if (VRManager.VRMode && GUICursor.Get.LastSelectedWidgetFlag != GUIEditorID) {
-								Hide();
-						} else if ((LastUser == null || !LastUser.HasFocus)) {
+						if ((LastUser == null || !LastUser.HasFocus)) {
 								Hide();
 						} else {
+								//GUICursor.Get.TryToFollowCurrentWidget(GUIEditorID);
 								DopplegangerParent.transform.Rotate(0f, 0.25f, 0f);
 						}
 				}

@@ -2,9 +2,9 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class LuminiteNode : WIScript, ILuminite
 		{		//spawns luminite over time

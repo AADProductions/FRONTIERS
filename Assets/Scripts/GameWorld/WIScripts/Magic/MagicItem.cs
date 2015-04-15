@@ -3,7 +3,7 @@ using System.Collections;
 using Frontiers;
 using Frontiers.World;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 	public class MagicItem : WIScript
 	{

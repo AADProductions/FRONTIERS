@@ -13,6 +13,10 @@ namespace Frontiers.GUI
 				public InventorySquareCurrency GoldSquare;
 				public InventorySquareCurrency LumenSquare;
 				public InventorySquareCurrency WarlockSquare;
+				public UILabel SilverMultiplierLabel;
+				public UILabel WarlockMultiplierLabel;
+				public UILabel GoldMultiplierLabel;
+				public UILabel LuminiteMultiplierLabel;
 				public List <InventorySquareCurrency> Squares = new List <InventorySquareCurrency>();
 				public UILabel TotalCurrencyLabel;
 				public UILabel TotalCurrencyNumberLabel;
@@ -136,6 +140,10 @@ namespace Frontiers.GUI
 								case BankDisplayMode.LargeTwoRows:
 										CreateLargeTwoRows();
 										break;
+
+								case BankDisplayMode.VerticalRows:
+										CreateVerticalSquares();
+										break;
 						}
 				}
 
@@ -147,6 +155,35 @@ namespace Frontiers.GUI
 						GoldSquare = InstantiateSquare(squarePrefab, WICurrencyType.C_Gold, new Vector3(250f, 0f, 0f));
 						LumenSquare = InstantiateSquare(squarePrefab, WICurrencyType.D_Luminite, new Vector3(62.5f, -125f, 0f));
 						WarlockSquare = InstantiateSquare(squarePrefab, WICurrencyType.E_Warlock, new Vector3(187.5f, -125f, 0f));
+				}
+
+				protected void CreateVerticalSquares() {
+						GameObject squarePrefab = GUIManager.Get.InventorySquareCurrencyLarge;
+						BronzeSquare = InstantiateSquare(squarePrefab, WICurrencyType.A_Bronze, new Vector3(40f, 75f, 0f));
+						SilverSquare = InstantiateSquare(squarePrefab, WICurrencyType.B_Silver, new Vector3(40f, -25f, 0f));
+						WarlockSquare = InstantiateSquare(squarePrefab, WICurrencyType.E_Warlock, new Vector3(40f, -125f, 0f));
+						GoldSquare = InstantiateSquare(squarePrefab, WICurrencyType.C_Gold, new Vector3(40f, -225f, 0f));
+						LumenSquare = InstantiateSquare(squarePrefab, WICurrencyType.D_Luminite, new Vector3(40f, -325f, 0f));
+
+						Vector3 stackLabelPosition = new Vector3(50f, 0f, -125f);
+						BronzeSquare.StackNumberLabel.transform.localPosition = stackLabelPosition;
+						SilverSquare.StackNumberLabel.transform.localPosition = stackLabelPosition;
+						GoldSquare.StackNumberLabel.transform.localPosition = stackLabelPosition;
+						LumenSquare.StackNumberLabel.transform.localPosition = stackLabelPosition;
+						WarlockSquare.StackNumberLabel.transform.localPosition = stackLabelPosition;
+
+						Vector3 labelPosition = new Vector3(-70f, 0f, -125f);
+						BronzeSquare.InventoryItemName.transform.localPosition = labelPosition;
+						SilverSquare.InventoryItemName.transform.localPosition = labelPosition;
+						GoldSquare.InventoryItemName.transform.localPosition = labelPosition;
+						LumenSquare.InventoryItemName.transform.localPosition = labelPosition;
+						WarlockSquare.InventoryItemName.transform.localPosition = labelPosition;
+
+						BronzeSquare.DetailedPrices = true;
+						SilverSquare.DetailedPrices = true;
+						GoldSquare.DetailedPrices = true;
+						LumenSquare.DetailedPrices = true;
+						WarlockSquare.DetailedPrices = true;
 				}
 
 				protected void CreateSmallTwoRowSquares()
@@ -175,7 +212,8 @@ namespace Frontiers.GUI
 						SmallOneRow,
 						SmallTwoRows,
 						LargeOneRow,
-						LargeTwoRows
+						LargeTwoRows,
+						VerticalRows,
 				}
 
 				protected IBank mBankToDisplay;

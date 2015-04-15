@@ -8,7 +8,7 @@ using Frontiers;
 using Frontiers.Data;
 using Frontiers.World.Gameplay;
 
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 using Frontiers.Story;
 
 namespace Frontiers.World

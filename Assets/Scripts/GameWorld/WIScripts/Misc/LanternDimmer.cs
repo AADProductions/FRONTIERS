@@ -3,7 +3,8 @@ using System.Collections;
 using System;
 using System.Collections.Generic;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class LanternDimmer : WIScript {
 
 		public LanternDimmerState State = new LanternDimmerState ( );

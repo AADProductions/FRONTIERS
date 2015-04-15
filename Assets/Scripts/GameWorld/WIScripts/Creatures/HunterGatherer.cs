@@ -4,7 +4,7 @@ using Frontiers;
 using Frontiers.World.Gameplay;
 
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 	//uses looker to search for items of interest
 	//when it sees one, it uses motile to hunt it

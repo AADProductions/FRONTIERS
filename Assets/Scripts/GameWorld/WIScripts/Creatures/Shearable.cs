@@ -3,9 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.GUI;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 	public class Shearable : WIScript
 	{

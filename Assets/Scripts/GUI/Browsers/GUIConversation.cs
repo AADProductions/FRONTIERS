@@ -70,7 +70,7 @@ namespace Frontiers.GUI
 
 				public override Vector3 LockOffset {
 						get {
-								return Vector3.zero;
+								return mLockOffset;
 						}
 				}
 				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
@@ -175,7 +175,7 @@ namespace Frontiers.GUI
 								}
 
 								#if UNITY_EDITOR
-								if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+								if (VRManager.VRMode | VRManager.VRTestingMode) {
 								#else
 								if (VRManager.VRMode) {
 								#endif
@@ -247,7 +247,7 @@ namespace Frontiers.GUI
 								LeaveButton.gameObject.SetActive(true);
 								ConversationFinishedLabel.enabled = true;
 								#if UNITY_EDITOR
-								if (VRManager.VRMode | VRManager.VRTestingModeEnabled | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+								if (VRManager.VRMode | VRManager.VRTestingMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 								#else
 								if (VRManager.VRMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 								#endif
@@ -319,7 +319,7 @@ namespace Frontiers.GUI
 						choices.Clear();
 						//if we're in VR mode, move the mouse to the best position
 						#if UNITY_EDITOR
-						if (VRManager.VRMode | VRManager.VRTestingModeEnabled | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+						if (VRManager.VRMode | VRManager.VRTestingMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 						#else
 						if (VRManager.VRMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 						#endif
@@ -437,6 +437,8 @@ namespace Frontiers.GUI
 						CharacterColor = Colors.Saturate(Colors.ColorFromString(Conv.SpeakingCharacter.FullName, 125));
 						//set the rep color in load next exchange, since it won't change
 						mDialogChoicesReady = false;
+						mLockOffset = VRManager.Get.ForwardOffset;
+
 						StartCoroutine(WaitForConversationToInitiate());
 				}
 
@@ -512,7 +514,7 @@ namespace Frontiers.GUI
 				protected void SendCharacterCameraToCharacter()
 				{
 						#if UNITY_EDITOR
-						if ((VRManager.VRMode | VRManager.VRTestingModeEnabled)) {
+						if ((VRManager.VRMode | VRManager.VRTestingMode)) {
 						#else
 						if (VRManager.VRMode) {
 						#endif

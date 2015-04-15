@@ -19,8 +19,10 @@ namespace Frontiers.GUI
 
 				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
+						if (flag < 0) { flag = GUILogInterface.Get.GUIEditorID; }
 						//this will get everything on all tabs
 						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects, flag);
+						base.GetActiveInterfaceObjects(currentObjects, flag);
 				}
 
 				public override void WakeUp()
@@ -307,8 +309,12 @@ namespace Frontiers.GUI
 						}
 
 						string finalDetailText = string.Join("\n", detailText.ToArray());
+						FrontiersInterface user = this;
+						if (!HasFocus) {
+								user = GUILogInterface.Get;
+						}
 						GUIDetailsPage.Get.DisplayDetail(
-								this,
+								user,
 								Frontiers.Data.GameData.InterpretScripts(mSelectedObject.Title, Profile.Get.CurrentGame.Character, null),
 								Frontiers.Data.GameData.InterpretScripts(finalDetailText, Profile.Get.CurrentGame.Character, null),
 								"IconMission",

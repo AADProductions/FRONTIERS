@@ -1,9 +1,9 @@
 using UnityEngine;
 using System;
 using System.Collections;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts {
 	public class Demolishable : WIScript {
 
 		public StructureDemolitionController DemolitionController;

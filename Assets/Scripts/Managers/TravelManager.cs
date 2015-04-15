@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 using Frontiers.GUI;
 using System;
 
@@ -243,7 +243,7 @@ namespace Frontiers
 						}
 
 						#if UNITY_EDITOR
-						if (VRManager.VRMode | VRManager.VRTestingModeEnabled && Profile.Get.CurrentPreferences.Video.VRStaticCameraFastTravel) {
+						if (VRManager.VRMode | VRManager.VRTestingMode && Profile.Get.CurrentPreferences.Video.VRStaticCameraFastTravel) {
 						#else
 						if (VRManager.VRMode && Profile.Get.CurrentPreferences.Video.VRStaticCameraFastTravel) {
 						#endif

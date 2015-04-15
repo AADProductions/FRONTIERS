@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class FishDen : WIScript, ICreatureDen
 		{

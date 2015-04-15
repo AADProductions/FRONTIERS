@@ -27,6 +27,7 @@ namespace Frontiers.GUI
 				public UILabel CurrentFontLabel;
 				public UILabel FontButtonLabel;
 				public UIFont CurrentFont;
+				public UICheckbox UseDyslexiaFont;
 
 				public override IEnumerable<ColorKey> FetchItems()
 				{
@@ -63,7 +64,18 @@ namespace Frontiers.GUI
 						HexInput.eventReceiver = gameObject;
 						HexInput.functionName = "OnHexValueChange";
 						HexInput.functionNameEnter = "OnHexValueChangeEnter";
+
+						UseDyslexiaFont.eventReceiver = gameObject;
+						UseDyslexiaFont.functionName = "OnClickUseDyslexiaFont";
+
+						mRefreshingFontSettings = true;
+
+						UseDyslexiaFont.isChecked = Profile.Get.CurrentPreferences.Accessibility.UseDyslexicFont;
+
+						mRefreshingFontSettings = false;
 				}
+
+				protected bool mRefreshingFontSettings = false;
 
 				public override void ReceiveFromParentEditor(IEnumerable<ColorKey> editObject, ChildEditorCallback<IEnumerable<ColorKey>> callBack)
 				{
@@ -235,6 +247,16 @@ namespace Frontiers.GUI
 						CurrentFont = Mats.Get.NextFont(CurrentFont);
 						CurrentFontLabel.font = CurrentFont;
 						FontButtonLabel.text = CurrentFont.name;
+				}
+
+				public void OnClickUseDyslexiaFont () {
+
+						if (mRefreshingFontSettings)
+								return;
+
+						Profile.Get.CurrentPreferences.Accessibility.UseDyslexicFont = UseDyslexiaFont.isChecked;
+						OnClickChangeFontButton();
+						OnClickSaveChangesButton();
 				}
 
 				protected bool mColorValueChanging = false;

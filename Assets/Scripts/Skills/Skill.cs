@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
+using Frontiers.World.WIScripts;
 using Frontiers.World.Gameplay;
 using System.Reflection;
 using Frontiers.GUI;

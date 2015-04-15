@@ -6,7 +6,7 @@ using Frontiers.World.Gameplay;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 //dev tool
 public class MissionTestingUtility : MonoBehaviour

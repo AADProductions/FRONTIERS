@@ -3,9 +3,10 @@ using System.Collections;
 using System;
 using Frontiers;
 using Frontiers.Data;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class ChangeMissionVariableOnReceptacleChanged : WIScript {
 		public ChangeMissionVariableOnReceptacleChangedState State = new ChangeMissionVariableOnReceptacleChangedState ( );
 

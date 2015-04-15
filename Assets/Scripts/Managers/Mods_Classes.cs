@@ -12,6 +12,7 @@ using Frontiers.World;
 using System.Text.RegularExpressions;
 using Frontiers.Story;
 using System.Globalization;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers
 {

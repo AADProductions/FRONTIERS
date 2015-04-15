@@ -6,9 +6,9 @@ using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.Data;
 using Frontiers.World;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		[ExecuteInEditMode]
 		public class PathAvatar : MonoBehaviour

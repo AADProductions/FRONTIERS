@@ -324,7 +324,7 @@ namespace Frontiers.GUI
 								return;
 
 						#if UNITY_EDITOR
-						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+						if (VRManager.VRMode | VRManager.VRTestingMode) {
 						#else
 						if (VRManager.VRMode) {
 						#endif

@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System;
 using Frontiers;
 using Frontiers.World.Gameplay;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class FamilyAlbertConfrontation : WIScript {
 		public static FamilyAlbertConfrontation AlbertsGuards;
 

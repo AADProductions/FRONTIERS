@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Collections;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class Shield : WIScript
 		{

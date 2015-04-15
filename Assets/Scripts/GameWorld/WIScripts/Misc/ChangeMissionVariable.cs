@@ -5,7 +5,8 @@ using Frontiers.Gameplay;
 using System;
 using Frontiers.Data;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class ChangeMissionVariable : WIScript {
 		public ChangeMissionVariableState State = new ChangeMissionVariableState ( );
 

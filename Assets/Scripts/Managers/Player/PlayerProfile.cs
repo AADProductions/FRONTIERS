@@ -257,7 +257,7 @@ namespace Frontiers
 						Debug.Log("PLAYERPROFILE: Applying preferences - saving? " + save.ToString());
 						Video.Apply();
 						Sound.Apply();
-						Controls.Apply();
+						Controls.Apply(true);
 						Immersion.Apply();
 						Mods.Apply();
 						Accessibility.Apply();
@@ -367,11 +367,10 @@ namespace Frontiers
 								return prefs;
 						}
 
-						public void Apply()
+						public void Apply(bool applyBindings)
 						{
 								if (Player.Local != null) {
 										Player.Local.FPSCamera.MouseSensitivity = new Vector2(MouseSensitivityFPSCamera, MouseSensitivityFPSCamera);
-										Player.Local.FPSCamera.InvertyMouseYAxis = MouseInvertYAxis;
 								}
 
 								if (InterfaceActionSettings == null || InterfaceActionSettings.Count == 0) {
@@ -381,24 +380,37 @@ namespace Frontiers
 										UserActionSettings = UserActionManager.Get.DefaultActionSettings;
 								}
 
-								InterfaceActionManager.Get.PushSettings(InterfaceActionSettings);
-								UserActionManager.Get.PushSettings(UserActionSettings);
+								if (applyBindings) {
+										InterfaceActionManager.Get.PushSettings(InterfaceActionSettings);
+										UserActionManager.Get.PushSettings(UserActionSettings);
+								} else {
+										//only push dead zones not bindings
+										InterfaceActionManager.Get.PushDeadZoneSettings();
+										UserActionManager.Get.PushDeadZoneSettings();
+								}
+
+								InterfaceActionManager.InvertRawMouseAxis = InvertRawInterfaceAxis;
+								InterfaceActionManager.InvertRawInterfaceAxis = InvertRawInterfaceAxis;
+								InterfaceActionManager.InvertRawMovementAxis = InvertRawMovementAxis;
+
+								UserActionManager.InvertRawMouseAxis = MouseInvertYAxis;
+								UserActionManager.InvertRawMovementAxis = InvertRawMovementAxis;
 						}
 
 						public void RefreshCustomDeadZoneSettings(InputDevice device)
 						{
-								if (UseCustomDeadZoneSettings) {
-										if (DeadZoneLStickLower < 0 || DeadZoneLStickLower < 0) {
+								if (device != InputDevice.Null) {
+										if (DeadZoneLStickLower < 0 || DeadZoneLStickLower < 0 || SensitivityRStick < 0) {
 												DeadZoneLStickLower = device.GetControl(InputControlType.LeftStickX).LowerDeadZone;
 												DeadZoneLStickUpper = device.GetControl(InputControlType.LeftStickY).UpperDeadZone;
 												SensitivityLStick = device.GetControl(InputControlType.LeftStickX).Sensitivity;
 										}
-										if (DeadZoneRStickLower < 0 || DeadZoneRStickUpper < 0) {
+										if (DeadZoneRStickLower < 0 || DeadZoneRStickUpper < 0 || SensitivityRStick < 0) {
 												DeadZoneRStickLower = device.GetControl(InputControlType.RightStickX).LowerDeadZone;
-												DeadZoneRStickUpper = device.GetControl(InputControlType.RightStickY).LowerDeadZone;
+												DeadZoneRStickUpper = device.GetControl(InputControlType.RightStickY).UpperDeadZone;
 												SensitivityRStick = device.GetControl(InputControlType.RightStickX).Sensitivity;
 										}
-										if (DeadZoneDPadLower < 0 || DeadZoneDPadUpper < 0) {
+										if (DeadZoneDPadLower < 0 || DeadZoneDPadUpper < 0 || SensitivityDPad < 0) {
 												DeadZoneDPadLower = device.GetControl(InputControlType.DPadUp).LowerDeadZone;
 												DeadZoneDPadUpper = device.GetControl(InputControlType.DPadUp).UpperDeadZone;
 												SensitivityDPad = device.GetControl(InputControlType.DPadUp).Sensitivity;
@@ -411,10 +423,11 @@ namespace Frontiers
 						public float MouseSensitivityFPSCamera = 5.0f;
 						public float MouseSensitivityInterface = 0.25f;
 						public bool MouseInvertYAxis = false;
+						public bool InvertRawInterfaceAxis = false;
+						public bool InvertRawMovementAxis = false;
 						public bool UseControllerMouse = true;
 						public bool UseCustomDeadZoneSettings = false;
 						public bool ShowControllerPrompts = false;
-
 						public float DeadZoneLStickLower = -1f;
 						public float DeadZoneLStickUpper = -1f;
 						public float SensitivityLStick = -1f;
@@ -443,7 +456,10 @@ namespace Frontiers
 
 						public void Apply()
 						{
+								if (!Manager.IsAwake <Frontiers.Mats>())
+										return;
 
+								Frontiers.Mats.Get.PushDefaultFont(DefaultFont);
 						}
 				}
 
@@ -550,6 +566,7 @@ namespace Frontiers
 								VRStaticCameraFastTravel = copyFrom.VRStaticCameraFastTravel;
 								VRDisableScreenEffects = copyFrom.VRDisableScreenEffects;
 								VRDisableExtraGrassLayers = copyFrom.VRDisableExtraGrassLayers;
+								VRQuadZOffset = copyFrom.VRQuadZOffset;
 						}
 
 						public void Apply()
@@ -632,14 +649,17 @@ namespace Frontiers
 										Biomes.Get.SunLight.shadows = DefaultShadowSetting;
 
 										if (!Application.isEditor) {
-												if (!IsCurrentResolutionSupported) {
-														RefreshSupportedResolutions();
-														FindDefaultResolution();
-												}
-												if (Screen.currentResolution.width != ResolutionWidth
-												|| Screen.currentResolution.height != ResolutionHeight
-												|| Screen.fullScreen != Fullscreen) {
-														Screen.SetResolution(ResolutionWidth, ResolutionHeight, Fullscreen);
+												if (!OculusMode && !VRManager.VRMode) {
+														Debug.Log("Not oculus or vr mode, applying screen resolution / full screen");
+														if (!IsCurrentResolutionSupported) {
+																RefreshSupportedResolutions();
+																FindDefaultResolution();
+														}
+														if (Screen.currentResolution.width != ResolutionWidth
+														|| Screen.currentResolution.height != ResolutionHeight
+														|| Screen.fullScreen != Fullscreen) {
+																Screen.SetResolution(ResolutionWidth, ResolutionHeight, Fullscreen);
+														}
 												}
 										}
 
@@ -655,21 +675,31 @@ namespace Frontiers
 														CameraFX.Get.Default.SSAO.enabled = false;
 														CameraFX.Get.Default.Grain.enabled = false;
 														SetOrDisablePostEffect(CameraFX.Get.Default.AA, true, ref PostFXAA);
-														SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref PostFXGlobalFog);
+														if (Application.platform == RuntimePlatform.WindowsPlayer) {
+																SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref PostFXGlobalFog);
+														} else {
+																bool fogOff = false;
+																SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref fogOff);
+														}
 														CameraFX.Get.Default.ColorGrading.enabled = true;
 												} else {
-													SetOrDisablePostEffect(CameraFX.Get.Default.BloomEffect, false, ref PostFXBloom);
-													SetOrDisablePostEffect(CameraFX.Get.Default.SunShaftsEffect, false, ref PostFXGodRays);
-													SetOrDisablePostEffect(CameraFX.Get.Default.SSAO, true, ref PostFXSSAO);
-													SetOrDisablePostEffect(CameraFX.Get.Default.Grain, true, ref PostFXGrain);
-													SetOrDisablePostEffect(CameraFX.Get.Default.AA, true, ref PostFXAA);
-													SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref PostFXGlobalFog);
+														SetOrDisablePostEffect(CameraFX.Get.Default.BloomEffect, false, ref PostFXBloom);
+														SetOrDisablePostEffect(CameraFX.Get.Default.SunShaftsEffect, false, ref PostFXGodRays);
+														SetOrDisablePostEffect(CameraFX.Get.Default.SSAO, true, ref PostFXSSAO);
+														SetOrDisablePostEffect(CameraFX.Get.Default.Grain, true, ref PostFXGrain);
+														SetOrDisablePostEffect(CameraFX.Get.Default.AA, true, ref PostFXAA);
+														if (Application.platform == RuntimePlatform.WindowsPlayer) {
+																SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref PostFXGlobalFog);
+														} else {
+																bool fogOff = false;
+																SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref fogOff);
+														}
 												}
 
 										}
 
 										QualitySettings.masterTextureLimit = TextureResolution;
-										QualitySettings.lodBias = ((float)LodDistance + 0.65f);
+										QualitySettings.lodBias = ((float)LodDistance + 0.75f);
 
 										if (Manager.IsAwake <GameWorld>()) {
 												GameWorld.Get.RefreshTerrainDetailSettings();
@@ -688,13 +718,13 @@ namespace Frontiers
 												Structures.Get.RefreshStructureShadowSettings(StructureShadows, TerrainShadows);
 										}
 
-										if (VSync) {
-												QualitySettings.vSyncCount = 1;
-										} else {
-												QualitySettings.vSyncCount = 0;
+										if (!OculusMode && !VRManager.VRMode) {
+												if (VSync) {
+														QualitySettings.vSyncCount = 1;
+												} else {
+														QualitySettings.vSyncCount = 0;
+												}
 										}
-
-										//oculus mode will enable when it catches the change
 
 								} catch (Exception e) {
 										Debug.LogException(e);
@@ -752,6 +782,7 @@ namespace Frontiers
 						public bool VRStaticCameraFastTravel = true;
 						public bool VRDisableScreenEffects = true;
 						public bool VRDisableExtraGrassLayers = true;
+						public float VRQuadZOffset = 0f;
 
 						#region helper functions
 

@@ -7,7 +7,7 @@ using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.World;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 	public class PilgrimStop : WIScript
 	{

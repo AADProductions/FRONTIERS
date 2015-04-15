@@ -17,11 +17,19 @@ namespace Frontiers.GUI
 				public UIButtonMessage ShowHideButton;
 				public UILabel ContainerName;
 				public bool Visible = false;
+				public override Camera NGUICamera {
+						get {
+								return mNGUICamera;
+						}
+						set {
+								mNGUICamera = value;
+								ContainerDisplay.NGUICamera = value;
+						}
+				}
 
 				public void GetActiveInterfaceObjects(List<FrontiersInterface.Widget> currentObjects, int flag)
 				{
 						if (Visible) {
-								ContainerDisplay.NGUICamera = NGUICamera;
 								ContainerDisplay.GetActiveInterfaceObjects(currentObjects, flag);
 								FrontiersInterface.Widget w = new FrontiersInterface.Widget(flag);
 								w.SearchCamera = NGUICamera;

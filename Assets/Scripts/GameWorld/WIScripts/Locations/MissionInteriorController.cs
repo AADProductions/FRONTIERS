@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class MissionInteriorController : WIScript
 		{		//used a LOT to control when & where mission-related characters & items spawn

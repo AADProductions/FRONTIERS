@@ -8,7 +8,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class WIScript : MonoBehaviour, IUnloadable
 		{
@@ -214,7 +214,7 @@ namespace Frontiers.World
 
 				#endregion
 
-				#region naming & HUD
+				#region naming, HUD & prices
 
 				public virtual string FileNamer(int increment)
 				{
@@ -245,6 +245,26 @@ namespace Frontiers.World
 						get {
 								return false;
 						}
+				}
+
+				public int LocalPrice(int basePrice)
+				{
+						if (mLocalPriceCalculator != null) {
+								System.Object stateData = null;
+								if (mHasSaveStateField) {
+										stateData = mSaveStateField.GetValue(this);
+								}
+								return mLocalPriceCalculator(basePrice, worlditem);
+						}
+						return basePrice;
+				}
+
+				public int GlobalPrice(int basePrice)
+				{
+						if (mGlobalPriceCalculator != null) {
+								return mGlobalPriceCalculator(basePrice);
+						}
+						return basePrice;
 				}
 
 				#endregion
@@ -311,6 +331,14 @@ namespace Frontiers.World
 						if (mSaveStateField != null) {	//only save data if we have a member called 'State'
 								mHasSaveStateField = true;
 						}
+
+						if (mLocalPriceCalculator == null) {
+								var staticPriceCalculator = mTrueType.GetMethod("CalculateLocalPrice", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+								if (staticPriceCalculator != null) {
+										Debug.Log("Created local price calculator delegate in " + mTrueType.Name);
+										mLocalPriceCalculator = (LocalPriceCalculator)Delegate.CreateDelegate(typeof(LocalPriceCalculator), staticPriceCalculator);
+								}
+						}
 				}
 
 				public virtual void OnEnable()
@@ -351,7 +379,18 @@ namespace Frontiers.World
 
 				public virtual void InitializeTemplate()
 				{
+						CheckScriptProps();
+
 						mWorldItem = gameObject.GetComponent <WorldItem>();
+
+
+						if (mGlobalPriceCalculator == null) {
+								var staticPriceCalculator = GetType().GetMethod("CalculateGlobalPrice", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+								if (staticPriceCalculator != null) {
+										Debug.Log("Created global price calculator delegate in " + GetType().Name);
+										mGlobalPriceCalculator = (GlobalPriceCalculator)Delegate.CreateDelegate(typeof(GlobalPriceCalculator), staticPriceCalculator);
+								}
+						}
 				}
 
 				public void Finish()
@@ -422,6 +461,8 @@ namespace Frontiers.World
 				protected Type mTrueType;
 				protected bool mHasSaveStateField = false;
 				protected FieldInfo mSaveStateField;
+				protected LocalPriceCalculator mLocalPriceCalculator = null;
+				protected GlobalPriceCalculator mGlobalPriceCalculator = null;
 				protected bool mInitialized = false;
 				protected bool mFinished = false;
 				protected bool mDestroyed = false;
@@ -468,7 +509,7 @@ namespace Frontiers.World
 				{
 						object deserializedObject = null;
 						Type type = Type.GetType(typeName);
-						if (type == null) {
+						if (type == null || string.IsNullOrEmpty(objectData)) {
 								//Debug.Log ("Couldn't get type from typename " + typeName);
 								return null;
 						}

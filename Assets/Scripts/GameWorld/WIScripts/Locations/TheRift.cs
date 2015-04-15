@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Frontiers;
 using System;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		[ExecuteInEditMode]
 		public class TheRift : WIScript
@@ -348,27 +348,29 @@ namespace Frontiers.World
 						gameCameraPosition.y = worlditem.tr.position.y;
 						FXPivot.LookAt(gameCameraPosition);
 
-						if (UnityEngine.Random.value > MagmaEffectSpawnValue) {
-								//select a random light source
-								Light lightSource = PointLights[UnityEngine.Random.Range(0, PointLights.Count)];
-								FXManager.Get.SpawnFX(lightSource.transform.position + MagmaEffectOffset, MagmaEffectName);
-								lightSource.intensity = TargetLightIntensity * 2;
-						}
+						if (GameManager.Is (FGameState.Cutscene | FGameState.InGame)) {
+							if (UnityEngine.Random.value > MagmaEffectSpawnValue) {
+									//select a random light source
+									Light lightSource = PointLights[UnityEngine.Random.Range(0, PointLights.Count)];
+									FXManager.Get.SpawnFX(lightSource.transform.position + MagmaEffectOffset, MagmaEffectName);
+									lightSource.intensity = TargetLightIntensity * 2;
+							}
 
-						float swapValue = UnityEngine.Random.value;
-						if (swapValue > TargetSwapValue) {
-								//swap 2 random target points
-								//this will keep the lights & smoke moving about
-								int index1 = UnityEngine.Random.Range(0, LightTargetPositions.Count);
-								int index2 = index1++;
-								if (swapValue > 0.5f) {
-										index2 = index1--;
-								}
-								if (index2 < LightTargetPositions.Count && index2 > 0) {
-										Vector3 position1 = LightTargetPositions[index1];
-										LightTargetPositions[index1] = LightTargetPositions[index2];
-										LightTargetPositions[index2] = position1;
-								}
+							float swapValue = UnityEngine.Random.value;
+							if (swapValue > TargetSwapValue) {
+									//swap 2 random target points
+									//this will keep the lights & smoke moving about
+									int index1 = UnityEngine.Random.Range(0, LightTargetPositions.Count);
+									int index2 = index1++;
+									if (swapValue > 0.5f) {
+											index2 = index1--;
+									}
+									if (index2 < LightTargetPositions.Count && index2 > 0) {
+											Vector3 position1 = LightTargetPositions[index1];
+											LightTargetPositions[index1] = LightTargetPositions[index2];
+											LightTargetPositions[index2] = position1;
+									}
+							}
 						}
 
 						for (int i = 0; i < PointLights.Count; i++) {

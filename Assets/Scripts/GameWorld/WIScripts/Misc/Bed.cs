@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 using Frontiers.GUI;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class Bed : WIScript
 		{

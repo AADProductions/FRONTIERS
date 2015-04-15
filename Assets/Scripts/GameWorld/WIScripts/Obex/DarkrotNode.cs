@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Frontiers.World.Gameplay;
 using System.Reflection;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class DarkrotNode : MonoBehaviour, IPhotosensitive, IDispersible, IItemOfInterest
 		{

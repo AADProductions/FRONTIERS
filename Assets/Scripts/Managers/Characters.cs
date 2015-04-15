@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.Story;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 using ExtensionMethods;
 
 namespace Frontiers.World
@@ -217,7 +217,7 @@ namespace Frontiers.World
 				{
 						CharacterTemplate template = null;
 						if (mCharacterTemplates.TryGetValue(character.name.Trim().ToLower(), out template)) {
-								character.State = ObjectClone.Clone <Frontiers.World.BaseWIScripts.CharacterState>(template.StateTemplate);
+								character.State = ObjectClone.Clone <Frontiers.World.WIScripts.CharacterState>(template.StateTemplate);
 								Talkative talkative = character.GetComponent <Talkative>();
 								talkative.State = ObjectClone.Clone <TalkativeState>(template.TalkativeTemplate);
 						}
@@ -606,7 +606,7 @@ namespace Frontiers.World
 						#region clone data / assign
 						//apply all the states by copying the template data
 						//make sure to copy the combined flags!
-						newPilgrim.State = ObjectClone.Clone <Frontiers.World.BaseWIScripts.CharacterState>(template.StateTemplate);
+						newPilgrim.State = ObjectClone.Clone <Frontiers.World.WIScripts.CharacterState>(template.StateTemplate);
 						newPilgrim.State.Name = characterName;
 						newPilgrim.State.Flags = combinedFlags;
 						//save the body and character texture names, they won't change again
@@ -805,7 +805,7 @@ namespace Frontiers.World
 						#region clone data / assign
 						//apply all the states by copying the template data
 						//make sure to copy the combined flags!
-						newCharacter.State = ObjectClone.Clone <Frontiers.World.BaseWIScripts.CharacterState>(template.StateTemplate);
+						newCharacter.State = ObjectClone.Clone <Frontiers.World.WIScripts.CharacterState>(template.StateTemplate);
 						newCharacter.State.Name = characterName;
 						newCharacter.State.Flags = combinedFlags;
 						//save the body and character texture names, they won't change again
@@ -995,7 +995,7 @@ namespace Frontiers.World
 						newCharacter.Body = newBodyObject.GetComponent <CharacterBody>();
 
 						//apply all the states by copying the template data
-						newCharacter.State = ObjectClone.Clone <Frontiers.World.BaseWIScripts.CharacterState>(template.StateTemplate);
+						newCharacter.State = ObjectClone.Clone <Frontiers.World.WIScripts.CharacterState>(template.StateTemplate);
 						//save the body and character texture names, they won't change again
 						newCharacter.State.TemplateName = template.Name;
 						Talkative talkative = newCharacterBase.GetComponent <Talkative>();

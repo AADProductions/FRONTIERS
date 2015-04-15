@@ -1,9 +1,10 @@
 using UnityEngine;
 using System.Collections;
 using System;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class StructureTerrainTypeController : WIScript {
 		public Structure structure;
 

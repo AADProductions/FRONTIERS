@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 	public class Woods : WIScript
 	{	

@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class TriggerCutsceneOnInitialized : WIScript
 		{

@@ -4,7 +4,7 @@ using Frontiers;
 using Frontiers.World.Gameplay;
 using Frontiers.Data;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 	public class Mobile : WIScript
 	{

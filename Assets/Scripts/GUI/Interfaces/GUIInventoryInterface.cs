@@ -5,6 +5,7 @@ using Frontiers;
 using Frontiers.World;
 using System;
 using ExtensionMethods;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.GUI
 {
@@ -28,6 +29,7 @@ namespace Frontiers.GUI
 				public Vector3 QuickslotTarget = new Vector3(0f, 0f, 0f);
 				public Vector2 QuickslotsAnchorHiddenOffset = new Vector2(0f, -1f);
 				public Vector2 QuickslotsAnchorVisibleOffset = new Vector2(0f, 0f);
+				public Vector2 QuickslotsAnchorVisibleOffsetVR = new Vector2(0.02f, 0f);
 				public UISprite QuickslotHighlight;
 				public UISprite EquippedIconRight;
 				public UISprite EquippedIconLeft;
@@ -144,6 +146,8 @@ namespace Frontiers.GUI
 										StackContainerDisplays[i].Hide();
 								}
 								InventoryTabsAnchor.relativeOffset = Vector2.one;
+								//don't follow whatever we were following any more
+								mFollowWidgetFlag = -1;
 								return true;
 						}
 
@@ -167,6 +171,9 @@ namespace Frontiers.GUI
 								for (int i = 0; i < StackContainerDisplays.Count; i++) {
 										StackContainerDisplays[i].Show();
 								}
+								FrontiersInterface.Widget w = FirstInterfaceObject;
+								GUICursor.Get.SelectWidget(w);
+								mFollowWidgetFlag = w.Flag;
 								return true;
 						}
 						return false;
@@ -210,15 +217,22 @@ namespace Frontiers.GUI
 						if (!mInitialized)
 								return;
 
+						if (VRManager.VRMode && Maximized && mFollowWidgetFlag > 0) {
+								//used to follow stack interface when opened
+								if (!GUICursor.Get.TryToFollowCurrentWidget(mFollowWidgetFlag)) {
+										mFollowWidgetFlag = -1;
+								}
+						}
+
 						UpdateQuickslotsDisplay();
 						UpdateStackContainerDisplay();
 						UpdateSelectedStackDisplay();
 						UpdateMouseOver();
 
 						#if UNITY_EDITOR
-						UpdateVRFocusOffsets(VRManager.VRMode | VRManager.VRTestingModeEnabled);
+						UpdateVRFocusOffsets(VRManager.VRMode | VRManager.VRTestingMode);
 						#else
-			UpdateVRFocusOffsets (VRManager.VRMode);
+						UpdateVRFocusOffsets (VRManager.VRMode);
 						#endif
 				}
 
@@ -293,8 +307,14 @@ namespace Frontiers.GUI
 										}
 										//QuickslotHighlightParent.localPosition = Vector3.Lerp(QuickslotHighlightParent.localPosition, mQuickslotHighlightTarget, 0.75f);
 								}
-								if (QuickslotsAnchor.relativeOffset != QuickslotsAnchorVisibleOffset) {
-										QuickslotsAnchor.relativeOffset = QuickslotsAnchorVisibleOffset;
+								if (VRManager.VRMode) {
+										if (QuickslotsAnchor.relativeOffset != QuickslotsAnchorVisibleOffsetVR) {
+												QuickslotsAnchor.relativeOffset = QuickslotsAnchorVisibleOffsetVR;
+										}
+								} else {
+										if (QuickslotsAnchor.relativeOffset != QuickslotsAnchorVisibleOffset) {
+												QuickslotsAnchor.relativeOffset = QuickslotsAnchorVisibleOffset;
+										}
 								}
 						} else {
 								if (QuickslotsAnchor.relativeOffset != QuickslotsAnchorHiddenOffset) {
@@ -345,7 +365,7 @@ namespace Frontiers.GUI
 				protected void UpdateSelectedStackDisplay()
 				{
 						if (Player.Local.Inventory.SelectedStack.HasTopItem) {
-								SelectedStackDisplayTransform.position = NGUICamera.camera.ScreenToWorldPoint(Input.mousePosition);
+								SelectedStackDisplayTransform.position = NGUICamera.camera.ScreenToWorldPoint(InterfaceActionManager.MousePosition);
 								SelectedStackDoppleganger = WorldItems.GetDoppleganger(Player.Local.Inventory.SelectedStack.TopItem, SelectedStackDisplayOffsetTransform, SelectedStackDoppleganger, WIMode.Selected);
 								StackNumberLabel.enabled = true;
 						} else {
@@ -359,9 +379,9 @@ namespace Frontiers.GUI
 
 				protected void UpdateVRFocusOffsets(bool vrMode)
 				{
-						if (!Maximized) {
-								VRFocusOnTabs = false;
-						} else {
+						if (Maximized) {
+								//turn off the one square setup
+								QuickslotsDisplay.SetOneSquareMode(false, Player.Local.Inventory.State.ActiveQuickslot);
 								//see which widget we focuse on last
 								if (HasFocus) {
 										int lastSelectedFlag = GUICursor.Get.LastSelectedWidgetFlag;
@@ -371,33 +391,45 @@ namespace Frontiers.GUI
 												VRFocusOnTabs = true;
 										}
 								}
+						} else {
+								VRFocusOnTabs = false;
+								//set the 'one square' setup
+								QuickslotsDisplay.SetOneSquareMode(vrMode, Player.Local.Inventory.State.ActiveQuickslot);
 						}
 
 						if (vrMode) {
 								//FUUUGLY
 								if (VRFocusOnTabs) {
 										if (VRTabsTransform.localPosition.IsApproximately(VRTabsFocusTabsPosition, 0.01f)) {
-												GUICursor.Get.StopFollowingCurrentWidget(TabsEditorID);
+												if(mFollowWidgetFlag != TabsEditorID) {
+														GUICursor.Get.StopFollowingCurrentWidget(TabsEditorID);
+												}
 										} else {
 												VRTabsTransform.localPosition = Vector3.Lerp(VRTabsTransform.localPosition, VRTabsFocusTabsPosition, 0.25f);
 												GUICursor.Get.TryToFollowCurrentWidget(TabsEditorID);
 										}
 										if (VRContainersTransform.localPosition.IsApproximately(VRTabsFocusContainersPosition, 0.01f)) {
-												GUICursor.Get.StopFollowingCurrentWidget(ContainersEditorID);
+												if(mFollowWidgetFlag != ContainersEditorID) {
+														GUICursor.Get.StopFollowingCurrentWidget(ContainersEditorID);
+												}
 										} else {
 												VRContainersTransform.localPosition = Vector3.Lerp(VRContainersTransform.localPosition, VRTabsFocusContainersPosition, 0.25f);
 												GUICursor.Get.TryToFollowCurrentWidget(ContainersEditorID);
 										}
 										if (Maximized) {
 												if (QuickslotsParent.localPosition.IsApproximately(VRTabsFocusQuickslotsPosition, 0.01f)) {
-														GUICursor.Get.StopFollowingCurrentWidget(QuickslotsEditorID);
+														if(mFollowWidgetFlag != QuickslotsEditorID) {
+																GUICursor.Get.StopFollowingCurrentWidget(QuickslotsEditorID);
+														}
 												} else {
 														QuickslotsParent.localPosition = Vector3.Lerp(QuickslotsParent.localPosition, VRTabsFocusQuickslotsPosition, 0.25f);
 														GUICursor.Get.TryToFollowCurrentWidget(QuickslotsEditorID);
 												}
 										} else {
 												if (QuickslotsParent.localPosition.IsApproximately(VRContainersFocusQuickslotsPosition, 0.01f)) {
-														GUICursor.Get.StopFollowingCurrentWidget(QuickslotsEditorID);
+														if(mFollowWidgetFlag != QuickslotsEditorID) {
+																GUICursor.Get.StopFollowingCurrentWidget(QuickslotsEditorID);
+														}
 												} else {
 														QuickslotsParent.localPosition = Vector3.Lerp(QuickslotsParent.localPosition, VRContainersFocusQuickslotsPosition, 0.25f);
 														GUICursor.Get.TryToFollowCurrentWidget(QuickslotsEditorID);
@@ -405,28 +437,36 @@ namespace Frontiers.GUI
 										}
 								} else {
 										if (VRTabsTransform.localPosition.IsApproximately(VRContainersFocusTabsPosition, 0.01f)) {
-												GUICursor.Get.StopFollowingCurrentWidget(TabsEditorID);
+												if(mFollowWidgetFlag != TabsEditorID) {
+														GUICursor.Get.StopFollowingCurrentWidget(TabsEditorID);
+												}
 										} else {
 												VRTabsTransform.localPosition = Vector3.Lerp(VRTabsTransform.localPosition, VRContainersFocusTabsPosition, 0.25f);
 												GUICursor.Get.TryToFollowCurrentWidget(TabsEditorID);
 										}
 										if (VRContainersTransform.localPosition.IsApproximately(VRContainersFocusContainersPosition, 0.01f)) {
-												GUICursor.Get.StopFollowingCurrentWidget(ContainersEditorID);
+												if(mFollowWidgetFlag != ContainersEditorID) {
+														GUICursor.Get.StopFollowingCurrentWidget(ContainersEditorID);
+												}
 										} else {
 												VRContainersTransform.localPosition = Vector3.Lerp(VRContainersTransform.localPosition, VRContainersFocusContainersPosition, 0.25f);
 												GUICursor.Get.TryToFollowCurrentWidget(ContainersEditorID);
 										}
 										if (QuickslotsParent.localPosition.IsApproximately(VRContainersFocusQuickslotsPosition, 0.01f)) {
-												GUICursor.Get.StopFollowingCurrentWidget(QuickslotsEditorID);
+												if(mFollowWidgetFlag != QuickslotsEditorID) {
+														GUICursor.Get.StopFollowingCurrentWidget(QuickslotsEditorID);
+												}
 										} else {
 												QuickslotsParent.localPosition = Vector3.Lerp(QuickslotsParent.localPosition, VRContainersFocusQuickslotsPosition, 0.25f);
 												GUICursor.Get.TryToFollowCurrentWidget(QuickslotsEditorID);
 										}
 								}
 						} else {
-								VRTabsTransform.localPosition = Vector3.zero;
-								VRContainersTransform.localPosition = Vector3.zero;
-								QuickslotsParent.localPosition = QuickslotsContainerOffset;
+								if (VRTabsTransform.localPosition != Vector3.zero) {
+										VRTabsTransform.localPosition = Vector3.zero;
+										VRContainersTransform.localPosition = Vector3.zero;
+										QuickslotsParent.localPosition = QuickslotsContainerOffset;
+								}
 						}
 				}
 
@@ -460,7 +500,13 @@ namespace Frontiers.GUI
 						//we want to look at the containers
 						VRFocusOnTabs = false;
 						StackContainerInterface.OpenStackContainer(newEditObject);
-						GUICursor.Get.SelectWidget(StackContainerInterface.ContainerDisplay.FirstInterfaceObject);
+						Widget w = StackContainerInterface.ContainerDisplay.FirstInterfaceObject;
+						GUICursor.Get.SelectWidget(w);
+						mFollowWidgetFlag = w.Flag;
+						if (VRManager.VRMode) {
+								//tell the vr manager to orient itself forward
+								VRManager.Get.ResetInterfacePosition();
+						}
 				}
 
 				public void CloseStackContainer()
@@ -470,13 +516,15 @@ namespace Frontiers.GUI
 
 				public void SetActiveQuickslots(int activeQuickslot)
 				{
-						if (QuickslotsDisplay.HasEnabler && QuickslotsDisplay.Enabler.IsEnabled) {
-								InventorySquare square = QuickslotsDisplay.InventorySquares[activeQuickslot];
-								QuickslotHighlightParent.parent = square.transform;
-								QuickslotHighlightParent.localPosition = Vector3.zero;
-								//QuickslotHighlightParent.parent = QuickslotsDisplay.transform;
-								//mQuickslotHighlightTarget = QuickslotHighlightParent.localPosition;
-								//mQuickslotHighlightTarget.z -= 50f;
+						if (!VRManager.VRMode) {
+								if (QuickslotsDisplay.HasEnabler && QuickslotsDisplay.Enabler.IsEnabled) {
+										InventorySquare square = QuickslotsDisplay.InventorySquares[activeQuickslot];
+										QuickslotHighlightParent.parent = square.transform;
+										QuickslotHighlightParent.localPosition = Vector3.zero;
+										//QuickslotHighlightParent.parent = QuickslotsDisplay.transform;
+										//mQuickslotHighlightTarget = QuickslotHighlightParent.localPosition;
+										//mQuickslotHighlightTarget.z -= 50f;
+								}
 						}
 				}
 
@@ -595,12 +643,15 @@ namespace Frontiers.GUI
 								EquippedIconLeft.alpha = QuickslotHighlight.alpha;
 								EquippedIconRight.alpha = QuickslotHighlight.alpha;
 
+								StackContainerInterface.NGUICamera = NGUICamera;
+
 								QuickslotHighlight.transform.localScale = new Vector3(carrySquare.Dimensions.x, carrySquare.Dimensions.y, 1f);
 						}
 				}
 
 				protected bool mRefreshNextFrame = false;
 				protected bool mInitialized = false;
+				protected int mFollowWidgetFlag = -1;
 				//protected Vector3 mQuickslotHighlightTarget = Vector3.zero;
 		}
 }

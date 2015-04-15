@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 using System;
 
 namespace Frontiers

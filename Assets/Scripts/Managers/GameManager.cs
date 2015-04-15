@@ -19,13 +19,13 @@ namespace Frontiers
 				public GameObject StartupScenePrefab;
 				public static int BuildNumber;
 				//TODO get this from steam somehow
-				public static readonly System.Version Version = new Version(0, 4, 1);
+				public static readonly System.Version Version = new Version(0, 4, 3);
 				//since we're using this everywhere we don't want to call ToString on Version
 				//believe it or not this actually has an effect on allocations / garbage
 				public static readonly string VersionString = Version.ToString();
 				public static readonly uint SteamAppID = 293480;
 				public static readonly string FocusOnCheatCode = "skiptotheend";
-				public static readonly string FocusOnSubject = "TrappingAndFishing";
+				public static readonly string FocusOnSubject = "FocusOnBartering";
 
 				public static bool Is(FGameState state)
 				{
@@ -254,6 +254,8 @@ namespace Frontiers
 								yield break;
 
 						mInitializing = true;
+						//create the startup scene
+						mStartupScenePrefab = GameObject.Instantiate(StartupScenePrefab) as GameObject;
 						//wait a tick
 						yield return WorldClock.WaitForRTSeconds(0.01f);
 						//TODO move these into globals, use strings for types
@@ -304,8 +306,6 @@ namespace Frontiers
 						//load all data from disk
 						//wait a tick
 						yield return null;
-						//create the startup scene
-						mStartupScenePrefab = GameObject.Instantiate(StartupScenePrefab) as GameObject;
 						Biomes.Get.UseTimeOfDayOverride = true;
 						Biomes.Get.HourOfDayOverride = UnityEngine.Random.Range(0f, 24f);
 						mInitializing = false;
@@ -314,7 +314,6 @@ namespace Frontiers
 						//do this now while the player won't notice a hitch
 						System.GC.Collect();
 						Resources.UnloadUnusedAssets();
-						//we'll be waiting for the start menu
 				}
 
 				protected IEnumerator StartupGame()

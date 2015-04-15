@@ -4,7 +4,7 @@ using Frontiers;
 using Frontiers.World.Gameplay;
 using System;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		//uses a detection skill to draw attention to an object
 		//if the object is detected FX will be spawned on it - if not, no FX

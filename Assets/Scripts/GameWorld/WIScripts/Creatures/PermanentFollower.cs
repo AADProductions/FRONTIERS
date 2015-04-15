@@ -7,9 +7,8 @@ using Frontiers.World.Gameplay;
 using Frontiers;
 using Frontiers.Data;
 using ExtensionMethods;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World.Gameplay
+namespace Frontiers.World.WIScripts
 {
 		public class PermanentFollower : WIScript
 		{

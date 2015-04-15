@@ -4,7 +4,8 @@ using System;
 using Frontiers;
 using System.Collections.Generic;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class GliderMaterialsCrate : WIScript {
 		public string MaterialsObjective;
 		public string MaterialsMission;

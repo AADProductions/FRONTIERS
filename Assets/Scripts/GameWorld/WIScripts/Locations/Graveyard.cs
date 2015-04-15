@@ -3,9 +3,8 @@ using System.Collections;
 using Frontiers;
 using System;
 using System.Collections.Generic;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class Graveyard : WIScript
 		{

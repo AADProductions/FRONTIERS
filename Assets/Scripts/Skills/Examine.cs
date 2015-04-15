@@ -5,11 +5,69 @@ using Frontiers.World;
 using ExtensionMethods;
 using Frontiers;
 using Frontiers.GUI;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World.Gameplay
 {
 	public class Examine : Skill
 	{
+				public static string GetExamineInfo (StackItem targetObject) {
+						string examineString = string.Empty;
+						List <WIExamineInfo> info = new List <WIExamineInfo>();
+						Examinable examinable = null;
+						if (targetObject.Is <Examinable>()){
+								examineString = "Examine info for stack item";//examinable.State.StaticExamineMessage;
+						} else {
+								WIGlobalProps props = WorldItems.Get.GlobalPropsFromName(targetObject.PackName, targetObject.PrefabName);
+								examineString = targetObject.DisplayName + "\n" + props.ExamineInfo.StaticExamineMessage;
+						}
+						return examineString;
+				}
+
+				public static string GetExamineInfo (IItemOfInterest targetObject) {
+						string examineString = string.Empty;
+						WorldItem worlditem = null;
+						List <WIExamineInfo> info = new List <WIExamineInfo>();
+						if (targetObject.IOIType == ItemOfInterestType.WorldItem) {
+								worlditem = targetObject.worlditem;
+								Examinable examinable = null;
+								if (worlditem.Is <Examinable>(out examinable)) {
+										examineString = examinable.State.StaticExamineMessage;
+								} else {
+										worlditem.Examine(info);
+										//get all the examine info from each script
+										//if we have enough skill, add it to the introspection
+										if (info.Count == 0) {
+												//TODO this sucks come up with a better line
+												if (worlditem.Props.Global.MaterialType != WIMaterialType.None && worlditem.Props.Global.Flags.Size != WISize.NoLimit) {
+														examineString = "It's " + Colors.ColorWrap(worlditem.Props.Global.Flags.Size.ToString(), Colors.Get.MessageSuccessColor)
+														+ " and is made mostly of " + Colors.ColorWrap(worlditem.Props.Global.MaterialType.ToString(), Colors.Get.MessageSuccessColor);
+												}
+										}
+
+										examineString = worlditem.DisplayName;
+
+										for (int i = 0; i < info.Count; i++) {
+												WIExamineInfo examineInfo = info[i];
+												bool displaySuccess = true;
+												if (!string.IsNullOrEmpty(examineInfo.RequiredSkill)) {
+														displaySuccess = false;
+														float skillUsageLevel = 0f;
+														if (Skills.Get.HasLearnedSkill(examineInfo.RequiredSkill, out skillUsageLevel) && skillUsageLevel >= examineInfo.RequiredSkillUsageLevel) {
+																displaySuccess = true;
+														}
+												}
+												if (displaySuccess) {
+														examineString = examineInfo.StaticExamineMessage;
+												} else if (!string.IsNullOrEmpty(examineInfo.ExamineMessageOnFail)) {
+														examineString = examineInfo.ExamineMessageOnFail;
+												}
+										}
+								}
+						}
+						return examineString;
+				}
+
 		public override bool Use(IItemOfInterest targetObject, int flavorIndex)
 		{
 			WorldItem worlditem = null;

@@ -16,7 +16,7 @@ namespace Frontiers.GUI
 				public override bool ShowQuickslots {
 						get {
 								#if UNITY_EDITOR
-								if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+								if (VRManager.VRMode | VRManager.VRTestingMode) {
 								#else
 								if (VRManager.VRMode) {
 								#endif
@@ -35,7 +35,9 @@ namespace Frontiers.GUI
 						if (flag < 0) { flag = GUIEditorID; }
 
 						Tabs.GetActiveInterfaceObjects(currentObjects, flag);
-						GUIDetailsPage.Get.GetActiveInterfaceObjects(currentObjects, flag);
+						if (GUIDetailsPage.Get.Visible) {
+								GUIDetailsPage.Get.GetActiveInterfaceObjects(currentObjects, GUIDetailsPage.Get.GUIEditorID);
+						}
 				}
 
 				public override Widget FirstInterfaceObject {
@@ -73,10 +75,11 @@ namespace Frontiers.GUI
 				{
 						if (base.Maximize()) {
 								#if UNITY_EDITOR
-								if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+								if (VRManager.VRMode | VRManager.VRTestingMode) {
 								#else
 								if (VRManager.VRMode) {
 								#endif
+										VRManager.Get.ResetInterfacePosition();
 										transform.localPosition = VRModeOffsetFocusLog;
 								} else {
 										transform.localPosition = Vector3.zero;
@@ -90,29 +93,22 @@ namespace Frontiers.GUI
 				public override void Update()
 				{
 						base.Update();
+
 						if (!Maximized) {
 								return;
 						}
 
-						VRFocusDetailsPage = GUIDetailsPage.Get.Visible;
-
 						#if UNITY_EDITOR
-						if (Input.GetKeyDown(KeyCode.K)) {
-								VRFocusDetailsPage = !VRFocusDetailsPage;
-								GUIDetailsPage.Get.Visible = VRFocusDetailsPage;
-						}
+						if (VRManager.VRMode | VRManager.VRTestingMode) {
+						#else
+						if (VRManager.VRMode) {
 						#endif
-
-						#if UNITY_EDITOR
-						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
-								#else
-			if (VRManager.VRMode) {
-								#endif
-								if (VRFocusDetailsPage) {
-										transform.localPosition = Vector3.Lerp(transform.localPosition, VRModeOffsetFocusDetails, 0.25f);
+								if (GUICursor.Get.TryToFollowCurrentWidget (GUIEditorID) || !GUIDetailsPage.Get.Visible) {
+										VRFocusDetailsPage = false;
 								} else {
-										transform.localPosition = Vector3.Lerp(transform.localPosition, VRModeOffsetFocusLog, 0.25f);
+										VRFocusDetailsPage = GUICursor.Get.TryToFollowCurrentWidget (GUIDetailsPage.Get.GUIEditorID);
 								}
+								transform.localPosition = Vector3.Lerp(transform.localPosition, VRFocusDetailsPage ? VRModeOffsetFocusDetails : VRModeOffsetFocusLog, 0.25f);
 						}
 				}
 		}

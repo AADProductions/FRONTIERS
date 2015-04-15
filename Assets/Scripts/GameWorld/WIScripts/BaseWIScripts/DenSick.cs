@@ -3,7 +3,7 @@ using System.Collections;
 using Frontiers.World.Gameplay;
 using System;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class DenSick : WIScript
 		{

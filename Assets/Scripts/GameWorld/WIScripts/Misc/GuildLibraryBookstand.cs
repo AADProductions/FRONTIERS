@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using System;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class GuildLibraryBookstand : WIScript {
 
 		GuildLibraryBookstandState State = new GuildLibraryBookstandState ();

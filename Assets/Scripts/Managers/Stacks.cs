@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World;
+using Frontiers.World.WIScripts;
 using System.Linq;
 
 namespace Frontiers
@@ -647,6 +648,38 @@ namespace Frontiers
 				public static class Find
 				{
 						public static IWIBase gItemsOfTypeCheck;
+
+						public static bool FirstItemByPrefabName (WIStack stack, string prefabName, bool searchStackContainers, out IWIBase item, out WIStack inStack)
+						{
+								item = null;
+								inStack = null;
+								for (int i = 0; i < stack.Items.Count; i++) {
+										if (stack.Items[i] != null) {
+												if (stack.Items[i].PrefabName.Equals(prefabName)) {
+														item = stack.Items[i];
+														inStack = stack;
+														break;
+												} else if (searchStackContainers && item.IsStackContainer) {
+														return FirstItemByPrefabName (item.StackContainer, prefabName, searchStackContainers, out item, out inStack);
+												}
+										}
+								}
+								return item != null;
+						}
+
+						public static bool FirstItemByPrefabName (WIStackContainer stackContainer, string prefabName, bool searchStackContainers, out IWIBase item, out WIStack inStack)
+						{
+								item = null;
+								inStack = null;
+								for (int i = 0; i < stackContainer.StackList.Count; i++) {
+										if (stackContainer.StackList[i] != null) {
+												if (FirstItemByPrefabName (stackContainer.StackList[i], prefabName, searchStackContainers, out item, out inStack)) {
+														break;
+												}
+										}
+								}
+								return item != null;
+						}
 
 						public static void ItemsOfType(WIStack stack, string scriptName, bool searchStackContainers, List <IWIBase> itemsOfType)
 						{

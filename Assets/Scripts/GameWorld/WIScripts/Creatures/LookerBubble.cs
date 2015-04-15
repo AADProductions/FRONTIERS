@@ -4,7 +4,7 @@ using Frontiers;
 using ExtensionMethods;
 using System.Collections.Generic;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 	public class LookerBubble : AwarenessBubble <Looker>
 	{

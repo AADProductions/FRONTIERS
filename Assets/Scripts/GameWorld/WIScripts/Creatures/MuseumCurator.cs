@@ -3,7 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class MuseumCurator : WIScript {
 		public MuseumCuratorState State = new MuseumCuratorState ( );
 

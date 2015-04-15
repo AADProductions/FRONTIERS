@@ -5,7 +5,7 @@ using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class Perishable : WIScript
 		{

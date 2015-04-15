@@ -5,7 +5,8 @@ using Frontiers.World.Gameplay;
 using Frontiers;
 using Frontiers.GUI;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class GliderInProgress : WIScript {
 
 		public GameObject BodyObject;

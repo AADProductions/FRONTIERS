@@ -1,7 +1,8 @@
 using UnityEngine;
 using System.Collections;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class FrozenInPlace : WIScript {
 		public override void OnInitialized ()
 		{

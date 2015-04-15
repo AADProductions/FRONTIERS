@@ -2,9 +2,8 @@ using UnityEngine;
 using System.Collections;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 	public class MagicCurse : WIScript
 	{

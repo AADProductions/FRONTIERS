@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class Refinery : WIScript
 		{		//used with Refinable plus a Refine skill to refine goods

@@ -5,7 +5,8 @@ using Frontiers.Data;
 using Frontiers.World.Gameplay;
 using System;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class KarasNote : WIScript {
 		//this is a total kludge script that could probably be done generically
 		//i have lost the will to avoid kludges

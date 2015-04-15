@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers
 {
@@ -82,7 +82,8 @@ namespace Frontiers
 				public Shield DamageAbsorber;
 
 				public virtual void InstantKill (IItemOfInterest causeOfDeath) {
-						return;
+						Player.Local.Status.ReduceStatus(PlayerStatusRestore.F_Full, "Health");
+						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalTakeDamage, WorldClock.AdjustedRealTime);
 				}
 
 				public bool TakeDamage(WIMaterialType materialType, Vector3 damagePoint, float attemptedDamage, Vector3 attemptedForce, string source, out float actualDamage, out bool isDead)

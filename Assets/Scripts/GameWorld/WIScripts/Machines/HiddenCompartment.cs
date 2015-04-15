@@ -4,9 +4,9 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.GUI;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class HiddenCompartment : WIScript {
 		public GameObject PivotObject;
 		public HiddenCompartmentState State = new HiddenCompartmentState ();

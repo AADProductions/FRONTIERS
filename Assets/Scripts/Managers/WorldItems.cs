@@ -7,7 +7,7 @@ using System.Xml.Serialization;
 using System.Xml.Schema;
 using System.Runtime.Serialization;
 using Frontiers.Data;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 using ExtensionMethods;
 using System.Text;
 using System.Reflection;
@@ -542,9 +542,12 @@ namespace Frontiers.World
 								} else {
 										//if it doesn't have states, all of its renderers will be kept in the Renderers list
 										for (int i = 0; i < item.Renderers.Count; i++) {
-												renderersToCreate.Add(doppleGanger.CreateChild(item.Renderers[i].name).gameObject);
+												//ignore anything that doesn't have ignore doppleganger tag
+												if (!item.Renderers[i].CompareTag(Globals.TagIgnoreStackedDoppleganger)) {
+														renderersToCopy.Add(item.Renderers[i]);
+														renderersToCreate.Add(doppleGanger.CreateChild(item.Renderers[i].name).gameObject);
+												}
 										}
-										renderersToCopy.AddRange(item.Renderers);
 								}
 						}
 						transformEachRenderer = renderersToCopy.Count > 0;
@@ -580,12 +583,34 @@ namespace Frontiers.World
 												dopMr.receiveShadows = false;
 												dopGameObject.layer = Globals.LayerNumWorldItemInventory;
 												//NGUI doesn't play nice with outline shaders in VR mode
-												materials.AddRange(wiMr.sharedMaterials);
 												#if UNITY_EDITOR
-												if (!(VRManager.VRMode | VRManager.VRTestingModeEnabled)) {
-														#else
-														if (!VRManager.VRMode) {
-														#endif
+												if (VRManager.VRMode | VRManager.VRTestingMode) {
+												#else
+												if (VRManager.VRMode) {
+												#endif
+														for (int j = 0; j < wiMr.sharedMaterials.Length; j++) {
+																//use a shader designed for vr mode - it won't get over-written by the vr ngui shaders
+																Material baseMat = wiMr.sharedMaterials[j];
+																Material customMat = new Material(Mats.Get.VRInventoryDopplegangerMaterial);
+																if (baseMat.shader.name.Contains ("WithDetail")) {
+																		//it's one of our detail shaders - get the main material
+																		customMat.mainTexture = baseMat.GetTexture ("_MainDiffMap");
+																		customMat.mainTextureOffset = baseMat.GetTextureOffset ("_MainDiffMap");
+																		customMat.mainTextureScale = baseMat.GetTextureScale ("_MainDiffMap");
+																		customMat.color = baseMat.GetColor ("_MainTintColor");
+																} else {
+																		//treat it as an ordinary shader
+																		customMat.mainTexture = baseMat.mainTexture;
+																		customMat.mainTextureOffset = baseMat.mainTextureOffset;
+																		customMat.mainTextureScale = baseMat.mainTextureScale;
+																		if (baseMat.HasProperty ("_Color")) {
+																				customMat.color = baseMat.color;
+																		}
+																}
+																materials.Add(customMat);
+														}
+												} else {
+														materials.AddRange(wiMr.sharedMaterials);
 														for (int j = 0; j < wiMr.sharedMaterials.Length; j++) {
 																if (item.Props.Global.UseCutoutShader) {
 																		Material baseMat = wiMr.sharedMaterials[j];
@@ -633,7 +658,11 @@ namespace Frontiers.World
 												//materials.AddRange (wiMr.sharedMaterials);
 												sharedMaterialsLength = wiMr.sharedMaterials.Length;
 												for (int j = 0; j < sharedMaterialsLength; j++) {
-														materials.Add(Mats.Get.CraftingDoppleGangerMaterial);
+														if (VRManager.VRMode) {
+																materials.Add(Mats.Get.VRCraftingDoppleGangerMaterial);
+														} else {
+																materials.Add(Mats.Get.CraftingDoppleGangerMaterial);
+														}
 												}
 												break;
 
@@ -1372,7 +1401,8 @@ namespace Frontiers.World
 						return GetIOIFromCollider(other, true, out ioi, out bodyPart);
 				}
 
-				public static bool GetIOIFromCollider(Collider other, bool ignoreTrigger, out IItemOfInterest ioi) {
+				public static bool GetIOIFromCollider(Collider other, bool ignoreTrigger, out IItemOfInterest ioi)
+				{
 						return GetIOIFromCollider(other, ignoreTrigger, out ioi, out mBodyPartCheck);
 				}
 
@@ -1400,7 +1430,8 @@ namespace Frontiers.World
 						return GetIOIFromGameObject(other.collider.gameObject, out ioi, out bodyPart);
 				}
 
-				public static bool GetIOIFromGameObject(GameObject go, out IItemOfInterest ioi) {
+				public static bool GetIOIFromGameObject(GameObject go, out IItemOfInterest ioi)
+				{
 						return GetIOIFromGameObject(go, out ioi, out mBodyPartCheck);
 				}
 

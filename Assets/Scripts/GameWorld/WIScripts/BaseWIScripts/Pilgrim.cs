@@ -7,7 +7,7 @@ using Frontiers;
 using Frontiers.Data;
 using ExtensionMethods;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class Pilgrim : WIScript, IItemOfInterest//implements item of interest to be a live target for motile actions
 		{

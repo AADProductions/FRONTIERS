@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 using Frontiers.World.Gameplay;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {

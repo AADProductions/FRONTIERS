@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class DungeonEntrance : WIScript
 		{		//dungeons have been removed for now

@@ -9,6 +9,7 @@ namespace Frontiers.GUI
 		{
 				public void Awake() {
 						KeystrokeLabel.useDefaultLabelFont = false;
+						KeystrokeLabel.transform.localScale = Vector3.one * 18f;
 				}
 
 				public void Reset()
@@ -258,7 +259,6 @@ namespace Frontiers.GUI
 										break;
 
 								default:
-										Debug.Log("Couldn't show action, trued to show " + control.ToString());
 										result = false;
 										break;
 						}
@@ -295,6 +295,6 @@ namespace Frontiers.GUI
 				public UISprite BackButtonSprite;
 				public static Vector3 ThinKeystrokeScale = new Vector3(25f, 25f, 1f);
 				public static Vector3 WideKeystrokeScale = new Vector3(50f, 25f, 1f);
-				public static Vector3 KeystrokeLabelPosition = new Vector3(-27f, 18f, -20f);
+				public static Vector3 KeystrokeLabelPosition = new Vector3(-27f, 18f, -60f);
 		}
 }

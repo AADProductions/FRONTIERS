@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.GUI;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class FoodStuff : WIScript
 		{
@@ -18,6 +18,21 @@ namespace Frontiers.World.BaseWIScripts
 				public GameObject CookingFX;
 				public Action OnEat;
 				public string CommonName;
+
+				public static int CalculateGlobalPrice(int basePrice)
+				{
+						return basePrice + Globals.BasePriceFoodstuff;
+				}
+
+				public static int CalculateLocalPrice(int basePrice, IWIBase item)
+				{
+						if (item == null) {
+								Debug.Log("state data null in foodstuff");
+								return basePrice;
+						}
+
+						return basePrice + 10;
+				}
 
 				public override void OnInitialized()
 				{
@@ -118,7 +133,7 @@ namespace Frontiers.World.BaseWIScripts
 								bool foundState = false;
 								for (int i = 0; i < State.PotentialProps.Count; i++) {
 										FoodStuffProps potentialProps = State.PotentialProps[i];
-										if (potentialProps.Name.Equals (newStateName)) {
+										if (potentialProps.Name.Equals(newStateName)) {
 												mCurrentProps = potentialProps;
 												foundState = true;
 												break;
@@ -343,12 +358,19 @@ namespace Frontiers.World.BaseWIScripts
 						return description;
 				}
 
+				public static int CalculateFoodStuffLocalPrice(int basePrice, FoodStuffProps props, string stateName)
+				{
+						return basePrice;
+				}
+
 				protected FoodStuffProps mCurrentProps;
 				#if UNITY_EDITOR
 				//this editor function does a bunch of sanity-check stuff
 				//to make sure that the foodstuff is set up properly
 				public override void InitializeTemplate()
 				{
+						base.InitializeTemplate();
+
 						if (NonStandardProps)
 								return;
 

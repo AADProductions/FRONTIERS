@@ -4,7 +4,7 @@ using Frontiers;
 using System;
 using System.Collections.Generic;
 using Frontiers.GUI;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {

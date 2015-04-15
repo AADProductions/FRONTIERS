@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.Data;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers
 {
@@ -31,6 +32,8 @@ namespace Frontiers
 				public delegate void WIGroupCallback(WIGroup group);
 				public delegate void IWIBaseCallback(IWIBase wiBase);
 				public delegate void PilgrimCallback(MobileReference start,MobileReference target,PathAvatar path,PathDirection direction);
+				public delegate int LocalPriceCalculator (int basePrice, IWIBase item);
+				public delegate int GlobalPriceCalculator (int basePrice);
 				//public delegate bool TriggerCallback(Trigger source,TriggerEvent triggerEvent,out string errorMessage);
 		}
 		namespace Gameplay

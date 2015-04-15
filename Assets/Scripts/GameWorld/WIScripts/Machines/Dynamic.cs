@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers.Data;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class Dynamic : WIScript
 		{		//anything that's part of a structure that moves

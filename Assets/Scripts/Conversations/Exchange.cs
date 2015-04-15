@@ -8,6 +8,7 @@ using Frontiers.World.Gameplay;
 using Frontiers.World;
 using Frontiers.Data;
 using System.Linq;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.Story.Conversations
 {

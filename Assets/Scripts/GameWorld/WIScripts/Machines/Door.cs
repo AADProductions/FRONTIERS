@@ -5,7 +5,7 @@ using Frontiers;
 using Frontiers.GUI;
 using System.Collections.Generic;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class Door : WIScript
 		{

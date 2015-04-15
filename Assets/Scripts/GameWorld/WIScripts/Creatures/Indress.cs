@@ -2,9 +2,8 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {	//this script addresses a strange problem I ran into while scripting Legacy
 	//conversations are supposed to change either directly or due to structure loading
 	//we found that indress needs her conversation to change while you're in the same structure

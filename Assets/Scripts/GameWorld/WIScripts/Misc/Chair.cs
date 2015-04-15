@@ -3,7 +3,7 @@ using System.Collections;
 using Frontiers.GUI;
 using System.Collections.Generic;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class Chair : WIScript
 		{

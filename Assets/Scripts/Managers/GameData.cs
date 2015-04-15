@@ -661,7 +661,11 @@ namespace Frontiers
 
 								public static string CleanGameName(string gameName)
 								{
-										if (gameName == gLiveGameFolderName || string.IsNullOrEmpty (gameName)) {
+										if (string.IsNullOrEmpty(gameName)) {
+												return string.Empty;
+										}
+
+										if (gameName == gLiveGameFolderName) {
 												gameName = "Game";
 										}
 

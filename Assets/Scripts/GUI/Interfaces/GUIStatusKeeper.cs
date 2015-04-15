@@ -22,6 +22,7 @@ namespace Frontiers.GUI
 				public BoxCollider Collider;
 				public Transform tr;
 				public GUIStatusKeeper Neighbor;
+				public IInfoDisplay DisplayInfo;
 
 				public Vector3 TargetPosition {
 						get {
@@ -98,7 +99,9 @@ namespace Frontiers.GUI
 
 				public void Awake()
 				{
-						Keeper = null;
+						if (Keeper == null || !Keeper.Initialized) {
+								Keeper = null;
+						}
 						ButtonHover = gameObject.GetOrAdd <GUIButtonHover>();
 						ButtonHover.OnButtonHover += OnButtonHover;
 						tr = transform;
@@ -107,7 +110,10 @@ namespace Frontiers.GUI
 
 				public void OnButtonHover()
 				{
-						GUIPlayerStatusInterface.Get.PostInfo(UICamera.hoveredObject, Keeper.CurrentDescription);
+						if (DisplayInfo != null) {
+								DisplayInfo.PostInfo (UICamera.hoveredObject, Keeper.CurrentDescription);
+						}
+						//GUIPlayerStatusInterface.Get.PostInfo(UICamera.hoveredObject, Keeper.CurrentDescription);
 				}
 
 				public void Initialize(StatusKeeper newKeeper, GUIStatusKeeper neighbor, int displayPosition, float iconScale)
@@ -183,7 +189,7 @@ namespace Frontiers.GUI
 
 						//when the game is paused these don't get updated
 						//so do it manually
-						if (GameManager.Is(FGameState.GamePaused)) {
+						if (GameManager.Is(FGameState.GamePaused) && StatusKeeperPanel != null) {
 								StatusKeeperPanel.LateUpdate();
 						}
 				}

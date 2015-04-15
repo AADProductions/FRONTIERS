@@ -10,7 +10,7 @@ using Pathfinding.RVO;
 using ExtensionMethods;
 using Frontiers.GUI;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		//TODO: Implement GetComponent<TNObject> ().isMine
 		public class Motile : WIScript, IBodyOwner

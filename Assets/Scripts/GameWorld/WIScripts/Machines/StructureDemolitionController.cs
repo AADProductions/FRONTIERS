@@ -2,9 +2,9 @@ using UnityEngine;
 using System.Collections;
 using System;
 using System.Collections.Generic;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	//doesn't just destroy a structure - actually demolishes it entirely and
 	//replaces it with a new structure
 	public class StructureDemolitionController : WIScript {

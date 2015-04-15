@@ -8,7 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.GUI;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {
@@ -240,6 +240,7 @@ namespace Frontiers.World
 						get {
 								if (IsStackContainer) {
 										if (mStackContainer == null) {
+												Debug.Log("Stack container was null in worlditem " + name + ", creating empty one now");
 												mStackContainer = Stacks.Create.StackContainer(this, this.Group);
 										}
 								}

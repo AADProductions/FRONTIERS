@@ -4,7 +4,7 @@ using System.Collections;
 using Frontiers;
 using Frontiers.World;
 using ExtensionMethods;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 public class WaterSubmergeObjects : MonoBehaviour
 {

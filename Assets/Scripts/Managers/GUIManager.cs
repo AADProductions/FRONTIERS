@@ -336,7 +336,7 @@ namespace Frontiers.GUI
 						VersionNumber.enabled = true;
 
 						#if UNITY_EDITOR
-						if ((VRManager.VRMode | VRManager.VRTestingModeEnabled)) {
+						if ((VRManager.VRMode | VRManager.VRTestingMode)) {
 								VersionNumber.enabled = false;
 								NGUIPrimaryRoot.manualHeight = ScreenAspectRatioMaxVR;
 								NGUISecondaryRoot.manualHeight = ScreenAspectRatioMaxVR;
@@ -855,19 +855,6 @@ namespace Frontiers.GUI
 
 				#endregion
 
-				#region oculus
-
-				public void SetOculusMode(bool enabled)
-				{
-						if (enabled) {
-								//set up our cameras so they're rendering to render textures
-						} else {
-								//disable the render textures
-						}
-				}
-
-				#endregion
-
 				#region messages
 
 				//these are conveneince functions for posting messages
@@ -974,7 +961,7 @@ namespace Frontiers.GUI
 						}
 				}
 
-				public static void PostGainedItem(Frontiers.World.BaseWIScripts.QuestItemState questItem)
+				public static void PostGainedItem(Frontiers.World.WIScripts.QuestItemState questItem)
 				{
 						InterfaceActionType a = InterfaceActionType.ToggleInventory;
 						InControl.InputControlType c = InterfaceActionManager.Get.GetActionBinding((int)InterfaceActionType.ToggleInventory);
@@ -990,7 +977,7 @@ namespace Frontiers.GUI
 								"Inventory");
 				}
 
-				public static void PostGainedItem(Frontiers.World.PurseState purseState)
+				public static void PostGainedItem(Frontiers.World.WIScripts.PurseState purseState)
 				{
 						InterfaceActionType a = InterfaceActionType.ToggleInventory;
 						InControl.InputControlType c = InterfaceActionManager.Get.GetActionBinding((int)InterfaceActionType.ToggleInventory);
@@ -1062,7 +1049,7 @@ namespace Frontiers.GUI
 								a = InterfaceActionType.ToggleInterfaceNext;
 						}
 						Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage(
-								"Added " + currency.ToString() + Frontiers.World.Currency.TypeToString(type) + " to Currency",
+								"Added " + currency.ToString() + Frontiers.World.WIScripts.Currency.TypeToString(type) + " to Currency",
 								0.0,
 								"Currency",
 								GainedSomethingType.Currency,

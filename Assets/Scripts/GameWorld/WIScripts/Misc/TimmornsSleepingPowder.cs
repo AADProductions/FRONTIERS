@@ -1,9 +1,10 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class TimmornsSleepingPowder : WIScript {
 
 		public string QuestItemName = "FamilyMessHallCauldron";

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 using Frontiers.GUI;
 
 namespace Frontiers.World.Gameplay

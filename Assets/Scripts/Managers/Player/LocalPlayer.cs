@@ -7,6 +7,7 @@ using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
 using Frontiers.GUI;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers
 {
@@ -383,7 +384,7 @@ namespace Frontiers
 				public void SnapToHijackedPosition()
 				{
 						#if UNITY_EDITOR
-						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+						if (VRManager.VRMode | VRManager.VRTestingMode) {
 						#else
 						if (VRManager.VRMode) {
 						#endif

@@ -8,6 +8,7 @@ using Frontiers.World.Gameplay;
 using ExtensionMethods;
 using System.Xml.Serialization;
 using System.Text;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {

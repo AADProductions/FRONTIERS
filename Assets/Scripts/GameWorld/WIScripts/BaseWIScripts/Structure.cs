@@ -8,7 +8,7 @@ using Frontiers.World.Gameplay;
 
 using System.Xml.Serialization;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class Structure : WIScript
 		{

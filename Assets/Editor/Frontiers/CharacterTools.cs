@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 using Frontiers.World.Gameplay;
 using UnityEditor;
 using ExtensionMethods;

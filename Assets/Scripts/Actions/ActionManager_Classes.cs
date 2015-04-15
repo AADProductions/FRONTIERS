@@ -396,7 +396,7 @@ namespace Frontiers
 														break;
 
 												default:
-							//other keys are descriptive, don't bind them
+														//other keys are descriptive, don't bind them
 														break;
 										}
 								}

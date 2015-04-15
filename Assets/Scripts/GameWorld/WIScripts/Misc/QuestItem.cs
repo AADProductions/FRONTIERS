@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System;
 using Frontiers;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class QuestItem : WIScript
 		{

@@ -51,7 +51,6 @@ namespace Frontiers.GUI
 				public UISprite IconSprite;
 				public UISlicedSprite IconBackground;
 				public UISlicedSprite IconShadow;
-				public Vector3 OculusModeOffset = new Vector3(0f, -350f, 0f);
 				public Vector4 GainedSomethingIconPanelVisible = new Vector4(100f, 100f, 0f, 0f);
 				public Vector4 GainedSomethingIconInvisible = new Vector4(0.1f, 0.1f, 0f, 0f);
 				public Vector4 GainedSomethingIconPanelTarget;
@@ -67,6 +66,8 @@ namespace Frontiers.GUI
 				public Vector3 LongFormLabelPositionLeft = new Vector3(0f, 15f, -10f);
 				public Vector3 LongFormLabelPositionCenter = new Vector3(500f, 15f, -10f);
 				public Vector3 ShortFormLabelPositionWithIcon = new Vector3(600f, 15f, -10f);
+				public Vector3 DefaultOffset;
+				public Vector3 VROffset;
 				public int ShortFormLineWidth = 600;
 				public int LongFormLineWidth = 800;
 
@@ -120,13 +121,13 @@ namespace Frontiers.GUI
 						base.Update();
 
 						#if UNITY_EDITOR
-						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+						if (VRManager.VRMode | VRManager.VRTestingMode) {
 						#else
 						if (VRManager.VRMode) {
 						#endif
-								transform.localPosition = OculusModeOffset;
+								transform.localPosition = VROffset;
 						} else {
-								transform.localPosition = Vector3.zero;
+								transform.localPosition = DefaultOffset;
 						}
 
 						BackgroundSprite.transform.localScale = Vector3.Lerp(BackgroundSprite.transform.localScale, ScaleTarget, 0.25f);

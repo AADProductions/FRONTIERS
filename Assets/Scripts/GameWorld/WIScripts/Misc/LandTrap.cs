@@ -3,9 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World.Gameplay;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class LandTrap : WIScript, ITrap
 		{

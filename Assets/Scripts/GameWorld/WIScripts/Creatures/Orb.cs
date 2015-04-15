@@ -3,9 +3,8 @@ using System.Collections;
 using Frontiers.GUI;
 using System.Collections.Generic;
 using System;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {	//controls the routine of the orb
 	//also interacts with several player scripts / skills
 	public class Orb : WIScript {

@@ -5,7 +5,7 @@ using Frontiers;
 using Frontiers.Data;
 using Frontiers.World;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 	public class CrossRoads : WIScript
 	{			

@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.Data;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {
@@ -670,6 +670,8 @@ namespace Frontiers.World
 						mStackContainer = null;
 						Props.Local.IsStackContainer = false;
 
+						mGlobalBaseCurrencyValue = Mathf.CeilToInt (Props.Global.BaseCurrencyValue);
+
 						mLastActiveState = WIActiveState.Invisible;
 						mActiveState = WIActiveState.Invisible;
 
@@ -700,10 +702,19 @@ namespace Frontiers.World
 										}
 								}
 
-								WIScript[] wiScripts = gameObject.GetComponents <WIScript>();
-								foreach (WIScript script in wiScripts) {
-										script.InitializeTemplate();
+								gInitializeScriptsResult.Clear();
+								gameObject.GetComponents (typeof(WIScript), gInitializeScriptsResult);
+								Debug.Log ("Got " + gInitializeScriptsResult.Count.ToString() + " scripts in " + name + " during initialization");
+								foreach (Component script in gInitializeScriptsResult) {
+										WIScript w = script as WIScript;
+										if (w != null) {
+												w.InitializeTemplate();
+										} else {
+												Debug.Log ("Script was null in " + name);
+										}
 								}
+								gInitializeScriptsResult.Clear();
+
 								mTemplateStackitem = new StackItem();
 								mTemplateStackitem.Props.CopyLocal(Props);
 								mTemplateStackitem.Props.CopyName(Props);
@@ -745,6 +756,7 @@ namespace Frontiers.World
 						}
 				}
 
+				protected static List <Component> gInitializeScriptsResult = new List<Component> ();
 				List <WIScript> mScriptsAddedWhileInitializing = null;
 
 				public void Initialize()

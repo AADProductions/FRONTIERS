@@ -21,6 +21,9 @@ namespace Frontiers
 				public static double TimeStamp = 0f;
 				public static bool SoftwareMouse = false;
 				public static Vector3 MousePosition;
+				public static bool InvertRawMouseAxis = false;
+				public static bool InvertRawMovementAxis = false;
+				public static bool InvertRawInterfaceAxis = false;
 				public static float RawMouseAxisX = 0.0f;
 				public static float RawMouseAxisY = 0.0f;
 				public static float RawMovementAxisX = 0.0f;
@@ -28,6 +31,16 @@ namespace Frontiers
 				public static float RawScrollWheelAxis = 0.0f;
 				public static float RawInterfaceAxisX = 0.0f;
 				public static float RawInterfaceAxisY = 0.0f;
+				#if UNITY_EDITOR
+				public Vector3 mMousePosition;
+				public float mRawMouseAxisX = 0.0f;
+				public float mRawMouseAxisY = 0.0f;
+				public float mRawMovementAxisX = 0.0f;
+				public float mRawMovementAxisY = 0.0f;
+				public float mRawScrollWheelAxis = 0.0f;
+				public float mRawInterfaceAxisX = 0.0f;
+				public float mRawInterfaceAxisY = 0.0f;
+				#endif
 				public static int LastMouseClick = 0;
 				public static bool AvailableKeyDown = false;
 				public static KeyCode LastKey = KeyCode.None;
@@ -80,35 +93,8 @@ namespace Frontiers
 						}
 				}
 
-				public virtual void PushSettings(List <ActionSetting> newSettings)
+				public void PushDeadZoneSettings()
 				{
-						if (newSettings == null || newSettings.Count == 0) {
-								//Debug.Log("Not pushing settings in " + name + " , was null or empty");
-								return;
-						}
-						//Debug.Log("Pushing " + newSettings.Count.ToString() + " settings in " + name);
-						//start over
-						ClearSettings();
-
-						List <ActionSetting> settingsNotFound = new List<ActionSetting>();
-						//get the default settings and make sure all bindings are accounted for
-						for (int i = 0; i < DefaultActionSettings.Count; i++) {
-								bool foundInNewSettings = false;
-								for (int j = 0; j < newSettings.Count; j++) {
-										if (DefaultActionSettings[i].ActionDescription.Equals(newSettings[j].ActionDescription)) {
-												foundInNewSettings = true;
-												break;
-										}
-								}
-								if (!foundInNewSettings) {
-										Debug.Log("Didn't find action setting " + DefaultActionSettings[i].ActionDescription + " in preferences, adding now");
-										settingsNotFound.Add(DefaultActionSettings[i]);
-								}
-						}
-
-						CurrentActionSettings.AddRange(newSettings);
-						CurrentActionSettings.AddRange(settingsNotFound);
-
 						if (Profile.Get.CurrentPreferences.Controls.UseCustomDeadZoneSettings) {
 								//make sure the dead zones are legit
 								Profile.Get.CurrentPreferences.Controls.RefreshCustomDeadZoneSettings(Device);
@@ -141,6 +127,37 @@ namespace Frontiers
 								Device.GetControl(InputControlType.DPadUp).Sensitivity = Profile.Get.CurrentPreferences.Controls.SensitivityDPad;
 								Device.GetControl(InputControlType.DPadDown).Sensitivity = Profile.Get.CurrentPreferences.Controls.SensitivityDPad;
 						}
+				}
+
+				public virtual void PushSettings(List <ActionSetting> newSettings)
+				{
+						if (newSettings == null || newSettings.Count == 0) {
+								//Debug.Log("Not pushing settings in " + name + " , was null or empty");
+								return;
+						}
+						//Debug.Log("Pushing " + newSettings.Count.ToString() + " settings in " + name);
+						//start over
+						ClearSettings();
+
+						List <ActionSetting> settingsNotFound = new List<ActionSetting>();
+						//get the default settings and make sure all bindings are accounted for
+						for (int i = 0; i < DefaultActionSettings.Count; i++) {
+								bool foundInNewSettings = false;
+								for (int j = 0; j < newSettings.Count; j++) {
+										if (DefaultActionSettings[i].ActionDescription.Equals(newSettings[j].ActionDescription)) {
+												foundInNewSettings = true;
+												break;
+										}
+								}
+								if (!foundInNewSettings) {
+										Debug.Log("Didn't find action setting " + DefaultActionSettings[i].ActionDescription + " in preferences, adding now");
+										settingsNotFound.Add(DefaultActionSettings[i]);
+								}
+						}
+
+						CurrentActionSettings.AddRange(newSettings);
+						CurrentActionSettings.AddRange(settingsNotFound);
+						PushDeadZoneSettings();
 
 						//check for mouse and movement axis
 						//also add available keys for when we want to rebind them
@@ -332,14 +349,13 @@ namespace Frontiers
 								mDaisyChains.Add(action, actionList);
 						}
 				}
-
 				//use this function sparingly
-				public bool IsKeyDown (T action)
+				public bool IsKeyDown(T action)
 				{
-						InputControlType control = GetActionBinding(Convert.ToInt32 (action));
+						InputControlType control = GetActionBinding(Convert.ToInt32(action));
 						#if UNITY_EDITOR
 						bool isDown = Device.GetControl(control).IsPressed || InputManager.ActiveDevice.GetControl(control).IsPressed;
-						Debug.Log("Input control:  " + control.ToString() + " is down? " + isDown.ToString());
+						//Debug.Log("Input control:  " + control.ToString() + " is down? " + isDown.ToString());
 						return isDown;
 						#else
 						return Device.GetControl(control).IsPressed || InputManager.ActiveDevice.GetControl(control).IsPressed;
@@ -454,6 +470,17 @@ namespace Frontiers
 								return;
 						}
 
+						#if UNITY_EDITOR
+						mMousePosition = MousePosition;
+						mRawMouseAxisX = RawMouseAxisX;
+						mRawMouseAxisY = RawMouseAxisY;
+						mRawMovementAxisX = RawMovementAxisX;
+						mRawMovementAxisY = RawMovementAxisY;
+						mRawScrollWheelAxis = RawScrollWheelAxis;
+						mRawInterfaceAxisX = RawInterfaceAxisX;
+						mRawInterfaceAxisY = RawInterfaceAxisY;
+						#endif
+
 						if (!SoftwareMouse) {
 								MousePosition = Input.mousePosition;
 						}
@@ -485,27 +512,19 @@ namespace Frontiers
 						}
 
 						RawScrollWheelAxis = 0f;
-						/*
-						RawMouseAxisX = 0f;
-						RawMouseAxisY = 0f;
-						RawMovementAxisX = 0f;
-						RawMovementAxisY = 0f;
-						RawInterfaceAxisX = 0f;
-						RawInterfaceAxisY = 0f;
-						*/
 
-						CheckAxis(MouseXAxis, ref RawMouseAxisX, "Mouse X");
-						CheckAxis(MouseYAxis, ref RawMouseAxisY, "Mouse Y");
-						CheckAxis(MovementXAxis, ref RawMovementAxisX, "Horizontal");
-						CheckAxis(MovementYAxis, ref RawMovementAxisY, "Vertical");
-						CheckAxis(InterfaceXAxis, ref RawInterfaceAxisX, string.Empty);
-						CheckAxis(InterfaceYAxis, ref RawInterfaceAxisY, string.Empty);
+						CheckAxis(MouseXAxis, ref RawMouseAxisX, "Mouse X", false);
+						CheckAxis(MouseYAxis, ref RawMouseAxisY, "Mouse Y", InvertRawMouseAxis);
+						CheckAxis(MovementXAxis, ref RawMovementAxisX, "Horizontal", false);
+						CheckAxis(MovementYAxis, ref RawMovementAxisY, "Vertical", InvertRawMovementAxis);
+						CheckAxis(InterfaceXAxis, ref RawInterfaceAxisX, string.Empty, false);
+						CheckAxis(InterfaceYAxis, ref RawInterfaceAxisY, string.Empty, InvertRawInterfaceAxis);
 
-						/*if (ScrollWheelAxis != InputControlType.None) {
-								RawScrollWheelAxis = (float)Device.GetControl(ScrollWheelAxis).Value;
-						} else {*/
-						RawScrollWheelAxis = Input.GetAxis("Mouse ScrollWheel");
-						//}
+						if (ScrollWheelAxis != InputControlType.None) {
+								RawScrollWheelAxis = (float)Device.GetControl(ScrollWheelAxis).Value + Input.GetAxis("Mouse ScrollWheel");
+						} else {
+								RawScrollWheelAxis = Input.GetAxis("Mouse ScrollWheel");
+						}
 
 						TimeStamp = WorldClock.AdjustedRealTime;
 
@@ -534,7 +553,7 @@ namespace Frontiers
 						OnUpdate();
 				}
 
-				public void CheckAxis(InputControlType axis, ref float rawAxis, string failSafe)
+				public void CheckAxis(InputControlType axis, ref float rawAxis, string failSafe, bool invert)
 				{
 						if (axis != InputControlType.None) {
 								switch (axis) {
@@ -552,8 +571,8 @@ namespace Frontiers
 												break;
 
 										case InputControlType.DPadY:
-												rawAxis = (float)InputManager.ActiveDevice.GetControl(InputControlType.DPadLeft).Value;
-												rawAxis += -(float)InputManager.ActiveDevice.GetControl(InputControlType.DPadRight).Value;
+												rawAxis = (float)InputManager.ActiveDevice.GetControl(InputControlType.DPadUp).Value;
+												rawAxis += -(float)InputManager.ActiveDevice.GetControl(InputControlType.DPadDown).Value;
 												/*if (InputManager.ActiveDevice.GetControl(InputControlType.DPadUp).IsPressed) {
 														Debug.Log("DPad up is pressed - y axis: " + rawAxis.ToString());
 														rawAxis = (float)InputManager.ActiveDevice.GetControl(InputControlType.DPadLeft).Value;
@@ -572,6 +591,10 @@ namespace Frontiers
 								rawAxis = Input.GetAxisRaw(failSafe);
 						} else {
 								rawAxis = 0f;
+						}
+
+						if (invert) {
+								rawAxis *= -1;
 						}
 				}
 
@@ -649,10 +672,9 @@ namespace Frontiers
 				{
 						var enumerator = mAxisChangeMappings.GetEnumerator();
 						while (enumerator.MoveNext()) {
-								//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyUpMappings) {
 								keyMapping = enumerator.Current;
 								InputControl d = InputManager.ActiveDevice.GetControl(keyMapping.Key);
-								InputControl c = Device.GetControl(keyMapping.Key);								
+								InputControl c = Device.GetControl(keyMapping.Key);
 								if ((c.HasChanged || c.Value != 0f) || (d.HasChanged || d.Value != null)) {
 										for (int i = 0; i < keyMapping.Value.Count; i++) {
 												Send(keyMapping.Value[i], TimeStamp);
@@ -662,31 +684,35 @@ namespace Frontiers
 
 						enumerator = mAxisNegativeMappings.GetEnumerator();
 						while (enumerator.MoveNext()) {
-								//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyUpMappings) {
 								keyMapping = enumerator.Current;
-								InputControl d = InputManager.ActiveDevice.GetControl(keyMapping.Key);
-								InputControl c = Device.GetControl(keyMapping.Key);		
-								float cVal = c.Value;
-								float dVal = d.Value;			
-								if ((cVal < 0f && Mathf.Abs (cVal) > gMinAxisChange) || (dVal < 0f && Mathf.Abs (dVal) > gMinAxisChange)) {
-										for (int i = 0; i < keyMapping.Value.Count; i++) {
-												Send(keyMapping.Value[i], TimeStamp);
-										}
+								float val = Mathf.Min(Device.GetControl(keyMapping.Key).Value, InputManager.ActiveDevice.GetControl(keyMapping.Key).Value);
+								if (val < 0f && Mathf.Abs (val) > gMinAxisChange) {
+										float opposingVal = GetOpposingAxisValue(keyMapping.Key, GetFailsafeAxis (keyMapping.Key));
+										if (Mathf.Abs (val) > Mathf.Abs (opposingVal)) {
+												//Debug.Log("Val " + keyMapping.Key.ToString() + " " + val.ToString () + " was above threshold and greater than opposing axis value " + opposingVal.ToString());
+												for (int i = 0; i < keyMapping.Value.Count; i++) {
+														Send(keyMapping.Value[i], TimeStamp);
+												}
+										}/* else {
+												Debug.Log("Val " + keyMapping.Key.ToString() + " " + val.ToString () + " was above threshold but below opposing axis value");
+										}*/
 								}
 						}
 
 						enumerator = mAxisPositiveMappings.GetEnumerator();
 						while (enumerator.MoveNext()) {
-								//foreach (KeyValuePair <KeyCode, List <T>> keyMapping in mKeyUpMappings) {
 								keyMapping = enumerator.Current;
-								InputControl d = InputManager.ActiveDevice.GetControl(keyMapping.Key);
-								InputControl c = Device.GetControl(keyMapping.Key);								
-								float cVal = c.Value;
-								float dVal = d.Value;			
-								if ((cVal > 0f && Mathf.Abs (cVal) > gMinAxisChange) || (dVal > 0f && Mathf.Abs (dVal) > gMinAxisChange)) {
-										for (int i = 0; i < keyMapping.Value.Count; i++) {
-												Send(keyMapping.Value[i], TimeStamp);
-										}
+								float val = Mathf.Max(Device.GetControl(keyMapping.Key).Value, InputManager.ActiveDevice.GetControl(keyMapping.Key).Value);
+								if (val > 0f && val > gMinAxisChange) {
+										float opposingVal = GetOpposingAxisValue(keyMapping.Key, GetFailsafeAxis (keyMapping.Key));
+										if (val > Mathf.Abs (opposingVal)) {
+												//Debug.Log("Val " + keyMapping.Key.ToString() + " " + val.ToString () + " was above threshold and greater than opposing axis value " + opposingVal.ToString());
+												for (int i = 0; i < keyMapping.Value.Count; i++) {
+														Send(keyMapping.Value[i], TimeStamp);
+												}
+										} /*else {
+												Debug.Log("Val " + keyMapping.Key.ToString() + " " + val.ToString () + " was above threshold but below opposing axis value");
+										}*/
 								}
 						}
 				}
@@ -842,7 +868,6 @@ namespace Frontiers
 
 				public InputControlType GetActionAxis(ActionSetting.InputAxis axis)
 				{
-						Debug.Log("Getting axis " + axis.ToString());
 						InputControlType control = InputControlType.None;
 						for (int i = 0; i < CurrentActionSettings.Count; i++) {
 								ActionSetting a = CurrentActionSettings[i];
@@ -880,17 +905,77 @@ namespace Frontiers
 						return mouseBinding != ActionSetting.MouseAction.None;
 				}
 
-				public bool GetKeyBinding(InputControlType controllerAction, ref KeyCode keyBinding)
+				public bool GetKeyBinding(InputControlType controllerAction, bool isAxis, bool axisX, ref KeyCode keyBinding)
 				{
 						keyBinding = KeyCode.None;
 						for (int i = 0; i < CurrentActionSettings.Count; i++) {
 								ActionSetting a = CurrentActionSettings[i];
-								if (a.Action > 0 && a.Controller == controllerAction) {
+								if (isAxis && a.AxisSetting) {
+										if (axisX) {
+												if (a.Controller == controllerAction) {
+														keyBinding = a.KeyX;
+														break;
+												}
+										} else {
+												if (a.Controller == controllerAction) {
+														keyBinding = a.KeyY;
+														break;
+												}
+										}
+								} else if (a.Action > 0 && a.Controller == controllerAction) {
 										keyBinding = a.Key;
 										break;
 								}
 						}
 						return keyBinding != KeyCode.None;
+				}
+
+				public bool GetKeyBinding(InputControlType controllerAction, ref KeyCode keyBinding)
+				{
+						return GetKeyBinding(controllerAction, false, false, ref keyBinding);
+				}
+
+				public string GetFailsafeAxis (InputControlType axis) {
+						return string.Empty;
+				}
+
+				public float GetOpposingAxisValue (InputControlType input, string failSafe) {
+						float opposingValue = 0f;
+						switch (input) {
+								case InputControlType.LeftStickX:
+										opposingValue = Mathf.Max(Mathf.Abs(Device.GetControl(InputControlType.LeftStickY).Value), Mathf.Abs(InputManager.ActiveDevice.GetControl(InputControlType.LeftStickY).Value));
+										break;
+
+								case InputControlType.LeftStickY:
+										opposingValue = Mathf.Max(Mathf.Abs(Device.GetControl(InputControlType.LeftStickX).Value), Mathf.Abs(InputManager.ActiveDevice.GetControl(InputControlType.LeftStickX).Value));
+										break;
+
+								case InputControlType.RightStickX:
+										opposingValue = Mathf.Max(Mathf.Abs(Device.GetControl(InputControlType.RightStickY).Value), Mathf.Abs(InputManager.ActiveDevice.GetControl(InputControlType.RightStickY).Value));
+										break;
+
+								case InputControlType.RightStickY:
+										opposingValue = Mathf.Max(Mathf.Abs(Device.GetControl(InputControlType.RightStickX).Value), Mathf.Abs(InputManager.ActiveDevice.GetControl(InputControlType.RightStickX).Value));
+										break;
+
+								case InputControlType.DPadUp:
+								case InputControlType.DPadDown:
+								case InputControlType.DPadY:
+										CheckAxis(InputControlType.DPadX, ref opposingValue, failSafe, false);
+										opposingValue = Mathf.Abs(opposingValue);
+										break;
+
+								case InputControlType.DPadLeft:
+								case InputControlType.DPadRight:
+								case InputControlType.DPadX:
+										CheckAxis(InputControlType.DPadY, ref opposingValue, failSafe, false);
+										opposingValue = Mathf.Abs(opposingValue);
+										break;
+
+								default:
+										break;
+						}
+						return opposingValue;
 				}
 
 				public bool GetKeyAxis(InputControlType axis, ref KeyCode keyX, ref KeyCode keyY)

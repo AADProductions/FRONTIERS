@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.Data;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 using ExtensionMethods;
 
 namespace Frontiers.World

@@ -6,7 +6,7 @@ using Frontiers;
 using Frontiers.World.Gameplay;
 using System;
 using Frontiers.World;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.GUI
 {

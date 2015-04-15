@@ -97,10 +97,20 @@ namespace Frontiers.GUI
 						}
 				}
 
-				protected Vector3 mLockOffset = Vector3.zero;
-				protected bool mAxisLock = false;
-				protected bool mCursorLock = false;
-				protected bool mCustomVRSettings = false;
+				public virtual float QuadZOffset {
+						get {
+								if (mQuadZOffset < 0) {
+										return VRManager.Get.DefaultRenderQuadOffset.z;
+								}
+								return mQuadZOffset;
+						}
+				}
+
+				public Vector3 mLockOffset = Vector3.zero;
+				public float mQuadZOffset = -1f;
+				public bool mAxisLock = false;
+				public bool mCursorLock = false;
+				public bool mCustomVRSettings = false;
 
 				public static void GetActiveInterfaceObjectsInTransform(Transform startTransform, Camera searchCamera, List<Widget> currentObjects, int flag)
 				{
@@ -161,7 +171,7 @@ namespace Frontiers.GUI
 								relativeDifference.x = 0f;//should we really do this...?
 								dragPanel.MoveRelative(relativeDifference, true, minBrowserPosition);
 								dragPanel.UpdateScrollbars(true, true);
-								Debug.Log("world position " + worldPosition.ToString() + " was NOT visible in clip panel " + clipPanel.name + ", moving " + relativeDifference.y.ToString());
+								//Debug.Log("world position " + worldPosition.ToString() + " was NOT visible in clip panel " + clipPanel.name + ", moving " + relativeDifference.y.ToString());
 						}
 						return browserBounds;
 				}
@@ -232,7 +242,7 @@ namespace Frontiers.GUI
 				{
 						gameObject.SetLayerRecursively(Globals.LayerNumGUIRaycast);
 						#if UNITY_EDITOR
-						if ((VRManager.VRMode | VRManager.VRTestingModeEnabled)) {
+						if ((VRManager.VRMode | VRManager.VRTestingMode)) {
 								GUICursor.Get.SelectWidget(FirstInterfaceObject);
 						}
 						#else

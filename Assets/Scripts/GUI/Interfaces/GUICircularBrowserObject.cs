@@ -20,6 +20,7 @@ namespace Frontiers.GUI
 				public UIButtonScale ButtonScale;
 				public UIButtonMessage Message;
 				public Vector2 Dimensions = new Vector2(100.0f, 100.0f);
+				public Vector3 TargetPosition;
 				public int Index = -1;
 				public GameObject Doppleganger;
 				public MasterAudio.SoundType SoundType = MasterAudio.SoundType.PlayerInterface;

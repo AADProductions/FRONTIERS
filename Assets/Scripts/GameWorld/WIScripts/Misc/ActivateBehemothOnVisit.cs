@@ -4,9 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World;
 using Frontiers.Gameplay;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class ActivateBehemothOnVisit : WIScript
 		{

@@ -150,7 +150,7 @@ namespace Frontiers
 						}
 
 						//TEMP - this is where I add 'focus update' functionality
-						if (GameManager.Is(FGameState.InGame | FGameState.GamePaused) && Player.Local.HasSpawned) {
+						/*if (GameManager.Is(FGameState.InGame | FGameState.GamePaused) && Player.Local.HasSpawned) {
 								bool hitKey = false;
 								//get the input string and see if it contains a cheat code
 								if (AvailableKeyDown) {
@@ -224,7 +224,7 @@ namespace Frontiers
 										mCheatCodeSoFar = string.Empty;
 										mLastTimeHitKey = WorldClock.RealTime;
 								}
-						}
+						}*/
 				}
 
 				protected string mCheatCodeSoFar = string.Empty;

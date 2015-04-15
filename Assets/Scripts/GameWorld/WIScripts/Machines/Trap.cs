@@ -4,9 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using ExtensionMethods;
 using Frontiers.World.Gameplay;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class Trap : WIScript
 		{		//general purpose indiana jones style trap

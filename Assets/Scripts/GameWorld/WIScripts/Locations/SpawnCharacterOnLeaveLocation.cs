@@ -2,9 +2,8 @@ using UnityEngine;
 using System.Collections;
 using System;
 using Frontiers;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class SpawnCharacterOnLeaveLocation : WIScript
 		{

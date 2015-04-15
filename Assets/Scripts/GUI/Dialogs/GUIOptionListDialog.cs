@@ -5,12 +5,14 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.GUI
 {
 		public class GUIOptionListDialog : GUIEditor <WIListResult>
 		{
 				public Transform ScreenTarget;
+				public Transform ScreenEdgeOffset;
 				public Camera ScreenTargetCamera;
 				public UILabel MessageType;
 				public UILabel Message;
@@ -26,6 +28,20 @@ namespace Frontiers.GUI
 				public float TargetLightIntensity = 1.0f;
 				protected float StartPosition = 25.0f;
 				protected float RowSize = 55.0f;
+				#if UNITY_EDITOR
+				public Vector2 gScreenPoint;
+				public Vector3 gWorldPoint;
+				public Bounds gScreenBounds;
+				public Bounds gColliderBounds;
+				public Vector3 gScreenOffset;
+				#else
+		protected Vector2 gScreenPoint;
+		protected Vector3 gWorldPoint;
+		protected static Bounds gScreenBounds;
+		protected static Bounds gColliderBounds;
+		protected static Vector3 gScreenOffset;
+		#endif
+				protected Transform tr;
 
 				public override Widget FirstInterfaceObject {
 						get {
@@ -41,11 +57,14 @@ namespace Frontiers.GUI
 				{			
 						base.WakeUp();
 
+						tr = transform;
 						InventoryLight.intensity = 0f;
 						HideCrosshair = true;
 						UserActions.Filter = UserActionType.FlagsAll;
 						UserActions.Behavior = PassThroughBehavior.InterceptByFocus;
 						UserActions.FilterExceptions = UserActionType.NoAction;
+
+						ScreenEdgeOffset = OptionButtonsPanel.gameObject.CreateChild("ScreenEdgeOffset").transform;
 				}
 
 				public void RefreshDoppleganger()
@@ -70,13 +89,19 @@ namespace Frontiers.GUI
 						numButtonsCreated += CreateButtons(EditObject.Options, ref buttonPosition, "OnClickOptionButton");
 						numButtonsCreated += CreateButtons(EditObject.SecondaryOptions, ref buttonPosition, "OnClickSecondaryOptionButton");
 
-						transform.localPosition = mEditObject.PositionTarget;
+						tr.localPosition = mEditObject.PositionTarget;
 
 						if (numButtonsCreated == 0) {
 								CreateButton(new WIListOption("(No options available)", "Cancel"), -1, buttonPosition, "OnClickOptionButton");
 						}
 
 						RefreshDoppleganger();
+				}
+
+				public void OnDrawGizmos()
+				{
+						Gizmos.color = Colors.Alpha(Color.red, 0.5f);
+						Gizmos.DrawCube(gColliderBounds.center, gColliderBounds.size);
 				}
 
 				protected int CreateButtons(List <WIListOption> options, ref float buttonPosition, string functionName)
@@ -103,7 +128,7 @@ namespace Frontiers.GUI
 				{
 						if (option.IsValid) {
 								UIButton randomPrototype = ButtonPrototypes[UnityEngine.Random.Range(0, ButtonPrototypes.Count)];
-								UIButton newButton = NGUITools.AddChild(OptionButtonsPanel.gameObject, randomPrototype.gameObject).GetComponent <UIButton>();
+								UIButton newButton = NGUITools.AddChild(ScreenEdgeOffset.gameObject, randomPrototype.gameObject).GetComponent <UIButton>();
 
 								UISprite newButtonBackground = newButton.transform.FindChild("Background").GetComponent <UISprite>();
 								UISprite newButtonSelection = newButton.transform.FindChild("Selection").GetComponent <UISprite>();
@@ -276,14 +301,34 @@ namespace Frontiers.GUI
 						InventoryLight.intensity = Mathf.Lerp(InventoryLight.intensity, TargetLightIntensity, 0.25f);
 
 						if (ScreenTarget != null) {
-								Camera targetCamera = NGUICamera;
+								//figure out how big the list is
+								gColliderBounds = NGUIMath.CalculateAbsoluteWidgetBounds(tr);
+								//now get the actual final on-screen point from our ngui cameara so we can check against edges
+								gColliderBounds.center = ScreenTarget.position;
 								if (ScreenTargetCamera != null) {
-										targetCamera = ScreenTargetCamera;
+										gScreenBounds.SetMinMax (ScreenTargetCamera.WorldToScreenPoint(gColliderBounds.min), ScreenTargetCamera.WorldToScreenPoint(gColliderBounds.max));
+										//gScreenBounds.center = ScreenTargetCamera.WorldToScreenPoint(ScreenTarget.position);
+								} else {
+										gScreenBounds.SetMinMax (NGUICamera.WorldToScreenPoint(gColliderBounds.min), NGUICamera.WorldToScreenPoint(gColliderBounds.max));
+										//gScreenBounds.center = NGUICamera.WorldToScreenPoint(ScreenTarget.position);
 								}
-								Vector2 screenPoint = targetCamera.WorldToScreenPoint(ScreenTarget.position);
-								Vector3 worldpoint = NGUICamera.ScreenToWorldPoint(screenPoint);
-								worldpoint.z = transform.position.z;
-								transform.position = worldpoint;
+								//keep the center from going off screen
+								gScreenOffset = Vector3.zero;
+								if (gScreenBounds.max.x > Screen.width) {
+										gScreenOffset.x = Screen.width - gScreenBounds.max.x;
+								}
+								if (gScreenBounds.max.y > Screen.height) {
+										gScreenOffset.y = Screen.height - gScreenBounds.max.y;
+								}
+								if (gScreenBounds.min.x < 0) {
+										gScreenOffset.x = 0f - gScreenBounds.min.x;
+								}
+								if (gScreenBounds.min.y < 0) {
+										gScreenOffset.y = 0f - gScreenBounds.min.y;
+								}
+								gWorldPoint = NGUICamera.ScreenToWorldPoint(gScreenBounds.center + gScreenOffset);
+								gWorldPoint.z = tr.position.z;
+								tr.position = gWorldPoint;
 						}
 				}
 		}

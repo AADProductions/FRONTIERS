@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World;
 using Frontiers;
+using Frontiers.World.WIScripts;
 
 [CustomEditor(typeof(CoatOfArms))]
 public class CoatOfArmsEditor : Editor

@@ -47,6 +47,20 @@ namespace Frontiers.GUI
 						}
 				}
 
+				public override void OnHover(bool isOver)
+				{
+						base.OnHover(isOver);
+						if (isOver && HasSession) {
+								if (NumItems > 0) {
+										if (Stack.TopItem.IsWorldItem) {
+												Session.InfoDisplay.PostInfo(gameObject, Examine.GetExamineInfo(Stack.TopItem.worlditem));
+										} else {
+												Session.InfoDisplay.PostInfo(gameObject, Examine.GetExamineInfo(Stack.TopItem.GetStackItem(WIMode.Stacked)));
+										}
+								}
+						}
+				}
+
 				public override void OnClickSquare()
 				{
 						if (HasStack && mStack.TopItem.IsQuestItem) {
@@ -132,6 +146,7 @@ namespace Frontiers.GUI
 								stackNumberLabelText = numItems.ToString();
 						}
 						StackNumberLabel.text = stackNumberLabelText;
+						StackNumberLabel.transform.localScale = Vector3.one * 18f;
 				}
 
 				public void SendGoodsToSession(int numGoodsToSend)

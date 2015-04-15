@@ -6,7 +6,7 @@ using Frontiers;
 using Frontiers.World.Gameplay;
 using Frontiers.Data;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class DailyRoutine : WIScript
 		{

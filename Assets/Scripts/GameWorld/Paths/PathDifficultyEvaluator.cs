@@ -5,6 +5,7 @@ using Frontiers;
 using Frontiers.World;
 using System.Linq;
 using System;
+using Frontiers.World.WIScripts;
 
 public class PathDifficultyEvaluator : MonoBehaviour
 {

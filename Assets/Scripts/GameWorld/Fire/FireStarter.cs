@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Frontiers;
 using System;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 	public class FireStarter : WIScript
 	{	

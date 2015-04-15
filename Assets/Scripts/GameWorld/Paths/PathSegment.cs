@@ -7,6 +7,7 @@ using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
+using Frontiers.World.WIScripts;
 
 
 [Serializable]

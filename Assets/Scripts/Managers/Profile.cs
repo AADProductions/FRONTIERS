@@ -44,8 +44,8 @@ namespace Frontiers
 
 				public bool HasSelectedProfile = false;
 				public bool HasSelectedGame = false;
-				public bool HasControllerPluggedIn = false;//TODO move to interface manager
-
+				public bool HasControllerPluggedIn = false;
+				//TODO move to interface manager
 				public override void WakeUp()
 				{
 						base.WakeUp();
@@ -94,7 +94,6 @@ namespace Frontiers
 
 				public List <string> GameNames(string worldName, bool toLower)
 				{
-						Debug.Log("Getting game names for " + worldName);
 						List <string> gameNames = null;
 						if (HasCurrentProfile) {
 								string gameName = string.Empty;
@@ -383,23 +382,38 @@ namespace Frontiers
 						mGameLoaded = true;
 				}
 
-				public bool ValidateExistingGameName(string worldName, string gameName) {
-						//TODO get rid of this
-						return true;
+				public bool ValidateExistingGameName(string worldName, string gameName)
+				{
+						//gameName = GameData.IO.CleanGameName(gameName);
+						if (!string.IsNullOrEmpty(gameName)) {
+								gameName = gameName.ToLower();
+								List <string> gameNames = GameNames(worldName, true);
+								foreach (string existingGameName in gameNames) {
+										if (existingGameName.Equals(gameName)) {
+												return true;
+										}
+								}
+						}
+						return false;
 				}
 
 				public bool ValidateNewGameName(string worldName, string gameName, out string cleanAlternative)
 				{	
 						gameName = GameData.IO.CleanGameName(gameName);
-						List <string> gameNames = GameNames(worldName, true);
-						int increment = 1;
-						string incrementedGameName = gameName;
-						while (gameNames.Contains(incrementedGameName.ToLower())) {
-								incrementedGameName = gameName + increment.ToString();
-								increment++;
+						cleanAlternative = gameName;
+						if (!string.IsNullOrEmpty(gameName)) {
+								List <string> gameNames = GameNames(worldName, true);
+								int increment = 1;
+								string incrementedGameName = gameName;
+								while (gameNames.Contains(incrementedGameName.ToLower())) {
+										incrementedGameName = gameName + increment.ToString();
+										increment++;
+								}
+								cleanAlternative = incrementedGameName;
+								return cleanAlternative.Length > 2;
+						} else {
+								return false;
 						}
-						cleanAlternative = incrementedGameName;
-						return true;
 				}
 
 				public bool ValidateExistingProfileName(string profileName, out string error)

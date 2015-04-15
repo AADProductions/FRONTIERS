@@ -8,7 +8,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 using Hydrogen.Threading.Jobs;
 
 #if UNITY_EDITOR

@@ -9,7 +9,7 @@ using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class BookAvatar : WIScript
 		{

@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using Frontiers.Data;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class MissionStatesController : WIScript
 		{		//this is used to change an object's state based on mission state

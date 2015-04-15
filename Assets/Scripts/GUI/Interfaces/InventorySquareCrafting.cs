@@ -110,16 +110,37 @@ namespace Frontiers.GUI
 				{
 						//right clicking a blueprint square opens a menu
 						//where you can select the blueprint used to create the item
-						if (EnabledForBlueprint && RequirementCanBeCrafted) {
+						//or you can bring the item in from your inventory
+						if (EnabledForBlueprint) {
+								bool canCraft = RequirementCanBeCrafted;
+								bool canPlace = Player.Local.Inventory.FindFirstByKeyword(DopplegangerProps.PrefabName, out gCheckItem, out gCheckStack);
 								SpawnOptionsList optionsList = gameObject.GetOrAdd <SpawnOptionsList>();
 								optionsList.MessageType = string.Empty;//"Take " + mSkillUseTarget.DisplayName;
-								optionsList.Message = "This item can be crafted";
+								if (canCraft && canPlace) {
+										optionsList.Message = "Craft or Add Item";
+								} else if (canCraft) {
+										optionsList.Message = "Craft Item";
+								} else {
+										optionsList.Message = "Add Item";
+								}
 								optionsList.FunctionName = "OnSelectBlueprint";
 								optionsList.RequireManualEnable = false;
 								optionsList.OverrideBaseAvailabilty = true;
 								optionsList.FunctionTarget = gameObject;
-								optionsList.AddOption(new WIListOption("Craft " + DopplegangerProps.DisplayName, "Craft"));
-								optionsList.AddOption(new WIListOption("Cancel"));
+								if (gCraftOption == null) {
+										gCraftOption = new WIListOption("Craft", "Craft");
+										gPlaceOption = new WIListOption("Place", "Place");
+										gCancelOption = new WIListOption("Cancel", "Cancel");
+								}
+								gCraftOption.OptionText = "Craft " + DopplegangerProps.DisplayName;
+								gCraftOption.Disabled = !canCraft;
+								gPlaceOption.OptionText = "Place " + DopplegangerProps.DisplayName;
+								gPlaceOption.Divider = !canPlace;
+
+								optionsList.AddOption(gCraftOption);
+								optionsList.AddOption(gPlaceOption);
+								optionsList.AddOption(gCancelOption);
+
 								optionsList.ShowDoppleganger = false;
 								GUIOptionListDialog dialog = null;
 								if (optionsList.TryToSpawn(true, out dialog, NGUICamera)) {
@@ -184,5 +205,10 @@ namespace Frontiers.GUI
 				protected bool mEnabledForBlueprint = false;
 				protected int mNumCraftableItems = 0;
 				protected bool mRequirementsMet = false;
+				protected IWIBase gCheckItem;
+				protected WIStack gCheckStack;
+				protected static WIListOption gCraftOption;
+				protected static WIListOption gPlaceOption;
+				protected static WIListOption gCancelOption;
 		}
 }

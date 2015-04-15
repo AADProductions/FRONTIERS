@@ -7,7 +7,7 @@ using Pathfinding;
 using Pathfinding.RVO;
 using ExtensionMethods;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class Character : WIScript, IInventory
 		{
@@ -88,7 +88,11 @@ namespace Frontiers.World.BaseWIScripts
 								if (!string.IsNullOrEmpty(State.Name.Prefix)) {
 										name = State.Name.Prefix + " ";
 								}
-								return name + State.Name.FirstName + " " + State.Name.LastName;
+								if (!string.IsNullOrEmpty(State.Name.FirstName)) {
+										return name + State.Name.FirstName + " " + State.Name.LastName;
+								} else {
+										return State.Name.GenericIdentifier;
+								}
 						}
 				}
 

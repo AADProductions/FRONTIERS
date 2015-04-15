@@ -17,6 +17,44 @@ namespace Frontiers.GUI
 				public float TargetSpeechAlpha = 0f;
 				public double FadeSpeed = 4f;
 				public double FadeOutSpeed = 8f;
+				public Vector3 DefaultOffset;
+				public Vector3 VROffset;
+
+				public override bool CustomVRSettings {
+						get {
+								return true;
+						}
+						set {
+								base.CustomVRSettings = value;
+						}
+				}
+
+				public override bool AxisLock {
+						get {
+								return true;
+						}
+						set {
+								base.AxisLock = value;
+						}
+				}
+
+				public override bool CursorLock {
+						get {
+								return false;
+						}
+						set {
+								base.CursorLock = value;
+						}
+				}
+
+				public override Vector3 LockOffset {
+						get {
+								return Vector3.zero;
+						}
+						set {
+								base.LockOffset = value;
+						}
+				}
 
 				public override void WakeUp()
 				{
@@ -160,6 +198,11 @@ namespace Frontiers.GUI
 
 				protected GUIConversationBubble CreateBubble()
 				{
+						if (VRManager.VRMode) {
+								BubbleParent.transform.localPosition = VROffset;
+						} else {
+								BubbleParent.transform.localPosition = DefaultOffset;
+						}
 						//create the new conversation bubble
 						GameObject newBubbleGameObject = NGUITools.AddChild(BubbleParent, ConversationBubblePrototype);
 						GUIConversationBubble bubble = newBubbleGameObject.GetComponent <GUIConversationBubble>();

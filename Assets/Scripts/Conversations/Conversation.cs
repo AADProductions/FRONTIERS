@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.Data;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.Story.Conversations
 {

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Frontiers.GUI;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 	public class ReceptaclePivot : MonoBehaviour
 	{

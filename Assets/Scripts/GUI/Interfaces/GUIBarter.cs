@@ -7,8 +7,16 @@ using Frontiers.World.Gameplay;
 
 namespace Frontiers.GUI
 {
-		public class GUIBarter : GUIEditor <BarterSession>
+		public class GUIBarter : GUIEditor <BarterSession>, IInfoDisplay
 		{
+				public UISprite BarterIconTop;
+				public UISprite BarterIconBorderTop;
+				public UISprite BarterIconBot;
+				public UISprite BarterIconBorderBot;
+				public UIPanel ModifierPanelTop;
+				public UIPanel ModifierPanelBot;
+				public GUIStatusKeeper StatusKeeperTop;
+				public GUIStatusKeeper StatusKeeperBot;
 				public Vector3 ApprovedTradeCharacterToPlayerArrow;
 				public Vector3 ApprovedTradePlayerToCharacterArrow;
 				public Vector3 UnapprovedTradeCharacterToPlayerArrow;
@@ -57,6 +65,17 @@ namespace Frontiers.GUI
 				public GUIBank CharacterInventoryBank;
 				public GUIBank PlayerGoodsBank;
 				public GUIBank CharacterGoodsBank;
+
+				public UIPanel InfoPanel;
+				public bool DisplayInfo = false;
+				public GameObject CurrentInfoTarget;
+				public float CurrentInfoTargetXOffset;
+				public float CurrentInfoTargetYOffset;
+				public string CurrentInfo;
+				public UILabel InfoLabel;
+				public UISprite InfoSpriteShadow;
+				public UISprite InfoSpriteBackground;
+				public Transform InfoOffset;
 
 				public override void PushEditObjectToNGUIObject()
 				{
@@ -124,14 +143,38 @@ namespace Frontiers.GUI
 						mRefreshBarterGUIAction = Refresh;
 
 						#if UNITY_EDITOR
-						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
-						#else
+						if (VRManager.VRMode | VRManager.VRTestingMode) {
+								#else
 						if (VRManager.VRMode) {
-						#endif
+								#endif
 								Vector3 localPosition = transform.localPosition;
 								localPosition.y = -75f;
 								transform.localPosition = localPosition;
 						}
+						StatusKeeper s = null;
+						Player.Local.Status.GetStatusKeeper("Personal Reputation", out s);
+						StatusKeeperTop.Initialize(s, null, 0, 1f);
+						StatusKeeperBot.Initialize(s, null, 0, 1f);
+						StatusKeeperTop.DisplayInfo = this;
+						StatusKeeperBot.DisplayInfo = this;
+
+						Skill skill = null;
+						Skills.Get.SkillByName("Barter", out skill);
+						BarterIconBorderTop.color = skill.SkillBorderColor;
+						BarterIconBorderBot.color = skill.SkillBorderColor;
+						BarterIconTop.color = skill.SkillIconColor;
+						BarterIconBot.color = skill.SkillIconColor;
+
+						BarterIconBorderBot.transform.parent.GetComponent <GUIButtonHover> ().OnButtonHover += OnHoverOnSkill;
+						BarterIconBorderTop.transform.parent.GetComponent <GUIButtonHover> ().OnButtonHover += OnHoverOnSkill;
+				}
+
+				protected void OnHoverOnSkill ( ) {
+
+						Skill skill = null;
+						Skills.Get.SkillByName("Barter", out skill);
+						string description = "Your barter skill is " + Skill.MasteryAdjective(skill.State.NormalizedMasteryLevel);
+						PostInfo(UICamera.hoveredObject, description);
 				}
 
 				protected override void OnFinish()
@@ -191,8 +234,8 @@ namespace Frontiers.GUI
 				{
 						//don't bother with the stack containers and squares
 						//they take care of themselves
-						BaseValueCharacterGoodsLabel.text = mEditObject.TotalValueCharacterGoods.ToString();
-						BaseValuePlayerGoodsLabel.text = mEditObject.TotalValuePlayerGoods.ToString();
+						BaseValueCharacterGoodsLabel.text = mEditObject.BarteringCharacter.FullName + "'s price for their goods: " + mEditObject.TotalValueCharacterGoods.ToString();
+						BaseValuePlayerGoodsLabel.text = mEditObject.BarteringCharacter.FullName + "'s offer for your goods: " + mEditObject.TotalValuePlayerGoods.ToString();
 						//TODO enable these only when some kind of dev global is set
 						if (Skills.Get.DebugSkills) {
 								SkillPenaltyLabel.enabled = true;
@@ -211,15 +254,19 @@ namespace Frontiers.GUI
 						if (mEditObject.TotalValuePlayerGoods > 0) {
 								PlayerToPlayerArrowAlphaTarget = 1f;
 								ApprovedTradeCharacterLabelAlphaTarget = 1f;
+								ModifierPanelBot.enabled = true;
 						} else {
 								PlayerToPlayerArrowAlphaTarget = 0f;
 								ApprovedTradeCharacterLabelAlphaTarget = 0f;
+								ModifierPanelBot.enabled = false;
 						}
 
 						if (mEditObject.TotalValueCharacterGoods > 0) {
 								CharacterToCharacterArrowAlphaTarget = 1f;
+								ModifierPanelTop.enabled = true;
 						} else {
 								CharacterToCharacterArrowAlphaTarget = 0f;
+								ModifierPanelTop.enabled = false;
 						}
 
 						if (mEditObject.CharacterApprovesTrade) {
@@ -245,7 +292,7 @@ namespace Frontiers.GUI
 								PlayerToCharacterArrowBump.x = 0f;
 								PlayerToCharacterArrowTarget = UnapprovedTradePlayerToCharacterArrow;
 								ApproveTradeButtonPlayer.SendMessage("SetDisabled");
-								ApproveTradeLabelPlayer.text = "Can't Make Trade";
+								ApproveTradeLabelPlayer.text = "No Trade";
 						}
 
 						//base.Refresh ();
@@ -266,6 +313,31 @@ namespace Frontiers.GUI
 								return;
 						}
 
+						if (DisplayInfo) {
+								if (UICamera.hoveredObject == null || UICamera.hoveredObject != CurrentInfoTarget) {
+										DisplayInfo = false;
+								}
+								if (InfoSpriteShadow.alpha < 1f) {
+										InfoSpriteShadow.alpha = Mathf.Lerp(InfoSpriteShadow.alpha, 1f, 0.25f);
+										if (InfoSpriteShadow.alpha > 0.99f) {
+												InfoSpriteShadow.alpha = 1f;
+										}
+								}
+								//make sure the info doesn't overlay an icon
+								mInfoOffset.x = CurrentInfoTargetXOffset;
+								mInfoOffset.y = CurrentInfoTargetYOffset;
+								InfoOffset.localPosition = mInfoOffset;
+						} else {
+								if (InfoSpriteShadow.alpha > 0f) {
+										InfoSpriteShadow.alpha = Mathf.Lerp(InfoSpriteShadow.alpha, 0f, 0.25f);
+										if (InfoSpriteShadow.alpha < 0.01f) {
+												InfoSpriteShadow.alpha = 0f;
+										}
+								}
+						}
+						InfoLabel.alpha = InfoSpriteShadow.alpha;
+						InfoSpriteBackground.alpha = InfoSpriteShadow.alpha;
+
 						if (!HasEditObject) {
 								PlayerToCharacterArrow.alpha = 0f;
 								CharacterToPlayerArrow.alpha = 0f;
@@ -274,6 +346,8 @@ namespace Frontiers.GUI
 								ApproveTradeLabelCharacter.alpha = 0f;
 								PlayerToCharacterArrow.cachedTransform.localPosition = UnapprovedTradePlayerToCharacterArrow;
 								CharacterToPlayerArrow.cachedTransform.localPosition = UnapprovedTradeCharacterToPlayerArrow;
+								ModifierPanelBot.enabled = false;
+								ModifierPanelTop.enabled = false;
 						}
 
 						ApproveTradeLabelCharacter.alpha = Mathf.Lerp(ApproveTradeLabelCharacter.alpha, ApprovedTradeCharacterLabelAlphaTarget, 0.25f);
@@ -386,8 +460,42 @@ namespace Frontiers.GUI
 						yield break;
 				}
 
+				public void PostInfo(GameObject target, string info)
+				{
+						CurrentInfoTarget = target;
+						CurrentInfoTargetXOffset = InfoPanel.transform.InverseTransformPoint (target.transform.position).x;
+						CurrentInfoTargetYOffset = InfoPanel.transform.InverseTransformPoint (target.transform.position).y;
+						CurrentInfo = info;
+						InfoLabel.text = CurrentInfo;
+						DisplayInfo = true;
+						//update the box around the text to reflect its size
+						Transform textTrans = InfoLabel.transform;
+						Vector3 offset = textTrans.localPosition;
+						Vector3 textScale = textTrans.localScale;
+
+						// Calculate the dimensions of the printed text
+						Vector3 size = InfoLabel.relativeSize;
+
+						// Scale by the transform and adjust by the padding offset
+						size.x *= textScale.x;
+						size.y *= textScale.y;
+						size.x += 50f;
+						size.y += 50f;
+						size.x += (InfoSpriteBackground.border.x + InfoSpriteBackground.border.z + (offset.x - InfoSpriteBackground.border.x) * 2f);
+						size.y += (InfoSpriteBackground.border.y + InfoSpriteBackground.border.w + (-offset.y - InfoSpriteBackground.border.y) * 2f);
+						size.z = 1f;
+
+						InfoSpriteBackground.transform.localScale = size;
+						InfoSpriteShadow.transform.localScale = size;
+				}
+
 				protected System.Action mRefreshBarterGUIAction;
 				protected bool mWaitingForContainer = false;
 				protected bool mLastEnteredFromInterface = false;
+				protected Vector3 mInfoOffset;
+		}
+
+		public interface IInfoDisplay {
+				void PostInfo(GameObject target, string info);
 		}
 }

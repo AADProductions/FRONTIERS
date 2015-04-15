@@ -15,7 +15,6 @@ namespace Frontiers.GUI
 				public bool CurrentWorldConfirmed = false;
 				public bool CurrentGameConfirmed = false;
 				public bool DevLockOverride = false;
-
 				public UIButtonMessage OKWorldButton;
 				public UIButtonMessage OKNameButton;
 				public UIButtonMessage StartGameButton;
@@ -49,7 +48,9 @@ namespace Frontiers.GUI
 
 				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
-						if (flag < 0) { flag = GUIEditorID; }
+						if (flag < 0) {
+								flag = GUIEditorID;
+						}
 
 						Tabs.GetActiveInterfaceObjects(currentObjects, flag);
 				}
@@ -311,7 +312,8 @@ namespace Frontiers.GUI
 						RefreshWorld();
 				}
 
-				public void Update(){
+				public void Update()
+				{
 						if (Input.GetKeyDown(KeyCode.F7)) {
 								DevLockOverride = true;
 						}
@@ -319,6 +321,8 @@ namespace Frontiers.GUI
 
 				public override void PushEditObjectToNGUIObject()
 				{
+						GameNameInput.text = "Game";
+						GameNameInput.label.text = "Game";
 						Refresh();
 				}
 

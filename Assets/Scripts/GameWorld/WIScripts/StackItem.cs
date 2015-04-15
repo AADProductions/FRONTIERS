@@ -8,7 +8,7 @@ using System.Xml.Schema;
 using System.Runtime.Serialization;
 using Frontiers;
 using Frontiers.Data;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {
@@ -105,12 +105,8 @@ namespace Frontiers.World
 
 				public float BaseCurrencyValue { 
 						get { 
-								//all items must cost at least 1
-								if (Props.Local.BaseCurrencyValue > 0) {
-										return Mathf.Max(1, Props.Local.BaseCurrencyValue); 
-								} else {
-										return Mathf.Max(1, GlobalProps.BaseCurrencyValue); 
-								}
+								Props.Local.BaseCurrencyValue = CalculateLocalBaseCurrencyValue();
+								return Props.Local.BaseCurrencyValue;
 						}
 				}
 
@@ -362,6 +358,37 @@ namespace Frontiers.World
 						return this;
 				}
 
+				protected int CalculateLocalBaseCurrencyValue () {
+						int baseCurrencyValue = Mathf.CeilToInt (GlobalProps.BaseCurrencyValue);
+						if (HasStates) {
+								var enumerator = this.SaveState.Scripts.GetEnumerator();
+								while (enumerator.MoveNext()) {
+										Type scriptType = System.Type.GetType(enumerator.Current.Key);
+										if (scriptType == null) {
+												Debug.Log("Couldn't get script type for name " + enumerator.Current.Key);
+										} else {
+												Debug.Log("Got a script type for name: " + enumerator.Current.Key + " in " + Props.Name);
+												var calculateLocalPriceMethod = scriptType.GetMethod("CalculateLocalPrice", System.Reflection.BindingFlags.Static);
+												if (calculateLocalPriceMethod != null) {
+														object stateData = null;
+														string scriptStateName = scriptType.FullName + "State";//<-this shit is going to get people in trouble, haha
+														string scriptStateString = string.Empty;
+														stateData = WIScript.XmlDeserializeFromString(enumerator.Current.Value, scriptStateName);
+														baseCurrencyValue = (int)calculateLocalPriceMethod.Invoke(null, new object [] {
+																baseCurrencyValue,
+																this
+														});
+												}
+										}
+								}
+						}
+						if (Props.Local.CraftedByPlayer) {
+								baseCurrencyValue = Mathf.CeilToInt (baseCurrencyValue * Globals.BaseValueCraftingBonus);
+						}
+						Debug.Log("Base currency value in stack item " + Props.Name.FileName + ": " + baseCurrencyValue.ToString());
+						return baseCurrencyValue;
+				}
+
 				#endregion
 
 				public void RemoveFromGame()
@@ -414,6 +441,7 @@ namespace Frontiers.World
 										if (IsStackContainer) {	//but we ARE supposed to have one
 												//that must mean we've never actually created it yet
 												//so create it now
+												Debug.Log("Stack container was null in stack item " + Props.Name + ", creating one now");
 												mStackContainer = Stacks.Create.StackContainer(this, this.Group);
 										}
 								}

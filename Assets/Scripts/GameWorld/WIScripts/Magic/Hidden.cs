@@ -5,7 +5,7 @@ using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		//hides all renderers in a world item
 		//this is the effect of a magical spell

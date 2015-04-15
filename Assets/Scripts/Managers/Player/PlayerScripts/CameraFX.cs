@@ -62,8 +62,8 @@ namespace Frontiers
 						}
 				}
 
-				public OVRManager OvrManager;
-				public OVRCameraRig OvrCameraRig;
+				//public OVRManager OvrManager;
+				//public OVRCameraRig OvrCameraRig;
 				public Camera VRTestInterfaceCamera;
 				public ScreenEffectsSet Default;
 				public ScreenEffectsSet OvrRight;
@@ -156,40 +156,50 @@ namespace Frontiers
 
 						//enable / disable cameras based on oculus mode
 						if (VRManager.VRMode) {
+
+								OvrLeft.TimeOfDay.enabled = true;
+								Default.TimeOfDay.enabled = false;
+
 								if (GUI.GUILoading.IsLoading) {
 										//only show the loading stuff
 										if (OvrLeft.cam.cullingMask != Globals.LayerScenery) {
 												VRManager.Get.RefreshSettings(false);
+												//this is a weird complication, sky is scenery and so is the interface
+												//so we end up seeing the sky while loading
+												GameWorld.Get.Sky.gameObject.SetLayerRecursively(Globals.LayerNumHidden);
 										}
+										//fog shows up over black so disable this too
+										OvrLeft.Fog.enabled = false;
+										OvrRight.Fog.enabled = false;
+										OvrLeft.SunShaftsEffect.enabled = false;
+										OvrLeft.SunShaftsEffect.enabled = false;
 										OvrLeft.cam.cullingMask = Globals.LayerScenery;
 										OvrRight.cam.cullingMask = Globals.LayerScenery;
 										OvrLeft.cam.clearFlags = CameraClearFlags.SolidColor;
 										OvrRight.cam.clearFlags = CameraClearFlags.SolidColor;
 										OvrLeft.cam.backgroundColor = Color.black;
 										OvrRight.cam.backgroundColor = Color.black;
-										OvrLeft.TimeOfDay.enabled = true;
-										Default.TimeOfDay.enabled = false;
 								} else {
 										if (OvrLeft.cam.cullingMask != OvrLeft.CullingMask) {
 												VRManager.Get.RefreshSettings(false);
+												GameWorld.Get.Sky.gameObject.SetLayerRecursively(Globals.LayerNumScenery);
 										}
 										OvrLeft.cam.cullingMask = OvrLeft.CullingMask;
 										OvrRight.cam.cullingMask = OvrRight.CullingMask;
-										OvrLeft.TimeOfDay.enabled = false;
-										Default.TimeOfDay.enabled = true;
 										OvrLeft.CopyFrom(Default);
 										OvrRight.CopyFrom(Default);
 								}
 						} else {
 								if (GUI.GUILoading.IsLoading && GUI.GUILoading.CurrentMode == Frontiers.GUI.GUILoading.Mode.FullScreenBlack) {
 										Default.cam.cullingMask = 0;
-								} else {
+								} else if (Default.cam.cullingMask != Default.CullingMask) {
 										Default.cam.cullingMask = Default.CullingMask;
+										GameWorld.Get.Sky.gameObject.SetLayerRecursively(Globals.LayerNumScenery);
 								}
 						}
 
 						#if UNITY_EDITOR
-						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+						if (VRManager.VRMode | VRManager.VRTestingMode) {
 								Default.cam.fieldOfView = 90f;
 								VRTestInterfaceCamera.fieldOfView = 90f;
 								if (GUI.GUILoading.IsLoading) {
@@ -215,25 +225,25 @@ namespace Frontiers
 				{
 						#if UNITY_EDITOR
 						VRTestInterfaceCamera.enabled = false;
-						if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+						if (VRManager.VRMode | VRManager.VRTestingMode) {
 								#else
 						if (VRManager.VRMode) {
 								#endif
 								#if UNITY_EDITOR
 								//keep the default cam enabled
 								//we'll render the ovr interface here
-								if (VRManager.VRTestingModeEnabled) {
+								if (VRManager.VRTestingMode) {
 										Default.cam.enabled = true;
 										VRTestInterfaceCamera.enabled = true;
-										OvrCameraRig.gameObject.SetLayerRecursively(Globals.LayerNumGUIHUD);
+										VRManager.Get.OvrCameraRig.gameObject.SetLayerRecursively(Globals.LayerNumGUIHUD);
 								} else {
 										Default.cam.enabled = false;
 										OvrLeft.cam.enabled = true;
 										OvrRight.cam.enabled = true;
 										OvrLeft.cam.cullingMask = Default.cam.cullingMask;
 										OvrRight.cam.cullingMask = Default.cam.cullingMask;
-										OvrManager.enabled = true;
-										OvrCameraRig.enabled = true;
+										//OvrManager.enabled = true;
+										//OvrCameraRig.enabled = true;
 								}
 								#else
 								Default.cam.enabled = false;
@@ -241,12 +251,12 @@ namespace Frontiers
 								OvrRight.cam.enabled = true;
 								OvrLeft.cam.cullingMask = Default.cam.cullingMask;
 								OvrRight.cam.cullingMask = Default.cam.cullingMask;
-								OvrManager.enabled = true;
-								OvrCameraRig.enabled = true;
+								//OvrManager.enabled = true;
+								//OvrCameraRig.enabled = true;
 								#endif
 						} else {
-								OvrManager.enabled = false;
-								OvrCameraRig.enabled = false;
+								//OvrManager.enabled = false;
+								//OvrCameraRig.enabled = false;
 								OvrLeft.cam.enabled = false;
 								OvrRight.cam.enabled = false;
 								Default.cam.enabled = true;

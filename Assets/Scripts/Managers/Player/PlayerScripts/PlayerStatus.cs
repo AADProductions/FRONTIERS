@@ -10,7 +10,7 @@ using Frontiers.World;
 using Frontiers.Data;
 using Frontiers.GUI;
 using Frontiers.World.Gameplay;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers
 {

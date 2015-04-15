@@ -7,7 +7,7 @@ using Frontiers.World;
 using Steamworks;
 using Frontiers.Data;
 using Frontiers.World.Gameplay;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 using Frontiers.GUI;
 
 namespace Frontiers

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.GUI
 {
@@ -85,23 +86,44 @@ namespace Frontiers.GUI
 						return;
 				}
 
+				public override void OnHover(bool isOver)
+				{
+						base.OnHover(isOver);
+						if (isOver && HasSession) {
+								if (Goods.NumItems > 0) {
+										if (Goods.TopItem.IsWorldItem) {
+												Session.InfoDisplay.PostInfo(gameObject, Examine.GetExamineInfo(Goods.TopItem.worlditem));
+										} else {
+												Session.InfoDisplay.PostInfo(gameObject, Examine.GetExamineInfo(Goods.TopItem.GetStackItem(WIMode.Stacked)));
+										}
+								}
+						}
+				}
+
 				public override void SetInventoryStackNumber()
 				{
 						string stackNumberLabelText = string.Empty;
 						if (IsEnabled && HasGoods) {
 								int numItems = Goods.NumItems;
 								if (numItems > 0) {
-										if (Goods.TopItemStack.HasTopItem && Goods.TopItem.IsQuestItem) {
-												stackNumberLabelText = "(Mission Item)";
-										} else if (IsStolen) {
-												//you bastard you stole it!
-												stackNumberLabelText = "(Stolen)";
-										} else {
-												stackNumberLabelText = numItems.ToString();
+										if (Goods.TopItemStack.HasTopItem) {
+												if (Goods.TopItem.IsQuestItem) {
+														stackNumberLabelText = "(Mission Item)";
+												} else if (IsStolen) {
+														//you bastard you stole it!
+														stackNumberLabelText = "(Stolen)";
+												} else {
+														if (numItems < 2) {
+																stackNumberLabelText = Goods.TopItem.BaseCurrencyValue.ToString();
+														} else {
+																stackNumberLabelText = Goods.TopItem.BaseCurrencyValue.ToString() + "(x" + numItems.ToString() + ")";
+														}
+												}
 										}
 								}
 						}
 						StackNumberLabel.text = stackNumberLabelText;
+						StackNumberLabel.transform.localScale = Vector3.one * 18f;
 				}
 
 				public override void SetProperties()

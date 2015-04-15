@@ -1,10 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System;
 using Frontiers.GUI;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class PromptUsableQuestItem : WIScript {
 
 		public PromptUsableQuestItemState State = new PromptUsableQuestItemState ( );

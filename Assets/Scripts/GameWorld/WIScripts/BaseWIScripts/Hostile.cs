@@ -6,7 +6,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using Frontiers;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class Hostile : WIScript, IHostile
 		{		//used by both characters and creatures

@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class DespawnOnPlayerLeave : WIScript
 		{

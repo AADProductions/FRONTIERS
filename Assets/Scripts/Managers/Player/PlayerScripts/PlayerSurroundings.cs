@@ -7,7 +7,7 @@ using Frontiers;
 using Frontiers.World;
 using System.Text;
 using Frontiers.GUI;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers
 {

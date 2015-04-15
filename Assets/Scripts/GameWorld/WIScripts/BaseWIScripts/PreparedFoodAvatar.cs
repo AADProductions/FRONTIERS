@@ -7,7 +7,7 @@ using Frontiers.World.Gameplay;
 using System.Xml.Serialization;
 using System;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class PreparedFoodAvatar : WIScript
 		{

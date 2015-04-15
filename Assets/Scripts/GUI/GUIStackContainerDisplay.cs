@@ -32,6 +32,18 @@ namespace Frontiers.GUI
 						}
 				}
 
+				public override Camera NGUICamera {
+						get {
+								return mNGUICamera;
+						}
+						set {
+								mNGUICamera = value;
+								for (int i = 0; i < InventorySquares.Count; i++) {
+										InventorySquares[i].NGUICamera = value;
+								}
+						}
+				}
+
 				public UIPanel MainPanel;
 				public InventorySquare EnablerDisplay;
 				public GameObject EnablerDisplayPrefab;
@@ -147,8 +159,8 @@ namespace Frontiers.GUI
 										}
 								}
 						}
-			//if we don't have an enabler and the new one isn't null
-			else if (enabler != null) {
+						//if we don't have an enabler and the new one isn't null
+						else if (enabler != null) {
 								mEnabler = enabler;
 								mEnabler.RefreshAction += mRefreshRequest;
 						}
@@ -193,6 +205,7 @@ namespace Frontiers.GUI
 										//always let RefreshSquares set its stack
 								}
 								EnablerDisplay.transform.localPosition = EnablerOffset;
+								EnablerDisplay.TargetPosition = EnablerOffset;
 						}
 
 						switch (DisplayMode) {
@@ -213,6 +226,12 @@ namespace Frontiers.GUI
 
 								default:
 										break;
+						}
+
+						if (mOneSquareMode) {
+								//set it to false so we can set it up
+								mOneSquareMode = false;
+								SetOneSquareMode(mOneSquareMode, mActiveSquare);
 						}
 				}
 
@@ -236,7 +255,8 @@ namespace Frontiers.GUI
 										}
 										square.NGUICamera = NGUICamera;
 										squareDimensions = square.Dimensions;
-										square.transform.localPosition	= new Vector3(x * (square.Dimensions.x), currentRow * (-square.Dimensions.y), 0f);
+										square.TargetPosition = new Vector3(x * (square.Dimensions.x), currentRow * (-square.Dimensions.y), 0f);
+										square.transform.localPosition = square.TargetPosition;
 										square.Enabler = Enabler;
 										square.Index = currentSquare;
 										InventorySquares.Add(square);
@@ -251,6 +271,12 @@ namespace Frontiers.GUI
 								#if UNITY_EDITOR
 								EnablerDisplay.name = DisplayName + " enabler ";
 								#endif
+						}
+
+						if (mOneSquareMode) {
+								//set it to false so we can set it up
+								mOneSquareMode = false;
+								SetOneSquareMode(mOneSquareMode, mActiveSquare);
 						}
 				}
 
@@ -270,7 +296,8 @@ namespace Frontiers.GUI
 										InventorySquare square = instantiatedSquare.GetComponent <InventorySquare>();
 										square.NGUICamera = NGUICamera;
 										squareDimensions = square.Dimensions;
-										square.transform.localPosition	= new Vector3(x * (square.Dimensions.x), currentRow * (-square.Dimensions.y), 0f);
+										square.TargetPosition = new Vector3(x * (square.Dimensions.x), currentRow * (-square.Dimensions.y), 0f);
+										square.transform.localPosition = square.TargetPosition;
 										square.Enabler = Enabler;
 										square.Index = currentSquare;
 										InventorySquares.Add(square);
@@ -285,6 +312,12 @@ namespace Frontiers.GUI
 								#if UNITY_EDITOR
 								EnablerDisplay.name = DisplayName + " enabler ";
 								#endif
+						}
+
+						if (mOneSquareMode) {
+								//set it to false so we can set it up
+								mOneSquareMode = false;
+								SetOneSquareMode(mOneSquareMode, mActiveSquare);
 						}
 				}
 
@@ -302,7 +335,8 @@ namespace Frontiers.GUI
 								InventorySquare square = instantiatedSquare.GetComponent <InventorySquare>();
 								square.NGUICamera = NGUICamera;
 								squareDimensions = square.Dimensions;
-								square.transform.localPosition	= new Vector3(((numberOfSquares - 1) - x) * (-square.Dimensions.x), 0f, 0f);
+								square.TargetPosition = new Vector3(((numberOfSquares - 1) - x) * (-square.Dimensions.x), 0f, 0f);
+								square.transform.localPosition = square.TargetPosition;
 								square.Enabler = Enabler;
 								square.Index = currentSquare;
 								InventorySquares.Add(square);
@@ -316,6 +350,70 @@ namespace Frontiers.GUI
 								#if UNITY_EDITOR
 								EnablerDisplay.name = DisplayName + " enabler ";
 								#endif
+						}
+
+						if (mOneSquareMode) {
+								//set it to false so we can set it up
+								mOneSquareMode = false;
+								SetOneSquareMode(mOneSquareMode, mActiveSquare);
+						}
+				}
+
+				public void SetOneSquareMode(bool oneSquareMode, int activeSquare)
+				{
+						if (!HasCreatedSquares)
+								return;
+
+						if (activeSquare < 0 || activeSquare > InventorySquares.Count) {
+								activeSquare = 0;
+						}
+
+						if (mOneSquareMode == oneSquareMode && mActiveSquare == activeSquare) {
+								//nothing to do!
+								return;
+						}
+
+						mActiveSquare = activeSquare;
+						mOneSquareMode = oneSquareMode;
+
+						if (oneSquareMode) {
+								for (int i = 0; i < InventorySquares.Count; i++) {
+										if (i != mActiveSquare) {
+												//set layer instead of de-activating to prevent 'flash' when switching
+												InventorySquares[i].ButtonScale.enabled = true;
+												InventorySquares[i].gameObject.SetLayerRecursively(Globals.LayerNumHidden);
+												InventorySquares[i].enabled = false;
+										} else {
+												//the button scale will just mess things up
+												InventorySquares[i].ButtonScale.enabled = false;
+												InventorySquares[i].gameObject.SetLayerRecursively(Globals.LayerNumGUIRaycast);
+												InventorySquares[i].transform.localScale = Vector3.one * 2f;
+												InventorySquares[i].transform.localPosition = new Vector3(-600f, 50f, 0f);
+												InventorySquares[i].enabled = true;
+										}
+								}
+								if (UseVisualEnabler) {
+										EnablerDisplay.gameObject.SetLayerRecursively(Globals.LayerNumGUIRaycast);
+										EnablerDisplay.transform.localPosition = new Vector3(-640f, -60f, 0f);
+								}
+								if (FrameSprite != null) {
+										FrameSprite.enabled = false;
+								}
+						} else {
+								for (int i = 0; i < InventorySquares.Count; i++) {
+										InventorySquares[i].ButtonScale.enabled = true;
+										InventorySquares[i].enabled = true;
+										InventorySquares[i].gameObject.SetLayerRecursively(Globals.LayerNumGUIRaycast);
+										InventorySquares[i].transform.localScale = Vector3.one;
+										InventorySquares[i].transform.localPosition = InventorySquares[i].TargetPosition;
+								}
+								if (UseVisualEnabler) {
+										EnablerDisplay.gameObject.SetLayerRecursively(Globals.LayerNumGUIRaycast);
+										EnablerDisplay.transform.localPosition = EnablerDisplay.TargetPosition;
+								}
+								if (FrameSprite != null) {
+										FrameSprite.enabled = true;
+								}
 						}
 				}
 
@@ -377,6 +475,8 @@ namespace Frontiers.GUI
 						base.OnDestroy();
 				}
 
+				protected int mActiveSquare = 0;
+				protected bool mOneSquareMode = false;
 				protected WIStackEnabler mEnabler = null;
 				public float mFramePadding = 17.5f;
 				protected bool mCollidersEnabled = false;

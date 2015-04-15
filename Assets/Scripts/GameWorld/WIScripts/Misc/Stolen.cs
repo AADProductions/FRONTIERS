@@ -1,7 +1,8 @@
 using UnityEngine;
 using System.Collections;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class Stolen : WIScript {
 				//currently treated as a tag
 				//but this will get more complex later

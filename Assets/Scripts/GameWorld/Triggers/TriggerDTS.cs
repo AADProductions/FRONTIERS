@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Frontiers.World.Gameplay;
 using Frontiers.Data;
 using Frontiers.Story;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {

@@ -128,7 +128,7 @@ namespace Frontiers
 						mCameraNearClipDistanceOnStartup = GameManager.Get.GameCamera.nearClipPlane;
 
 						#if UNITY_EDITOR
-						VRMode = (VRManager.VRMode | VRManager.VRTestingModeEnabled && Profile.Get.CurrentPreferences.Video.VRStaticCameraCutscenes);
+						VRMode = (VRManager.VRMode | VRManager.VRTestingMode && Profile.Get.CurrentPreferences.Video.VRStaticCameraCutscenes);
 						#else
 						VRMode = (VRManager.VRMode && Profile.Get.CurrentPreferences.Video.VRStaticCameraCutscenes);
 						#endif

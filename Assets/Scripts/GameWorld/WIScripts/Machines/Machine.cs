@@ -3,7 +3,7 @@ using System.Collections;
 using System;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class Machine : WIScript
 		{

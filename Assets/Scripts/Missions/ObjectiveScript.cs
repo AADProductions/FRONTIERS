@@ -6,7 +6,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using Frontiers;
 using Frontiers.World;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 using Frontiers.Data;
 using Frontiers.Story;
 

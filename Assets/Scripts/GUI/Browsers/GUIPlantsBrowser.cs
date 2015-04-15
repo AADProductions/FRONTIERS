@@ -21,6 +21,7 @@ namespace Frontiers.GUI
 
 				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
+						if (flag < 0) { flag = GUILogInterface.Get.GUIEditorID; }
 						//this will get everything on all tabs
 						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects, flag);
 						base.GetActiveInterfaceObjects(currentObjects, flag);
@@ -134,7 +135,7 @@ namespace Frontiers.GUI
 						GUIGenericBrowserObject plantBrowserObject = newBrowserObject.gameObject.GetComponent <GUIGenericBrowserObject>();
 
 						#if UNITY_EDITOR
-						if (VRManager.VRDeviceAvailable | VRManager.VRTestingModeEnabled) {
+						if (VRManager.VRDeviceAvailable | VRManager.VRTestingMode) {
 						#else
 						if (VRManager.VRDeviceAvailable) {
 						#endif

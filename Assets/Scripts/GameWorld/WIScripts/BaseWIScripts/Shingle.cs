@@ -6,7 +6,7 @@ using Frontiers.Data;
 using Frontiers.World;
 using System;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class Shingle : WIScript
 		{

@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
+using Frontiers.World.WIScripts;
 
 [CustomEditor(typeof(PotionAvatar))]
 public class PotionAvatarEditor : Editor

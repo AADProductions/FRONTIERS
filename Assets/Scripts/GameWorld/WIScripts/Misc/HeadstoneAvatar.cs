@@ -4,7 +4,7 @@ using Frontiers;
 using System;
 using System.Text;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 	public class HeadstoneAvatar : WIScript
 	{

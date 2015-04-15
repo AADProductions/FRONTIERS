@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class SetMissionStatusOnMode : WIScript
 		{		//used for missions where you have to pick something up

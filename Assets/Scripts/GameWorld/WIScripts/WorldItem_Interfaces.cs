@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {
@@ -236,13 +236,16 @@ namespace Frontiers.World
 				public bool Destroyed { get { return mDestroyed; } }
 
 				public float BaseCurrencyValue { 
-						get { 
-								//all items must cost at least 1
+						get {
+								Props.Local.BaseCurrencyValue = CalculateLocalBaseCurrencyValue();
+								Debug.Log("Base currency value of " + Props.Local.BaseCurrencyValue.ToString() + " in " + name);
+								return Props.Local.BaseCurrencyValue;
+								/*//all items must cost at least 1
 								if (Props.Local.BaseCurrencyValue > 0) {
 										return Mathf.Max(1, Props.Local.BaseCurrencyValue); 
 								} else {
 										return Mathf.Max(1, Props.Global.BaseCurrencyValue); 
-								}
+								}*/
 						}
 				}
 
@@ -368,6 +371,22 @@ namespace Frontiers.World
 				//water
 				public Action OnEnterBodyOfWater;
 				public Action OnExitBodyOfWater;
+
+				protected int CalculateLocalBaseCurrencyValue () {
+						//global base currency value is determined on startup
+						int baseCurrencyValue = mGlobalBaseCurrencyValue;
+						var enumerator = mScripts.GetEnumerator();
+						while (enumerator.MoveNext()) {
+								baseCurrencyValue = enumerator.Current.Value.LocalPrice(baseCurrencyValue);
+						}
+						if (Props.Local.CraftedByPlayer) {
+								baseCurrencyValue = Mathf.CeilToInt (baseCurrencyValue * Globals.BaseValueCraftingBonus);
+						}
+						return baseCurrencyValue;
+				}
+
+				[SerializeField]
+				protected int mGlobalBaseCurrencyValue;
 				#endregion
 
 				#region IVisible implementation
@@ -376,9 +395,9 @@ namespace Frontiers.World
 				public ItemOfInterestType IOIType { get { return ItemOfInterestType.WorldItem; } }
 
 				public bool IsVisible { get { return true; } }
-//should this be linked to visibile state?
+				//should this be linked to visibile state?
 				public float AwarenessDistanceMultiplier { get { return 1.0f; } }
-//should this be added to WIScript?
+				//should this be added to WIScript?
 				public float FieldOfViewMultiplier { get { return 1.0f; } }
 
 				public Vector3 Position {

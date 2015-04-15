@@ -246,7 +246,7 @@ namespace Frontiers.GUI
 												Get.QuoteText.alpha = Get.BackgroundSprite.alpha;
 
 												#if UNITY_EDITOR
-												if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+												if (VRManager.VRMode | VRManager.VRTestingMode) {
 												#else
 												if (VRManager.VRMode) {
 												#endif
@@ -311,7 +311,7 @@ namespace Frontiers.GUI
 												Get.QuoteText.alpha = Get.BackgroundSprite.alpha;
 
 												#if UNITY_EDITOR
-												if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+												if (VRManager.VRMode | VRManager.VRTestingMode) {
 												#else
 												if (VRManager.VRMode) {
 												#endif
@@ -359,6 +359,7 @@ namespace Frontiers.GUI
 						DetailsInfo = string.Empty;
 						LoadingCompass.animation["NGUIScaleDown"].normalizedTime = 0f;
 						LoadingCompass.animation.Play("NGUIScaleDown");
+						IsLoading = false;
 						yield return null;
 						while (LoadingCompass.animation["NGUIScaleDown"].normalizedTime < 0.95f) {	//wait for the animation to complete
 								LoadingCompass.animation["NGUIScaleDown"].time += (float)WorldClock.RTDeltaTimeSmooth;
@@ -383,7 +384,6 @@ namespace Frontiers.GUI
 						BackgroundSprite.alpha = 0f;
 						BackgroundOverlaySprite.alpha = 0f;
 						BackgroundSprite.enabled = false;
-						IsLoading = false;
 						HideCharacterQuote();
 						Get.LoadingCamera.enabled = false;
 						//disable all panels

@@ -3,9 +3,8 @@ using System;
 using System.Xml.Serialization;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class PotionAvatar : WIScript
 		{

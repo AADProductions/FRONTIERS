@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class BodyOfWater : WIScript, IBodyOfWater
 		{

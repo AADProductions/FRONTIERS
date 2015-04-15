@@ -31,7 +31,6 @@ namespace Frontiers.GUI
 		public UICheckbox VideoVSync;
 		public UISlider VideoFieldOfView;
 		public UISlider VideoLighting;
-		public UICheckbox VideoHDR;
 		public UICheckbox VideoReduceTextureVariation;
 		public UILabel VideoReduceTextureVariationLabel;
 		public UISlider SoundGeneral;
@@ -142,7 +141,7 @@ namespace Frontiers.GUI
 			ImmersionCameraSmoothingSlider.functionName = "OnImmersionSettingChange";
 			ImmersionCameraSmoothingSlider.eventReceiver = gameObject;
 
-			OculusModeCheckbox.functionName = "OnClickOculusMode";
+			OculusModeCheckbox.functionName = "OnClickVideoCheckbox";
 			OculusModeCheckbox.eventReceiver = gameObject;
 			VRDisableScreenEffectsCheckbox.functionName = "OnClickVideoCheckbox";
 			VRDisableScreenEffectsCheckbox.eventReceiver = gameObject;
@@ -217,14 +216,11 @@ namespace Frontiers.GUI
 				return;
 			}
 
-			Debug.Log("On click oculus mode: " + OculusModeCheckbox.isChecked.ToString());
-
 			mRefreshingOculusMode = true;
 
 			TempVideoPrefs.CopyFrom(Profile.Get.CurrentPreferences.Video);
 			TempVideoPrefs.OculusMode = OculusModeCheckbox.isChecked;
 			mMadeVideoChanges = true;
-			VideoApply();
 
 			mRefreshingOculusMode = false;
 		}
@@ -364,7 +360,6 @@ namespace Frontiers.GUI
 			TempVideoPrefs.PostFXAA = VideoPostFXAA.isChecked;
 			TempVideoPrefs.Fullscreen = VideoFullScreen.isChecked;
 			TempVideoPrefs.PostFXGlobalFog = VideoPostFXGlobalFog.isChecked;
-			//TempVideoPrefs.HDR = VideoHDR.isChecked;
 			TempVideoPrefs.ObjectShadows = VideoShadowObjects.isChecked;
 			TempVideoPrefs.TerrainShadows = VideoShadowTerrain.isChecked;
 			TempVideoPrefs.StructureShadows = VideoShadowStructure.isChecked;
@@ -375,6 +370,7 @@ namespace Frontiers.GUI
 			TempVideoPrefs.VRStaticCameraCutscenes = VRStaticCutsceneCamerasCheckbox.isChecked;
 			TempVideoPrefs.VRStaticCameraFastTravel = VRStaticFastTravelCamerasCheckbox.isChecked;
 			TempVideoPrefs.VRDisableExtraGrassLayers = VRDisableExtraGrassLayersCheckbox.isChecked;
+			TempVideoPrefs.OculusMode = OculusModeCheckbox.isChecked;
 
 			VideoRefresh(TempVideoPrefs);
 		}
@@ -473,9 +469,7 @@ namespace Frontiers.GUI
 			mRefreshingVideo = true;
 
 			VideoFullScreen.isChecked = (videoPrefs.Fullscreen);
-			VideoHDR.isChecked = true;//videoPrefs.HDR;
 			VideoReduceTextureVariation.isChecked = videoPrefs.StructureReduceTextureVariation;
-			VideoHDR.gameObject.SetActive(false);
 			VideoResolutionLabel.text = (videoPrefs.ResolutionWidth.ToString() + " x " + videoPrefs.ResolutionHeight.ToString());
 			VideoFOVLabel.text = videoPrefs.FieldOfView.ToString();
 			VideoLighting.sliderValue = ((float)videoPrefs.AdjustBrightness) / 100;
@@ -599,13 +593,12 @@ namespace Frontiers.GUI
 			VRDisableExtraGrassLayersCheckbox.isChecked = videoPrefs.VRDisableExtraGrassLayers;
 
 			OculusModeCheckbox.isChecked = videoPrefs.OculusMode;
-			Debug.Log("Just set oculus mode 'is checked' to " + OculusModeCheckbox.isChecked.ToString());
 
 			if (VRManager.VRDeviceAvailable) {
 				OculusModeLabelEnabled.enabled = true;
 				OculusModeLabelDisabled.enabled = false;
 				#if UNITY_EDITOR
-				if (VRManager.VRMode | VRManager.VRTestingModeEnabled) {
+				if (VRManager.VRMode | VRManager.VRTestingMode) {
 				#else
 				if (VRManager.VRMode) {
 				#endif

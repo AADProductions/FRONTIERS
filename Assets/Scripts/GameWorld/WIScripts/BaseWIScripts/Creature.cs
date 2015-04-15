@@ -9,7 +9,7 @@ using ExtensionMethods;
 using Frontiers;
 using Frontiers.Data;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 	public class Creature : WIScript
 	{

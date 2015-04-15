@@ -3,7 +3,7 @@ using System.Collections;
 using System;
 using Frontiers.Story;
 using System.Collections.Generic;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {

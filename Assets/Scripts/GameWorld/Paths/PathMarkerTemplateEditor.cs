@@ -3,6 +3,7 @@ using System.Collections;
 using Frontiers.World;
 using Frontiers;
 using System.Collections.Generic;
+using Frontiers.World.WIScripts;
 
 public class PathMarkerTemplateEditor : MonoBehaviour
 {

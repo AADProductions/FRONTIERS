@@ -24,7 +24,7 @@ namespace Frontiers.GUI
 
 				public override void GetActiveInterfaceObjects(List<Widget> currentObjects, int flag)
 				{
-						if (flag < 0) { flag = GUIEditorID; }
+						if (flag < 0) { flag = GUILogInterface.Get.GUIEditorID; }
 						//this will get everything on all tabs
 						GUILogInterface.Get.GetActiveInterfaceObjects(currentObjects, flag);
 						base.GetActiveInterfaceObjects(currentObjects, flag);

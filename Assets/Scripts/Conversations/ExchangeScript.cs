@@ -7,6 +7,7 @@ using Frontiers.World;
 using Frontiers.World.Gameplay;
 using Frontiers.Data;
 using System.Xml.Serialization;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.Story.Conversations
 {

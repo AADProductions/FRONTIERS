@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 using Frontiers.Story;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {

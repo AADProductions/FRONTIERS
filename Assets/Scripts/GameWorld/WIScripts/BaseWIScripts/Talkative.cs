@@ -8,7 +8,7 @@ using Frontiers.World.Gameplay;
 using Frontiers.GUI;
 using Frontiers.Story.Conversations;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class Talkative : WIScript
 		{

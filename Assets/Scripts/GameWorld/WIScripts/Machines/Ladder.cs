@@ -6,7 +6,7 @@ using Frontiers.GUI;
 using System.Collections.Generic;
 using System;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class Ladder : WIScript
 		{

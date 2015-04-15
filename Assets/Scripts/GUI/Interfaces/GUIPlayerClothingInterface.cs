@@ -5,6 +5,7 @@ using Frontiers.World.Gameplay;
 using Frontiers.World;
 using System.Collections.Generic;
 using System;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.GUI
 {
@@ -15,6 +16,7 @@ namespace Frontiers.GUI
 				public GameObject LowerBodySquaresParent;
 				public List <InventorySquareWearable> Squares = new List <InventorySquareWearable>();
 				public List <BoxCollider> StatButtons = new List<BoxCollider>();
+				public List <UISprite> ShadowSprites = new List<UISprite>();
 				public GameObject MaleBodyDoppleganger;
 				public GameObject FemaleBodyDoppleganger;
 				public UISprite HeatProtection;
@@ -383,6 +385,10 @@ namespace Frontiers.GUI
 										Colors.Get.GenericNeutralValue,
 										Colors.Get.GenericHighValue,
 										Player.Local.Wearables.NormalizedStrengthChange);
+
+								for (int i = 0; i < ShadowSprites.Count; i++) {
+										ShadowSprites[i].enabled = !VRManager.VRMode;
+								}
 						}
 				}
 

@@ -6,7 +6,7 @@ using Frontiers.World;
 using Frontiers.World.Gameplay;
 using Frontiers.GUI;
 using Frontiers.Data;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers
 {
@@ -537,6 +537,11 @@ namespace Frontiers
 						//try to use it again
 						if (FindMostRelevantStack(ref mLastRelevantStack, item, true, true, ref error)) {
 								addResult = Stacks.Push.Item(mLastRelevantStack, item, true, StackPushMode.Manual, ref error);
+								#if UNITY_EDITOR
+								if (!addResult) {
+										//Debug.Log ("Found most relevant stack but couldn't push item");
+								}
+								#endif
 						}
 
 						if (!addResult) {
@@ -580,15 +585,29 @@ namespace Frontiers
 				//this is where we find the best stack to put something when it's added to the inventory
 				public bool FindMostRelevantStack(ref WIStack mostRelevantStack, IWIBase item, bool enablerStacksOk, bool compatibleOK, ref WIStackError error)
 				{
+						if (WorldClock.RealTime > mTimeSinceLastRelevantStackSearch + mRelevantStackSearchInterval) {
+								#if UNITY_EDITOR
+								//Debug.Log ("Most relevant stack was out of date, clearing");
+								#endif
+								mostRelevantStack = null;
+						}
 						//first see if the stack we have will fit it
 						if (mostRelevantStack != null && mostRelevantStack.Mode == WIStackMode.Generic) {
 								if (mostRelevantStack.Group == WIGroups.Get.Player) {
 										if (!mostRelevantStack.IsFull && Stacks.Can.Stack(mostRelevantStack, item)) {
+												#if UNITY_EDITOR
+												//Debug.Log ("Most relevant was NOT out of date, returning relevant stack");
+												#endif
 												return true;
 										}
 								}
 						}
 
+						#if UNITY_EDITOR
+						//Debug.Log ("Most relevant stack was null, searching from scratch");
+						#endif
+
+						mTimeSinceLastRelevantStackSearch = WorldClock.RealTime;
 						mostRelevantStack = null;
 						bool checkedQuickslots = false;
 						bool foundFirstEmpty = false;
@@ -745,10 +764,23 @@ namespace Frontiers
 				public bool CanItemFit(IWIBase item)
 				{
 						WIStackError error = WIStackError.None;
+						#if UNITY_EDITOR
+						bool oneSpaceItem = item.HasAtLeastOne(NoSpaceNeededItems);
+						bool relevantStack = FindMostRelevantStack(ref mLastRelevantStack, item, true, true, ref error);
+						if (oneSpaceItem | relevantStack) {
+								return true;
+						} else {
+								Debug.Log ("Item couldn't fit - one space item? " + oneSpaceItem.ToString() + " - relevant stack? " + relevantStack.ToString());
+								return false;
+						}
+						#else
 						return item.HasAtLeastOne(NoSpaceNeededItems) || FindMostRelevantStack(ref mLastRelevantStack, item, true, true, ref error);
+						#endif
 				}
 
 				protected WIStack mLastRelevantStack;
+				protected double mTimeSinceLastRelevantStackSearch = 0;
+				protected double mRelevantStackSearchInterval = 0.5;
 
 				public bool PushSelectedStack()
 				{
@@ -811,13 +843,27 @@ namespace Frontiers
 						return result;
 				}
 
-				public bool FindFirstByKeyword(string keyword, out IWIBase firstFoundItem)
+				public bool FindFirstByKeyword(string keyword, out IWIBase firstFoundItem, out WIStack stack)
 				{
-						//TODO re-implement
+						bool result = false;
 						mRunningSearch = true;
 						firstFoundItem = null;
+						stack = null;
+						if (QuickslotEnabler.HasEnablerContainer) {
+								result = Stacks.Find.FirstItemByPrefabName(QuickslotEnabler.EnablerContainer, keyword, true, out firstFoundItem, out stack);
+						}
+						if (!result) {
+								for (int i = 0; i < InventoryEnablers.Count; i++) {
+										if (InventoryEnablers[i].HasEnablerContainer) {
+												result = Stacks.Find.FirstItemByPrefabName(QuickslotEnabler.EnablerContainer, keyword, true, out firstFoundItem, out stack);
+												if (result) {
+														break;
+												}
+										}
+								}
+						}
 						mRunningSearch = false;
-						return false;
+						return result;
 				}
 
 				public bool FindProjectileForWeapon(Weapon weapon, out IWIBase projectile, out WIStack projectileStack)
@@ -865,12 +911,14 @@ namespace Frontiers
 				public bool HasItem(string itemName)
 				{
 						IWIBase foundObject = null;
-						return FindFirstByKeyword(itemName, out foundObject);
+						WIStack stack = null;
+						return FindFirstByKeyword(itemName, out foundObject, out stack);
 				}
 
 				public bool HasItem(string itemName, out IWIBase foundObject)
 				{
-						return FindFirstByKeyword(itemName, out foundObject);
+						WIStack stack = null;
+						return FindFirstByKeyword(itemName, out foundObject, out stack);
 				}
 
 				#endregion

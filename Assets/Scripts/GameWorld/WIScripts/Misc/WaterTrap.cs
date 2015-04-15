@@ -4,7 +4,7 @@ using Frontiers.World.Gameplay;
 using System;
 using System.Collections.Generic;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class WaterTrap : WIScript, ITrap
 		{

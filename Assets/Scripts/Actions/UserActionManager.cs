@@ -212,8 +212,8 @@ namespace Frontiers
 						aSetting = ActionSetting.Button;
 						aSetting.Action = (int)UserActionType.CameraSetForward;
 						aSetting.Controller = InputControlType.Back;
-						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence("Camera Forward (VR)");
-						aSetting.Key = KeyCode.LeftCommand;
+						aSetting.ActionDescription = Data.GameData.AddSpacesToSentence("Camera Forward(VR)");
+						aSetting.Key = KeyCode.LeftAlt;
 						aSetting.AvailableControllerButtons = DefaultAvailableActions;
 						aSetting.AvailableKeys = DefaultAvailableKeys;
 						aSetting.AvailableMouseButtons = DefaultAvailableMouseButtons;

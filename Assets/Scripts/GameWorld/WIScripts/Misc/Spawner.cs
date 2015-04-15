@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Xml.Serialization;
 using Frontiers.Data;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 		public class Spawner : WIScript
 		{

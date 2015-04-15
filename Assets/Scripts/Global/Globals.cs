@@ -245,6 +245,8 @@ public static class Globals
 		public static float EdibleBurnTimeMultiplier = 4f;
 		public static float BarBasePricePerRoundOfDrinks = 20f;
 		public static float BarBasePricePerDrink = 1f;
+		public static int BasePriceFoodstuff = 10;
+		public static float BaseValueCraftingBonus = 1.25f;
 
 		public static float DamageBodyPartEyeMultiplier = 10f;
 		public static float DamageBodyPartHeadMultiplier = 1f;
@@ -677,15 +679,8 @@ public static class Globals
 		public static string TagStateChild = "StateChild";
 		public static string TagNonInteractive = "NonInteractive";
 		public static string TagIgnoreTab = "IgnoreTab";
-		public static float ControllerDeadZoneSizeLStickLower = 0.0f;
-		public static float ControllerDeadZoneSizeLStickUpper = 1.0f;
-		public static float ControllerSensitivityLStick = 1.0f;
-		public static float ControllerDeadZoneSizeRStickLower = 0.0f;
-		public static float ControllerDeadZoneSizeRStickUpper = 1.0f;
-		public static float ControllerSensitivityRStick = 1.0f;
-		public static float ControllerDeadZoneSizeDPadLower = 0.0f;
-		public static float ControllerDeadZoneSizeDPadUpper = 1.0f;
-		public static float ControllerSensitivityDPad = 1.0f;
+		public static string TagIgnoreStackedDoppleganger = "IgnoreStackedDoppleganger";
+
 		public static float BodyPartDamageForceMultiplier = 2500f;
 		public static string ControllerDefaultActionSpriteSuffix = "XBox";
 		public const int LayerPlayer = 1 << 8;

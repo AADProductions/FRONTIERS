@@ -6,7 +6,7 @@ using Frontiers.GUI;
 using System.Collections.Generic;
 using Frontiers.World.Gameplay;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 	public class LibraryCatalogue : WIScript
 	{

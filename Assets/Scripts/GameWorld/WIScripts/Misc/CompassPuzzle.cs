@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class CompassPuzzle : WIScript
 		{

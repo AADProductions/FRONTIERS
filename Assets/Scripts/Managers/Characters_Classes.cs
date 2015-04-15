@@ -2,7 +2,7 @@
 using System.Collections;
 using System;
 using System.Collections.Generic;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {
@@ -216,7 +216,7 @@ namespace Frontiers.World
 				}
 
 				public CharacterTemplateType TemplateType = CharacterTemplateType.Generic;
-				public Frontiers.World.BaseWIScripts.CharacterState StateTemplate = new Frontiers.World.BaseWIScripts.CharacterState();
+				public Frontiers.World.WIScripts.CharacterState StateTemplate = new Frontiers.World.WIScripts.CharacterState();
 				public TalkativeState TalkativeTemplate	= new TalkativeState();
 				public MotileState MotileTemplate = new MotileState();
 				public HostileState HostileTemplate = new HostileState();

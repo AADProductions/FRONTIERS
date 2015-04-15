@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class CraftingItem : WIScript
 		{

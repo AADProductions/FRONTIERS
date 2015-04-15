@@ -1,9 +1,8 @@
 using UnityEngine;
 using System.Collections;
 using Frontiers.World.Gameplay;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class Terrified : WIScript, ISkillEffect
 		{

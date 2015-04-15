@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Frontiers.Data;
 using Frontiers.World;
 using System;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers
 {
@@ -596,9 +597,9 @@ namespace Frontiers
 										//Debug.Log("Not inside structure, returning first outside structure group");
 										//make sure we don't return the structure group of the structure we're visiting
 										for (int i = 0; i < Frontiers.Player.Local.Surroundings.VisitingLocations.Count; i++) {
-												Frontiers.World.BaseWIScripts.Location location = Frontiers.Player.Local.Surroundings.VisitingLocations[i];
+												Frontiers.World.WIScripts.Location location = Frontiers.Player.Local.Surroundings.VisitingLocations[i];
 												currentGroup = location.LocationGroup;
-												if (!location.worlditem.Is<Frontiers.World.BaseWIScripts.Structure>()) {
+												if (!location.worlditem.Is<Frontiers.World.WIScripts.Structure>()) {
 														//Debug.Log("Location group is NOT shingle, calling this good");
 														break;
 												} else {

@@ -8,7 +8,7 @@ using Frontiers.World;
 using Frontiers.Data;
 using Hydrogen.Threading.Jobs;
 using ExtensionMethods;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers
 {

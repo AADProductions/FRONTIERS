@@ -4,7 +4,7 @@ using System;
 using Frontiers.GUI;
 using System.Collections.Generic;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class FlowerPot : WIScript
 		{

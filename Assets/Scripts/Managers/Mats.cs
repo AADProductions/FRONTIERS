@@ -14,16 +14,21 @@ namespace Frontiers
 				public SetupAdvancedFoliageShader AFS;
 				public Cubemap FoliageShaderDiffuseMap;
 				public Cubemap FoliageShaderSpecMap;
-				public static float DefaultLabelFontSize { 
+				public UIFont DefaultLabelFont;
+
+				public float DefaultFontSize {
 						get {
-								if (Get != null) {
-										return Get.DefaultLabelFont.preferredSize;
-								}
+								return DefaultLabelFont.defaultSize;//sizeRelativeToPrimaryFont * PrimaryFontSize;
+						}
+				}
+
+				public float PrimaryFontSize {
+						get {
+								//move to globals
 								return 30f;
 						}
 				}
-				//set on startup
-				public UIFont DefaultLabelFont;
+
 				public List <Texture2D> TerrainGrassTextures = new List<Texture2D>();
 				public List <Texture2D> TerrainGroundTextures = new List<Texture2D>();
 				public List <Texture2D> GenericTerrainNormals = new List<Texture2D>();
@@ -135,14 +140,14 @@ namespace Frontiers
 						AFS.afsSetupCameraLayerCulling();
 
 						//set the preferred size of each font based on the default size & default font
-						PrintingPress40Font.preferredSize = 30f;//TODO move to globals
-						Arimo14Font.preferredSize = 25f;
-						Arimo18Font.preferredSize = 25f;
-						Arimo20Font.preferredSize = 25f;
-						SloppyHandwriting48Font.preferredSize = 18f;
-						DyslexiaFont.preferredSize = DyslexiaFont.size;
-						BlackChancery32Font.preferredSize = 30f;
-						CleanHandwriting42Font.preferredSize = 18f;
+						PrintingPress40Font.sizeRelativeToPrimaryFont = 1f;
+						Arimo14Font.sizeRelativeToPrimaryFont = (float)Arimo14Font.size / PrimaryFontSize;
+						Arimo18Font.sizeRelativeToPrimaryFont = (float)Arimo14Font.size / PrimaryFontSize;
+						Arimo20Font.sizeRelativeToPrimaryFont = (float)Arimo14Font.size / PrimaryFontSize;
+						SloppyHandwriting48Font.sizeRelativeToPrimaryFont = (float)Arimo14Font.size / PrimaryFontSize;
+						DyslexiaFont.sizeRelativeToPrimaryFont = 1f;
+						BlackChancery32Font.sizeRelativeToPrimaryFont = (float)Arimo14Font.size / PrimaryFontSize;
+						CleanHandwriting42Font.sizeRelativeToPrimaryFont = (float)Arimo14Font.size / PrimaryFontSize;
 
 						mInitialized = true;
 				}
@@ -153,9 +158,7 @@ namespace Frontiers
 
 						UILabel[] labels = GameObject.FindObjectsOfType <UILabel>();
 						for (int i = 0; i < labels.Length; i++) {
-								if (labels[i].useDefaultLabelFont) {
-										labels[i].font = DefaultLabelFont;
-								}
+								labels[i].RefreshDefaultFontAndColor();
 						}
 				}
 
@@ -165,6 +168,7 @@ namespace Frontiers
 						switch (fontName) {
 								case "PrintingPress40":
 								default:
+										Debug.Log("Default, printing press 40");
 										return PrintingPress40Font;
 
 								case "Arimo18":
@@ -178,11 +182,17 @@ namespace Frontiers
 
 								case "SloppyHandwriting48":
 										return SloppyHandwriting48Font;
+
+								case "OpenDyslexic40":
+										return OpenDyslexic40Font;
 						}
 				}
 
 				public UIFont NextFont(UIFont currentFont)
 				{
+						if (Profile.Get.CurrentPreferences.Accessibility.UseDyslexicFont) {
+								return FontByName("OpenDyslexic40");
+						}
 						//TODO put these in an array
 						//ugh this is terrible
 						switch (currentFont.name) {
@@ -200,6 +210,9 @@ namespace Frontiers
 										return FontByName("SloppyHandwriting48");
 
 								case "SloppyHandwriting48":
+										return FontByName("OpenDyslexic40");
+
+								case "OpenDyslexic40":
 										return FontByName("PrintingPress40");
 						}
 				}
@@ -280,6 +293,7 @@ namespace Frontiers
 				public UIFont TrajanPro18Font;
 				public UIFont VerySloppyHandwriting48Font;
 				public UIFont WolgastCursive72Font;
+				public UIFont OpenDyslexic40Font;
 				public Material DefaultDiffuseMaterial;
 				public Material WaveOverlayMaterial;
 				public Material SnowOverlayMaterial;
@@ -296,6 +310,8 @@ namespace Frontiers
 				public Material FocusOutlineCutoutMaterial;
 				public Material AttentionOutlineMaterial;
 				public Material CraftingDoppleGangerMaterial;
+				public Material VRCraftingDoppleGangerMaterial;
+				public Material VRInventoryDopplegangerMaterial;
 				public Material InventoryRimMaterial;
 				public Material InventoryRimCutoutMaterial;
 				public Material WindowsMaterial;

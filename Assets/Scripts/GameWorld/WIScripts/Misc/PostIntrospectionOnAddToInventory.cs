@@ -3,7 +3,7 @@ using System.Collections;
 using Frontiers;
 using Frontiers.World;
 
-namespace Frontiers
+namespace Frontiers.World.WIScripts
 {
 		public class PostIntrospectionOnAddToInventory : WIScript
 		{

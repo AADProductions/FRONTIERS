@@ -49,12 +49,13 @@ namespace Frontiers.GUI
 						Visible = true;
 						OnShow.SafeInvoke();
 						#if UNITY_EDITOR
-						if (VRManager.VRMode | VRManager.VRTestingModeEnabled | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+						if (VRManager.VRMode | VRManager.VRTestingMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 						#else
 						if (VRManager.VRMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 						#endif
 								if (mScaledUp) {
-									GUICursor.Get.SelectWidget(FirstInterfaceObject);
+										Debug.Log("Showing secondary interface, was scaled up, selecting first widget");
+										GUICursor.Get.SelectWidget(FirstInterfaceObject);
 								}
 						}
 				}
@@ -67,7 +68,7 @@ namespace Frontiers.GUI
 
 						for (int i = 0; i < Panels.Count; i++) {
 								if (Panels[i] == null) {
-										Debug.Log ("WTF panel waws null");
+										Debug.Log("WTF panel waws null");
 								}
 								Panels[i].enabled = false;
 						}		
@@ -117,13 +118,15 @@ namespace Frontiers.GUI
 						}
 				}
 
-				public void OnFinishScaleUp () {
+				public void OnFinishScaleUp()
+				{
 						mScaledUp = true;
 						#if UNITY_EDITOR
-						if (VRManager.VRMode | VRManager.VRTestingModeEnabled | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
-						#else
+						if (VRManager.VRMode | VRManager.VRTestingMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
+								#else
 						if (VRManager.VRMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
-						#endif
+								#endif
+								Debug.Log("Finished scaling up, selecting widget");
 								GUICursor.Get.SelectWidget(FirstInterfaceObject);
 						}
 				}

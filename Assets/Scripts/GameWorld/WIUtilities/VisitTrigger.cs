@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Frontiers.World.BaseWIScripts;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {
@@ -59,13 +59,14 @@ namespace Frontiers.World
 
 				public void OnTriggerEnter(Collider other)
 				{
+						if (VisitableLocation == null || !VisitableLocation.Initialized)
+								return;
+
 						if (other.isTrigger)
 								return;
 
 						if (other.gameObject.layer == Globals.LayerNumPlayer) {
-								if (VisitableLocation != null) {
-										VisitableLocation.PlayerVisit(LocationVisitMethod.ByDefault);
-								}
+								VisitableLocation.PlayerVisit(LocationVisitMethod.ByDefault);
 								if (VisitableLocation.PlayerOnly) {
 										return;
 								}
@@ -81,13 +82,14 @@ namespace Frontiers.World
 
 				public void OnTriggerExit(Collider other)
 				{
+						if (VisitableLocation == null || !VisitableLocation.Initialized)
+								return;
+
 						if (other.isTrigger)
 								return;
 
 						if (other.gameObject.layer == Globals.LayerNumPlayer) {
-								if (VisitableLocation != null) {
-										VisitableLocation.PlayerLeave();
-								}
+								VisitableLocation.PlayerLeave();
 								if (VisitableLocation.PlayerOnly) {
 										return;
 								}

@@ -11,7 +11,7 @@ using Frontiers;
 using Frontiers.Story;
 using ExtensionMethods;
 
-namespace Frontiers.World.BaseWIScripts
+namespace Frontiers.World.WIScripts
 {
 	public class Location : WIScript, IComparable <Location>
 	{

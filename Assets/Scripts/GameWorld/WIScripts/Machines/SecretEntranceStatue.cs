@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Collections;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World {
+namespace Frontiers.World.WIScripts
+{
 	public class SecretEntranceStatue : WIScript {
 		public Animation CacheOpenAnimation;
 		public string CacheOpenClipName;

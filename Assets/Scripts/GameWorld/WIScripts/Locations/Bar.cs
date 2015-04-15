@@ -1,9 +1,8 @@
 using UnityEngine;
 using System;
 using System.Collections;
-using Frontiers.World.BaseWIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class Bar : WIScript
 		{

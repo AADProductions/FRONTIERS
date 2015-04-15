@@ -3,7 +3,7 @@ using System.Collections;
 using Frontiers;
 using System;
 
-namespace Frontiers.World
+namespace Frontiers.World.WIScripts
 {
 		public class ReleaseDarkrot : WIScript
 		{
