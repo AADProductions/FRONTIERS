@@ -66,7 +66,7 @@ namespace Frontiers.GUI
 										break;
 						}
 
-						StackNumberLabel.text = CurrencyAmount.ToString();
+						StackNumberLabel.text = Colors.ColorWrap ("$", Colors.Darken (StackNumberLabel.color)) + CurrencyAmount.ToString();
 
 						if (DetailedPrices) {
 								StackNumberLabel.transform.localPosition = new Vector3(0f, 0f, -120f);//new Vector3(80f, 0f, -120f);
@@ -80,7 +80,7 @@ namespace Frontiers.GUI
 										BronzeDoppleganger = WorldItems.GetDoppleganger(Currency.BronzeGenericWorldItem, gameObject.FindOrCreateChild("BronzeDopParent").transform, BronzeDoppleganger, WIMode.Stacked, 0.4f);
 								}
 								BronzeDoppleganger.transform.localPosition = new Vector3(72f, 0f, -125f);
-								MultiplierLabel.text = "+" + Currency.ConvertToBaseCurrency(CurrencyAmount, CurrencyType).ToString();
+								MultiplierLabel.text = "+ " + Colors.ColorWrap ("$", Colors.Darken (StackNumberLabel.color)) + Currency.ConvertToBaseCurrency(CurrencyAmount, CurrencyType).ToString();
 								MultiplierLabel.transform.localScale = Vector3.one * 20f;
 								MultiplierLabel.transform.localPosition = new Vector3(90f, 0f, -125f);
 								MultiplierArrow.enabled = true;

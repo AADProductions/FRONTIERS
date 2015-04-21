@@ -394,7 +394,7 @@ namespace Frontiers
 										endDuration = CameraSeat.animation[CameraAnimationFinishing].length;
 								}
 								//in vr mode we need at least 1 second to fade out
-								endDuration = Mathf.Min(1f, endDuration);
+								endDuration = Mathf.Max(1f, endDuration);
 						} else {
 								//otherwise just use the camera animation
 								if (!string.IsNullOrEmpty(CameraAnimationFinishing)) {
@@ -420,6 +420,12 @@ namespace Frontiers
 										Frontiers.GUI.CameraFade.StartAlphaFade(FadeOutColor, false, FadeOutDuration);
 								}
 								yield return null;
+						}
+
+						if (!VRMode && !string.IsNullOrEmpty(CameraAnimationFinishing)) {
+								while (CameraSeat.animation[CameraAnimationFinishing].normalizedTime < 1f) {
+										yield return null;
+								}
 						}
 
 						State = CutsceneState.Finished;

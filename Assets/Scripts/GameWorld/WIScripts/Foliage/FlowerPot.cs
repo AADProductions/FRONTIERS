@@ -69,6 +69,20 @@ namespace Frontiers.World.WIScripts
 				{
 						PlantDoppleganger = WorldItems.GetDoppleganger("Plants", "WorldPlant", DopplegangerParent, PlantDoppleganger, WIMode.World, string.Empty, "Default", State.PlantName, 1.0f, WorldClock.TimeOfDayCurrent, WorldClock.TimeOfYearCurrent);
 				}
+
+				public int CalculateLocalValue (int baseValue, IWIBase item) {
+						if (item == null)
+								return baseValue;
+
+						object flowerPotStateObject = null;
+						if (item.GetStateOf <FlowerPot>(out flowerPotStateObject)) {
+								FlowerPotState f = (FlowerPotState)flowerPotStateObject;
+								if (f != null) {
+										baseValue += Plants.Get.BaseCurrencyValueOfPlant(f.PlantName);
+								}
+						}
+						return baseValue;
+				}
 		}
 
 		[Serializable]

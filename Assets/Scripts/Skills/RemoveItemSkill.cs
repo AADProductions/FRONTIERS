@@ -43,11 +43,12 @@ namespace Frontiers.World.Gameplay
 								return;
 						}
 						//use the skill against the target
-						Use(skillUseTarget.worlditem, 0);
+						Use(skillUseTarget.worlditem, LastSkillFlavor);
 				}
 
 				public virtual void TryToRemoveItem(IStackOwner skillUseTarget, IWIBase itemToMove, IInventory toInventory, Action callBack)
 				{
+						Debug.Log("Using skill to remove item in skill " + name + ", item to move is null? " + (itemToMove == null).ToString());
 						LastFromStack = null;
 						LastToStack = null;
 						LastItemToMove = itemToMove;
@@ -59,7 +60,7 @@ namespace Frontiers.World.Gameplay
 								return;
 						}
 						//use the skill against the target
-						Use(skillUseTarget.worlditem, 0);
+						Use(skillUseTarget.worlditem, LastSkillFlavor);
 				}
 
 				protected override void OnUseFinish()

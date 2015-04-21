@@ -1049,7 +1049,7 @@ namespace Frontiers.GUI
 								a = InterfaceActionType.ToggleInterfaceNext;
 						}
 						Get.NGUIIntrospectionDisplay.AddGainedSomethingMessage(
-								"Added " + currency.ToString() + Frontiers.World.WIScripts.Currency.TypeToString(type) + " to Currency",
+								"Added $" + currency.ToString() + Frontiers.World.WIScripts.Currency.TypeToString(type) + " to Currency",
 								0.0,
 								"Currency",
 								GainedSomethingType.Currency,

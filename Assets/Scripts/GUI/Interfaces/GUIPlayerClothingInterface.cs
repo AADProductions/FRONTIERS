@@ -311,7 +311,7 @@ namespace Frontiers.GUI
 						for (int i = 0; i < Squares.Count; i++) {
 								Squares[i].RefreshRequest();
 						}
-						Debug.Log("Refreshing clothing");
+						//Debug.Log("Refreshing clothing");
 						RefreshClothing.SafeInvoke();
 				}
 

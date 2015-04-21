@@ -257,6 +257,14 @@ namespace Frontiers.World.WIScripts
 				protected double mStartTime = 0f;
 				protected double mEndTime = 0f;
 				protected bool mClimbingThroughWindow = false;
+
+				public int CalculateLocalValue (int baseValue, IWIBase item) {
+						if (item == null)
+								return baseValue;
+
+						//windows are pretty valuable
+						return baseValue + Globals.BaseValueGold;
+				}
 		}
 
 		[Serializable]

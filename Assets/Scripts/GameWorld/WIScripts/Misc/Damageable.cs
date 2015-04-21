@@ -219,6 +219,15 @@ namespace Frontiers.World.WIScripts
 				}
 
 				protected static Character mCheckOwner;
+
+				public int CalculateLocalValue (int baseValue, IWIBase item) {
+						if (item == null)
+								return baseValue;
+
+						//reduce value by normalized damage, up to half off
+						baseValue -= (Mathf.CeilToInt(NormalizedDamage * baseValue) / 2);
+						return baseValue;
+				}
 		}
 
 		[Serializable]

@@ -498,6 +498,16 @@ namespace Frontiers
 						}
 				}
 
+				public int BaseCurrencyValueOfPlant(string plantName)
+				{
+						Plant props = null;
+						if (mPlantPropsLookup.TryGetValue(plantName, out props)) {
+								Debug.Log("Got plant currency value: " + props.BaseCurrencyValue.ToString());
+								return props.BaseCurrencyValue;
+						}
+						return 1;
+				}
+
 				public static void SaveProps(Plant props)
 				{
 						Mods.Get.Runtime.SaveMod <Plant>(props, "Plant", props.Name);
@@ -911,27 +921,33 @@ namespace Frontiers
 								plant = PlantList[i];
 								//add the plant props to our name lookup
 								mPlantPropsLookup.Add(plant.Name, plant);
+								float baseCurrencyValue = 1f;
 								//set the climate flags based on climate property
 								switch (plant.Climate) {
 										case ClimateType.Arctic:
 												plant.ClimateFlags = ArcticClimateFlags;
+												baseCurrencyValue += Globals.PlantBaseCurrencyValueArctic;
 												break;
 
 										case ClimateType.Temperate:
 										default:
 												plant.ClimateFlags = TemperateClimateFlags;
+												baseCurrencyValue += Globals.PlantBaseCurrencyValueTemperate;
 												break;
 
 										case ClimateType.TropicalCoast:
 												plant.ClimateFlags = TropicalCoastClimateFlags;
+												baseCurrencyValue += Globals.PlantBaseCurrencyValueTropical;
 												break;
 
 										case ClimateType.Wetland:
 												plant.ClimateFlags = WetlandClimateFlags;
+												baseCurrencyValue += Globals.PlantBaseCurrencyValueWetland;
 												break;
 
 										case ClimateType.Desert:
 												plant.ClimateFlags = DesertClimateFlags;
+												baseCurrencyValue += Globals.PlantBaseCurrencyValueDesert;
 												break;
 								}
 
@@ -947,11 +963,13 @@ namespace Frontiers
 										//Debug.Log ("Adding plant " + plant.Name + " to seasonal lookup, it's in season");
 										//sort the plant by climate
 										rarity = WIFlags.RarityToInt(plant.Rarity, 5);
+										baseCurrencyValue += plant.BaseCurrencyValue * (5 - rarity);
 										climateTypes = FlagSet.GetFlagValues(plant.ClimateFlags);
 										if (plant.AboveGround) {
 												plantsByClimate = AGPlantsByClimate;
 										} else {
 												plantsByClimate = BGPlantsByClimate;
+												baseCurrencyValue *= Globals.PlantUndergroundMultiplier;
 										}
 										for (int j = 0; j < climateTypes.Length; j++) {
 												int climateType = climateTypes[j];
@@ -967,6 +985,8 @@ namespace Frontiers
 												}
 										}
 								}
+
+								plant.BaseCurrencyValue = Mathf.CeilToInt(baseCurrencyValue);
 						}
 						//shuffle the plants so they appear in a random non-alphabetized order
 						System.Random orderShuffler = new System.Random(Profile.Get.CurrentGame.Seed);
@@ -977,7 +997,6 @@ namespace Frontiers
 
 				public void PlantCombinerCallback(int hash, Hydrogen.Threading.Jobs.MeshCombiner.MeshOutput[] meshOutputs)
 				{
-						//////Debug.Log ("Got the callback");
 						mCurrentHash = hash;
 						mCurrentMeshOutputs = meshOutputs;
 						mWaitingForCallback = false;

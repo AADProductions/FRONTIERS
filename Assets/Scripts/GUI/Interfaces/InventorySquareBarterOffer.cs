@@ -114,9 +114,9 @@ namespace Frontiers.GUI
 														stackNumberLabelText = "(Stolen)";
 												} else {
 														if (numItems < 2) {
-																stackNumberLabelText = Goods.TopItem.BaseCurrencyValue.ToString();
+																stackNumberLabelText = Colors.ColorWrap ("$", Colors.Darken (StackNumberLabel.color)) + Goods.TopItem.BaseCurrencyValue.ToString();
 														} else {
-																stackNumberLabelText = Goods.TopItem.BaseCurrencyValue.ToString() + "(x" + numItems.ToString() + ")";
+																stackNumberLabelText = Colors.ColorWrap ("$", Colors.Darken (StackNumberLabel.color)) + Goods.TopItem.BaseCurrencyValue.ToString() + " (x" + numItems.ToString() + ")";
 														}
 												}
 										}

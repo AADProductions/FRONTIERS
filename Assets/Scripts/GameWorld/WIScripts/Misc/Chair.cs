@@ -99,6 +99,8 @@ namespace Frontiers.World.WIScripts
 						DrawArrow.ForGizmo(SitCameraPosition.position, SitCameraPosition.forward, 0.25f, 20);
 				}
 
+
+
 				public static WIListOption gSitOption = null;
 				public static WIListOption gWaitOption = null;
 		}

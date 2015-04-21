@@ -232,6 +232,13 @@ namespace Frontiers.World.WIScripts
 						}
 				}
 
+				public int CalculateLocalValue (int baseValue, IWIBase item) {
+						if (item == null)
+								return baseValue;
+
+						return baseValue + Plants.Get.BaseCurrencyValueOfPlant(item.Subcategory);
+				}
+
 				protected bool mIsPicking = false;
 		}
 

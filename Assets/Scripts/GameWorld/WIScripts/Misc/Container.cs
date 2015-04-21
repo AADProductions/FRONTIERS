@@ -117,6 +117,12 @@ namespace Frontiers.World.WIScripts
 								return basePrice;
 						}
 
+						if (item.IsWorldItem) {
+								basePrice *= Mats.MatTypeToInt(item.worlditem.Props.Global.MaterialType);
+						} else {
+								basePrice *= Mats.MatTypeToInt(item.GetStackItem(WIMode.None).GlobalProps.MaterialType);
+						}
+
 						if (item.IsStackContainer) {
 								for (int i = 0; i < item.StackContainer.StackList.Count; i++) {
 										for (int j = 0; j < item.StackContainer.StackList[i].Items.Count; j++) {

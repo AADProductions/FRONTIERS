@@ -11,6 +11,23 @@ namespace Frontiers.World.WIScripts
 				public LuminiteState State = new LuminiteState();
 				public bool IsGoodForHandHeld = true;
 
+				public static int CalculateLocalPrice(int basePrice, IWIBase item)
+				{
+						if (item == null) {
+								return basePrice;
+						}
+
+						object luminiteStateObject = null;
+						if (item.GetStateOf <Luminite>(out luminiteStateObject)) {
+								LuminiteState l = (LuminiteState)luminiteStateObject;
+								if (l != null) {
+										basePrice += Mathf.CeilToInt(l.MaxCharge * Globals.BaseValueLuminite);
+								}
+						}
+
+						return basePrice;
+				}
+
 				public override void OnInitialized()
 				{
 						if (IsDark) {

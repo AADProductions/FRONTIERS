@@ -1,3 +1,4 @@
+
 using UnityEngine;
 using System;
 using System.Collections;
@@ -6,6 +7,20 @@ using System.Reflection;
 
 public static class Globals
 {
+		public static float PlantBaseCurrencyValueArctic = 12.5f;
+		public static float PlantBaseCurrencyValueTemperate = 5f;
+		public static float PlantBaseCurrencyValueTropical = 10f;
+		public static float PlantBaseCurrencyValueWetland = 7.5f;
+		public static float PlantBaseCurrencyValueDesert = 15f;
+		public static float PlantUndergroundMultiplier = 2.5f;
+		public static float BaseValueWeaponDamagePerHit = 5f;
+		public static float BaseValueWeaponForcePerHit = 2.5f;
+		public static float BaseValueWeaponDelayInterval = 5f;
+		public static float BaseValueWeaponStrengthDrain = 20f;
+		public static float BaseValueWeaponProjectileMultiplier = 2.5f;
+		public static float BaseValueWearable = 5f;
+		public static float BaseValueLuminite = 10f;
+
 		public static string PlayerManagerGameObjectName = "=PLAYER=";
 		public static string GroupsManagerGameObjectName = "=GROUPS=";
 		public static string ManagersGameObjectName = "=MANAGER=";
@@ -245,7 +260,7 @@ public static class Globals
 		public static float EdibleBurnTimeMultiplier = 4f;
 		public static float BarBasePricePerRoundOfDrinks = 20f;
 		public static float BarBasePricePerDrink = 1f;
-		public static int BasePriceFoodstuff = 10;
+		public static int BaseValueFoodStuff = 75;
 		public static float BaseValueCraftingBonus = 1.25f;
 
 		public static float DamageBodyPartEyeMultiplier = 10f;

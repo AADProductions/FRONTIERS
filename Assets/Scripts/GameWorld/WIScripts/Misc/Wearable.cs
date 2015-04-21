@@ -107,29 +107,45 @@ namespace Frontiers.World.WIScripts
 						return false;
 				}
 
-				[Serializable]
-				public class WearableState
+				public static int CalculateLocalPrice(int baseValue, IWIBase item)
 				{
-						public CharacterGender CurrentGender = CharacterGender.Male;
-						public BodyOrientation CurrentOrientation = BodyOrientation.None;
-						public WearableStyle CurrentStyle = WearableStyle.A;
-						[FrontiersColorAttribute]
-						public string BaseColor;
-						[FrontiersColorAttribute]
-						public string TrimColor;
-						[FrontiersColorAttribute]
-						public string HighlightColor;
-						[FrontiersColorAttribute]
-						public string CrystalColor;
+						if (item == null)
+								return baseValue;
+
+						object wearableStateObject = null;
+						if (item.GetStateOf <Wearable>(out wearableStateObject)) {
+								WearableState w = (WearableState)wearableStateObject;
+								if (w != null) {
+										baseValue += Mathf.CeilToInt(Mathf.Max(0, w.ColdProtection * Globals.BaseValueWearable));
+										baseValue += Mathf.CeilToInt(Mathf.Max(0, w.HeatProtection * Globals.BaseValueWearable));
+										baseValue += Mathf.CeilToInt(Mathf.Max(0, w.EnergyProtection * Globals.BaseValueWearable));
+										baseValue += Mathf.CeilToInt(Mathf.Max(0, w.VisibilityChange * Globals.BaseValueWearable));
+										baseValue += Mathf.CeilToInt(Mathf.Max(0, w.StrengthChange * Globals.BaseValueWearable));
+								}
+						} else {
+								Debug.Log("Couldn't get state");
+						}
+						return baseValue;
+				}
+
+				public override void InitializeTemplate()
+				{
+						base.InitializeTemplate();
+
+						State.FingerIndex = FingerIndex;
+						State.ColdProtection = ColdProtection;
+						State.HeatProtection = HeatProtection;
+						State.EnergyProtection = EnergyProtection;
+						State.VisibilityChange = VisibilityChange;
+						State.StrengthChange = StrengthChange;
 				}
 				#if UNITY_EDITOR
 				public override void OnEditorRefresh()
 				{
 						try {
-						worlditem.Props.Local.Subcategory = BodyPart.ToString();
-						}
-						catch (Exception e) {
-								Debug.LogError(e.ToString ());
+								worlditem.Props.Local.Subcategory = BodyPart.ToString();
+						} catch (Exception e) {
+								Debug.LogError(e.ToString());
 						}
 				}
 				#endif
@@ -137,5 +153,27 @@ namespace Frontiers.World.WIScripts
 				{
 						return wearable.State.CurrentOrientation.ToString() + "_" + wearable.State.CurrentStyle.ToString();
 				}
+		}
+
+		[Serializable]
+		public class WearableState
+		{
+				public CharacterGender CurrentGender = CharacterGender.Male;
+				public BodyOrientation CurrentOrientation = BodyOrientation.None;
+				public WearableStyle CurrentStyle = WearableStyle.A;
+				[FrontiersColorAttribute]
+				public string BaseColor;
+				[FrontiersColorAttribute]
+				public string TrimColor;
+				[FrontiersColorAttribute]
+				public string HighlightColor;
+				[FrontiersColorAttribute]
+				public string CrystalColor;
+				public int FingerIndex = 0;
+				public int ColdProtection = 0;
+				public int HeatProtection = 0;
+				public int EnergyProtection = 0;
+				public int VisibilityChange = 0;
+				public int StrengthChange = 0;
 		}
 }

@@ -33,7 +33,7 @@ namespace Frontiers.GUI
 				if (IsInUse) {
 					mChildEditor.ScreenTarget = value;
 				} else {
-					Debug.Log("Not in use, nothing to set");
+					//Debug.Log("Not in use, nothing to set");
 				}
 			}
 		}
@@ -43,7 +43,7 @@ namespace Frontiers.GUI
 				if (IsInUse) {
 					mChildEditor.ScreenTargetCamera = value;
 				} else {
-					Debug.Log("Not in use, nothing to set");
+					//Debug.Log("Not in use, nothing to set");
 				}
 			}
 		}

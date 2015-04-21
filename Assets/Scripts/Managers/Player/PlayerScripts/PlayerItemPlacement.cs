@@ -440,6 +440,7 @@ namespace Frontiers
 								return;
 
 						mPickUpTarget = worlditemInRange;
+						Debug.Log("Using skill to pick up item, pick up target null? " + (mPickUpTarget == null).ToString());
 
 						//add the option list we'll use to select the skill
 						SpawnOptionsList optionsList = gameObject.GetOrAdd <SpawnOptionsList>();
@@ -471,10 +472,11 @@ namespace Frontiers
 						WIListResult dialogResult = result as WIListResult;
 						RemoveItemSkill skillToUse = null;
 						foreach (Skill removeSkill in mRemoveSkillList) {
-								if (removeSkill.name == dialogResult.Result) {
+								if (dialogResult.Result.Contains (removeSkill.name)) {
 										skillToUse = removeSkill as RemoveItemSkill;
 										break;
 								}
+								Debug.Log("Result was " + dialogResult.Result);
 						}
 
 						if (skillToUse != null) {
@@ -486,10 +488,12 @@ namespace Frontiers
 								//a) our selected stack is empty and
 								//b) our stack has item
 								//so proceed as though we know those are true
+								Debug.Log("Using skill, chosen skill, pickup item is null? " + (mPickUpTarget == null).ToString());
 								skillToUse.TryToRemoveItem(mSkillUseTarget, mPickUpTarget, Player.Local.Inventory, FinishUsingSkillToRemoveItem);
 								//now we just have to wait!
 								//the skill will move stuff around
 								//refresh requests will be automatic
+								mPickUpTarget = null;
 						}
 
 						mRemoveItemSkillNames.Clear();

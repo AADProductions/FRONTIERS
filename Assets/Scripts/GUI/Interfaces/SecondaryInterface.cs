@@ -126,7 +126,6 @@ namespace Frontiers.GUI
 								#else
 						if (VRManager.VRMode | Profile.Get.CurrentPreferences.Controls.ShowControllerPrompts) {
 								#endif
-								Debug.Log("Finished scaling up, selecting widget");
 								GUICursor.Get.SelectWidget(FirstInterfaceObject);
 						}
 				}

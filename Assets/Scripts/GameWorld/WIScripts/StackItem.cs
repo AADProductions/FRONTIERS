@@ -105,7 +105,9 @@ namespace Frontiers.World
 
 				public float BaseCurrencyValue { 
 						get { 
-								Props.Local.BaseCurrencyValue = CalculateLocalBaseCurrencyValue();
+								if (!Is<Currency>()) {
+										Props.Local.BaseCurrencyValue = CalculateLocalBaseCurrencyValue();
+								}
 								return Props.Local.BaseCurrencyValue;
 						}
 				}
@@ -305,7 +307,11 @@ namespace Frontiers.World
 								stateData = WIScript.XmlDeserializeFromString(scriptStateString, scriptStateName);
 								if (stateData != null) {
 										return true;
+								} else {
+										Debug.Log("Couldn't deserialize state data for " + scriptStateName);
 								}
+						} else {
+								Debug.Log("Couldn't get state data for " + scriptName + " in " + FileName);
 						}
 						return false;
 				}
@@ -358,18 +364,20 @@ namespace Frontiers.World
 						return this;
 				}
 
-				protected int CalculateLocalBaseCurrencyValue () {
-						int baseCurrencyValue = Mathf.CeilToInt (GlobalProps.BaseCurrencyValue);
-						if (HasStates) {
+				protected int CalculateLocalBaseCurrencyValue()
+				{
+						int baseCurrencyValue = Mathf.CeilToInt(GlobalProps.BaseCurrencyValue);
+						if (SaveState != null && SaveState.Scripts != null) {
 								var enumerator = this.SaveState.Scripts.GetEnumerator();
 								while (enumerator.MoveNext()) {
-										Type scriptType = System.Type.GetType(enumerator.Current.Key);
+										//Debug.Log("Checking script " + enumerator.Current.Key);
+										Type scriptType = System.Type.GetType("Frontiers.World.WIScripts." + enumerator.Current.Key);
 										if (scriptType == null) {
-												Debug.Log("Couldn't get script type for name " + enumerator.Current.Key);
+												//Debug.Log("Couldn't get script type for name " + enumerator.Current.Key);
 										} else {
-												Debug.Log("Got a script type for name: " + enumerator.Current.Key + " in " + Props.Name);
-												var calculateLocalPriceMethod = scriptType.GetMethod("CalculateLocalPrice", System.Reflection.BindingFlags.Static);
+												var calculateLocalPriceMethod = scriptType.GetMethod("CalculateLocalPrice", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
 												if (calculateLocalPriceMethod != null) {
+														//Debug.Log("Got calcualate price method from " + enumerator.Current.Key);
 														object stateData = null;
 														string scriptStateName = scriptType.FullName + "State";//<-this shit is going to get people in trouble, haha
 														string scriptStateString = string.Empty;
@@ -381,11 +389,14 @@ namespace Frontiers.World
 												}
 										}
 								}
+						} else {
+								Debug.Log("Didn't have states");
 						}
 						if (Props.Local.CraftedByPlayer) {
-								baseCurrencyValue = Mathf.CeilToInt (baseCurrencyValue * Globals.BaseValueCraftingBonus);
+								baseCurrencyValue = Mathf.CeilToInt(baseCurrencyValue * Globals.BaseValueCraftingBonus);
 						}
-						Debug.Log("Base currency value in stack item " + Props.Name.FileName + ": " + baseCurrencyValue.ToString());
+						//apply wealth level
+						baseCurrencyValue = Mathf.Max(baseCurrencyValue, Mathf.CeilToInt(baseCurrencyValue * FlagSet.GetAverageValue (GlobalProps.Flags.Wealth) * 0.25f));
 						return baseCurrencyValue;
 				}
 
@@ -441,7 +452,7 @@ namespace Frontiers.World
 										if (IsStackContainer) {	//but we ARE supposed to have one
 												//that must mean we've never actually created it yet
 												//so create it now
-												Debug.Log("Stack container was null in stack item " + Props.Name + ", creating one now");
+												//Debug.Log("Stack container was null in stack item " + Props.Name + ", creating one now");
 												mStackContainer = Stacks.Create.StackContainer(this, this.Group);
 										}
 								}

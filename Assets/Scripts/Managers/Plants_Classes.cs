@@ -53,6 +53,7 @@ namespace Frontiers
 		public bool Revealed = false;
 		public bool RawPropsRevealed = false;
 		public bool CookedPropsRevealed = false;
+		public int BaseCurrencyValue = 1;
 
 		public static float FlowerSizeToFloat (PlantFlowerSize size)
 		{

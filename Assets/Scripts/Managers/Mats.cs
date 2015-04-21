@@ -266,6 +266,39 @@ namespace Frontiers
 						}
 				}
 
+				public static int MatTypeToInt(WIMaterialType mat)
+				{
+						switch (mat) {
+								case WIMaterialType.Stone:
+										return 1;
+
+								case WIMaterialType.Bone:
+										return 2;
+
+								case WIMaterialType.Crystal:
+										return 3;
+
+								case WIMaterialType.Fabric:
+										return 4;
+
+								case WIMaterialType.Glass:
+										return 5;
+
+								case WIMaterialType.Wood:
+										return 2;
+
+								case WIMaterialType.Plant:
+										return 4;
+
+								case WIMaterialType.Metal:
+										return 5;
+
+								default:
+										return 1;
+
+						}
+				}
+
 				public Shader NGUIOculusShader;
 				public Shader NGUINormalShader;
 				public Material WorldMapPathMaterial;

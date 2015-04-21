@@ -223,6 +223,14 @@ namespace Frontiers.World.WIScripts
 
 				protected EntranceState mStateLastFrame = EntranceState.Closed;
 				protected bool mChangingDoorState	= false;
+
+				public int CalculateLocalValue (int baseValue, IWIBase item) {
+						if (item == null)
+								return baseValue;
+
+						//doors are pretty valuable
+						return baseValue + Globals.BaseValueGold;
+				}
 		}
 
 		[Serializable]

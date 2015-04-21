@@ -612,7 +612,11 @@ namespace Frontiers.World
 				public bool CanBeCarried = false;
 				public bool CanBeDropped = false;
 				public bool UnloadWhenStacked = true;
-				public bool HasStates = false;
+				public bool HasStates {
+						get {
+								return Scripts == null || Scripts.Count == 0;
+						}
+				}
 				public string LastState = string.Empty;
 				public SDictionary <string,string> Scripts = new SDictionary <string, string>();
 		}

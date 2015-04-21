@@ -13,6 +13,10 @@ namespace Frontiers.GUI
 				public UISprite BarterIconBorderTop;
 				public UISprite BarterIconBot;
 				public UISprite BarterIconBorderBot;
+				public UISprite MapIconBot;
+				public UISprite MapIconBorderBot;
+				public UISprite MapIconTop;
+				public UISprite MapIconBorderTop;
 				public UIPanel ModifierPanelTop;
 				public UIPanel ModifierPanelBot;
 				public GUIStatusKeeper StatusKeeperTop;
@@ -65,7 +69,6 @@ namespace Frontiers.GUI
 				public GUIBank CharacterInventoryBank;
 				public GUIBank PlayerGoodsBank;
 				public GUIBank CharacterGoodsBank;
-
 				public UIPanel InfoPanel;
 				public bool DisplayInfo = false;
 				public GameObject CurrentInfoTarget;
@@ -164,12 +167,26 @@ namespace Frontiers.GUI
 						BarterIconBorderBot.color = skill.SkillBorderColor;
 						BarterIconTop.color = skill.SkillIconColor;
 						BarterIconBot.color = skill.SkillIconColor;
+						MapIconTop.color = Color.grey;
+						MapIconBot.color = Color.grey;
+						MapIconBorderTop.color = Color.gray;
+						MapIconBorderBot.color = Color.gray;
 
-						BarterIconBorderBot.transform.parent.GetComponent <GUIButtonHover> ().OnButtonHover += OnHoverOnSkill;
-						BarterIconBorderTop.transform.parent.GetComponent <GUIButtonHover> ().OnButtonHover += OnHoverOnSkill;
+						BarterIconBorderBot.transform.parent.GetComponent <GUIButtonHover>().OnButtonHover += OnHoverOnSkill;
+						BarterIconBorderTop.transform.parent.GetComponent <GUIButtonHover>().OnButtonHover += OnHoverOnSkill;
+						MapIconBorderTop.transform.parent.GetComponent <GUIButtonHover>().OnButtonHover += OnHoverOnMap;
+						MapIconBorderBot.transform.parent.GetComponent <GUIButtonHover>().OnButtonHover += OnHoverOnMap;
 				}
 
-				protected void OnHoverOnSkill ( ) {
+				protected void OnHoverOnMap()
+				{
+
+						string description = "All of your items are from around here.";
+						PostInfo(UICamera.hoveredObject, description);
+				}
+
+				protected void OnHoverOnSkill()
+				{
 
 						Skill skill = null;
 						Skills.Get.SkillByName("Barter", out skill);
@@ -234,8 +251,14 @@ namespace Frontiers.GUI
 				{
 						//don't bother with the stack containers and squares
 						//they take care of themselves
-						BaseValueCharacterGoodsLabel.text = mEditObject.BarteringCharacter.FullName + "'s price for their goods: " + mEditObject.TotalValueCharacterGoods.ToString();
-						BaseValuePlayerGoodsLabel.text = mEditObject.BarteringCharacter.FullName + "'s offer for your goods: " + mEditObject.TotalValuePlayerGoods.ToString();
+						if (mEditObject.BarteringCharacter.State.Flags.Gender == 1) {
+								BaseValueCharacterGoodsLabel.text = "His price for his goods:" + Colors.ColorWrap (" $", Colors.Darken (BaseValueCharacterGoodsLabel.color)) + mEditObject.TotalValueCharacterGoods.ToString();
+								BaseValuePlayerGoodsLabel.text = "His offer for your goods:" + Colors.ColorWrap (" $", Colors.Darken (BaseValuePlayerGoodsLabel.color)) + mEditObject.TotalValuePlayerGoods.ToString();
+						} else {
+								BaseValueCharacterGoodsLabel.text = "Her price for her goods:" + Colors.ColorWrap (" $", Colors.Darken (BaseValueCharacterGoodsLabel.color)) + mEditObject.TotalValueCharacterGoods.ToString();
+								BaseValuePlayerGoodsLabel.text = "Her offer for your goods:" + Colors.ColorWrap (" $", Colors.Darken (BaseValuePlayerGoodsLabel.color)) + mEditObject.TotalValuePlayerGoods.ToString();
+						}
+
 						//TODO enable these only when some kind of dev global is set
 						if (Skills.Get.DebugSkills) {
 								SkillPenaltyLabel.enabled = true;
@@ -463,8 +486,8 @@ namespace Frontiers.GUI
 				public void PostInfo(GameObject target, string info)
 				{
 						CurrentInfoTarget = target;
-						CurrentInfoTargetXOffset = InfoPanel.transform.InverseTransformPoint (target.transform.position).x;
-						CurrentInfoTargetYOffset = InfoPanel.transform.InverseTransformPoint (target.transform.position).y;
+						CurrentInfoTargetXOffset = InfoPanel.transform.InverseTransformPoint(target.transform.position).x;
+						CurrentInfoTargetYOffset = InfoPanel.transform.InverseTransformPoint(target.transform.position).y;
 						CurrentInfo = info;
 						InfoLabel.text = CurrentInfo;
 						DisplayInfo = true;
@@ -495,7 +518,8 @@ namespace Frontiers.GUI
 				protected Vector3 mInfoOffset;
 		}
 
-		public interface IInfoDisplay {
+		public interface IInfoDisplay
+		{
 				void PostInfo(GameObject target, string info);
 		}
 }

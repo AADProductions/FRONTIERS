@@ -275,7 +275,7 @@ namespace Frontiers.World
 								mHasWeaponEquipped = Player.Local.Tool.HasWorldItem && Player.Local.Tool.worlditem.Is <Weapon>();
 								if (mHasWeaponEquipped && !mHadWeaponEquippedLastFrame) {
 										mHudTarget.position = Player.Local.Surroundings.ClosestObjectFocusHitInfo.point;
-										GUIHud.Get.ShowAction(this, UserActionType.ToolUse, "Shake (" + gSpawnDescription + ")", mHudTarget, GameManager.Get.GameCamera);
+										GUIHud.Get.ShowAction(this, UserActionType.ToolUse, "Shake", mHudTarget, GameManager.Get.GameCamera);
 								}
 								mHudTarget.position = Vector3.Lerp(mHudTarget.position, Player.Local.Surroundings.ClosestObjectFocusHitInfo.point, 0.35f);
 								mHadWeaponEquippedLastFrame = mHasWeaponEquipped;

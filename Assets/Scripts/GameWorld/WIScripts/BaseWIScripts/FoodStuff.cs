@@ -21,17 +21,24 @@ namespace Frontiers.World.WIScripts
 
 				public static int CalculateGlobalPrice(int basePrice)
 				{
-						return basePrice + Globals.BasePriceFoodstuff;
+						return basePrice + Globals.BaseValueFoodStuff;
 				}
 
 				public static int CalculateLocalPrice(int basePrice, IWIBase item)
 				{
 						if (item == null) {
-								Debug.Log("state data null in foodstuff");
 								return basePrice;
 						}
 
-						return basePrice + 10;
+						object foodStuffStateObject = null;
+						if (item.GetStateOf <FoodStuff>(out foodStuffStateObject)) {
+								FoodStuffState f = (FoodStuffState)foodStuffStateObject;
+								if (f != null) {
+										basePrice += CalculateFoodStuffLocalPrice(f.PotentialProps, item.State);
+								}
+						}
+
+						return basePrice;
 				}
 
 				public override void OnInitialized()
@@ -358,9 +365,34 @@ namespace Frontiers.World.WIScripts
 						return description;
 				}
 
-				public static int CalculateFoodStuffLocalPrice(int basePrice, FoodStuffProps props, string stateName)
+				public static int CalculateFoodStuffLocalPrice(List<FoodStuffProps> props, string stateName)
 				{
-						return basePrice;
+						FoodStuffProps p = null;
+						if (props.Count > 1) {
+								p = props[0];
+								for (int i = 0; i < props.Count; i++) {
+										if (props[i].Name == stateName) {
+												p = props[i];
+										}
+								}
+						} else if (props.Count > 0) {
+								p = props[0];
+						} else {
+								Debug.Log("No potential props, returning base value");
+								return 1;
+						}
+
+						float price = 0f;
+
+						price += Frontiers.Status.RestoreToFloat(p.HealthRestore) * Globals.BaseValueFoodStuff * 2;
+						price -= Frontiers.Status.RestoreToFloat(p.HealthReduce) * Globals.BaseValueFoodStuff;
+						if (Flags.Check((uint)p.Type, (uint)FoodStuffEdibleType.WellFed, Flags.CheckType.MatchAny)) {
+								price += Globals.BaseValueFoodStuff * 10;
+						} else {
+								price += Frontiers.Status.RestoreToFloat(p.HungerRestore) * Globals.BaseValueFoodStuff;
+						}
+
+						return Mathf.CeilToInt(Mathf.Clamp(price, 1, Mathf.Infinity));
 				}
 
 				protected FoodStuffProps mCurrentProps;

@@ -167,7 +167,7 @@ namespace Frontiers.World.WIScripts
 						}
 				}
 
-				protected void TryToFillContainer(bool immediately)
+				public void TryToFillContainer(bool immediately)
 				{
 						Purse purse = null;
 						if (worlditem.Is <Purse>(out purse)) {
@@ -225,6 +225,7 @@ namespace Frontiers.World.WIScripts
 						}
 						//update our local base currency value so the purse is worth what's really in it
 						worlditem.Props.Local.BaseCurrencyValue = purse.State.TotalValue;
+						Finish();
 				}
 
 				IEnumerator FillContainerOverTime(bool immediately)

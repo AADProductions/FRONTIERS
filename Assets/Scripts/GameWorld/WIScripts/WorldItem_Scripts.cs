@@ -677,8 +677,20 @@ namespace Frontiers.World
 
 						Props.Local.Mode = WIMode.Frozen;
 						Props.Local.PreviousMode = WIMode.Frozen;
-
 						mFlags = null;
+
+						Currency currency = null;
+						if (gameObject.HasComponent <Currency>(out currency)) {
+								//currency overrides any autogen settings
+								Props.Global.BaseCurrencyValue = Currency.ConvertToBaseCurrency(currency.NumCurrency, currency.Type);
+								Props.Local.BaseCurrencyValue = Props.Global.BaseCurrencyValue;
+						} else if (Props.Global.BaseCurrencyValue <= 0) {
+								//generate price if our global price is zero
+								Props.Global.BaseCurrencyValue = Mats.MatTypeToInt(Props.Global.MaterialType);
+								Props.Global.BaseCurrencyValue += Props.Global.BaseCurrencyValue * (int)Props.Global.Flags.Size;
+								Props.Global.BaseCurrencyValue += FlagSet.GetAverageValue(Props.Global.Flags.Wealth);
+								Props.Global.BaseCurrencyValue *= (int)Props.Global.Flags.BaseRarity;
+						}
 
 						try {
 								worlditem.Renderers.Clear();
@@ -704,7 +716,7 @@ namespace Frontiers.World
 
 								gInitializeScriptsResult.Clear();
 								gameObject.GetComponents (typeof(WIScript), gInitializeScriptsResult);
-								Debug.Log ("Got " + gInitializeScriptsResult.Count.ToString() + " scripts in " + name + " during initialization");
+								//Debug.Log ("Got " + gInitializeScriptsResult.Count.ToString() + " scripts in " + name + " during initialization");
 								foreach (Component script in gInitializeScriptsResult) {
 										WIScript w = script as WIScript;
 										if (w != null) {
@@ -1095,7 +1107,7 @@ namespace Frontiers.World
 								saveState.CanBeDropped = CanBeDropped;
 								saveState.CanEnterInventory = CanEnterInventory;
 								saveState.UnloadWhenStacked = UnloadWhenStacked;
-								saveState.HasStates = HasStates;
+								//saveState.HasStates = HasStates;
 								//if the worlditem is loaded then its state will be set
 								//so use that
 								if (Is(WILoadState.Initialized)) {
@@ -1118,7 +1130,7 @@ namespace Frontiers.World
 								saveState.CanBeDropped = CanBeDropped;
 								saveState.CanEnterInventory = CanEnterInventory;
 								saveState.UnloadWhenStacked = true;
-								saveState.HasStates = HasStates;
+								//saveState.HasStates = HasStates;
 								if (HasStates) {
 										if ((!HasSaveState || string.IsNullOrEmpty(SaveState.LastState)) || SaveState.LastState == "Default") {
 												saveState.LastState = State;
@@ -1127,8 +1139,9 @@ namespace Frontiers.World
 										}
 								}
 								//if application isn't playing then scripts won't be loaded
-								Component[] wiScripts = gameObject.GetComponents <WIScript>();
-								foreach (WIScript script in wiScripts) {
+								gameObject.GetComponents (typeof(WIScript), gInitializeScriptsResult);
+								foreach (Component component in gInitializeScriptsResult) {
+										WIScript script = (WIScript)component;
 										if (!script.IsFinished) {
 												script.CheckScriptProps();
 												try {
@@ -1151,8 +1164,10 @@ namespace Frontiers.World
 				#if UNITY_EDITOR
 				public void OnEditorRefresh()
 				{
-						Component[] wiScripts = gameObject.GetComponents <WIScript>();
-						foreach (WIScript script in wiScripts) {
+						List <Component> wiScripts = new List<Component>();
+						gameObject.GetComponents (typeof(WIScript), wiScripts);
+						foreach (Component component in wiScripts) {
+								WIScript script = (WIScript)component;
 								script.OnEditorRefresh();
 								UnityEditor.EditorUtility.SetDirty(script);
 						}

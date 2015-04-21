@@ -660,7 +660,6 @@ namespace Frontiers.World
 
 				protected void CreateRiver(River river)
 				{
-						Debug.Log("Creating river " + river.Name);
 						Transform agRivers = Transforms.AboveGroundRivers;
 						GameObject riverAvatarObject = GameObject.Instantiate(GameWorld.Get.RiverPrefab) as GameObject;
 						riverAvatarObject.transform.parent = Transforms.AboveGroundRivers;

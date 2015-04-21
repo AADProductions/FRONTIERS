@@ -335,7 +335,7 @@ namespace Frontiers.World.WIScripts
 						if (mLocalPriceCalculator == null) {
 								var staticPriceCalculator = mTrueType.GetMethod("CalculateLocalPrice", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 								if (staticPriceCalculator != null) {
-										Debug.Log("Created local price calculator delegate in " + mTrueType.Name);
+										//Debug.Log("Created local price calculator delegate in " + mTrueType.Name);
 										mLocalPriceCalculator = (LocalPriceCalculator)Delegate.CreateDelegate(typeof(LocalPriceCalculator), staticPriceCalculator);
 								}
 						}
@@ -387,7 +387,7 @@ namespace Frontiers.World.WIScripts
 						if (mGlobalPriceCalculator == null) {
 								var staticPriceCalculator = GetType().GetMethod("CalculateGlobalPrice", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 								if (staticPriceCalculator != null) {
-										Debug.Log("Created global price calculator delegate in " + GetType().Name);
+										//Debug.Log("Created global price calculator delegate in " + GetType().Name);
 										mGlobalPriceCalculator = (GlobalPriceCalculator)Delegate.CreateDelegate(typeof(GlobalPriceCalculator), staticPriceCalculator);
 								}
 						}
@@ -499,7 +499,7 @@ namespace Frontiers.World.WIScripts
 						if (deserializedObject != null) {
 								return true;
 						} else {
-								//Debug.Log ("Deserialized object was null when attempting to deserialize " + objectData + " into type " + type.ToString ());
+								Debug.Log ("Deserialized object was null when attempting to deserialize " + objectData + " into type " + type.ToString ());
 						}
 
 						return false;
@@ -509,13 +509,13 @@ namespace Frontiers.World.WIScripts
 				{
 						object deserializedObject = null;
 						Type type = Type.GetType(typeName);
-						if (type == null || string.IsNullOrEmpty(objectData)) {
-								//Debug.Log ("Couldn't get type from typename " + typeName);
+						if (type == null) {
+								Debug.Log ("Couldn't get type from typename " + typeName);
 								return null;
 						}
 
-						if (!XmlDeserializeFromString(objectData, Type.GetType(typeName), out deserializedObject)) {
-								//Debug.Log ("Couldn't deserialize from string for some reason");
+						if (string.IsNullOrEmpty (objectData) || !XmlDeserializeFromString(objectData, Type.GetType(typeName), out deserializedObject)) {
+								Debug.Log ("Couldn't deserialize from string for some reason");
 						}
 
 						return deserializedObject;

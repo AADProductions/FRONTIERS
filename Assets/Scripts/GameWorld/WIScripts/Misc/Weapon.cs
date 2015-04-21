@@ -18,28 +18,27 @@ namespace Frontiers.World.WIScripts
 
 				#region IMeleeWeapon implementation
 
-				public float ImpactTime { get { return BaseImpactTime; } }
+				public float ImpactTime { get { return State.BaseImpactTime; } }
 
-				public float UseSpeed { get { return BaseUseSpeed; } }
+				public float UseSpeed { get { return State.BaseUseSpeed; } }
 
-				public float WindupDelay { get { return BaseWindupDelay; } }
+				public float WindupDelay { get { return State.BaseWindupDelay; } }
 
-				public float SwingDelay { get { return BaseSwingDelay; } }
+				public float SwingDelay { get { return State.BaseSwingDelay; } }
 
-				public float SwingRate { get { return BaseSwingRate; } }
+				public float SwingRate { get { return State.BaseSwingRate; } }
 
-				public float SwingDuration { get { return BaseSwingDuration; } }
+				public float SwingDuration { get { return State.BaseSwingDuration; } }
 
-				public float SwingImpactForce { get { return BaseSwingImpactForce; } }
+				public float SwingImpactForce { get { return State.BaseSwingImpactForce; } }
 
-				public float StrengthDrain { get { return BaseStrengthDrain; } }
+				public float StrengthDrain { get { return State.BaseStrengthDrain; } }
 
-				public float RecoilIntensity { get { return BaseRecoilIntensity; } }
+				public float RecoilIntensity { get { return State.BaseRecoilIntensity; } }
 
 				public bool RandomSwingDirection { get { return Style == PlayerToolStyle.Slice; } }
 
-				public string AttackState { get { return BaseAttackState; } }
-
+				public string AttackState { get { return State.BaseAttackState; } }
 				//these variables are redundant so they will appear in the Unity editor
 				//as well as being served up by the interface
 				public float BaseImpactTime = 0.11f;
@@ -53,7 +52,6 @@ namespace Frontiers.World.WIScripts
 				public float BaseRecoilIntensity = 1.0f;
 				public float BaseStrengthOnSwing = 0.25f;
 				public string BaseAttackState = "ToLeft";
-				public float StrengthOnLastSwing = 1.0f;
 				public bool TakeCollisionDamage = false;
 
 				#endregion
@@ -77,8 +75,56 @@ namespace Frontiers.World.WIScripts
 						State.Damage.OnPackageReceived += OnPackageReceived;
 				}
 
+				public override void InitializeTemplate()
+				{
+						base.InitializeTemplate();
+						if (!State.HasInitializedValues) {
+								State.BaseImpactTime = BaseImpactTime;
+								State.BaseUseSpeed = BaseUseSpeed;
+								State.BaseWindupDelay = BaseWindupDelay;
+								State.BaseSwingDelay = BaseSwingDelay;
+								State.BaseSwingRate = BaseSwingRate;
+								State.BaseSwingDuration = BaseSwingDuration;
+								State.BaseSwingImpactForce = BaseSwingImpactForce;
+								State.BaseStrengthDrain = BaseStrengthDrain;
+								State.BaseRecoilIntensity = BaseRecoilIntensity;
+								State.BaseStrengthOnSwing = BaseStrengthOnSwing;
+								State.BaseAttackState = BaseAttackState;
+								State.ProjectileType = ProjectileType;
+								State.HasInitializedValues = true;
+						}
+				}
+
 				public override void OnInitialized()
 				{
+						if (!State.HasInitializedValues) {
+								State.BaseImpactTime = BaseImpactTime;
+								State.BaseUseSpeed = BaseUseSpeed;
+								State.BaseWindupDelay = BaseWindupDelay;
+								State.BaseSwingDelay = BaseSwingDelay;
+								State.BaseSwingRate = BaseSwingRate;
+								State.BaseSwingDuration = BaseSwingDuration;
+								State.BaseSwingImpactForce = BaseSwingImpactForce;
+								State.BaseStrengthDrain = BaseStrengthDrain;
+								State.BaseRecoilIntensity = BaseRecoilIntensity;
+								State.BaseStrengthOnSwing = BaseStrengthOnSwing;
+								State.BaseAttackState = BaseAttackState;
+								State.ProjectileType = ProjectileType;
+								State.HasInitializedValues = true;
+						} else {
+								BaseImpactTime = State.BaseImpactTime;
+								BaseUseSpeed = State.BaseUseSpeed;
+								BaseWindupDelay = State.BaseWindupDelay;
+								BaseSwingDelay = State.BaseSwingDelay;
+								BaseSwingRate = State.BaseSwingRate;
+								BaseSwingDuration = State.BaseSwingDuration;
+								BaseSwingImpactForce = State.BaseSwingImpactForce;
+								BaseStrengthDrain = State.BaseStrengthDrain;
+								BaseRecoilIntensity = State.BaseRecoilIntensity;
+								BaseStrengthOnSwing = State.BaseStrengthOnSwing;
+								BaseAttackState = State.BaseAttackState;
+						}
+
 						Equippable equippable = null;
 						if (worlditem.Is <Equippable>(out equippable)) {
 								equippable.OnUseStart += OnUseStart;
@@ -107,7 +153,7 @@ namespace Frontiers.World.WIScripts
 
 				public void OnUseStart()
 				{
-						StrengthOnLastSwing = Player.Local.Status.GetStatusValue("Strength");
+						State.StrengthOnLastSwing = Player.Local.Status.GetStatusValue("Strength");
 						Player.Local.Status.ReduceStatus(PlayerStatusRestore.F_Full, "Strength", StrengthDrain);
 				}
 
@@ -155,7 +201,7 @@ namespace Frontiers.World.WIScripts
 
 				public static float DamagePerHit(Weapon weapon)
 				{		
-						float damagePerHit = weapon.State.BaseDamagePerHit * Mathf.Max(weapon.BaseStrengthOnSwing, weapon.StrengthOnLastSwing);
+						float damagePerHit = weapon.State.BaseDamagePerHit * Mathf.Max(weapon.BaseStrengthOnSwing, weapon.State.StrengthOnLastSwing);
 						/*
 						if (weapon.State.HasBeenImproved)
 						{
@@ -172,7 +218,7 @@ namespace Frontiers.World.WIScripts
 				public static float ForcePerHit(Weapon weapon)
 				{
 						//TODO improve
-						return weapon.SwingImpactForce * Mathf.Max(weapon.BaseStrengthOnSwing, weapon.StrengthOnLastSwing);
+						return weapon.SwingImpactForce * Mathf.Max(weapon.BaseStrengthOnSwing, weapon.State.StrengthOnLastSwing);
 				}
 
 				public static bool CanLaunch(Weapon weapon, IWIBase projectileBase)
@@ -200,6 +246,36 @@ namespace Frontiers.World.WIScripts
 				
 						return false;
 				}
+
+				public static int CalculateLocalPrice(int baseValue, IWIBase item)
+				{
+						if (item == null)
+								return baseValue;
+
+						object weaponStateObject = null;
+						if (item.GetStateOf <Weapon>(out weaponStateObject)) {
+								WeaponState w = (WeaponState)weaponStateObject;
+								if (w != null) {
+										//Debug.Log("Adding to base value of weapon, " + baseValue.ToString());
+										float delays = w.BaseSwingDelay + w.BaseWindupDelay + w.BaseEquipInterval + w.BaseHitInterval + w.BaseSwingDuration + w.BaseSwingRate + w.BaseImpactTime;
+										baseValue += Mathf.CeilToInt(Mathf.Clamp(20f - delays, 0f, Mathf.Infinity) * Globals.BaseValueWeaponDelayInterval);
+										baseValue += Mathf.CeilToInt(w.BaseDamagePerHit * Globals.BaseValueWeaponDamagePerHit);
+										baseValue += Mathf.CeilToInt(w.BaseForcePerHit * Globals.BaseValueWeaponForcePerHit);
+										baseValue += Mathf.CeilToInt(0.5f - w.BaseStrengthDrain * Globals.BaseValueWeaponStrengthDrain);
+										if (w.HasBeenImproved) {
+												baseValue = baseValue * w.NumTimesImproved;
+										}
+										baseValue += w.NumTimesUsedSuccessfully;
+										baseValue += w.NumTimesKilledTarget * 10;
+										if (!string.IsNullOrEmpty(w.ProjectileType)) {
+												baseValue = Mathf.CeilToInt(baseValue * Globals.BaseValueWeaponProjectileMultiplier);
+										}
+								}
+						} else {
+								Debug.Log("Couldn't get state");
+						}
+						return baseValue;
+				}
 		}
 
 		[Serializable]
@@ -213,6 +289,20 @@ namespace Frontiers.World.WIScripts
 						}
 				}
 
+				public string ProjectileType;
+				public bool HasInitializedValues = false;
+				public float BaseImpactTime = 0.11f;
+				public float BaseUseSpeed = 0.5f;
+				public float BaseWindupDelay = 0.05f;
+				public float BaseSwingDelay = 0.5f;
+				public float BaseSwingRate = 0.5f;
+				public float BaseSwingDuration = 0.5f;
+				public float BaseSwingImpactForce = 1.0f;
+				public float BaseStrengthDrain = 0.05f;
+				public float BaseRecoilIntensity = 1.0f;
+				public float BaseStrengthOnSwing = 0.25f;
+				public string BaseAttackState = "ToLeft";
+				public float StrengthOnLastSwing = 1.0f;
 				public string WeaponName;
 				public int NumTimesImproved = 0;
 				public int MaxTimesImproved = 10;

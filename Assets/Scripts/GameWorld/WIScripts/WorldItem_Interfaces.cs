@@ -13,7 +13,6 @@ namespace Frontiers.World
 {
 		public partial class WorldItem
 		{
-
 				#region IUnloadableChild implementation
 
 				public bool PrepareToUnload()
@@ -237,8 +236,9 @@ namespace Frontiers.World
 
 				public float BaseCurrencyValue { 
 						get {
-								Props.Local.BaseCurrencyValue = CalculateLocalBaseCurrencyValue();
-								Debug.Log("Base currency value of " + Props.Local.BaseCurrencyValue.ToString() + " in " + name);
+								if (!Is<Currency>()) {
+										Props.Local.BaseCurrencyValue = CalculateLocalBaseCurrencyValue();
+								}
 								return Props.Local.BaseCurrencyValue;
 								/*//all items must cost at least 1
 								if (Props.Local.BaseCurrencyValue > 0) {
@@ -373,15 +373,19 @@ namespace Frontiers.World
 				public Action OnExitBodyOfWater;
 
 				protected int CalculateLocalBaseCurrencyValue () {
+						//Debug.Log("Calculating base currency for " + name);
 						//global base currency value is determined on startup
-						int baseCurrencyValue = mGlobalBaseCurrencyValue;
+						int baseCurrencyValue = Mathf.Max(mGlobalBaseCurrencyValue, Mathf.CeilToInt(Props.Global.BaseCurrencyValue));
 						var enumerator = mScripts.GetEnumerator();
 						while (enumerator.MoveNext()) {
+								//Debug.Log("Getting local price from " + enumerator.Current.Value.TrueType.Name);
 								baseCurrencyValue = enumerator.Current.Value.LocalPrice(baseCurrencyValue);
 						}
 						if (Props.Local.CraftedByPlayer) {
 								baseCurrencyValue = Mathf.CeilToInt (baseCurrencyValue * Globals.BaseValueCraftingBonus);
 						}
+						//apply wealth level
+						baseCurrencyValue = Mathf.Max(baseCurrencyValue, Mathf.CeilToInt(baseCurrencyValue * FlagSet.GetAverageValue (Props.Global.Flags.Wealth) * 0.25f));
 						return baseCurrencyValue;
 				}
 
