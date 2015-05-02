@@ -27,7 +27,7 @@ namespace Frontiers
 								while (!structure.Is(StructureLoadState.ExteriorLoaded)) {
 										yield return null;
 								}
-								yield return WorldClock.WaitForRTSeconds(0.1f);
+								//yield return WorldClock.WaitForRTSeconds(0.1f);
 						}
 						yield break;
 				}

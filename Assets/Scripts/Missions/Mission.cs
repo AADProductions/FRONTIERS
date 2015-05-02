@@ -218,7 +218,11 @@ namespace Frontiers.World.Gameplay
 								yield return null;
 						}
 						//wait a tad for all of this frame's updates to pile in
-						yield return WorldClock.WaitForRTSeconds(0.025f);//this way it will update when the game is paused
+						double start = Frontiers.WorldClock.RealTime;
+						while (Frontiers.WorldClock.RealTime < start + 0.025f) {
+								yield return null;
+						}
+						//yield return WorldClock.WaitForRTSeconds(0.025f);//this way it will update when the game is paused
 
 						//if we're not already completed and we're active
 						if (!State.ObjectivesCompleted && Flags.Check((uint)State.Status, (uint)MissionStatus.Active, Flags.CheckType.MatchAny)) {	//try to complete the mission

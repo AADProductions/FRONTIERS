@@ -182,8 +182,14 @@ namespace Frontiers.World.WIScripts
 								//OR if we're the terminal of an active path
 								if (Flags.Check((uint)PathMarkerType.PathOrigin, (uint)mProps.Type, Flags.CheckType.MatchAny) || (IsActive && IsTerminal)) {
 										visitable.Trigger.enabled = true;
-										SphereCollider sc = visitable.Trigger.VisitableCollider as SphereCollider;
-										sc.radius = Globals.PathOriginTriggerRadius;
+										if (visitable.Trigger.VisitableCollider != null) {
+												SphereCollider sc = visitable.Trigger.VisitableCollider as SphereCollider;
+												sc.radius = Globals.PathOriginTriggerRadius;
+										} else {
+												SphereCollider sc = visitable.Trigger.gameObject.AddComponent <SphereCollider>();
+												sc.radius = Globals.PathOriginTriggerRadius;
+												visitable.Trigger.VisitableCollider = sc;
+										}
 										worlditem.State = "CrossMarker";
 								} else {
 										visitable.Trigger.enabled = false;

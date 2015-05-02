@@ -102,6 +102,10 @@ namespace Frontiers.GUI
 				public UIRoot NGUIBaseRoot;
 				public UIAnchor NGUIBaseCenterAnchor;
 				public UIAnchor NGUIBaseBottomAnchor;
+				public UIAnchor NGUIBaseLeftAnchor;
+				public UIAnchor NGUIBaseTopAnchor;
+				public UIAnchor NGUIBaseTopRightAnchor;
+				public UIAnchor NGUIBaseBottomRightAnchor;
 				public UIAnchor NGUITrash;
 				public GUICrosshair Crosshair;
 				public UILabel TitleCardLabel;
@@ -423,6 +427,17 @@ namespace Frontiers.GUI
 						//this has to be called each frame
 						//to clear its toggle interface action
 						PrimaryInterface.ResetToggle();
+
+						NGUIBaseCenterAnchor.enabled = NGUIBaseCenterAnchor.transform.childCount > 0 ? true : false;
+						NGUIBaseBottomAnchor.enabled = NGUIBaseBottomAnchor.transform.childCount > 0 ? true : false;
+						NGUIBaseLeftAnchor.enabled = NGUIBaseLeftAnchor.transform.childCount > 0 ? true : false;
+						NGUIBaseTopAnchor.enabled = NGUIBaseTopAnchor.transform.childCount > 0 ? true : false;
+						NGUIBaseTopRightAnchor.enabled = NGUIBaseTopRightAnchor.transform.childCount > 0 ? true : false;
+						NGUIBaseBottomRightAnchor.enabled = NGUIBaseBottomRightAnchor.transform.childCount > 0 ? true : false;
+
+						NGUISecondaryCenterAnchor.enabled = NGUISecondaryCenterAnchor.transform.childCount > 0 ? true : false;
+						NGUISecondaryLeftAnchor.enabled = NGUISecondaryLeftAnchor.transform.childCount > 0 ? true : false;
+						NGUISecondaryBottomAnchor.enabled = NGUISecondaryBottomAnchor.transform.childCount > 0 ? true : false;
 				}
 
 				protected void ControlDialogCallback(YesNoCancelDialogResult editObject, IGUIChildEditor <YesNoCancelDialogResult> childEditor)

@@ -192,8 +192,10 @@ namespace Frontiers
 						} else {
 								if (GUI.GUILoading.IsLoading && GUI.GUILoading.CurrentMode == Frontiers.GUI.GUILoading.Mode.FullScreenBlack) {
 										Default.cam.cullingMask = 0;
+										Default.cam.enabled = false;
 								} else if (Default.cam.cullingMask != Default.CullingMask) {
 										Default.cam.cullingMask = Default.CullingMask;
+										Default.cam.enabled = true;
 										GameWorld.Get.Sky.gameObject.SetLayerRecursively(Globals.LayerNumScenery);
 								}
 						}

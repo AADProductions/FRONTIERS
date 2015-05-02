@@ -155,7 +155,12 @@ namespace Frontiers.GUI
 								}
 						}
 
-						StackNumberLabel.text = stackNumberLabelText;
+						if (!string.IsNullOrEmpty(stackNumberLabelText)) {
+								StackNumberLabel.enabled = true;
+								StackNumberLabel.text = stackNumberLabelText;
+						} else {
+								StackNumberLabel.enabled = false;
+						}
 		
 						base.UpdateDisplay();
 				}

@@ -88,7 +88,7 @@ namespace Frontiers.World.WIScripts
 									//the body will follow it automatically
 								}
 								catch (Exception e) {
-										Debug.LogError(e.ToString());
+										Debug.LogError("Orb spawner error, proceeding normally: " + e.ToString());
 										yield break;
 								}
 								yield return null;

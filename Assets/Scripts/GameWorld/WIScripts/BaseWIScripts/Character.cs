@@ -105,11 +105,13 @@ namespace Frontiers.World.WIScripts
 						//after that it will pull this info from its stack item state
 						Looker looker = null;
 						if (worlditem.Is <Looker>(out looker)) {
-								looker.State = ObjectClone.Clone <LookerState>(Template.LookerTemplate);
+								Reflection.CopyProperties(Template.LookerTemplate, looker.State);
+								//looker.State = ObjectClone.Clone <LookerState>(Template.LookerTemplate);
 						}
 						Listener listener = null;
 						if (worlditem.Is <Listener>(out listener)) {
-								listener.State = ObjectClone.Clone <ListenerState>(Template.ListenerTemplate);
+								Reflection.CopyProperties(Template.ListenerTemplate, listener.State);
+								//listener.State = ObjectClone.Clone <ListenerState>(Template.ListenerTemplate);
 						}
 						//and we're done!
 				}
@@ -120,12 +122,14 @@ namespace Frontiers.World.WIScripts
 						Looker looker = null;
 						if (worlditem.Is <Looker>(out looker)) {
 								//TODO should we change this?
-								looker.State = ObjectClone.Clone <LookerState>(Characters.Get.DefaultLookerState);
+								Reflection.CopyProperties(Characters.Get.DefaultLookerState, looker.State);
+								//looker.State = ObjectClone.Clone <LookerState>(Characters.Get.DefaultLookerState);
 								looker.OnSeeItemOfInterest += OnSeeItemOfInterest;
 						}
 						Listener listener = null;
 						if (worlditem.Is <Listener>(out listener)) {
-								listener.State = ObjectClone.Clone <ListenerState>(Template.ListenerTemplate);
+								Reflection.CopyProperties(Template.ListenerTemplate, listener.State);
+								//listener.State = ObjectClone.Clone <ListenerState>(Template.ListenerTemplate);
 								listener.OnHearItemOfInterest += OnHearItemOfInterest;
 						}
 				}
@@ -222,6 +226,7 @@ namespace Frontiers.World.WIScripts
 				public void OnAddedToGroup()
 				{
 						worlditem.Get <Motile>().StartMotileActions();
+						Characters.Get.BodyTexturesAndMaterials(this);
 				}
 
 				#endregion
@@ -507,7 +512,8 @@ namespace Frontiers.World.WIScripts
 						Hostile hostile = null;
 						if (!worlditem.Is <Hostile>(out hostile)) {
 								hostile = worlditem.GetOrAdd <Hostile>();
-								hostile.State = ObjectClone.Clone <HostileState>(Template.HostileTemplate);
+								Reflection.CopyProperties(Template.HostileTemplate, hostile.State);
+								//hostile.State = ObjectClone.Clone <HostileState>(Template.HostileTemplate);
 								hostile.OnAttack1Start += OnAttack1;
 								hostile.OnAttack2Start += OnAttack2;
 								hostile.OnWarn += OnWarn;

@@ -640,7 +640,7 @@ namespace Frontiers.World.WIScripts
 						}
 
 						mCheckTopActionAnimation++;
-						if (mCheckTopActionAnimation > 6) {
+						if (mCheckTopActionAnimation > 6 && Body.IsVisible) {
 								mCheckTopActionAnimation = 0;
 								MotileAction topAction = TopAction;
 								Body.Animator.IdleAnimation = topAction.IdleAnimation;

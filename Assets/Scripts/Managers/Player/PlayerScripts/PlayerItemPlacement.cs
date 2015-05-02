@@ -476,7 +476,6 @@ namespace Frontiers
 										skillToUse = removeSkill as RemoveItemSkill;
 										break;
 								}
-								Debug.Log("Result was " + dialogResult.Result);
 						}
 
 						if (skillToUse != null) {
@@ -488,8 +487,8 @@ namespace Frontiers
 								//a) our selected stack is empty and
 								//b) our stack has item
 								//so proceed as though we know those are true
-								Debug.Log("Using skill, chosen skill, pickup item is null? " + (mPickUpTarget == null).ToString());
-								skillToUse.TryToRemoveItem(mSkillUseTarget, mPickUpTarget, Player.Local.Inventory, FinishUsingSkillToRemoveItem);
+								Debug.Log("Using skill, chosen skill with flavor " + dialogResult.SecondaryResultFlavor.ToString());
+								skillToUse.TryToRemoveItem(mSkillUseTarget, mPickUpTarget, Player.Local.Inventory, FinishUsingSkillToRemoveItem, dialogResult.SecondaryResultFlavor);
 								//now we just have to wait!
 								//the skill will move stuff around
 								//refresh requests will be automatic
@@ -1039,7 +1038,10 @@ namespace Frontiers
 
 						while (!Player.Local.Inventory.SelectedStack.IsEmpty) {
 								Stacks.Pop.ContentsIntoWorld(Player.Local.Inventory.SelectedStack, 1, Player.Local.Grabber.Position, group);
-								yield return WorldClock.WaitForRTSeconds(0.1f);
+								double start = Frontiers.WorldClock.RealTime;
+								while (Frontiers.WorldClock.RealTime < start + 0.1f) {
+										yield return null;
+								}
 						}
 						mDroppingSelectedItems = false;
 						yield break;

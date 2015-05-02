@@ -214,7 +214,7 @@ namespace Frontiers
 						{
 								//this is the first time it's been calculated this cycle
 								//aldo check whether we need to refresh our active state
-								return a.worlditem.LastActiveDistanceToPlayer.CompareTo(b.worlditem.LastActiveDistanceToPlayer);
+								return a.worlditem.DistanceToPlayer.CompareTo(b.worlditem.DistanceToPlayer);
 						}
 				}
 		}

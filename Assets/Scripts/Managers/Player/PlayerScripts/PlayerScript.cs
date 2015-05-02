@@ -121,7 +121,7 @@ namespace Frontiers
 
 				public void LoadState(string playerState)
 				{
-						Debug.Log ("Calling update player state in player script");
+						Debug.Log("Calling update player state in player script");
 						if (mHasPlayerStateField && !string.IsNullOrEmpty(playerState)) {
 								object playerStateValue = null;
 								try {

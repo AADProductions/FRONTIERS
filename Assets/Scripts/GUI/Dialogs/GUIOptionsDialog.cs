@@ -49,6 +49,7 @@ namespace Frontiers.GUI
 		public UISlider VideoTerrainTerrainDetail;
 		public UISlider VideoTerrainTreeBillboardDistance;
 		public UISlider VideoTerrainTreeDistance;
+		public UISlider VideoTerrainMaxGrassVarieties;
 		public UISlider VideoAmbientLightAtNight;
 		public UICheckbox VideoTerrainReduceTreeVariation;
 		public UILabel VideoTerrainReduceTreeVariationLabel;
@@ -111,6 +112,7 @@ namespace Frontiers.GUI
 			TerrainDetailMax = Globals.ChunkTerrainDetailMax;
 			TerrainDetailMin = Globals.ChunkTerrainDetailMin;
 			VideoTerrainReduceTreeVariation.functionName = "OnTerrainSettingChange";
+			VideoTerrainMaxGrassVarieties.functionName = "OnTerrainSettingChange";
 
 			SoundGeneral.functionName = "OnSoundLevelChange";
 			SoundMusic.functionName = "OnSoundLevelChange";
@@ -242,6 +244,8 @@ namespace Frontiers.GUI
 			TempVideoPrefs.TerrainTreeBillboardDistance = (TreeBillboardDistMin + ((TreeBillboardDistMax - TreeBillboardDistMin) * VideoTerrainTreeBillboardDistance.sliderValue));
 			TempVideoPrefs.TerrainTreeDistance = VideoTerrainTreeDistance.sliderValue;
 			TempVideoPrefs.TerrainReduceTreeVariation = VideoTerrainReduceTreeVariation.isChecked;
+			int detailLayers = Mathf.CeilToInt (VideoTerrainMaxGrassVarieties.sliderValue * VideoTerrainMaxGrassVarieties.numberOfSteps);
+			TempVideoPrefs.TerrainMaxDetailLayers = Mathf.Clamp (detailLayers, 1, Globals.WorldChunkDetailLayers);
 
 			if (Profile.Get.HasCurrentGame && Profile.Get.CurrentGame.HasStarted) {
 				VideoTerrainReduceTreeVariationLabel.text = "(Requires restart)";
@@ -568,6 +572,8 @@ namespace Frontiers.GUI
 			VideoTerrainTerrainDetail.sliderValue = 1.0f - (videoPrefs.TerrainDetail - TerrainDetailMin) / (TerrainDetailMax - TerrainDetailMin);
 			VideoTerrainMaxMeshTrees.sliderValue = (float)(videoPrefs.TerrainMaxMeshTrees - MaxMeshTreesMin) / (MaxMeshTreesMax - MaxMeshTreesMin);
 			VideoTerrainTreeDistance.sliderValue = videoPrefs.TerrainTreeDistance;
+			float varieties = Mathf.Clamp ((float)videoPrefs.TerrainMaxDetailLayers / VideoTerrainMaxGrassVarieties.numberOfSteps, 1f / VideoTerrainMaxGrassVarieties.numberOfSteps, 1f);
+			VideoTerrainMaxGrassVarieties.sliderValue = varieties;
 			VideoTerrainMaxMeshTreesLabel.text = "Max Mesh Trees: " + videoPrefs.TerrainMaxMeshTrees.ToString();
 			VideoTerrainReduceTreeVariation.isChecked = TempVideoPrefs.TerrainReduceTreeVariation;
 			if (Profile.Get.HasCurrentGame && Profile.Get.CurrentGame.HasStarted) {

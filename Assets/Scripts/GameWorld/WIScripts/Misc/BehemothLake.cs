@@ -31,13 +31,7 @@ namespace Frontiers.World.WIScripts
 
 				public override void OnInitialized()
 				{
-						bodyofwater = worlditem.Get <BodyOfWater>();
-						worlditem.Group.GetParentChunk().GetRiver(RiverName, out river);
-						worlditem.Group.GetParentChunk().GetRiver(RiverEndName, out riverEnd);
-
-						if (river == null) {
-								Debug.Log("RIVER " + RiverName + " WAS NULL!");
-						}
+						bodyofwater = worlditem.GetComponent <BodyOfWater>();
 
 						bool flooded = false;
 						MissionStatus status = MissionStatus.Dormant;
@@ -55,15 +49,30 @@ namespace Frontiers.World.WIScripts
 								}
 						}
 
-						SetFlooded(flooded);
+						if (flooded) {
+								worlditem.OnVisible += OnVisible;
+								worlditem.OnInvisible += OnInvisible;
+						}
+
+						StartCoroutine (SetFlooded(flooded));
 
 						if (flooded) {
 								Player.Get.AvatarActions.Subscribe(AvatarAction.MissionVariableChange, new ActionListener(MissionVariableChange));
 						}
 				}
 
-				protected void SetFlooded(bool flooded)
+				protected IEnumerator SetFlooded(bool flooded)
 				{
+						while (worlditem.Group == null) {
+								yield return null;
+						}
+
+						while (river == null) {
+								worlditem.Group.GetParentChunk().GetRiver(RiverName, out river);
+								worlditem.Group.GetParentChunk().GetRiver(RiverEndName, out riverEnd);
+								yield return null;
+						}
+
 						if (flooded) {
 								//	Debug.Log ("SETTING FLOODED");
 								//the dam still isn't blown, make everything chaos
@@ -71,12 +80,9 @@ namespace Frontiers.World.WIScripts
 								river.TargetWaterLevel = State.RiverWaterLevelHigh;
 								riverEnd.TargetWaterLevel = State.RiverEndWaterLevelLow;
 
-								worlditem.OnVisible += OnVisible;
-								worlditem.OnInvisible += OnInvisible;
-
 								FollowSplineTransform = gameObject.CreateChild("FollowSplineTransform");
 								Transform wanderPatternSplineTransform = gameObject.CreateChild("WanderPatternSpline");
-								WanderPatternSpline = wanderPatternSplineTransform.gameObject.AddComponent <Spline>();
+								/*WanderPatternSpline = wanderPatternSplineTransform.gameObject.AddComponent <Spline>();
 								for (int i = 0; i < State.WanderPatternNodes.Count; i++) {
 										GameObject node = WanderPatternSpline.AddSplineNode();
 										node.transform.parent = WanderPatternSpline.transform;
@@ -87,7 +93,7 @@ namespace Frontiers.World.WIScripts
 								WanderPatternSpline.autoClose = true;
 								WanderPatternSpline.rotationMode = Spline.RotationMode.Tangent;
 								WanderPatternSpline.interpolationMode = Spline.InterpolationMode.Hermite;
-								WanderPatternSpline.normalMode = Spline.NormalMode.UseGlobalSplineNormal;
+								WanderPatternSpline.normalMode = Spline.NormalMode.UseGlobalSplineNormal;*/
 
 								enabled = true;
 						} else {
@@ -140,7 +146,7 @@ namespace Frontiers.World.WIScripts
 						if (HasActiveLeviathan) {
 								//move the wander position regardless of what the leviathan is doing
 								State.LastWanderParam += (float)(State.WanderSpeed * WorldClock.ARTDeltaTime);
-								FollowSplineTransform.position = WanderPatternSpline.GetPositionOnSpline(State.LastWanderParam);
+								//FollowSplineTransform.position = WanderPatternSpline.GetPositionOnSpline(State.LastWanderParam);
 								ActiveLeviathan.transform.position = FollowSplineTransform.position;
 						}
 				}

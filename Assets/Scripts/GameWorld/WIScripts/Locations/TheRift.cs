@@ -18,7 +18,7 @@ namespace Frontiers.World.WIScripts
 				public Material RiftSegmentMaterialLOD2;
 				public LavaRiver RiftLavaPrefab;
 				public GameObject HeatDistortionPrefab;
-				public ParticleEmitter RiftSmokePrefab;
+				public ParticleSystem RiftSmokePrefab;
 				public Light RiftLightPrefab;
 				public bool HasBeenGeneratedThisSession = false;
 				public Transform FXPivot;
@@ -28,7 +28,7 @@ namespace Frontiers.World.WIScripts
 				public LavaRiver RiftLava;
 				public Spline HeatDistortion;
 				public List <Light> PointLights = new List <Light>();
-				public List <ParticleEmitter> SmokeSources = new List <ParticleEmitter>();
+				public List <Transform> SmokeSources = new List <Transform>();
 				public List <Rigidbody> OuterSegments = new List <Rigidbody>();
 				public List <MeshRenderer> OuterSegmentRenderers = new List <MeshRenderer>();
 				public List <Rigidbody> InnerSegments = new List <Rigidbody>();
@@ -241,14 +241,14 @@ namespace Frontiers.World.WIScripts
 						FXPivot.Rotate(0f, -SmokeParticlesRange / 2, 0f);//so our Z points to the middle with particles on either side
 						for (int i = 0; i < NumSmokeSources; i++) {
 								GameObject smokeParticlesGameObject = GameObject.Instantiate(RiftSmokePrefab.gameObject) as GameObject;
-								ParticleEmitter smokeParticles = smokeParticlesGameObject.GetComponent <ParticleEmitter>();
-								Transform smokeParticlesTransform = smokeParticles.transform;
+								//ParticleSystem smokeParticles = smokeParticlesGameObject.GetComponent <ParticleSystem>();
+								Transform smokeParticlesTransform = smokeParticlesGameObject.transform;
 								smokeParticlesTransform.parent = worlditem.tr;
 								smokeParticlesTransform.ResetLocal();
 								smokeParticlesTransform.Translate(0f, SmokeHeight, (State.OuterRadius + State.InnerRadius) / 2);
 								smokeParticlesTransform.parent = FXPivot;
-								smokeParticles.Simulate(1.0f);
-								SmokeSources.Add(smokeParticles);
+								//smokeParticles.Simulate(1.0f);
+								SmokeSources.Add(smokeParticlesTransform);
 
 								GameObject lightGameObject = null;
 								if (State.BuildPointLights) {
@@ -348,7 +348,7 @@ namespace Frontiers.World.WIScripts
 						gameCameraPosition.y = worlditem.tr.position.y;
 						FXPivot.LookAt(gameCameraPosition);
 
-						if (GameManager.Is (FGameState.Cutscene | FGameState.InGame)) {
+						if (GameManager.Is (FGameState.Cutscene | FGameState.InGame) && !GUI.GUILoading.IsLoading) {
 							if (UnityEngine.Random.value > MagmaEffectSpawnValue) {
 									//select a random light source
 									Light lightSource = PointLights[UnityEngine.Random.Range(0, PointLights.Count)];

@@ -66,6 +66,7 @@ namespace Frontiers.World
 								//script.BeginUnload();
 								enumerator.Current.BeginUnload();
 						}
+						OnBeginUnload();
 				}
 
 				public bool TryToCancelUnload()
@@ -101,21 +102,23 @@ namespace Frontiers.World
 								bool result = false;
 								if (Is(WILoadState.Unloading)) {
 										//if we're still unloading, check if we're done
-										result = true;
-										IEnumerator <WIScript> enumerator = mScripts.Values.GetEnumerator();
-										while (enumerator.MoveNext()) {
-												//foreach (WIScript script in mScripts.Values) {
-												//we don't need to check them all
-												//just until we hit one that isn't done
-												if (!enumerator.Current.FinishedUnloading) {
-														result = false;
-														break;
+										if (SaveState != null && SaveState.Saved) {
+												result = true;
+												IEnumerator <WIScript> enumerator = mScripts.Values.GetEnumerator();
+												while (enumerator.MoveNext()) {
+														//foreach (WIScript script in mScripts.Values) {
+														//we don't need to check them all
+														//just until we hit one that isn't done
+														if (!enumerator.Current.FinishedUnloading) {
+																result = false;
+																break;
+														}
 												}
-										}
-										if (result) {
-												//are all scripts done? good then we're permanently unloaded
-												LoadState = WILoadState.Unloaded;
-												OnFinishedUnloading();
+												if (result) {
+														//are all scripts done? good then we're permanently unloaded
+														LoadState = WILoadState.Unloaded;
+														OnFinishedUnloading();
+												}
 										}
 								} else if (Is(WILoadState.Unloaded)) {
 										//if we've already unloaded there's no way back

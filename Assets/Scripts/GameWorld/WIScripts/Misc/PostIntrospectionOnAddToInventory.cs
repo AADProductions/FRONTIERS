@@ -24,7 +24,10 @@ namespace Frontiers.World.WIScripts
 
 				public IEnumerator PostIntrospection()
 				{
-						yield return WorldClock.WaitForRTSeconds(IntrospectionDelay);
+						double start = Frontiers.WorldClock.AdjustedRealTime;
+						while (Frontiers.WorldClock.AdjustedRealTime < start + IntrospectionDelay) {
+								yield return null;
+						}
 			
 						GUI.GUIManager.PostIntrospection(IntrospectionMessage);
 			

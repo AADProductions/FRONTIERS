@@ -36,6 +36,119 @@ namespace Frontiers
 								base.Awake();
 						}
 
+						public static class XmlHelper<T> where T : class
+						{
+								public static readonly XmlSerializer Serializer = new XmlSerializer(typeof(T));
+								public static readonly XmlWriterSettings WriterSettings = new XmlWriterSettings();
+
+								public static bool DeserializeXMLFromFile(ref T dataObject, string path)
+								{
+										bool result = false;
+
+										//Debug.Log("Loading path " + path);
+
+										if (File.Exists(path)) {
+												try {
+														using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)) {
+																dataObject = (T)Serializer.Deserialize(stream);
+																result = true;
+																stream.Close();
+														}
+												} catch (Exception e) {
+														Debug.Log("Couldn't load file " + path + " bacuase " + e.ToString() + "\n" + e.StackTrace);
+												}
+										} else {
+												//Debug.Log("File " + path + " doesn't exist");
+										}
+										return result;
+								}
+
+								public static bool SerializeXMLToFile(T dataObject, string path)
+								{
+										bool result = false;
+
+										if (File.Exists(path)) {
+												//that's right, if it exists before we save, we nuke it
+												File.Delete(path);
+										}
+
+										//Debug.Log("Saving " + path);
+
+										try {
+												WriterSettings.NewLineHandling = NewLineHandling.Replace;
+												WriterSettings.Indent = true;
+												WriterSettings.NewLineOnAttributes	= false;
+												WriterSettings.NewLineChars = Environment.NewLine;
+												WriterSettings.IndentChars = " ";
+												//writerSettings.Encoding = Encoding.UTF8; <-WHY does this explode things??
+
+												using (XmlWriter xmlWriter = XmlWriter.Create(path, WriterSettings)) {
+														Serializer.Serialize(xmlWriter, dataObject);
+														xmlWriter.Flush();
+														xmlWriter.Close();
+														result = true;
+												}
+										} catch (Exception e) {
+												Debug.Log("Couldn't save file " + path + " bacuase " + e.InnerException.ToString() + "\n" + e.StackTrace);
+										}
+										return result;
+								}
+
+								public static string XmlSerializeToString(object objectInstance)
+								{
+										//var serializer = new XmlSerializer(typeof(T));//objectInstance.GetType());
+										var sb = new StringBuilder();
+
+										using (TextWriter writer = new StringWriter(sb)) {
+												Serializer.Serialize(writer, objectInstance);
+										}
+										return sb.ToString();
+								}
+
+								public static T XmlDeserializeFromString <T>(string objectData) where T : new()
+								{
+										object deserializedObject = new T();
+
+										XmlDeserializeFromString(objectData, typeof(T), out deserializedObject);
+
+										return (T)deserializedObject;
+								}
+
+								public static bool XmlDeserializeFromString(string objectData, Type type, out object deserializedObject)
+								{
+										deserializedObject	= null;
+										var serializer = new XmlSerializer(type);
+
+										using (TextReader reader = new StringReader(objectData)) {
+												deserializedObject = serializer.Deserialize(reader);
+										}
+
+										if (deserializedObject != null) {
+												return true;
+										} else {
+												Debug.Log("Deserialized object was null when attempting to deserialize " + objectData + " into type " + type.ToString());
+										}
+
+										return false;
+								}
+
+								public static object XmlDeserializeFromString(string objectData, string typeName)
+								{
+										object deserializedObject = null;
+										Type type = Type.GetType(typeName);
+										if (type == null) {
+												Debug.Log("Couldn't get type from typename " + typeName);
+												return null;
+										}
+
+										if (string.IsNullOrEmpty(objectData) || !XmlDeserializeFromString(objectData, Type.GetType(typeName), out deserializedObject)) {
+												Debug.Log("Couldn't deserialize from string for some reason");
+										}
+
+										return deserializedObject;
+								}
+						}
+
 						public static class IO
 						{
 								//this is what most of the game uses to read / save files
@@ -84,7 +197,8 @@ namespace Frontiers
 										return false;
 								}
 
-								public static void SetWorldName (string worldName) {
+								public static void SetWorldName(string worldName)
+								{
 										gModWorldFolderName = worldName;
 										string errorMessage = null;
 										if (!InitializeSystemPaths(out errorMessage)) {
@@ -123,7 +237,7 @@ namespace Frontiers
 														gGlobalDataPath = System.IO.Path.Combine(Application.dataPath, gFrontiersPrefix);
 														gGlobalChangeLogPath = System.IO.Path.Combine(gGlobalDataPath, "changelog.txt");
 														break;
-												// HACK: This is only to fix your building into the root of the project. Bad form!
+										// HACK: This is only to fix your building into the root of the project. Bad form!
 												case RuntimePlatform.OSXEditor:
 														gGlobalDataPath = gFrontiersPrefix;
 														break;
@@ -332,16 +446,18 @@ namespace Frontiers
 										string dataPath = GetDataPath(type);
 										string directory = System.IO.Path.Combine(dataPath, directoryName);
 
-										if (Directory.Exists(directory)) {
+										System.IO.DirectoryInfo filesDirectory = new System.IO.DirectoryInfo(directory);
+										if (filesDirectory.Exists) {
 												result = true;
-												System.IO.DirectoryInfo filesDirectory = new System.IO.DirectoryInfo(directory);
+												string fileName = null;
 												foreach (System.IO.FileInfo file in filesDirectory.GetFiles ( )) {
-														if (!file.Name.StartsWith("_")) {
-																if (includeExtension) {
-																		fileNames.Add(file.Name);
-																} else {
-																		fileNames.Add(System.IO.Path.GetFileNameWithoutExtension(file.Name));
-																}
+														if (includeExtension) {
+																fileName = file.Name;
+														} else {
+																fileName = System.IO.Path.GetFileNameWithoutExtension(file.Name);
+														}
+														if (!fileName[0].Equals('_')) {
+																fileNames.Add(fileName);
 														}
 												}
 										} else {
@@ -410,7 +526,7 @@ namespace Frontiers
 
 										if (Directory.Exists(directory) && !string.IsNullOrEmpty(settings.Name)) {
 												string path = System.IO.Path.Combine(directory, settings.Name) + gDataExtension;
-												SerializeXMLToFile <WorldSettings>(settings, path);
+												XmlHelper<WorldSettings>.SerializeXMLToFile(settings, path);
 												return true;
 										}
 
@@ -422,52 +538,22 @@ namespace Frontiers
 										errorMessage = string.Empty;
 
 										string path = System.IO.Path.Combine(gGlobalWorldsPath, (worldName + gDataExtension));
-										FileMode mode = FileMode.Open;
-										FileShare share = FileShare.ReadWrite;
-										FileAccess access = FileAccess.ReadWrite;
-
-										if (File.Exists(path)) {
-												try {
-														var serializer = new XmlSerializer(typeof(WorldSettings));
-														var stream = new FileStream(path, mode, access, share);
-														world = (WorldSettings)serializer.Deserialize(stream);
-														return true;
-												} catch (Exception e) {
-														errorMessage = "Couldn't find world because " + e.ToString();
-												}
-										}
-										errorMessage = "Couldn't find world";
-										return false;
+										return XmlHelper<WorldSettings>.DeserializeXMLFromFile(ref world, path);
 								}
 
 								public static void SaveWorld(WorldSettings world)
 								{
 										string path = System.IO.Path.Combine(gGlobalWorldsPath, (world.Name + gDataExtension));
-										FileMode mode = FileMode.CreateNew;
-										FileShare share = FileShare.ReadWrite;
-										FileAccess access = FileAccess.ReadWrite;
-
-										if (File.Exists(path)) {
-												mode = FileMode.Open;
-										}
-
-										var serializer = new XmlSerializer(typeof(PlayerProfile));
-										using (var stream = new FileStream(path, mode, access, share)) {
-												serializer.Serialize(stream, world);
-										}
+										XmlHelper<WorldSettings>.SerializeXMLToFile(world, path);
 								}
 
 								public static bool LoadProfile(ref PlayerProfile profile, string profileName, out string errorMessage)
 								{
 										errorMessage = string.Empty;
-
 										string path = System.IO.Path.Combine(gGlobalProfilesPath, profileName);
 										path = System.IO.Path.Combine(path, (profileName + gProfileExtension));
-										FileMode mode = FileMode.Open;
-										FileShare share = FileShare.ReadWrite;
-										FileAccess access = FileAccess.ReadWrite;
 
-										if (!DeserializeXMLFromFile <PlayerProfile>(ref profile, path)) {
+										if (!XmlHelper<PlayerProfile>.DeserializeXMLFromFile(ref profile, path)) {
 												errorMessage = "Couldn't find profile";
 												return false;
 										}
@@ -478,11 +564,8 @@ namespace Frontiers
 								{
 										string path = System.IO.Path.Combine(gGlobalProfilesPath, profile.Name);
 										path = System.IO.Path.Combine(path, (profile.Name + gProfileExtension));
-										FileMode mode = FileMode.CreateNew;
-										FileShare share = FileShare.ReadWrite;
-										FileAccess access = FileAccess.ReadWrite;
 
-										SerializeXMLToFile <PlayerProfile>(profile, path);
+										XmlHelper<PlayerProfile>.SerializeXMLToFile(profile, path);
 								}
 
 								public static bool LoadPreferences(ref PlayerPreferences prefs, string profileName, out string errorMessage)
@@ -492,11 +575,7 @@ namespace Frontiers
 										string path = System.IO.Path.Combine(gGlobalProfilesPath, profileName);
 										path = System.IO.Path.Combine(path, "Preferences" + gPreferencesExtension);
 
-										FileMode mode = FileMode.Open;
-										FileShare share = FileShare.ReadWrite;
-										FileAccess access = FileAccess.ReadWrite;
-
-										if (!DeserializeXMLFromFile <PlayerPreferences>(ref prefs, path)) {
+										if (!XmlHelper<PlayerPreferences>.DeserializeXMLFromFile(ref prefs, path)) {
 												errorMessage = "Couldn't find profile";
 												Debug.Log("Couldn't find profile at " + path);
 												return false;
@@ -508,14 +587,14 @@ namespace Frontiers
 								{
 										string path = System.IO.Path.Combine(gGlobalProfilesPath, profileName);
 										path = System.IO.Path.Combine(path, "Preferences" + gPreferencesExtension);
-										SerializeXMLToFile <PlayerPreferences>(preferences, path);
+										XmlHelper<PlayerPreferences>.SerializeXMLToFile(preferences, path);
 								}
 
 								public static bool LoadGame(ref PlayerGame game, string worldName, string gameName)
 								{
 										string path = System.IO.Path.Combine(gCurrentProfilePath, worldName);
 										path = System.IO.Path.Combine(path, (gameName + gGameExtension));
-										return DeserializeXMLFromFile <PlayerGame>(ref game, path);
+										return XmlHelper<PlayerGame>.DeserializeXMLFromFile(ref game, path);
 								}
 
 								public static void SaveGame(PlayerGame game)
@@ -527,10 +606,11 @@ namespace Frontiers
 										string path = System.IO.Path.Combine(gCurrentProfilePath, game.WorldName);
 										path = System.IO.Path.Combine(path, (GameData.IO.gLiveGameFolderName + gGameExtension));
 										Debug.Log("Saving game to " + path);
-										SerializeXMLToFile <PlayerGame>(game, path);
+										XmlHelper<PlayerGame>.SerializeXMLToFile(game, path);
 								}
 
-								public static void DeleteLiveGame() {
+								public static void DeleteLiveGame()
+								{
 
 								}
 
@@ -540,11 +620,52 @@ namespace Frontiers
 										string gamePropsPath = System.IO.Path.Combine(gCurrentWorldPath, gameName + gGameExtension);
 
 										if (Directory.Exists(gameDirectoryPath)) {
-												Directory.Delete(gameDirectoryPath, true);
+												switch (Application.platform) {
+														case RuntimePlatform.LinuxPlayer:
+														case RuntimePlatform.OSXPlayer:
+																DeleteDirectory(gameDirectoryPath, true);
+																break;
+
+														default:
+																Directory.Delete(gameDirectoryPath, true);
+																break;
+												}
 										}
 										if (File.Exists(gamePropsPath)) {
 												File.Delete(gamePropsPath);
 										}
+								}
+
+								public static void DeleteDirectory(string path, bool recursive)
+								{
+										// Delete all files and sub-folders?
+										if (recursive) {
+												// Yep... Let's do this
+												var subfolders = Directory.GetDirectories(path);
+												foreach (var s in subfolders) {
+														DeleteDirectory(s, recursive);
+												}
+										}
+
+										// Get all files of the folder
+										var files = Directory.GetFiles(path);
+										foreach (var f in files) {
+												// Get the attributes of the file
+												var attr = File.GetAttributes(f);
+
+												// Is this file marked as 'read-only'?
+												if ((attr & FileAttributes.ReadOnly) == FileAttributes.ReadOnly) {
+														// Yes... Remove the 'read-only' attribute, then
+														File.SetAttributes(f, attr ^ FileAttributes.ReadOnly);
+												}
+
+												// Delete the file
+												File.Delete(f);
+										}
+
+										// When we get here, all the files of the folder were
+										// already deleted, so we just delete the empty folder
+										Directory.Delete(path);
 								}
 
 								public static void DeleteProfileData(string profileName)
@@ -586,7 +707,7 @@ namespace Frontiers
 										try {
 												if (Directory.Exists(toPath)) {
 														//this SHOULD be an atomic operation...
-														Debug.Log ("Deleting existing game data " + toPath);
+														Debug.Log("Deleting existing game data " + toPath);
 														Directory.Delete(toPath, true);
 												}
 
@@ -601,7 +722,7 @@ namespace Frontiers
 												if (File.Exists(fromGamePath)) {
 														//copy the actual save game too
 														if (File.Exists(toGamePath)) {
-																Debug.Log ("Deleting existing game file " + toGamePath);
+																Debug.Log("Deleting existing game file " + toGamePath);
 																File.Delete(toGamePath);
 														}					
 														File.Copy(fromGamePath, toGamePath);
@@ -806,7 +927,7 @@ namespace Frontiers
 										if (!Directory.Exists(dataPath)) {
 												Directory.CreateDirectory(dataPath);
 										}
-										SerializeXMLToFile <T>(dataObject, path);
+										XmlHelper<T>.SerializeXMLToFile(dataObject, path);
 								}
 
 								public static void SaveData <T>(T dataObject, string directoryName, string fileName, DataType type, DataCompression compression) where T : class
@@ -817,14 +938,14 @@ namespace Frontiers
 										if (!Directory.Exists(directory)) {
 												Directory.CreateDirectory(directory);
 										}
-										SerializeXMLToFile <T>(dataObject, path);
+										XmlHelper<T>.SerializeXMLToFile(dataObject, path);
 								}
 
 								public static bool LoadData <T>(ref T dataObject, string fileName, DataType type, DataCompression compression) where T : class
 								{
 										string dataPath = GetDataPath(type);
 										string path = System.IO.Path.Combine(dataPath, (fileName + gDataExtension));
-										return DeserializeXMLFromFile <T>(ref dataObject, path);
+										return XmlHelper<T>.DeserializeXMLFromFile(ref dataObject, path);
 								}
 
 								public static bool LoadData <T>(ref T dataObject, string directoryName, string fileName, DataType type, DataCompression compression) where T : class
@@ -832,7 +953,7 @@ namespace Frontiers
 										string dataPath = GetDataPath(type);
 										string directory = System.IO.Path.Combine(dataPath, directoryName);
 										string path = System.IO.Path.Combine(directory, (fileName + gDataExtension));
-										return DeserializeXMLFromFile <T>(ref dataObject, path);
+										return XmlHelper<T>.DeserializeXMLFromFile(ref dataObject, path);
 								}
 
 								public static bool SaveBinaryData <T>(T dataObject, string directoryName, string fileName, DataType type)
@@ -1026,8 +1147,7 @@ namespace Frontiers
 								{
 										return false;
 								}
-
-								public static bool DeserializeXMLFromFile <T>(ref T dataObject, string path) where T : class
+								/*public static bool DeserializeXMLFromFile <T>(ref T dataObject, string path) where T : class
 								{
 										bool result = false;
 										FileMode mode = FileMode.Open;
@@ -1087,8 +1207,7 @@ namespace Frontiers
 												Debug.Log("Couldn't save file " + path + " bacuase " + e.InnerException.ToString() + "\n" + e.StackTrace);
 										}
 										return result;
-								}
-
+								}*/
 								public static bool SaveObjFromMesh(Mesh mesh, Material[] mats, string directoryName, string fileName, DataType type)
 								{
 										string dataPath = GetDataPath(type);
@@ -1383,7 +1502,7 @@ namespace Frontiers
 										//unity doesn't let you specify normal map format in scripts (WTF UNITY)
 										//so if we want this to be a normal map we have to take this step
 										//do this here BEFORE the threaded texture resize so we don't end up working on grey pixels
-										if (asNormalMap) {
+										/*if (asNormalMap) { TEMP disabling this for now, load time was just too brutal
 												Debug.Log("Converting to normal map");
 												Color oldColor = new Color();
 												Color newColor = new Color();
@@ -1400,7 +1519,7 @@ namespace Frontiers
 												}
 												texture.Apply();
 												yield return null;
-										}
+										}*/
 										texture.filterMode = FilterMode.Bilinear;
 										texture.wrapMode = TextureWrapMode.Repeat;
 										if (requiresResize) {

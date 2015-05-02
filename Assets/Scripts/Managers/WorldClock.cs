@@ -494,26 +494,6 @@ namespace Frontiers
 				#endregion
 
 				#region helper functions / classes
-
-				//this is used in place of WaitForSeconds ( ) in coroutines because it works when timescale is different
-				public static IEnumerator WaitForRTSeconds(double time)
-				{
-						double start = RealTime;
-						while (RealTime < start + time) {
-								yield return null;
-						}
-						yield break;
-				}
-
-				public static IEnumerator WaitForSeconds(double time)
-				{
-						double start = AdjustedRealTime;
-						while (AdjustedRealTime < start + time) {
-								yield return null;
-						}
-						yield break;
-				}
-
 				public TimeOfDay TimeOfDayAfter(TimeOfDay timeOfDay)
 				{	//ugly, fix this
 						TimeOfDay nextTimeOfDay = TimeOfDay.aa_TimeMidnight;
@@ -913,7 +893,7 @@ namespace Frontiers
 				#endif
 				public static void SetCycleLength(double inGameMinutesPerRealTimeSecond)
 				{
-						Debug.Log("Setting in game minutes per rt minute to " + inGameMinutesPerRealTimeSecond.ToString());
+						//Debug.Log("Setting in game minutes per rt minute to " + inGameMinutesPerRealTimeSecond.ToString());
 
 						gMinutesPerRTSecond = inGameMinutesPerRealTimeSecond;
 						gSecondsPerRTSecond = gMinutesPerRTSecond * gMinuteCycleSeconds;
@@ -929,11 +909,13 @@ namespace Frontiers
 						gYearCycleRT = gYearCycleSeconds * gRTSecondsPerGameSecond;
 						gCenturyCycleRT = gCenturyCycleSeconds * gRTSecondsPerGameSecond;
 
+						/*
 						Debug.Log("Hour cycle RT: " + gHourCycleRT.ToString());
 						Debug.Log("Day cycle RT: " + gDayCycleRT.ToString());
 						Debug.Log("Month cycle RT: " + gMonthCycleRT.ToString());
 						Debug.Log("Year cycle RT: " + gYearCycleRT.ToString());
 						Debug.Log("Century cycle RT: " + gCenturyCycleRT.ToString());
+						*/
 				}
 
 				public bool SuspendMessagesThisFrame = false;

@@ -351,14 +351,21 @@ namespace Frontiers.World.WIScripts
 						if (Mods.Get.Editor.LoadMod <StructureTemplate>(ref template, "Structure", structure.State.TemplateName)) {
 								int numDoorsAndWindows = template.Exterior.GenericDoors.Length + template.Exterior.GenericWindows.Length;
 								int stackItems = template.Exterior.UniqueWorlditems.Count;
-								List <ChildPiece> genericDoors = new List<ChildPiece>();
-								List <ChildPiece> genericWindows = new List<ChildPiece>();
-								StructureTemplate.ExtractChildPiecesFromLayer(genericDoors, template.Exterior.GenericDoors);
-								StructureTemplate.ExtractChildPiecesFromLayer(genericWindows, template.Exterior.GenericWindows);
+								List <ChildPiece> genericDoors = null;//new List<ChildPiece>();
+								List <ChildPiece> genericWindows = null;//new List<ChildPiece>();
+								if (StructureTemplate.ExtractChildPiecesFromLayer(ref genericDoors, template.Exterior.GenericDoors)) {
+										numDoorsAndWindows += genericDoors.Count;
+								}
+								if (StructureTemplate.ExtractChildPiecesFromLayer(ref genericWindows, template.Exterior.GenericWindows)) {
+										numDoorsAndWindows += genericWindows.Count;
+								}
 								for (int i = 0; i < template.InteriorVariants.Count; i++) {
-										StructureTemplate.ExtractChildPiecesFromLayer(genericDoors, template.InteriorVariants[i].GenericDoors);
-										StructureTemplate.ExtractChildPiecesFromLayer(genericWindows, template.InteriorVariants[i].GenericWindows);
-										numDoorsAndWindows += (genericDoors.Count + genericWindows.Count);
+										if (StructureTemplate.ExtractChildPiecesFromLayer(ref genericDoors, template.InteriorVariants[i].GenericDoors)) {
+												numDoorsAndWindows += genericDoors.Count;
+										}
+										if (StructureTemplate.ExtractChildPiecesFromLayer(ref genericWindows, template.InteriorVariants[i].GenericWindows)) {
+												numDoorsAndWindows += genericWindows.Count;
+										}
 										stackItems += template.InteriorVariants[i].UniqueWorlditems.Count;
 								}
 								structureValue += numDoorsAndWindows + stackItems;

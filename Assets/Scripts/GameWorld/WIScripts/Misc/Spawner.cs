@@ -61,20 +61,21 @@ namespace Frontiers.World.WIScripts
 								if (setting.TimeToSpawn) {
 										setting.LastManualSpawnPointIndex = 0;//reset this just in case
 										var enumerator = GetSpawnPoints(setting, location, spawnGroup, Player.Local, random).GetEnumerator();
-										//foreach (SpawnPoint spawnPoint in GetSpawnPoints (setting, location, spawnGroup, Player.Local)) {
 										while (enumerator.MoveNext()) {
 												if (!spawnGroup.Is(WIGroupLoadState.Initialized | WIGroupLoadState.Loading | WIGroupLoadState.Loaded)) {
 														//whoops, it unloaded
 														yield break;
 												}
 												SpawnPoint spawnPoint = enumerator.Current;
+												//wait a tick after fetching the spawn point
+												yield return null;
 												if (spawnPoint != SpawnPoint.Empty) {
 														var spawn = Spawn(spawnPoint, setting, location, spawnGroup, random);
 														while (spawn.MoveNext()) {
 																yield return spawn.Current;
 														}
 												}
-												double waitUntil = WorldClock.RealTime + Globals.SpawnerRTYieldInterval;
+												double waitUntil = WorldClock.RealTime + Globals.SpawnerRTYieldInterval + UnityEngine.Random.value * 0.25f;
 												while (WorldClock.RealTime < waitUntil) {
 														yield return null;
 												}

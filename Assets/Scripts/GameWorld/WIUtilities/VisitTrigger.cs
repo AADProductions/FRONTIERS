@@ -17,19 +17,19 @@ namespace Frontiers.World
 						VisitableLocation = visitable;
 						Location location = null;
 						if (visitable.worlditem.Is <Location>(out location)) {
+								rb.position = visitable.worlditem.tr.position;
+								rb.rotation = visitable.worlditem.tr.rotation;
+								if (VisitableCollider == null) {
+										VisitableCollider = gameObject.GetOrAdd <SphereCollider>();
+								}
 								VisitableCollider.radius = location.worlditem.ActiveRadius;
+								VisitableCollider.isTrigger = true;
 						}
-						VisitableCollider.isTrigger = true;
-						rb.position = visitable.worlditem.tr.position;
-						rb.rotation = visitable.worlditem.tr.rotation;
 				}
 
 				public void Awake()
 				{
 						gameObject.layer = Globals.LayerNumLocationBroadcaster;
-						if (VisitableCollider == null) {
-								VisitableCollider = gameObject.GetOrAdd <SphereCollider>();
-						}
 						rb = gameObject.GetOrAdd <Rigidbody>();
 						rb.isKinematic = true;
 						rb.detectCollisions = false;
@@ -37,21 +37,21 @@ namespace Frontiers.World
 
 				public void OnEnable()
 				{
-						VisitableCollider.enabled = true;
+						if (VisitableCollider != null) {
+								VisitableCollider.enabled = true;
+						}
 						if (rb != null) {
 								rb.detectCollisions = true;
-						} else {
-								Debug.Log("VISIT TRIGGER " + name + " HAD NO ATTACHED RIGID BODY");
 						}
 				}
 
 				public void OnDisable()
 				{
-						VisitableCollider.enabled = false;
+						if (VisitableCollider != null) {
+								VisitableCollider.enabled = false;
+						}
 						if (rb != null) {
 								rb.detectCollisions = false;
-						} else {
-								Debug.Log("VISIT TRIGGER " + name + " HAD NO ATTACHED RIGID BODY");
 						}
 				}
 

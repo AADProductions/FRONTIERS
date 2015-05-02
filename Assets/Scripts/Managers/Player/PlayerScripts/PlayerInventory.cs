@@ -122,9 +122,17 @@ namespace Frontiers
 
 				public override void OnStateLoaded()
 				{
-						Stacks.Convert.UnloadedItemsToWorldItems(State.QuickslotsStack);
-						for (int i = 0; i < State.InventoryStacks.Count; i++) {
-								Stacks.Convert.UnloadedItemsToWorldItems(State.InventoryStacks[i]);
+						try {
+							if (State.QuickslotsStack.Group == null) {
+									State.QuickslotsStack.Group = WIGroups.Get.Player;
+							}
+							Stacks.Convert.UnloadedItemsToWorldItems(State.QuickslotsStack);
+							for (int i = 0; i < State.InventoryStacks.Count; i++) {
+									Stacks.Convert.UnloadedItemsToWorldItems(State.InventoryStacks[i]);
+							}
+						}
+						catch (Exception e) {
+								Debug.LogError("Exception when loading state in inventory, proceeding normally: " + e.ToString());
 						}
 				}
 

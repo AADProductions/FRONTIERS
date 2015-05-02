@@ -301,6 +301,7 @@ namespace Frontiers
 
 				public Shader NGUIOculusShader;
 				public Shader NGUINormalShader;
+				public Material EmptyMaterial;
 				public Material WorldMapPathMaterial;
 				public Material CompassProjectorMaterial;
 				public Material DirectionArrowMaterial;
@@ -327,6 +328,7 @@ namespace Frontiers
 				public UIFont VerySloppyHandwriting48Font;
 				public UIFont WolgastCursive72Font;
 				public UIFont OpenDyslexic40Font;
+				public Material WorldPathGroundParticleMaterial;
 				public Material DefaultDiffuseMaterial;
 				public Material WaveOverlayMaterial;
 				public Material SnowOverlayMaterial;

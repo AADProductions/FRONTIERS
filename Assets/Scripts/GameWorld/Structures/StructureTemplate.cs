@@ -1,6 +1,4 @@
 using UnityEngine;
-
-//using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 using System;
@@ -15,12 +13,12 @@ namespace Frontiers.World
 	[Serializable]
 	public class StructureTemplate : Mod
 	{
-		public SVector3 CommonShingleOffset = new SVector3();
-		public STransform CommonSignboardOffset = new STransform();
+		public SVector3 CommonShingleOffset = new SVector3 ();
+		public STransform CommonSignboardOffset = new STransform ();
 		public StructureBuildMethod BuildMethod = StructureBuildMethod.MeshCombiner;
-		public StructureTemplateGroup Exterior = new StructureTemplateGroup();
-		public List <StructureTemplateGroup> InteriorVariants = new List <StructureTemplateGroup>();
-		public List <STransform> Footprint = new List <STransform>();
+		public StructureTemplateGroup Exterior = new StructureTemplateGroup ();
+		public List <StructureTemplateGroup> InteriorVariants = new List <StructureTemplateGroup> ();
+		public List <STransform> Footprint = new List <STransform> ();
 
 		public int NumInteriorVariants {
 			get {
@@ -28,24 +26,24 @@ namespace Frontiers.World
 			}
 		}
 
-		public void Clear()
+		public void Clear ()
 		{
 			for (int i = 0; i < InteriorVariants.Count; i++) {
-				ClearTemplateGroup(InteriorVariants[i]);
+				ClearTemplateGroup (InteriorVariants [i]);
 			}
-			ClearTemplateGroup(Exterior);
+			ClearTemplateGroup (Exterior);
 		}
 
 		#region static helper functions
 
-		public static void ClearTemplateGroup(StructureTemplateGroup stg)
+		public static void ClearTemplateGroup (StructureTemplateGroup stg)
 		{
-			stg.ActionNodes.Clear();
-			stg.StaticStructureLayers.Clear();
-			stg.UniqueDoors.Clear();
-			stg.UniqueDynamic.Clear();
-			stg.UniqueWindows.Clear();
-			stg.UniqueWorlditems.Clear();
+			stg.ActionNodes.Clear ();
+			stg.StaticStructureLayers.Clear ();
+			stg.UniqueDoors.Clear ();
+			stg.UniqueDynamic.Clear ();
+			stg.UniqueWindows.Clear ();
+			stg.UniqueWorlditems.Clear ();
 
 			stg.UniqueDoors = null;
 			stg.UniqueDynamic = null;
@@ -62,91 +60,94 @@ namespace Frontiers.World
 			stg.GenericWItems = null;
 		}
 
-		public static void InstantiateStructureLayer(StructureLayer staticLayer, Transform childParent)
+		public static void InstantiateStructureLayer (StructureLayer staticLayer, Transform childParent)
 		{
 			//instantiate the child objects
 			ChildPiece childPiece = ChildPiece.Empty;
-			List <ChildPiece> childPieces = new List<ChildPiece>();
-			StructureTemplate.ExtractChildPiecesFromLayer(childPieces, staticLayer.Instances);
-			//send the child pieces to the mesh combiner and wait for it to finish
-			StructurePackPrefab prefab = null;
-			if (Structures.Get.PackStaticPrefab(staticLayer.PackName, staticLayer.PrefabName, out prefab)) {
-				//add the child pieces to the mesh combiner
+			List <ChildPiece> childPieces = null;//new List<ChildPiece>();
+			if (StructureTemplate.ExtractChildPiecesFromLayer (ref childPieces, staticLayer.Instances)) {
+				//send the child pieces to the mesh combiner and wait for it to finish
+				StructurePackPrefab prefab = null;
+				if (Structures.Get.PackStaticPrefab (staticLayer.PackName, staticLayer.PrefabName, out prefab)) {
+					//add the child pieces to the mesh combiner
+					if (childPieces.Count > 0) {
+						for (int j = 0; j < childPieces.Count; j++) {
+							childPiece = childPieces [j];
+							//use the helper to create a world matrix
+							GameObject instantiatedPrefab = GameObject.Instantiate (prefab.Prefab) as GameObject;
+							instantiatedPrefab.transform.parent = childParent;
+							instantiatedPrefab.transform.localPosition = childPiece.Position;
+							instantiatedPrefab.transform.localRotation = Quaternion.Euler (childPiece.Rotation);
+							instantiatedPrefab.transform.localScale = childPiece.Scale;
+							instantiatedPrefab.layer = staticLayer.Layer;
+							instantiatedPrefab.tag = staticLayer.Tag;
+						}
+					}
+
+				} else {	
+					//Debug.Log ("Couldn't load " + staticLayer.PackName + ", " + staticLayer.PrefabName + " in " + childParent.name);
+				}
+				childPieces.Clear ();
+				childPieces = null;
+			}
+		}
+
+		public static void InstantiateGenericDynamic (string dynamicInstances, Transform childParent, WIGroup group)
+		{
+			//instantiate the child objects
+			ChildPiece childPiece = ChildPiece.Empty;
+			List <ChildPiece> childPieces = null;//new List<ChildPiece>();
+			if (StructureTemplate.ExtractChildPiecesFromLayer (ref childPieces, dynamicInstances)) {
+				//send the child pieces to the mesh combiner and wait for it to finish
+				DynamicPrefab prefab = null;
 				if (childPieces.Count > 0) {
 					for (int j = 0; j < childPieces.Count; j++) {
-						childPiece = childPieces[j];
+						childPiece = childPieces [j];
 						//use the helper to create a world matrix
-						GameObject instantiatedPrefab = GameObject.Instantiate(prefab.Prefab) as GameObject;
-						instantiatedPrefab.transform.parent = childParent;
-						instantiatedPrefab.transform.localPosition = childPiece.Position;
-						instantiatedPrefab.transform.localRotation = Quaternion.Euler(childPiece.Rotation);
-						instantiatedPrefab.transform.localScale = childPiece.Scale;
-						instantiatedPrefab.layer = staticLayer.Layer;
-						instantiatedPrefab.tag = staticLayer.Tag;
-					}
-				}
-				childPieces.Clear();
-				childPieces = null;
-			} else {	
-				//Debug.Log ("Couldn't load " + staticLayer.PackName + ", " + staticLayer.PrefabName + " in " + childParent.name);
-			}
-		}
-
-		public static void InstantiateGenericDynamic(string dynamicInstances, Transform childParent, WIGroup group)
-		{
-			//instantiate the child objects
-			ChildPiece childPiece = ChildPiece.Empty;
-			List <ChildPiece> childPieces = new List<ChildPiece>();
-			StructureTemplate.ExtractChildPiecesFromLayer(childPieces, dynamicInstances);
-			//send the child pieces to the mesh combiner and wait for it to finish
-			DynamicPrefab prefab = null;
-			if (childPieces.Count > 0) {
-				for (int j = 0; j < childPieces.Count; j++) {
-					childPiece = childPieces[j];
-					//use the helper to create a world matrix
-					if (Structures.Get.PackDynamicPrefab(childPiece.PackName, childPiece.ChildName, out prefab)) {
-						//add the child pieces to the mesh combiner
-						GameObject instantiatedPrefab = GameObject.Instantiate(prefab.gameObject) as GameObject;
-						instantiatedPrefab.name = prefab.name;
-						instantiatedPrefab.transform.parent = childParent;
-						instantiatedPrefab.transform.localPosition = childPiece.Position;
-						instantiatedPrefab.transform.localRotation = Quaternion.Euler(childPiece.Rotation);
-						instantiatedPrefab.transform.localScale = childPiece.Scale;
-						DynamicPrefab dynPre = instantiatedPrefab.GetComponent <DynamicPrefab>();
-						if (dynPre.worlditem != null) {
-							dynPre.worlditem.Group = group;
-							WorldItems.InitializeWorldItem(dynPre.worlditem);
+						if (Structures.Get.PackDynamicPrefab (childPiece.PackName, childPiece.ChildName, out prefab)) {
+							//add the child pieces to the mesh combiner
+							GameObject instantiatedPrefab = GameObject.Instantiate (prefab.gameObject) as GameObject;
+							instantiatedPrefab.name = prefab.name;
+							instantiatedPrefab.transform.parent = childParent;
+							instantiatedPrefab.transform.localPosition = childPiece.Position;
+							instantiatedPrefab.transform.localRotation = Quaternion.Euler (childPiece.Rotation);
+							instantiatedPrefab.transform.localScale = childPiece.Scale;
+							DynamicPrefab dynPre = instantiatedPrefab.GetComponent <DynamicPrefab> ();
+							if (dynPre.worlditem != null) {
+								dynPre.worlditem.Group = group;
+								WorldItems.InitializeWorldItem (dynPre.worlditem);
+							}
+						} else {	
+							//Debug.Log ("Couldn't load " + childPiece.PackName + ", " + childPiece.ChildName + " in " + childParent.name);
 						}
-					} else {	
-						//Debug.Log ("Couldn't load " + childPiece.PackName + ", " + childPiece.ChildName + " in " + childParent.name);
 					}
 				}
+				childPieces.Clear ();
+				childPieces = null;
 			}
-			childPieces.Clear();
-			childPieces = null;
 		}
 
-		public static void AddSubstructuresToStructureTemplate(Transform start, ref string substructures)
+		public static void AddSubstructuresToStructureTemplate (Transform start, ref string substructures)
 		{
 			foreach (Transform child in start) {
-				string packName = Structures.Get.PackName(child.name);
+				string packName = Structures.Get.PackName (child.name);
 				StructureDestroyedBehavior behavior = StructureDestroyedBehavior.None;
 				StructureDestroyResult str = null;
-				if (child.gameObject.HasComponent <StructureDestroyResult>(out str)) {
+				if (child.gameObject.HasComponent <StructureDestroyResult> (out str)) {
 					behavior = str.Behavior;
 				}
-				StructureTemplate.AppendGenericChildPieceToLayer(packName, child.name, child, null, ref substructures, false, behavior);
+				StructureTemplate.AppendGenericChildPieceToLayer (packName, child.name, child, null, ref substructures, false, behavior);
 			}
 		}
 
-		public static void AddStaticCollidersToStructureTemplate(Transform start, List <StructureLayer> templateLayers, Transform module)
+		public static void AddStaticCollidersToStructureTemplate (Transform start, List <StructureLayer> templateLayers, Transform module)
 		{
-			Transform staticColliderHelper = start.gameObject.FindOrCreateChild("StaticColliderHelper");
+			Transform staticColliderHelper = start.gameObject.FindOrCreateChild ("StaticColliderHelper");
 
 			foreach (Transform child in start) {
 				if (child.renderer == null && child.collider == null && module == null) {
 					//this is a module, not a static child
-					AddStaticChildrenToStructureTemplate(child, start, templateLayers);
+					AddStaticChildrenToStructureTemplate (child, start, templateLayers);
 				} else {
 					bool addChild = true;
 					if (child.gameObject.layer == Globals.LayerNumHidden || child.gameObject.layer == Globals.LayerNumStructureIgnoreCollider) {
@@ -165,230 +166,230 @@ namespace Frontiers.World
 						string tag = child.gameObject.tag;
 						StructureDestroyedBehavior behavior = StructureDestroyedBehavior.None;
 						StructureDestroyResult str = null;
-						if (child.gameObject.HasComponent <StructureDestroyResult>(out str)) {
+						if (child.gameObject.HasComponent <StructureDestroyResult> (out str)) {
 							behavior = str.Behavior;
 						}
 
-						List <Collider> childColliders = new List <Collider>();
+						List <Collider> childColliders = new List <Collider> ();
 						if (child.collider != null) {
-							childColliders.Add(child.collider);
+							childColliders.Add (child.collider);
 						} else {
 							//Debug.Log ("Child collider was null, looking for sub colliders");
-							Collider[] childColliderComponents = child.GetComponentsInChildren <Collider>(true);
-							childColliders.AddRange(childColliderComponents);
+							Collider[] childColliderComponents = child.GetComponentsInChildren <Collider> (true);
+							childColliders.AddRange (childColliderComponents);
 							//Debug.Log ("Found " + childColliders.Count.ToString () + " colliders");
 						}
 
 						for (int i = 0; i < childColliders.Count; i++) {
-							Collider childCollider = childColliders[i];
+							Collider childCollider = childColliders [i];
 							//the pack name is based on the collider type (sphere, box, whatever)
 							//if it's a mesh collider then we save the mesh collider name
-							string packName = childCollider.GetType().Name;
+							string packName = childCollider.GetType ().Name;
 							string prefabName = childCollider.name;
 
 							//look for an existing layer that matches our own
 							StructureLayer structureLayer = null;
 							for (int j = 0; j < templateLayers.Count; j++) {
-								if (templateLayers[j].PackName == packName
-								            && templateLayers[j].PrefabName == prefabName
-								            && templateLayers[j].Layer == layer
-								            && templateLayers[j].Tag == tag
-								            && templateLayers[j].DestroyedBehavior == behavior) {
-									structureLayer = templateLayers[j];
+								if (templateLayers [j].PackName == packName
+								            && templateLayers [j].PrefabName == prefabName
+								            && templateLayers [j].Layer == layer
+								            && templateLayers [j].Tag == tag
+								            && templateLayers [j].DestroyedBehavior == behavior) {
+									structureLayer = templateLayers [j];
 									break;
 								}
 							}
 							//if we didn't find it, make a new layer
 							if (structureLayer == null) {
-								structureLayer = new StructureLayer();
+								structureLayer = new StructureLayer ();
 								structureLayer.PackName = packName;
 								structureLayer.PrefabName = prefabName;
 								structureLayer.Layer = layer;
 								structureLayer.Tag = tag;
 								structureLayer.DestroyedBehavior = behavior;
 								//add it to the template
-								templateLayers.Add(structureLayer);
+								templateLayers.Add (structureLayer);
 							}
 							//colliders may have odd dimensions and offsets
 							//to prevent us from getting a '1,1,1' collider
 							//use the helper transform to get the actual dimensions
 							staticColliderHelper.parent = childCollider.transform;
-							staticColliderHelper.ResetLocal();
+							staticColliderHelper.ResetLocal ();
 							staticColliderHelper.parent = start;
 							BoxCollider bc = childCollider as BoxCollider;
 							if (bc != null && bc.size != Vector3.one) {
-								staticColliderHelper.localScale = Vector3.Scale(staticColliderHelper.transform.localScale, bc.size);
-								staticColliderHelper.Translate(bc.center);
+								staticColliderHelper.localScale = Vector3.Scale (staticColliderHelper.transform.localScale, bc.size);
+								staticColliderHelper.Translate (bc.center);
 							}
 
 							//add another instance to this layer
 							structureLayer.NumInstances++;
-							structureLayer.Instances = StructureLayer.AddInstance(structureLayer.Instances, staticColliderHelper, module, behavior);
+							structureLayer.Instances = StructureLayer.AddInstance (structureLayer.Instances, staticColliderHelper, module, behavior);
 						}
 					}
 				}
 			}
 
-			GameObject.DestroyImmediate(staticColliderHelper.gameObject);
+			GameObject.DestroyImmediate (staticColliderHelper.gameObject);
 		}
 
-		public static void AddCustomCollidersToStructureTemplate(Transform start, List <StructureLayer> colliderLayers)
+		public static void AddCustomCollidersToStructureTemplate (Transform start, List <StructureLayer> colliderLayers)
 		{
 			foreach (Transform child in start) {
-				string packName = child.collider.GetType().Name;
+				string packName = child.collider.GetType ().Name;
 				string prefabName = child.name;
 				string tag = child.tag;
 				int layer = child.gameObject.layer;
 				StructureDestroyedBehavior behavior = StructureDestroyedBehavior.None;
 				StructureDestroyResult str = null;
-				if (child.gameObject.HasComponent <StructureDestroyResult>(out str)) {
+				if (child.gameObject.HasComponent <StructureDestroyResult> (out str)) {
 					behavior = str.Behavior;
 				}
 
 				//look for an existing layer that matches our own
 				StructureLayer colliderLayer = null;
 				for (int i = 0; i < colliderLayers.Count; i++) {
-					if (colliderLayers[i].PackName == packName
-					         && colliderLayers[i].PrefabName == prefabName
-					         && colliderLayers[i].Layer == layer
-					         && colliderLayers[i].Tag == tag
-					         && colliderLayers[i].DestroyedBehavior == behavior) {
+					if (colliderLayers [i].PackName == packName
+					         && colliderLayers [i].PrefabName == prefabName
+					         && colliderLayers [i].Layer == layer
+					         && colliderLayers [i].Tag == tag
+					         && colliderLayers [i].DestroyedBehavior == behavior) {
 						//we don't need to match substitutions
-						colliderLayer = colliderLayers[i];
+						colliderLayer = colliderLayers [i];
 						break;
 					}
 				}
 				//if we didn't find it, make a new layer
 				if (colliderLayer == null) {
-					colliderLayer = new StructureLayer();
+					colliderLayer = new StructureLayer ();
 					colliderLayer.PackName = packName;
 					colliderLayer.PrefabName = prefabName;
 					colliderLayer.Layer = layer;
 					colliderLayer.Tag = tag;
 					colliderLayer.DestroyedBehavior = behavior;
 					//add it to the template
-					colliderLayers.Add(colliderLayer);
+					colliderLayers.Add (colliderLayer);
 					//Debug.Log ("Added another layer");
 				}
 				//add another instance to this layer
 				colliderLayer.NumInstances++;
-				colliderLayer.Instances = StructureLayer.AddInstance(colliderLayer.Instances, child, null, behavior);
+				colliderLayer.Instances = StructureLayer.AddInstance (colliderLayer.Instances, child, null, behavior);
 			}
 		}
 
-		public static void AddGenericDynamicToStructureTemplate(Transform start, ref string genericDynamic)
+		public static void AddGenericDynamicToStructureTemplate (Transform start, ref string genericDynamic)
 		{
 			foreach (Transform child in start) {
-				string packName = Structures.Get.PackName(child.name);
+				string packName = Structures.Get.PackName (child.name);
 				StructureDestroyedBehavior behavior = StructureDestroyedBehavior.None;
 				StructureDestroyResult str = null;
-				if (child.gameObject.HasComponent <StructureDestroyResult>(out str)) {
+				if (child.gameObject.HasComponent <StructureDestroyResult> (out str)) {
 					behavior = str.Behavior;
 				}
-				StructureTemplate.AppendGenericChildPieceToLayer(packName, child.name, child, null, ref genericDynamic, false, behavior);
+				StructureTemplate.AppendGenericChildPieceToLayer (packName, child.name, child, null, ref genericDynamic, false, behavior);
 			}
 		}
 
-		public static void AddUniqueDynamicToStructureTemplate(Transform start, List <StackItem> dynamicTemplatePieces)
+		public static void AddUniqueDynamicToStructureTemplate (Transform start, List <StackItem> dynamicTemplatePieces)
 		{
 			foreach (Transform child in start) {
 				DynamicPrefab dynPre = null;
 				WorldItem worlditem = null;
-				if (child.gameObject.HasComponent <DynamicPrefab>(out dynPre)) {
-					worlditem = child.GetComponent <DynamicPrefab>().worlditem;
+				if (child.gameObject.HasComponent <DynamicPrefab> (out dynPre)) {
+					worlditem = child.GetComponent <DynamicPrefab> ().worlditem;
 				} else {
-					worlditem = child.GetComponent <WorldItem>();
+					worlditem = child.GetComponent <WorldItem> ();
 				}
 				worlditem.IsTemplate = false;
 				#if UNITY_EDITOR
-				worlditem.OnEditorRefresh();
+				worlditem.OnEditorRefresh ();
 				#endif
-				StackItem template = worlditem.GetStackItem(WIMode.World);
+				StackItem template = worlditem.GetStackItem (WIMode.World);
 				if (template != null) {
-					template.Transform.CopyFrom(child.transform);
-					dynamicTemplatePieces.Add(template);
+					template.Transform.CopyFrom (child.transform);
+					dynamicTemplatePieces.Add (template);
 				} else {
 					//Debug.Log ("Template was null in " + child.name);
 				}
 			}
 		}
 
-		public static void AddWindowsToStructureTemplate(Transform start, List <DynamicStructureTemplatePiece> dynamicTemplatePieces)
+		public static void AddWindowsToStructureTemplate (Transform start, List <DynamicStructureTemplatePiece> dynamicTemplatePieces)
 		{
 			foreach (Transform child in start) {
-				WorldItem worlditem = child.GetComponent <DynamicPrefab>().worlditem;
+				WorldItem worlditem = child.GetComponent <DynamicPrefab> ().worlditem;
 				if (worlditem != null) {
-					DynamicStructureTemplatePiece template = Structures.Get.StackItemFromName(child.name);
+					DynamicStructureTemplatePiece template = Structures.Get.StackItemFromName (child.name);
 					if (template != null) {
-						template.SaveState = worlditem.GetSaveState(true);
-						template.Transform.CopyFrom(child.transform);
-						dynamicTemplatePieces.Add(template);
+						template.SaveState = worlditem.GetSaveState (true);
+						template.Transform.CopyFrom (child.transform);
+						dynamicTemplatePieces.Add (template);
 					}
 				}
 			}
 		}
 
-		public static void AddActionNodesToTemplate(Transform start, List <ActionNodeState> actionNodes)
+		public static void AddActionNodesToTemplate (Transform start, List <ActionNodeState> actionNodes)
 		{
-			Dictionary <string,int> numberedNodes = new Dictionary <string, int>();
-			HashSet <string> nodeNamesRequiringNumbers = new HashSet <string>();
-			List <ActionNode> nodes = new List<ActionNode>();
+			Dictionary <string,int> numberedNodes = new Dictionary <string, int> ();
+			HashSet <string> nodeNamesRequiringNumbers = new HashSet <string> ();
+			List <ActionNode> nodes = new List<ActionNode> ();
 			foreach (Transform child in start) {
-				ActionNode node = child.GetComponent <ActionNode>();
+				ActionNode node = child.GetComponent <ActionNode> ();
 				if (node != null) {
-					nodes.Add(node);
-					node.Refresh();
+					nodes.Add (node);
+					node.Refresh ();
 					string nodeName = node.State.Name;
-					if (node.State.Name.Contains("-")) {
-						nodeName = nodeName.Split(new string [] { "-" }, StringSplitOptions.RemoveEmptyEntries)[0];
+					if (node.State.Name.Contains ("-")) {
+						nodeName = nodeName.Split (new string [] { "-" }, StringSplitOptions.RemoveEmptyEntries) [0];
 						node.State.Name = nodeName;
 					}
-					if (numberedNodes.ContainsKey(nodeName)) {
+					if (numberedNodes.ContainsKey (nodeName)) {
 						//Debug.Log (nodeName + " will have to be numbererd, it's already int the list");
-						nodeNamesRequiringNumbers.Add(nodeName);
+						nodeNamesRequiringNumbers.Add (nodeName);
 					} else {
-						numberedNodes.Add(nodeName, 1);
+						numberedNodes.Add (nodeName, 1);
 					}
 				}
 			}
 			//now that we've found them all, rename them and add them to template
-			numberedNodes.Clear();
+			numberedNodes.Clear ();
 			foreach (ActionNode node in nodes) {
 				//rename it with the new number
 				int numberOfDuplicates = 1;
-				if (nodeNamesRequiringNumbers.Contains(node.State.Name)) {
+				if (nodeNamesRequiringNumbers.Contains (node.State.Name)) {
 					//Debug.Log ("Node name " + node.State.Name + " requires a number");
-					if (numberedNodes.TryGetValue(node.State.Name, out numberOfDuplicates)) {
+					if (numberedNodes.TryGetValue (node.State.Name, out numberOfDuplicates)) {
 						numberOfDuplicates = numberOfDuplicates + 1;
-						numberedNodes[node.State.Name] = numberOfDuplicates;
+						numberedNodes [node.State.Name] = numberOfDuplicates;
 					} else {
 						numberOfDuplicates = 1;
-						numberedNodes.Add(node.State.Name, numberOfDuplicates);
+						numberedNodes.Add (node.State.Name, numberOfDuplicates);
 					}
-					string newName = node.State.Name + "-" + numberOfDuplicates.ToString().PadLeft(3, '0');
+					string newName = node.State.Name + "-" + numberOfDuplicates.ToString ().PadLeft (3, '0');
 					node.State.Name = newName;
 				}
-				node.Refresh();
-				actionNodes.Add(node.State);
+				node.Refresh ();
+				actionNodes.Add (node.State);
 			}
 		}
 
-		public static void AddStaticChildrenToStructureTemplate(Transform start, List <StructureLayer> templateLayers)
+		public static void AddStaticChildrenToStructureTemplate (Transform start, List <StructureLayer> templateLayers)
 		{
-			AddStaticChildrenToStructureTemplate(start, null, templateLayers);
+			AddStaticChildrenToStructureTemplate (start, null, templateLayers);
 		}
 
-		public static void AddStaticChildrenToStructureTemplate(Transform start, Transform module, List <StructureLayer> templateLayers)
+		public static void AddStaticChildrenToStructureTemplate (Transform start, Transform module, List <StructureLayer> templateLayers)
 		{
 			foreach (Transform child in start) {
 				if (child.renderer == null && child.collider == null && module == null) {
 					//this is a module, not a static child
-					AddStaticChildrenToStructureTemplate(child, start, templateLayers);
+					AddStaticChildrenToStructureTemplate (child, start, templateLayers);
 				} else {
 					bool addChild = true;
 					StructureDestroyedBehavior behavior = StructureDestroyedBehavior.None;
 					StructureDestroyResult str = null;
-					if (child.gameObject.HasComponent <StructureDestroyResult>(out str)) {
+					if (child.gameObject.HasComponent <StructureDestroyResult> (out str)) {
 						behavior = str.Behavior;
 					}
 					if (child.gameObject.layer == Globals.LayerNumHidden) {
@@ -406,7 +407,7 @@ namespace Frontiers.World
 						}
 
 						string prefabName = child.name;
-						string packName = Structures.Get.PackName(prefabName);
+						string packName = Structures.Get.PackName (prefabName);
 						int layer = child.gameObject.layer;
 						int numVertices = 0;
 						string tag = child.gameObject.tag;
@@ -414,38 +415,38 @@ namespace Frontiers.World
 						//get a material variation list going
 						SDictionary <string,string> substitutions = null;
 						List <string> additionalMaterials = null;
-						MeshRenderer mr = child.GetComponent <MeshRenderer>();
+						MeshRenderer mr = child.GetComponent <MeshRenderer> ();
 						//check for renderers in case we're adding colliders
-						MeshFilter pmf = child.GetComponent <MeshFilter>();
+						MeshFilter pmf = child.GetComponent <MeshFilter> ();
 						if (pmf != null) {
 							numVertices = pmf.sharedMesh.vertexCount;
 						}
 						if (mr != null) {
-							additionalMaterials = new List <string>();
-							substitutions = new SDictionary <string, string>();
+							additionalMaterials = new List <string> ();
+							substitutions = new SDictionary <string, string> ();
 							Material[] childMaterials = mr.sharedMaterials;
 							Material[] prefabMaterials = null;
 							StructurePackPrefab prefab = null;
-							if (Structures.Get.PackStaticPrefab(packName, prefabName, out prefab)) {
+							if (Structures.Get.PackStaticPrefab (packName, prefabName, out prefab)) {
 								MeshRenderer pmr = prefab.MRenderer;
 								prefabMaterials = pmr.sharedMaterials;
 
 								for (int i = 0; i < childMaterials.Length; i++) {
-									if (childMaterials[i] != null && childMaterials[i].name == "SnowOverlayMaterial") {
+									if (childMaterials [i] != null && childMaterials [i].name == "SnowOverlayMaterial") {
 										enableSnow = true;
 									}
 									//see if it's the same material in the same spot
 									//if it isn't, add a substitution
 									if (i < childMaterials.Length && i < prefabMaterials.Length) {
-										if (prefabMaterials[i] != null && childMaterials[i] != null && childMaterials[i].name != "SnowOverlayMaterial") {
-											if (prefabMaterials[i].name != childMaterials[i].name && !substitutions.ContainsKey(prefabMaterials[i].name)) {
+										if (prefabMaterials [i] != null && childMaterials [i] != null && childMaterials [i].name != "SnowOverlayMaterial") {
+											if (prefabMaterials [i].name != childMaterials [i].name && !substitutions.ContainsKey (prefabMaterials [i].name)) {
 												//Debug.Log ("Substituting " + childMaterials [i].name + " for " + prefabMaterials [i].name + " in child " + child.name);
-												substitutions.Add(prefabMaterials[i].name, childMaterials[i].name);
+												substitutions.Add (prefabMaterials [i].name, childMaterials [i].name);
 											}
 										}
 									} else if (i >= prefabMaterials.Length) {
 										//we've gone beyond the existing materials
-										additionalMaterials.Add(childMaterials[i].name);
+										additionalMaterials.Add (childMaterials [i].name);
 									}
 								}
 							}
@@ -454,25 +455,25 @@ namespace Frontiers.World
 						//look for an existing layer that matches our own
 						StructureLayer structureLayer = null;
 						for (int i = 0; i < templateLayers.Count; i++) {
-							if (templateLayers[i].PackName == packName
-							           && templateLayers[i].PrefabName == prefabName
-							           && templateLayers[i].Layer == layer
-							           && templateLayers[i].Tag == tag
-							           && templateLayers[i].EnableSnow == enableSnow
-							           && templateLayers[i].DestroyedBehavior == behavior) {
+							if (templateLayers [i].PackName == packName
+							           && templateLayers [i].PrefabName == prefabName
+							           && templateLayers [i].Layer == layer
+							           && templateLayers [i].Tag == tag
+							           && templateLayers [i].EnableSnow == enableSnow
+							           && templateLayers [i].DestroyedBehavior == behavior) {
 								//so far so good - does the substitution match?
 								//if we're dealing with colliders, they always will
-								if (StructureLayer.SubstitutionsMatch(substitutions, templateLayers[i].Substitutions)
-								            && StructureLayer.AdditionalMaterialsMatch(additionalMaterials, templateLayers[i].AdditionalMaterials)
-								            && enableSnow == templateLayers[i].EnableSnow) {
-									structureLayer = templateLayers[i];
+								if (StructureLayer.SubstitutionsMatch (substitutions, templateLayers [i].Substitutions)
+								            && StructureLayer.AdditionalMaterialsMatch (additionalMaterials, templateLayers [i].AdditionalMaterials)
+								            && enableSnow == templateLayers [i].EnableSnow) {
+									structureLayer = templateLayers [i];
 									break;
 								}
 							}
 						}
 						//if we didn't find it, make a new layer
 						if (structureLayer == null) {
-							structureLayer = new StructureLayer();
+							structureLayer = new StructureLayer ();
 							structureLayer.PackName = packName;
 							structureLayer.PrefabName = prefabName;
 							structureLayer.Layer = layer;
@@ -482,18 +483,18 @@ namespace Frontiers.World
 							structureLayer.DestroyedBehavior = behavior;
 							structureLayer.EnableSnow = enableSnow;
 							//add it to the template
-							templateLayers.Add(structureLayer);
+							templateLayers.Add (structureLayer);
 						}
 						//add another instance to this layer
 						structureLayer.NumInstances++;
 						structureLayer.NumVertices += numVertices;
-						structureLayer.Instances = StructureLayer.AddInstance(structureLayer.Instances, child, module);
+						structureLayer.Instances = StructureLayer.AddInstance (structureLayer.Instances, child, module);
 					}
 				}
 			}
 		}
 
-		public static void AddFiresToStructureTemplate(Transform start, ref string fires)
+		public static void AddFiresToStructureTemplate (Transform start, ref string fires)
 		{
 			if (fires == string.Empty) {
 				fires = "\n";
@@ -503,15 +504,15 @@ namespace Frontiers.World
 				if (child.tag == "Fire") {
 					StructureDestroyedBehavior behavior = StructureDestroyedBehavior.None;
 					StructureDestroyResult str = null;
-					if (child.gameObject.HasComponent <StructureDestroyResult>(out str)) {
+					if (child.gameObject.HasComponent <StructureDestroyResult> (out str)) {
 						behavior = str.Behavior;
 					}
-					StructureTemplate.AppendGenericChildPieceToLayer("Fire", child.name, child, null, ref fires, false, behavior);
+					StructureTemplate.AppendGenericChildPieceToLayer ("Fire", child.name, child, null, ref fires, false, behavior);
 				}
 			}
 		}
 
-		public static void AddLightsToStructureTemplate(Transform start, ref string lights)
+		public static void AddLightsToStructureTemplate (Transform start, ref string lights)
 		{
 			if (lights == string.Empty) {
 				lights = "\n";
@@ -523,125 +524,125 @@ namespace Frontiers.World
 					bool addChild = true;
 					StructureDestroyedBehavior behavior = StructureDestroyedBehavior.None;
 					StructureDestroyResult str = null;
-					if (child.gameObject.HasComponent <StructureDestroyResult>(out str)) {
+					if (child.gameObject.HasComponent <StructureDestroyResult> (out str)) {
 						behavior = str.Behavior;
 					}
 					if (addChild) {
-						StructureTemplate.AppendGenericLightPieceToLayer(child.name, childLight, ref lights);
+						StructureTemplate.AppendGenericLightPieceToLayer (child.name, childLight, ref lights);
 					}
 				}
 			}
 		}
 
-		public static void AddFXToStructureTemplate(Transform start, ref string fx)
+		public static void AddFXToStructureTemplate (Transform start, ref string fx)
 		{
 			if (fx == string.Empty) {
 				fx = "\n";
 			}
 
 			foreach (Transform child in start) {
-				FXPieceTemplate childFX = child.GetComponent <FXPieceTemplate>();
+				FXPieceTemplate childFX = child.GetComponent <FXPieceTemplate> ();
 				if (childFX != null) {
 					bool addChild = true;
 					StructureDestroyedBehavior behavior = StructureDestroyedBehavior.None;
 					StructureDestroyResult str = null;
-					if (child.gameObject.HasComponent <StructureDestroyResult>(out str)) {
+					if (child.gameObject.HasComponent <StructureDestroyResult> (out str)) {
 						behavior = str.Behavior;
 					}
 					if (addChild) {
-						StructureTemplate.AppendFXPieceToLayer(childFX, ref fx);
+						StructureTemplate.AppendFXPieceToLayer (childFX, ref fx);
 					}
 				}
 			}
 		}
 
-		public static void AddGenericWorldItemsToStructureTemplate(Transform start, ref string worlditems)
+		public static void AddGenericWorldItemsToStructureTemplate (Transform start, ref string worlditems)
 		{
 			foreach (Transform child in start) {
 				WorldItem worlditem = null;
-				if (child.gameObject.HasComponent <WorldItem>(out worlditem)) {
+				if (child.gameObject.HasComponent <WorldItem> (out worlditem)) {
 					worlditem.IsTemplate = false;
 					string packName = worlditem.Props.Name.PackName;
 					string prefabName = worlditem.Props.Name.PrefabName;
 					StructureDestroyedBehavior behavior = StructureDestroyedBehavior.None;
 					StructureDestroyResult str = null;
-					if (child.gameObject.HasComponent <StructureDestroyResult>(out str)) {
+					if (child.gameObject.HasComponent <StructureDestroyResult> (out str)) {
 						behavior = str.Behavior;
 					}
-					StructureTemplate.AppendGenericChildPieceToLayer(packName, prefabName, child, null, ref worlditems, false, behavior);
+					StructureTemplate.AppendGenericChildPieceToLayer (packName, prefabName, child, null, ref worlditems, false, behavior);
 				}
 			}
 		}
 
-		public static void AddUniqueWorldItemsToStructureTemplate(Transform start, List <StackItem> uniqueWorldItems)
+		public static void AddUniqueWorldItemsToStructureTemplate (Transform start, List <StackItem> uniqueWorldItems)
 		{
 			foreach (Transform child in start) {
 				WorldItem worlditem = null;
-				if (child.gameObject.HasComponent <WorldItem>(out worlditem)) {
+				if (child.gameObject.HasComponent <WorldItem> (out worlditem)) {
 					worlditem.IsTemplate = false;
 					#if UNITY_EDITOR
-					worlditem.OnEditorRefresh();
+					worlditem.OnEditorRefresh ();
 					#endif
-					StackItem newStackItem = worlditem.GetStackItem(WIMode.Frozen);
+					StackItem newStackItem = worlditem.GetStackItem (WIMode.Frozen);
 					if (newStackItem != null) {
-						uniqueWorldItems.Add(newStackItem);
+						uniqueWorldItems.Add (newStackItem);
 					}
 				}
 			}
 		}
 
-		public static void AddCatWorldItemsToStructureTemplate(Transform start, List <WICatItem> categoryWorldItems)
+		public static void AddCatWorldItemsToStructureTemplate (Transform start, List <WICatItem> categoryWorldItems)
 		{
-			List <WICategoryPlaceholder> catPlaceholders = new List <WICategoryPlaceholder>();
+			List <WICategoryPlaceholder> catPlaceholders = new List <WICategoryPlaceholder> ();
 
 			foreach (Transform child in start) {
 				WICategoryPlaceholder placeholder = null;
-				if (child.gameObject.HasComponent <WICategoryPlaceholder>(out placeholder)) {
-					catPlaceholders.Add(placeholder);
+				if (child.gameObject.HasComponent <WICategoryPlaceholder> (out placeholder)) {
+					catPlaceholders.Add (placeholder);
 				}
 			}
 
 			for (int i = 0; i < catPlaceholders.Count; i++) {
 				//check for duplicates
 				for (int j = 0; j < catPlaceholders.Count; j++) {
-					if (i != j && catPlaceholders[j] != null && catPlaceholders[i] != null && catPlaceholders[i].transform.position == catPlaceholders[j].transform.position) {
-						GameObject.DestroyImmediate(catPlaceholders[i].gameObject);
+					if (i != j && catPlaceholders [j] != null && catPlaceholders [i] != null && catPlaceholders [i].transform.position == catPlaceholders [j].transform.position) {
+						GameObject.DestroyImmediate (catPlaceholders [i].gameObject);
 					}
 				}
-				if (catPlaceholders[i] != null) {
-					catPlaceholders[i].Item.Transform.CopyFrom(catPlaceholders[i].transform);
-					categoryWorldItems.Add(catPlaceholders[i].Item);
+				if (catPlaceholders [i] != null) {
+					catPlaceholders [i].Item.Transform.CopyFrom (catPlaceholders [i].transform);
+					categoryWorldItems.Add (catPlaceholders [i].Item);
 				}
 			}
 		}
 
-		public static void AddTriggersToStructureTemplate(Transform start, SDictionary <string,KeyValuePair <string, string>> triggers)
+		public static void AddTriggersToStructureTemplate (Transform start, SDictionary <string,KeyValuePair <string, string>> triggers)
 		{
 			foreach (Transform child in start) {
 				WorldTrigger trigger = null;
-				if (child.gameObject.HasComponent <WorldTrigger>(out trigger)) {
-					trigger.RefreshState(true);
+				if (child.gameObject.HasComponent <WorldTrigger> (out trigger)) {
+					trigger.RefreshState (true);
 					#if UNITY_EDITOR
-					trigger.OnEditorRefresh();
+					trigger.OnEditorRefresh ();
 					#endif
 					string triggerState = string.Empty;
-					if (trigger.GetTriggerState(out triggerState)) {
+					if (trigger.GetTriggerState (out triggerState)) {
 						//Debug.Log ("Got trigger state: " + triggerState);
-						triggers.Add(trigger.name, new KeyValuePair <string,string>(trigger.ScriptName, triggerState));
+						triggers.Add (trigger.name, new KeyValuePair <string,string> (trigger.ScriptName, triggerState));
 					}
 				}
 			}
 		}
 
-		public static Light LightFromLightPiece(LightPiece piece, Transform parentTransform)
+		public static Light LightFromLightPiece (LightPiece piece, Transform parentTransform)
 		{
-			GameObject newLightGameObject = new GameObject(piece.LightName);
+			GameObject newLightGameObject = new GameObject (piece.LightName);
 			newLightGameObject.transform.parent = parentTransform;
 			newLightGameObject.transform.localPosition = piece.Position;
-			newLightGameObject.transform.localRotation = Quaternion.Euler(piece.Rotation);
+			newLightGameObject.transform.localRotation = Quaternion.Euler (piece.Rotation);
 
-			Light newLight = newLightGameObject.AddComponent <Light>();
-			newLight.type = (LightType)Enum.Parse(typeof(LightType), piece.LightType);
+			Light newLight = newLightGameObject.AddComponent <Light> ();
+			newLight.type = (LightType)Enum.Parse (typeof(LightType), piece.LightType);
 			newLight.color = piece.LightColor;
 			newLight.intensity = piece.LightIntensity;
 			newLight.range = piece.LightRange;
@@ -651,206 +652,346 @@ namespace Frontiers.World
 			return newLight;
 		}
 
-		public static void AppendFXPieceToLayer(FXPieceTemplate piece, ref string fx)
+		public static void AppendFXPieceToLayer (FXPieceTemplate piece, ref string fx)
 		{
-			List <string> fxPieces = new List <string>();
+			List <string> fxPieces = new List <string> ();
 			//fxname, soundname, soundtype, fxcolr, fxcolg, fxcolb, delay, duration, posx, posy, posz, rotx, roty, rotz
-			fxPieces.Add(piece.FXName);
-			fxPieces.Add(piece.SoundName);
-			fxPieces.Add(piece.SoundType.ToString());
-			fxPieces.Add(piece.FXColor.r.ToString());
-			fxPieces.Add(piece.FXColor.g.ToString());
-			fxPieces.Add(piece.FXColor.b.ToString());
-			fxPieces.Add(piece.FXDelay.ToString());
-			fxPieces.Add(piece.FXDuration.ToString());
-			fxPieces.Add(piece.transform.localPosition.x.ToString());
-			fxPieces.Add(piece.transform.localPosition.y.ToString());
-			fxPieces.Add(piece.transform.localPosition.z.ToString());
-			fxPieces.Add(piece.transform.localRotation.eulerAngles.x.ToString());
-			fxPieces.Add(piece.transform.localRotation.eulerAngles.y.ToString());
-			fxPieces.Add(piece.transform.localRotation.eulerAngles.z.ToString());
-			fxPieces.Add(piece.Explosion.ToString());
-			fxPieces.Add(piece.JustForShow.ToString());
+			fxPieces.Add (piece.FXName);
+			fxPieces.Add (piece.SoundName);
+			fxPieces.Add (piece.SoundType.ToString ());
+			fxPieces.Add (piece.FXColor.r.ToString ());
+			fxPieces.Add (piece.FXColor.g.ToString ());
+			fxPieces.Add (piece.FXColor.b.ToString ());
+			fxPieces.Add (piece.FXDelay.ToString ());
+			fxPieces.Add (piece.FXDuration.ToString ());
+			fxPieces.Add (piece.transform.localPosition.x.ToString ());
+			fxPieces.Add (piece.transform.localPosition.y.ToString ());
+			fxPieces.Add (piece.transform.localPosition.z.ToString ());
+			fxPieces.Add (piece.transform.localRotation.eulerAngles.x.ToString ());
+			fxPieces.Add (piece.transform.localRotation.eulerAngles.y.ToString ());
+			fxPieces.Add (piece.transform.localRotation.eulerAngles.z.ToString ());
+			fxPieces.Add (piece.Explosion.ToString ());
+			fxPieces.Add (piece.JustForShow.ToString ());
 
-			fx = fx + fxPieces.JoinToString(",\t") + "\n";
+			fx = fx + fxPieces.JoinToString (",\t") + "\n";
 		}
 
-		public static void AppendGenericLightPieceToLayer(string lightName, Light light, ref string lights)
+		public static void AppendGenericLightPieceToLayer (string lightName, Light light, ref string lights)
 		{
-			List <string> lightPieces = new List <string>();
+			List <string> lightPieces = new List <string> ();
 			//name, type, intensity, colr, colg, colb, range, spotangle, posx, posy, posz, rotx, roty, rotz
-			lightPieces.Add(lightName);
-			lightPieces.Add(light.type.ToString());
-			lightPieces.Add(light.intensity.ToString());
-			lightPieces.Add(light.color.r.ToString());
-			lightPieces.Add(light.color.g.ToString());
-			lightPieces.Add(light.color.b.ToString());
-			lightPieces.Add(light.range.ToString());
-			lightPieces.Add(light.spotAngle.ToString());
-			lightPieces.Add(light.transform.localPosition.x.ToString());
-			lightPieces.Add(light.transform.localPosition.y.ToString());
-			lightPieces.Add(light.transform.localPosition.z.ToString());
-			lightPieces.Add(light.transform.localRotation.eulerAngles.x.ToString());
-			lightPieces.Add(light.transform.localRotation.eulerAngles.y.ToString());
-			lightPieces.Add(light.transform.localRotation.eulerAngles.z.ToString());
+			lightPieces.Add (lightName);
+			lightPieces.Add (light.type.ToString ());
+			lightPieces.Add (light.intensity.ToString ());
+			lightPieces.Add (light.color.r.ToString ());
+			lightPieces.Add (light.color.g.ToString ());
+			lightPieces.Add (light.color.b.ToString ());
+			lightPieces.Add (light.range.ToString ());
+			lightPieces.Add (light.spotAngle.ToString ());
+			lightPieces.Add (light.transform.localPosition.x.ToString ());
+			lightPieces.Add (light.transform.localPosition.y.ToString ());
+			lightPieces.Add (light.transform.localPosition.z.ToString ());
+			lightPieces.Add (light.transform.localRotation.eulerAngles.x.ToString ());
+			lightPieces.Add (light.transform.localRotation.eulerAngles.y.ToString ());
+			lightPieces.Add (light.transform.localRotation.eulerAngles.z.ToString ());
 
-			lights = lights + lightPieces.JoinToString(",\t") + "\n";
+			lights = lights + lightPieces.JoinToString (",\t") + "\n";
 		}
 
-		public static void AppendGenericChildPieceToLayer(string packName, string childName, Transform child, Transform module, ref string childLayer, bool searchMats, StructureDestroyedBehavior behavior)
+		public static void AppendGenericChildPieceToLayer (string packName, string childName, Transform child, Transform module, ref string childLayer, bool searchMats, StructureDestroyedBehavior behavior)
 		{
-			List <string> childLayerPieces	= new List <string>();
-			List <string> childMaterials	= new List <string>();
+			List <string> childLayerPieces	= new List <string> ();
+			List <string> childMaterials	= new List <string> ();
 			//packname,childname,xpos,ypos,zpos,xrot,yrot,zrot,xscl,yscl,zscl,mat1|mat2|mat3,behavior\n\r
-			childLayerPieces.Add(packName);
-			childLayerPieces.Add(childName);
+			childLayerPieces.Add (packName);
+			childLayerPieces.Add (childName);
 
 			if (module == null) {
-				childLayerPieces.Add(child.transform.localPosition.x.ToString());
-				childLayerPieces.Add(child.transform.localPosition.y.ToString());
-				childLayerPieces.Add(child.transform.localPosition.z.ToString());
-				childLayerPieces.Add(child.transform.localRotation.eulerAngles.x.ToString());
-				childLayerPieces.Add(child.transform.localRotation.eulerAngles.y.ToString());
-				childLayerPieces.Add(child.transform.localRotation.eulerAngles.z.ToString());
-				childLayerPieces.Add(child.transform.localScale.x.ToString());
-				childLayerPieces.Add(child.transform.localScale.y.ToString());
-				childLayerPieces.Add(child.transform.localScale.z.ToString());
+				childLayerPieces.Add (child.transform.localPosition.x.ToString ());
+				childLayerPieces.Add (child.transform.localPosition.y.ToString ());
+				childLayerPieces.Add (child.transform.localPosition.z.ToString ());
+				childLayerPieces.Add (child.transform.localRotation.eulerAngles.x.ToString ());
+				childLayerPieces.Add (child.transform.localRotation.eulerAngles.y.ToString ());
+				childLayerPieces.Add (child.transform.localRotation.eulerAngles.z.ToString ());
+				childLayerPieces.Add (child.transform.localScale.x.ToString ());
+				childLayerPieces.Add (child.transform.localScale.y.ToString ());
+				childLayerPieces.Add (child.transform.localScale.z.ToString ());
 			} else {
 				//if module is not null then we need to transform the position using the module transform
-				Vector3 childPosition = module.InverseTransformPoint(child.position);
-				Vector3 childRotation = (Quaternion.Inverse(module.localRotation) * child.localRotation).eulerAngles;
+				Vector3 childPosition = module.InverseTransformPoint (child.position);
+				Vector3 childRotation = (Quaternion.Inverse (module.localRotation) * child.localRotation).eulerAngles;
 				Vector3 childScale = child.lossyScale;
 
-				childLayerPieces.Add(childPosition.x.ToString());
-				childLayerPieces.Add(childPosition.y.ToString());
-				childLayerPieces.Add(childPosition.z.ToString());
-				childLayerPieces.Add(childRotation.x.ToString());
-				childLayerPieces.Add(childRotation.y.ToString());
-				childLayerPieces.Add(childRotation.z.ToString());
-				childLayerPieces.Add(childScale.x.ToString());
-				childLayerPieces.Add(childScale.y.ToString());
-				childLayerPieces.Add(childScale.z.ToString());
+				childLayerPieces.Add (childPosition.x.ToString ());
+				childLayerPieces.Add (childPosition.y.ToString ());
+				childLayerPieces.Add (childPosition.z.ToString ());
+				childLayerPieces.Add (childRotation.x.ToString ());
+				childLayerPieces.Add (childRotation.y.ToString ());
+				childLayerPieces.Add (childRotation.z.ToString ());
+				childLayerPieces.Add (childScale.x.ToString ());
+				childLayerPieces.Add (childScale.y.ToString ());
+				childLayerPieces.Add (childScale.z.ToString ());
 			}
 
 			string matNames = "[Default]";
 			if (searchMats && child.transform.renderer != null) {
 				foreach (Material childMaterial in child.transform.renderer.sharedMaterials) {
-					childMaterials.Add(childMaterial.name);
+					childMaterials.Add (childMaterial.name);
 				}
-				matNames = childMaterials.JoinToString("|");
+				matNames = childMaterials.JoinToString ("|");
 			}
-			childLayerPieces.Add(matNames);
-			childLayerPieces.Add(((int)behavior).ToString());
+			childLayerPieces.Add (matNames);
+			childLayerPieces.Add (((int)behavior).ToString ());
 			//add all the pieces together and add a newline to the end
-			childLayer = childLayer + (childLayerPieces.JoinToString(",\t") + "\n");
+			childLayer = childLayer + (childLayerPieces.JoinToString (",\t") + "\n");
 		}
 
-		public static void ExtractChildPiecesFromLayer(List<ChildPiece> childPieces, string layer)
+		public static IEnumerator ExtractChildPiecesFromLayer (List<ChildPiece> childPieces, string layer, int maxPerFrame)
 		{
-			List <string> splitLayer = Data.GameData.SplitString(layer, new string [] { "\n" });
-			for (int i = 0; i < splitLayer.Count; i++) {
-				ChildPiece childPiece = new ChildPiece();
-				List <string> splitChild = Data.GameData.SplitString(splitLayer[i], new string [] { ",\t" });
-				//0:packname, 1:childname, 2:xpos, 3:ypos, 4:zpos, 5:xrot, 6:yrot, 7:zrot, 8:xscl, 9:yscl, 10:zscl, 11:mat1|mat2|mat3\n\r
-				//Debug.Log("Splitting " + splitLayer[i] + " into " + splitChild.Count.ToString());
-				childPiece.PackName = splitChild[0];
-				childPiece.ChildName = splitChild[1];
-				childPiece.Position = Vector3.zero;
-				childPiece.Position.x = float.Parse(splitChild[2]);
-				childPiece.Position.y = float.Parse(splitChild[3]);
-				childPiece.Position.z = float.Parse(splitChild[4]);
-				childPiece.Rotation = Vector3.zero;
-				childPiece.Rotation.x = float.Parse(splitChild[5]);
-				childPiece.Rotation.y = float.Parse(splitChild[6]);
-				childPiece.Rotation.z = float.Parse(splitChild[7]);
-				childPiece.Scale = Vector3.zero;
-				childPiece.Scale.x = float.Parse(splitChild[8]);
-				childPiece.Scale.y = float.Parse(splitChild[9]);
-				childPiece.Scale.z = float.Parse(splitChild[10]);
-				if (splitChild[11] == "[Default]") {
-					childPiece.Materials = new string [1] { "[Default]" };
-				} else if (splitChild[11].Contains("|")) {
-					childPiece.Materials = splitChild[11].Split(new string [] { "|" }, StringSplitOptions.RemoveEmptyEntries);
-				} else {
-					childPiece.Materials = new string [] { splitChild[11] };
-				}
-				//not all child pieces will have a behavior so check first
-				if (splitChild.Count > 12) {
-					childPiece.DestroyedBehavior = Int32.Parse(splitChild[12]);
-				} else {
-					childPiece.DestroyedBehavior = 0;//None
-				}
-				splitChild.Clear();
-				splitChild = null;
-				childPieces.Add(childPiece);
+			if (string.IsNullOrEmpty (layer)) {
+				childPieces.Clear ();
+				yield break;
 			}
-			splitLayer.Clear();
-			splitLayer = null;
+
+			int numPieces = gSplitter.SafeSplit (layer, gNew);
+			if (numPieces == 0) {
+				childPieces.Clear ();
+				yield break;
+			}
+
+			if (childPieces.Count < numPieces) {
+				while (childPieces.Count < numPieces) {
+					childPieces.Add (ChildPiece.Empty);
+				}
+			} else if (childPieces.Count > numPieces) {
+				int numToRemove = childPieces.Count - numPieces;
+				childPieces.RemoveRange (0, numToRemove);
+			}
+			int currentFrame = 0;
+			ChildPiece childPiece = ChildPiece.Empty;
+			for (int i = 0; i < numPieces; i++) {
+				int numSubPieces = gSubSplitter.Split (gSplitter.Results [i], gTab);
+				if (numSubPieces > 0) {
+					//0:packname, 1:childname, 2:xpos, 3:ypos, 4:zpos, 5:xrot, 6:yrot, 7:zrot, 8:xscl, 9:yscl, 10:zscl, 11:mat1|mat2|mat3\n\r
+					childPiece.PackName = gSubSplitter.buffer [0];
+					childPiece.ChildName = gSubSplitter.buffer [1];
+					childPiece.Position = Vector3.zero;
+					childPiece.Position.x = float.Parse (gSubSplitter.buffer [2]);
+					childPiece.Position.y = float.Parse (gSubSplitter.buffer [3]);
+					childPiece.Position.z = float.Parse (gSubSplitter.buffer [4]);
+					childPiece.Rotation = Vector3.zero;
+					childPiece.Rotation.x = float.Parse (gSubSplitter.buffer [5]);
+					childPiece.Rotation.y = float.Parse (gSubSplitter.buffer [6]);
+					childPiece.Rotation.z = float.Parse (gSubSplitter.buffer [7]);
+					childPiece.Scale = Vector3.zero;
+					childPiece.Scale.x = float.Parse (gSubSplitter.buffer [8]);
+					childPiece.Scale.y = float.Parse (gSubSplitter.buffer [9]);
+					childPiece.Scale.z = float.Parse (gSubSplitter.buffer [10]);
+					if (gSubSplitter.buffer [11] == "[Default]") {
+						childPiece.Materials = new string [1] { "[Default]" };
+					} else if (gSubSplitter.buffer [11].Contains ("|")) {
+						childPiece.Materials = gSubSplitter.buffer [11].Split (new string [] { "|" }, StringSplitOptions.RemoveEmptyEntries);
+					} else {
+						childPiece.Materials = new string [] { gSubSplitter.buffer [11] };
+					}
+					//not all child pieces will have a behavior so check first
+					if (numSubPieces > 12) {
+						childPiece.DestroyedBehavior = Int32.Parse (gSubSplitter.buffer [12]);
+					} else {
+						childPiece.DestroyedBehavior = 0;//None
+					}
+					childPieces [i] = childPiece;
+				} else {
+					childPieces [i] = ChildPiece.Empty;
+				}
+
+				if (Player.Local.HasSpawned) {
+					currentFrame++;
+					if (currentFrame > maxPerFrame) {
+						currentFrame = 0;
+						yield return null;
+					}
+				}
+			}
+			yield break;
 		}
 
-		public static LightPiece [] ExtractLightPiecesFromLayer(string layer)
+		public static bool ExtractChildPiecesFromLayer (ref List<ChildPiece> childPieces, string layer)
 		{
-			List <string> splitLayer = Data.GameData.SplitString(layer, new string [] { "\n" });
-			LightPiece[] lightPieces = new LightPiece [splitLayer.Count];
-			for (int i = 0; i < splitLayer.Count; i++) {
-				LightPiece lightPiece = new LightPiece();
-				List <string> splitChild = Data.GameData.SplitString(splitLayer[i], new string [] { ",\t" });
+			if (string.IsNullOrEmpty (layer)) {
+				return false;
+			}
+
+			int numPieces = gSplitter.SafeSplit (layer, gNew);
+			if (numPieces == 0) {
+				return false;
+			}
+
+			if (childPieces == null) {
+				childPieces = new List <ChildPiece> (numPieces);
+			}
+			if (childPieces.Count < numPieces) {
+				while (childPieces.Count < numPieces) {
+					childPieces.Add (ChildPiece.Empty);
+				}
+			} else if (childPieces.Count > numPieces) {
+				int numToRemove = childPieces.Count - numPieces;
+				childPieces.RemoveRange (0, numToRemove);
+			}
+
+			ChildPiece childPiece = ChildPiece.Empty;
+			for (int i = 0; i < numPieces; i++) {
+				int numSubPieces = gSubSplitter.Split (gSplitter.Results [i], gTab);
+				if (numSubPieces > 0) {
+					//0:packname, 1:childname, 2:xpos, 3:ypos, 4:zpos, 5:xrot, 6:yrot, 7:zrot, 8:xscl, 9:yscl, 10:zscl, 11:mat1|mat2|mat3\n\r
+					childPiece.PackName = gSubSplitter.buffer [0];
+					childPiece.ChildName = gSubSplitter.buffer [1];
+					childPiece.Position = Vector3.zero;
+					childPiece.Position.x = float.Parse (gSubSplitter.buffer [2]);
+					childPiece.Position.y = float.Parse (gSubSplitter.buffer [3]);
+					childPiece.Position.z = float.Parse (gSubSplitter.buffer [4]);
+					childPiece.Rotation = Vector3.zero;
+					childPiece.Rotation.x = float.Parse (gSubSplitter.buffer [5]);
+					childPiece.Rotation.y = float.Parse (gSubSplitter.buffer [6]);
+					childPiece.Rotation.z = float.Parse (gSubSplitter.buffer [7]);
+					childPiece.Scale = Vector3.zero;
+					childPiece.Scale.x = float.Parse (gSubSplitter.buffer [8]);
+					childPiece.Scale.y = float.Parse (gSubSplitter.buffer [9]);
+					childPiece.Scale.z = float.Parse (gSubSplitter.buffer [10]);
+					if (gSubSplitter.buffer [11] == "[Default]") {
+						childPiece.Materials = new string [1] { "[Default]" };
+					} else if (gSubSplitter.buffer [11].Contains ("|")) {
+						childPiece.Materials = gSubSplitter.buffer [11].Split (new string [] { "|" }, StringSplitOptions.RemoveEmptyEntries);
+					} else {
+						childPiece.Materials = new string [] { gSubSplitter.buffer [11] };
+					}
+					//not all child pieces will have a behavior so check first
+					if (numSubPieces > 12) {
+						childPiece.DestroyedBehavior = Int32.Parse (gSubSplitter.buffer [12]);
+					} else {
+						childPiece.DestroyedBehavior = 0;//None
+					}
+
+					childPieces [i] = childPiece;
+				} else {
+					childPieces [i] = ChildPiece.Empty;
+				}
+			}
+			return true;
+		}
+
+		public static bool ExtractLightPiecesFromLayer (ref List<LightPiece> lightPieces, string layer)
+		{
+			if (string.IsNullOrEmpty (layer)) {
+				return false;
+			}
+
+			int numPieces = gSplitter.SafeSplit (layer, gNew);
+
+			if (numPieces == 0) {
+				return false;
+			}
+
+			if (lightPieces == null) {
+				lightPieces = new List <LightPiece> (numPieces);
+			}
+
+			if (lightPieces.Count < numPieces) {
+				while (lightPieces.Count < numPieces) {
+					lightPieces.Add (LightPiece.Empty);
+				}
+			} else if (lightPieces.Count > numPieces) {
+				int numToRemove = lightPieces.Count - numPieces;
+				lightPieces.RemoveRange (0, numToRemove);
+			}
+					
+			LightPiece lightPiece = LightPiece.Empty;
+
+			for (int i = 0; i < numPieces; i++) {
+				gSubSplitter.Split (gSplitter.buffer [i], gTab);
 				//0:name, 1:type, 2:intensity, 3:colr, 4:colg, 5:colb, 6:range, 7:spotangle, 8:posx, 9:posy, 10:posz, 11:rotx, 12:roty, 13rotz
-				lightPiece.LightName = splitChild[0];
-				lightPiece.LightType = splitChild[1];
-				lightPiece.LightIntensity	= float.Parse(splitChild[2]);
+				lightPiece.LightName = gSubSplitter.buffer [0];
+				lightPiece.LightType = gSubSplitter.buffer [1];
+				lightPiece.LightIntensity	= float.Parse (gSubSplitter.buffer [2]);
 				lightPiece.LightColor = Color.white;
-				lightPiece.LightColor.r = float.Parse(splitChild[3]);
-				lightPiece.LightColor.g = float.Parse(splitChild[4]);
-				lightPiece.LightColor.b = float.Parse(splitChild[5]);
-				lightPiece.LightRange = float.Parse(splitChild[6]);
-				lightPiece.LightSpotAngle	= float.Parse(splitChild[7]);
+				lightPiece.LightColor.r = float.Parse (gSubSplitter.buffer [3]);
+				lightPiece.LightColor.g = float.Parse (gSubSplitter.buffer [4]);
+				lightPiece.LightColor.b = float.Parse (gSubSplitter.buffer [5]);
+				lightPiece.LightRange = float.Parse (gSubSplitter.buffer [6]);
+				lightPiece.LightSpotAngle	= float.Parse (gSubSplitter.buffer [7]);
 				lightPiece.Position = Vector3.zero;
-				lightPiece.Position.x = float.Parse(splitChild[8]);
-				lightPiece.Position.y = float.Parse(splitChild[9]);
-				lightPiece.Position.z = float.Parse(splitChild[10]);
+				lightPiece.Position.x = float.Parse (gSubSplitter.buffer [8]);
+				lightPiece.Position.y = float.Parse (gSubSplitter.buffer [9]);
+				lightPiece.Position.z = float.Parse (gSubSplitter.buffer [10]);
 				lightPiece.Rotation = Vector3.zero;
-				lightPiece.Rotation.x = float.Parse(splitChild[11]);
-				lightPiece.Rotation.y = float.Parse(splitChild[12]);
-				lightPiece.Rotation.z = float.Parse(splitChild[13]);
+				lightPiece.Rotation.x = float.Parse (gSubSplitter.buffer [11]);
+				lightPiece.Rotation.y = float.Parse (gSubSplitter.buffer [12]);
+				lightPiece.Rotation.z = float.Parse (gSubSplitter.buffer [13]);
 
-				lightPieces[i] = lightPiece;
+				lightPieces [i] = lightPiece;
 			}
-			return lightPieces;
+
+			return true;
 		}
 
-		public static FXPiece [] ExtractFXPiecesFromLayer(string layer)
+		public static bool ExtractFXPiecesFromLayer (ref List<FXPiece> fxPieces, string layer)
 		{
-			List <string> splitLayer = Data.GameData.SplitString(layer, new string [] { "\n" });
-			FXPiece[] fxPieces = new FXPiece [splitLayer.Count];
-			for (int i = 0; i < splitLayer.Count; i++) {
-				FXPiece fxPiece = new FXPiece();
-				List <string> splitChild = Data.GameData.SplitString(splitLayer[i], new string [] { ",\t" });
-				//0:fxname, 1:soundname, 2:soundtype, 3:fxcolr, 4:fxcolg, 5:fxcolb, 6:delay, 7:duration, 8:posx, 9:posy, 10:posz, 11:rotx, 12:roty, 13:rotz
-				fxPiece.FXName = splitChild[0];
-				fxPiece.SoundName = splitChild[1];
-				fxPiece.SoundType = (MasterAudio.SoundType)Enum.Parse(typeof(MasterAudio.SoundType), splitChild[2]);
-				fxPiece.FXColor = Color.white;
-				fxPiece.FXColor.r = float.Parse(splitChild[3]);
-				fxPiece.FXColor.g = float.Parse(splitChild[4]);
-				fxPiece.FXColor.b = float.Parse(splitChild[5]);
-				fxPiece.Delay = float.Parse(splitChild[6]);
-				fxPiece.Duration = float.Parse(splitChild[7]);
-				fxPiece.Position = Vector3.zero;
-				fxPiece.Position.x = float.Parse(splitChild[8]);
-				fxPiece.Position.y = float.Parse(splitChild[9]);
-				fxPiece.Position.z = float.Parse(splitChild[10]);
-				fxPiece.Rotation = Vector3.zero;
-				fxPiece.Rotation.x = float.Parse(splitChild[11]);
-				fxPiece.Rotation.y = float.Parse(splitChild[12]);
-				fxPiece.Rotation.z = float.Parse(splitChild[13]);
-				fxPiece.Explosion = bool.Parse(splitChild[14]);
-				fxPiece.JustForShow = bool.Parse(splitChild[15]);
+			if (string.IsNullOrEmpty (layer))
+				return false;
 
-				fxPieces[i] = fxPiece;
+			int numPieces = gSplitter.SafeSplit (layer, gNew);
+			if (numPieces == 0) {
+				return false;
 			}
-			return fxPieces;
+			if (fxPieces == null) {
+				fxPieces = new List <FXPiece> (numPieces);
+			}
+			if (fxPieces.Count < numPieces) {
+				while (fxPieces.Count < numPieces) {
+					fxPieces.Add (FXPiece.Empty);
+				}
+			} else if (fxPieces.Count > numPieces) {
+				int numToRemove = fxPieces.Count - numPieces;
+				fxPieces.RemoveRange (0, numToRemove);
+			}
+			FXPiece fxPiece = FXPiece.Empty;
+
+			for (int i = 0; i < numPieces; i++) {
+				//List <string> splitChild = Data.GameData.SplitString(gSplitter.buffer [i], gTabStringArray);
+				gSubSplitter.Split (gSplitter.buffer [i], gTab);
+				//0:fxname, 1:soundname, 2:soundtype, 3:fxcolr, 4:fxcolg, 5:fxcolb, 6:delay, 7:duration, 8:posx, 9:posy, 10:posz, 11:rotx, 12:roty, 13:rotz
+				fxPiece.FXName = gSubSplitter.buffer [0];
+				fxPiece.SoundName = gSubSplitter.buffer [1];
+				fxPiece.SoundType = (MasterAudio.SoundType)Enum.Parse (typeof(MasterAudio.SoundType), gSubSplitter.buffer [2]);
+				fxPiece.FXColor = Color.white;
+				fxPiece.FXColor.r = float.Parse (gSubSplitter.buffer [3]);
+				fxPiece.FXColor.g = float.Parse (gSubSplitter.buffer [4]);
+				fxPiece.FXColor.b = float.Parse (gSubSplitter.buffer [5]);
+				fxPiece.Delay = float.Parse (gSubSplitter.buffer [6]);
+				fxPiece.Duration = float.Parse (gSubSplitter.buffer [7]);
+				fxPiece.Position = Vector3.zero;
+				fxPiece.Position.x = float.Parse (gSubSplitter.buffer [8]);
+				fxPiece.Position.y = float.Parse (gSubSplitter.buffer [9]);
+				fxPiece.Position.z = float.Parse (gSubSplitter.buffer [10]);
+				fxPiece.Rotation = Vector3.zero;
+				fxPiece.Rotation.x = float.Parse (gSubSplitter.buffer [11]);
+				fxPiece.Rotation.y = float.Parse (gSubSplitter.buffer [12]);
+				fxPiece.Rotation.z = float.Parse (gSubSplitter.buffer [13]);
+				fxPiece.Explosion = bool.Parse (gSubSplitter.buffer [14]);
+				fxPiece.JustForShow = bool.Parse (gSubSplitter.buffer [15]);
+
+				fxPieces.Add (fxPiece);
+			}
+
+			return true;
 		}
+
+		protected static string[] gTabStringArray = new string[] { ",\t" };
+		protected static string[] gNewlineStringArray = new string[] { "\n" };
+		protected static string gTab = ",\t";
+		protected static string gNew = "\n";
+		protected static StringSplitter gSplitter = new StringSplitter (32);
+		protected static StringSplitter gSubSplitter = new StringSplitter (16);
 
 		#endregion
 

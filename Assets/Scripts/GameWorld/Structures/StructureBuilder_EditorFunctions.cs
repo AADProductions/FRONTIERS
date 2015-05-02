@@ -513,101 +513,99 @@ namespace Frontiers.World
 						foreach (StructureLayer staticLayer in templateGroup.StaticStructureLayers) {
 								StructurePackPrefab prefab = null;
 								if (Structures.Get.PackStaticPrefab(staticLayer.PackName, staticLayer.PrefabName, out prefab)) {
-										List <ChildPiece> staticPieces = new List<ChildPiece>();
-										StructureTemplate.ExtractChildPiecesFromLayer(staticPieces, staticLayer.Instances);
-										//ChildPiece[] staticPieces = StructureTemplate.ExtractChildPiecesFromLayer (staticLayer.Instances);
-										for (int i = 0; i < staticPieces.Count; i++) {
-												ChildPiece piece = staticPieces[i];
-												GameObject instantiatedPrefab = UnityEditor.PrefabUtility.InstantiatePrefab(prefab.Prefab) as GameObject;
-												//instantiate a new prefab - keep it as a prefab!
-												instantiatedPrefab.name = prefab.Prefab.name;
-												instantiatedPrefab.transform.parent = startStat;
-												instantiatedPrefab.tag = staticLayer.Tag;
-												instantiatedPrefab.layer = staticLayer.Layer;
-												if (instantiatedPrefab.layer != Globals.LayerNumStructureIgnoreCollider) {
-														instantiatedPrefab.layer = Globals.LayerNumStructureCustomCollider;
-												}
-												//put it in the right place
-												instantiatedPrefab.transform.localPosition = piece.Position;
-												instantiatedPrefab.transform.localRotation = Quaternion.identity;
-												instantiatedPrefab.transform.Rotate(piece.Rotation);
-												instantiatedPrefab.transform.localScale = piece.Scale;
+										List <ChildPiece> staticPieces = null;//new List<ChildPiece>();
+										if (StructureTemplate.ExtractChildPiecesFromLayer(ref staticPieces, staticLayer.Instances)) {
+												//ChildPiece[] staticPieces = StructureTemplate.ExtractChildPiecesFromLayer (staticLayer.Instances);
+												for (int i = 0; i < staticPieces.Count; i++) {
+														ChildPiece piece = staticPieces[i];
+														GameObject instantiatedPrefab = UnityEditor.PrefabUtility.InstantiatePrefab(prefab.Prefab) as GameObject;
+														//instantiate a new prefab - keep it as a prefab!
+														instantiatedPrefab.name = prefab.Prefab.name;
+														instantiatedPrefab.transform.parent = startStat;
+														instantiatedPrefab.tag = staticLayer.Tag;
+														instantiatedPrefab.layer = staticLayer.Layer;
+														if (instantiatedPrefab.layer != Globals.LayerNumStructureIgnoreCollider) {
+																instantiatedPrefab.layer = Globals.LayerNumStructureCustomCollider;
+														}
+														//put it in the right place
+														instantiatedPrefab.transform.localPosition = piece.Position;
+														instantiatedPrefab.transform.localRotation = Quaternion.identity;
+														instantiatedPrefab.transform.Rotate(piece.Rotation);
+														instantiatedPrefab.transform.localScale = piece.Scale;
 
-												if (staticLayer.DestroyedBehavior != 0) {
-														Debug.Log("Destroyed behavior was not zero, adding sdb");
-														instantiatedPrefab.AddComponent <StructureDestroyResult>().Behavior = (StructureDestroyedBehavior)staticLayer.DestroyedBehavior;
-												}
+														if (staticLayer.DestroyedBehavior != 0) {
+																Debug.Log("Destroyed behavior was not zero, adding sdb");
+																instantiatedPrefab.AddComponent <StructureDestroyResult>().Behavior = (StructureDestroyedBehavior)staticLayer.DestroyedBehavior;
+														}
 
-												Material[] variationsArray = null;
-												if (staticLayer.Substitutions != null && staticLayer.Substitutions.Count > 0) {
-														MeshRenderer pmr = prefab.MRenderer;
-														variationsArray = pmr.sharedMaterials;
-														string newMaterialName = string.Empty;
-														for (int j = 0; j < variationsArray.Length; j++) {
-																if (staticLayer.Substitutions.TryGetValue(variationsArray[j].name, out newMaterialName)) {
-																		Material sharedMaterial = null;
-																		if (Structures.Get.SharedMaterial(newMaterialName, out sharedMaterial)) {
-																				variationsArray[j] = sharedMaterial;
+														Material[] variationsArray = null;
+														if (staticLayer.Substitutions != null && staticLayer.Substitutions.Count > 0) {
+																MeshRenderer pmr = prefab.MRenderer;
+																variationsArray = pmr.sharedMaterials;
+																string newMaterialName = string.Empty;
+																for (int j = 0; j < variationsArray.Length; j++) {
+																		if (staticLayer.Substitutions.TryGetValue(variationsArray[j].name, out newMaterialName)) {
+																				Material sharedMaterial = null;
+																				if (Structures.Get.SharedMaterial(newMaterialName, out sharedMaterial)) {
+																						variationsArray[j] = sharedMaterial;
+																				}
 																		}
 																}
+																instantiatedPrefab.renderer.materials = variationsArray;
 														}
-														instantiatedPrefab.renderer.materials = variationsArray;
 												}
+												staticPieces.Clear();
+												staticPieces = null;
 										}
-										staticPieces.Clear();
-										staticPieces = null;
 								}
+
 						}
 						
 						foreach (StructureLayer colliderLayer in templateGroup.CustomStructureColliders) {
-								List <ChildPiece> customColliders = new List<ChildPiece>();
-								StructureTemplate.ExtractChildPiecesFromLayer(customColliders, colliderLayer.Instances);
-								for (int i = 0; i < customColliders.Count; i++) {
-										ChildPiece piece = customColliders[i];
-										GameObject customColliderObject = startCol.gameObject.CreateChild(colliderLayer.PrefabName).gameObject;
-										customColliderObject.tag = colliderLayer.Tag;
-										customColliderObject.layer = colliderLayer.Layer;
+								List <ChildPiece> customColliders = null;//new List<ChildPiece>();
+								if (StructureTemplate.ExtractChildPiecesFromLayer(ref customColliders, colliderLayer.Instances)) {
+										for (int i = 0; i < customColliders.Count; i++) {
+												ChildPiece piece = customColliders[i];
+												GameObject customColliderObject = startCol.gameObject.CreateChild(colliderLayer.PrefabName).gameObject;
+												customColliderObject.tag = colliderLayer.Tag;
+												customColliderObject.layer = colliderLayer.Layer;
 
-										Color colliderColor = Color.red;
+												Color colliderColor = Color.red;
 
-										if (piece.DestroyedBehavior != 0) {
-												customCollidersDestroyed++;
-												customColliderObject.GetOrAdd <StructureDestroyResult>().Behavior = (StructureDestroyedBehavior)piece.DestroyedBehavior;
-										} else {
-												colliderColor = Color.green;
-												customCollidersNormal++;
+												if (piece.DestroyedBehavior != 0) {
+														customCollidersDestroyed++;
+														customColliderObject.GetOrAdd <StructureDestroyResult>().Behavior = (StructureDestroyedBehavior)piece.DestroyedBehavior;
+												} else {
+														colliderColor = Color.green;
+														customCollidersNormal++;
+												}
+
+												customColliderObject.AddComponent(colliderLayer.PackName);
+												customColliderObject.transform.localPosition = piece.Position;
+												customColliderObject.transform.localRotation = Quaternion.Euler(piece.Rotation);
+												customColliderObject.transform.localScale = piece.Scale;
+
+												CrucialColliderGizmo ccg = customColliderObject.AddComponent <CrucialColliderGizmo>();
+												Color gizmoColor = Colors.Saturate(Colors.ColorFromString(piece.ChildName, 100));
+												ccg.fillColor = Colors.Alpha(colliderColor, 0.5f);
+												ccg.wireColor = gizmoColor;
+												ccg.centerColor = gizmoColor;
 										}
-
-										customColliderObject.AddComponent(colliderLayer.PackName);
-										customColliderObject.transform.localPosition = piece.Position;
-										customColliderObject.transform.localRotation = Quaternion.Euler(piece.Rotation);
-										customColliderObject.transform.localScale = piece.Scale;
-
-										CrucialColliderGizmo ccg = customColliderObject.AddComponent <CrucialColliderGizmo>();
-										Color gizmoColor = Colors.Saturate(Colors.ColorFromString(piece.ChildName, 100));
-										ccg.fillColor = Colors.Alpha(colliderColor, 0.5f);
-										ccg.wireColor = gizmoColor;
-										ccg.centerColor = gizmoColor;
+										customColliders.Clear();
+										customColliders = null;
 								}
-								customColliders.Clear();
-								customColliders = null;
 						}
 
 						foreach (StructureLayer colliderLayer in templateGroup.StaticStructureColliders) {
-								List <ChildPiece> customColliders = new List<ChildPiece>();
-								StructureTemplate.ExtractChildPiecesFromLayer(customColliders, colliderLayer.Instances);
-								for (int i = 0; i < customColliders.Count; i++) {
-										ChildPiece piece = customColliders[i];
-//					GameObject customColliderObject = startCol.gameObject.CreateChild (colliderLayer.PrefabName).gameObject;
-//					customColliderObject.tag = colliderLayer.Tag;
-//					customColliderObject.layer = colliderLayer.Layer;
-
-										if (piece.DestroyedBehavior > 0) {
-												staticCollidersDestroyed++;
-//						customColliderObject.AddComponent <StructureDestroyResult> ().Behavior = (StructureDestroyedBehavior) piece.DestroyedBehavior;
-										} else {
-												staticCollidersNormal++;
-										}
+								List <ChildPiece> customColliders = null;//new List<ChildPiece>();
+								if (StructureTemplate.ExtractChildPiecesFromLayer(ref customColliders, colliderLayer.Instances)) {
+										for (int i = 0; i < customColliders.Count; i++) {
+												ChildPiece piece = customColliders[i];
+												if (piece.DestroyedBehavior > 0) {
+														staticCollidersDestroyed++;
+												} else {
+														staticCollidersNormal++;
+												}
 
 //					customColliderObject.AddComponent (colliderLayer.PackName);
 //					customColliderObject.transform.localPosition = piece.Position;
@@ -619,69 +617,70 @@ namespace Frontiers.World
 //					ccg.fillColor = Colors.Alpha (gizmoColor, 0.5f);
 //					ccg.wireColor = gizmoColor;
 //					ccg.centerColor = gizmoColor;
-								}
-						}
-						List<ChildPiece> genericDoors = new List<ChildPiece>();
-						StructureTemplate.ExtractChildPiecesFromLayer(genericDoors, templateGroup.GenericDoors);
-						for (int i = 0; i < genericDoors.Count; i++) {
-								ChildPiece piece = genericDoors[i];
-								DynamicPrefab dynamicPrefab = null;
-								if (Structures.Get.PackDynamicPrefab(piece.PackName, piece.ChildName, out dynamicPrefab)) {
-										GameObject basePrefab = UnityEditor.PrefabUtility.FindPrefabRoot(dynamicPrefab.gameObject);
-										if (basePrefab != null) {
-												GameObject instantiatedGenDoor = UnityEditor.PrefabUtility.InstantiatePrefab(basePrefab) as GameObject;
-												//instantiate a new prefab - keep it as a prefab!
-												instantiatedGenDoor.name = basePrefab.name;
-												instantiatedGenDoor.transform.parent = startDoorGen;
-												//put it in the right place
-												instantiatedGenDoor.transform.localPosition = piece.Position;
-												instantiatedGenDoor.transform.localRotation = Quaternion.identity;
-												instantiatedGenDoor.transform.Rotate(piece.Rotation);
-										}
-								} 
-
-						}
-
-						List<ChildPiece> genericWindows = new List<ChildPiece>();
-						StructureTemplate.ExtractChildPiecesFromLayer(genericWindows, templateGroup.GenericWindows);
-						for (int i = 0; i < genericWindows.Count; i++) {
-								ChildPiece piece = genericWindows[i];
-								DynamicPrefab dynamicPrefab = null;
-								if (Structures.Get.PackDynamicPrefab(piece.PackName, piece.ChildName, out dynamicPrefab)) {
-										GameObject basePrefab = UnityEditor.PrefabUtility.FindPrefabRoot(dynamicPrefab.gameObject);
-										if (basePrefab != null) {
-												GameObject instantiatedGenWin = UnityEditor.PrefabUtility.InstantiatePrefab(basePrefab) as GameObject;
-												//instantiate a new prefab - keep it as a prefab!
-												instantiatedGenWin.name = basePrefab.name;
-												instantiatedGenWin.transform.parent = startWinGen;
-												//put it in the right place
-												instantiatedGenWin.transform.localPosition = piece.Position;
-												instantiatedGenWin.transform.localRotation = Quaternion.identity;
-												instantiatedGenWin.transform.Rotate(piece.Rotation);
 										}
 								}
-
+						}
+						List<ChildPiece> genericDoors = null;//new List<ChildPiece>();
+						if (StructureTemplate.ExtractChildPiecesFromLayer(ref genericDoors, templateGroup.GenericDoors)) {
+								for (int i = 0; i < genericDoors.Count; i++) {
+										ChildPiece piece = genericDoors[i];
+										DynamicPrefab dynamicPrefab = null;
+										if (Structures.Get.PackDynamicPrefab(piece.PackName, piece.ChildName, out dynamicPrefab)) {
+												GameObject basePrefab = UnityEditor.PrefabUtility.FindPrefabRoot(dynamicPrefab.gameObject);
+												if (basePrefab != null) {
+														GameObject instantiatedGenDoor = UnityEditor.PrefabUtility.InstantiatePrefab(basePrefab) as GameObject;
+														//instantiate a new prefab - keep it as a prefab!
+														instantiatedGenDoor.name = basePrefab.name;
+														instantiatedGenDoor.transform.parent = startDoorGen;
+														//put it in the right place
+														instantiatedGenDoor.transform.localPosition = piece.Position;
+														instantiatedGenDoor.transform.localRotation = Quaternion.identity;
+														instantiatedGenDoor.transform.Rotate(piece.Rotation);
+												}
+										} 
+								}
 						}
 
-						List<ChildPiece> genericDynamic = new List<ChildPiece>();
-						StructureTemplate.ExtractChildPiecesFromLayer(genericDynamic, templateGroup.GenericDynamic);
-						for (int i = 0; i < genericDynamic.Count; i++) {
-								ChildPiece piece = genericDynamic[i];
-								DynamicPrefab dynamicPrefab = null;
-								if (Structures.Get.PackDynamicPrefab(piece.PackName, piece.ChildName, out dynamicPrefab)) {
-										GameObject basePrefab = UnityEditor.PrefabUtility.FindPrefabRoot(dynamicPrefab.gameObject);
-										if (basePrefab != null) {
-												GameObject instantiatedGenDyn = UnityEditor.PrefabUtility.InstantiatePrefab(basePrefab) as GameObject;
-												//instantiate a new prefab - keep it as a prefab!
-												instantiatedGenDyn.name = basePrefab.name;
-												instantiatedGenDyn.transform.parent = startDyn;
-												//put it in the right place
-												instantiatedGenDyn.transform.localPosition = piece.Position;
-												instantiatedGenDyn.transform.localRotation = Quaternion.identity;
-												instantiatedGenDyn.transform.Rotate(piece.Rotation);
+						List<ChildPiece> genericWindows = null;//new List<ChildPiece>();
+						if (StructureTemplate.ExtractChildPiecesFromLayer(ref genericWindows, templateGroup.GenericWindows)) {
+								for (int i = 0; i < genericWindows.Count; i++) {
+										ChildPiece piece = genericWindows[i];
+										DynamicPrefab dynamicPrefab = null;
+										if (Structures.Get.PackDynamicPrefab(piece.PackName, piece.ChildName, out dynamicPrefab)) {
+												GameObject basePrefab = UnityEditor.PrefabUtility.FindPrefabRoot(dynamicPrefab.gameObject);
+												if (basePrefab != null) {
+														GameObject instantiatedGenWin = UnityEditor.PrefabUtility.InstantiatePrefab(basePrefab) as GameObject;
+														//instantiate a new prefab - keep it as a prefab!
+														instantiatedGenWin.name = basePrefab.name;
+														instantiatedGenWin.transform.parent = startWinGen;
+														//put it in the right place
+														instantiatedGenWin.transform.localPosition = piece.Position;
+														instantiatedGenWin.transform.localRotation = Quaternion.identity;
+														instantiatedGenWin.transform.Rotate(piece.Rotation);
+												}
 										}
-								} 
+								}
+						}
 
+						List<ChildPiece> genericDynamic = null;//new List<ChildPiece>();
+						if (StructureTemplate.ExtractChildPiecesFromLayer(ref genericDynamic, templateGroup.GenericDynamic)) {
+								for (int i = 0; i < genericDynamic.Count; i++) {
+										ChildPiece piece = genericDynamic[i];
+										DynamicPrefab dynamicPrefab = null;
+										if (Structures.Get.PackDynamicPrefab(piece.PackName, piece.ChildName, out dynamicPrefab)) {
+												GameObject basePrefab = UnityEditor.PrefabUtility.FindPrefabRoot(dynamicPrefab.gameObject);
+												if (basePrefab != null) {
+														GameObject instantiatedGenDyn = UnityEditor.PrefabUtility.InstantiatePrefab(basePrefab) as GameObject;
+														//instantiate a new prefab - keep it as a prefab!
+														instantiatedGenDyn.name = basePrefab.name;
+														instantiatedGenDyn.transform.parent = startDyn;
+														//put it in the right place
+														instantiatedGenDyn.transform.localPosition = piece.Position;
+														instantiatedGenDyn.transform.localRotation = Quaternion.identity;
+														instantiatedGenDyn.transform.Rotate(piece.Rotation);
+												}
+										} 
+								}
 						}
 
 						for (int i = 0; i < templateGroup.UniqueDynamic.Count; i++) {
@@ -711,62 +710,66 @@ namespace Frontiers.World
 
 						GameObject lastInstantied = null;
 
-						List <ChildPiece> genericWorldItems = new List<ChildPiece>();
-						StructureTemplate.ExtractChildPiecesFromLayer(genericWorldItems, templateGroup.GenericWItems);
-						for (int i = 0; i < genericWorldItems.Count; i++) {
-								ChildPiece piece = genericWorldItems[i];
-								WorldItem packPrefab = null;
-								if (WorldItems.Get.PackPrefab(piece.PackName, piece.ChildName, out packPrefab)) {
-										GameObject basePrefab = UnityEditor.PrefabUtility.FindPrefabRoot(packPrefab.gameObject);
-										if (basePrefab != null) {
-												GameObject instantiatedGenWi = UnityEditor.PrefabUtility.InstantiatePrefab(basePrefab) as GameObject;
-												//instantiate a new prefab - keep it as a prefab!
-												instantiatedGenWi.name = basePrefab.name;
-												instantiatedGenWi.transform.parent = startWIsGen;
-												////Debug.Log ("Instantiated prefab " + instantiatedGenWi.name + " has been parent under " + startWIsGen.name);
-												//put it in the right place
-												instantiatedGenWi.transform.localPosition = piece.Position;
-												instantiatedGenWi.transform.localRotation = Quaternion.identity;
-												instantiatedGenWi.transform.Rotate(piece.Rotation);
-												instantiatedGenWi.transform.localScale = basePrefab.transform.localScale;
-												////Debug.Log ("Instanitated prefab position is " + instantiatedGenWi.transform.localPosition.ToString () + ", rotation is " + instantiatedGenWi.transform.localRotation.eulerAngles.ToString ( ));
-												////Debug.Log ("Instantiated prefab's parent is " + instantiatedGenWi.transform.parent.name);
-												lastInstantied = instantiatedGenWi.gameObject;
-												WorldItem instantiatedWorldItem = instantiatedGenWi.GetComponent <WorldItem>();
-												instantiatedWorldItem.IsTemplate = false;
-										}
-								}
-						}
-
-						List <ChildPiece> fires = new List<ChildPiece>();
-						StructureTemplate.ExtractChildPiecesFromLayer(fires, templateGroup.DestroyedFires);
-						for (int i = 0; i < fires.Count; i++) {
-								ChildPiece fire = fires[i];
-								Transform newFire = null;
-								if (FXManager.Get != null) {
-										for (int j = 0; j < FXManager.Get.FirePrefabs.Count; j++) {
-												if (FXManager.Get.FirePrefabs[j].name == fire.ChildName) {
-														GameObject newFireGo = GameObject.Instantiate(FXManager.Get.FirePrefabs[i]) as GameObject;
-														newFire = newFireGo.transform;
-														newFire.parent = startFires;
+						List <ChildPiece> genericWorldItems = null;//new List<ChildPiece>();
+						if (StructureTemplate.ExtractChildPiecesFromLayer(ref genericWorldItems, templateGroup.GenericWItems)) {
+								for (int i = 0; i < genericWorldItems.Count; i++) {
+										ChildPiece piece = genericWorldItems[i];
+										WorldItem packPrefab = null;
+										if (WorldItems.Get.PackPrefab(piece.PackName, piece.ChildName, out packPrefab)) {
+												GameObject basePrefab = UnityEditor.PrefabUtility.FindPrefabRoot(packPrefab.gameObject);
+												if (basePrefab != null) {
+														GameObject instantiatedGenWi = UnityEditor.PrefabUtility.InstantiatePrefab(basePrefab) as GameObject;
+														//instantiate a new prefab - keep it as a prefab!
+														instantiatedGenWi.name = basePrefab.name;
+														instantiatedGenWi.transform.parent = startWIsGen;
+														////Debug.Log ("Instantiated prefab " + instantiatedGenWi.name + " has been parent under " + startWIsGen.name);
+														//put it in the right place
+														instantiatedGenWi.transform.localPosition = piece.Position;
+														instantiatedGenWi.transform.localRotation = Quaternion.identity;
+														instantiatedGenWi.transform.Rotate(piece.Rotation);
+														instantiatedGenWi.transform.localScale = basePrefab.transform.localScale;
+														////Debug.Log ("Instanitated prefab position is " + instantiatedGenWi.transform.localPosition.ToString () + ", rotation is " + instantiatedGenWi.transform.localRotation.eulerAngles.ToString ( ));
+														////Debug.Log ("Instantiated prefab's parent is " + instantiatedGenWi.transform.parent.name);
+														lastInstantied = instantiatedGenWi.gameObject;
+														WorldItem instantiatedWorldItem = instantiatedGenWi.GetComponent <WorldItem>();
+														instantiatedWorldItem.IsTemplate = false;
 												}
 										}
-								} else {
-										newFire = startFires.gameObject.CreateChild(fire.ChildName);
 								}
-								newFire.name = fire.ChildName;
-								newFire.localPosition = fire.Position;
-								newFire.localRotation = Quaternion.Euler(fire.Rotation);
-								newFire.localScale = fire.Scale;
-								newFire.gameObject.tag = "Fire";
 						}
 
-						FXPiece[] fxPieces = StructureTemplate.ExtractFXPiecesFromLayer(templateGroup.DestroyedFX);
-						for (int i = 0; i < fxPieces.Length; i++) {
-								FXPiece piece = fxPieces[i];
-								GameObject fxPieceTemplateGameObject = startDstFx.gameObject.CreateChild(piece.FXName).gameObject;
-								FXPieceTemplate fxPieceTemplate = fxPieceTemplateGameObject.AddComponent <FXPieceTemplate>();
-								fxPieceTemplate.Initialize(piece);
+						List <ChildPiece> fires = null;//new List<ChildPiece>();
+						if (StructureTemplate.ExtractChildPiecesFromLayer(ref fires, templateGroup.DestroyedFires)) {
+								for (int i = 0; i < fires.Count; i++) {
+										ChildPiece fire = fires[i];
+										Transform newFire = null;
+										if (FXManager.Get != null) {
+												for (int j = 0; j < FXManager.Get.FirePrefabs.Count; j++) {
+														if (FXManager.Get.FirePrefabs[j].name == fire.ChildName) {
+																GameObject newFireGo = GameObject.Instantiate(FXManager.Get.FirePrefabs[i]) as GameObject;
+																newFire = newFireGo.transform;
+																newFire.parent = startFires;
+														}
+												}
+										} else {
+												newFire = startFires.gameObject.CreateChild(fire.ChildName);
+										}
+										newFire.name = fire.ChildName;
+										newFire.localPosition = fire.Position;
+										newFire.localRotation = Quaternion.Euler(fire.Rotation);
+										newFire.localScale = fire.Scale;
+										newFire.gameObject.tag = "Fire";
+								}
+						}
+
+						List <FXPiece> fxPieces = null;
+						if (StructureTemplate.ExtractFXPiecesFromLayer(ref fxPieces, templateGroup.DestroyedFX)) {
+								for (int i = 0; i < fxPieces.Count; i++) {
+										FXPiece piece = fxPieces[i];
+										GameObject fxPieceTemplateGameObject = startDstFx.gameObject.CreateChild(piece.FXName).gameObject;
+										FXPieceTemplate fxPieceTemplate = fxPieceTemplateGameObject.AddComponent <FXPieceTemplate>();
+										fxPieceTemplate.Initialize(piece);
+								}
 						}
 
 						for (int i = 0; i < templateGroup.UniqueWorlditems.Count; i++) {
@@ -804,9 +807,11 @@ namespace Frontiers.World
 								wiCatPlaceHolder.Item = catItem;
 						}
 
-						LightPiece[] genericLights = StructureTemplate.ExtractLightPiecesFromLayer(templateGroup.GenericLights);
-						for (int i = 0; i < genericLights.Length; i++) {
-								StructureTemplate.LightFromLightPiece(genericLights[i], startFX);
+						List <LightPiece> genericLights = null;
+						if (StructureTemplate.ExtractLightPiecesFromLayer(ref genericLights, templateGroup.GenericLights)) {
+								for (int i = 0; i < genericLights.Count; i++) {
+										StructureTemplate.LightFromLightPiece(genericLights[i], startFX);
+								}
 						}
 
 						foreach (ActionNodeState actionNodeState in templateGroup.ActionNodes) {

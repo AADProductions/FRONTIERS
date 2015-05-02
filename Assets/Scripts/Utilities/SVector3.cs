@@ -73,6 +73,13 @@ public class SVector3
 	public float y;
 	public float z;
 
+	public void CopyFrom(SVector3 other)
+	{
+		x = other.x;
+		y = other.y;
+		z = other.z;
+	}
+
 	public static implicit operator Vector3 (SVector3 sv3)
 	{
 		if (sv3 == null) {
@@ -85,7 +92,7 @@ public class SVector3
 	{
 		return new SVector3 (v3);
 	}
-
+	
 	public static Vector3 operator + (Vector3 sv1, SVector3 sv2)
 	{
 		return new Vector3 (sv1.x + sv2.x, sv1.y + sv2.y, sv1.z + sv2.z);

@@ -141,7 +141,10 @@ namespace Frontiers.World.WIScripts
 												break;
 										}
 								}
-								yield return null;
+								double waitUntil = WorldClock.RealTime + 0.25f + UnityEngine.Random.value;
+								while (WorldClock.RealTime < waitUntil) {
+										yield return null;
+								}
 						}
 
 						if (!mSpawningCharacters) {
@@ -179,7 +182,7 @@ namespace Frontiers.World.WIScripts
 														SpawnedCharacters.Add(spawnedCharacter);
 												}
 										}
-										double waitUntil = WorldClock.RealTime + 0.5f;
+										double waitUntil = WorldClock.RealTime + 0.5f + UnityEngine.Random.value;
 										while (WorldClock.RealTime < waitUntil) {
 												yield return null;
 										}

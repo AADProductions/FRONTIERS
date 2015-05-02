@@ -62,7 +62,8 @@ namespace Frontiers.GUI
 
 								case WICurrencyType.E_Warlock:
 										DopplegangerProps.CopyFrom(Currency.WarlockGenericWorldItem);
-										inventoryItemName = Currency.WarlockCurrencyNamePlural;
+										inventoryItemName = Currency.WarlockCurrencyNamePlural + Colors.ColorWrap("\n(Warlock Coin)", Colors.Darken(InventoryItemName.color));
+										InventoryItemName.multiLine = true;
 										break;
 						}
 
@@ -72,6 +73,7 @@ namespace Frontiers.GUI
 								StackNumberLabel.transform.localPosition = new Vector3(0f, 0f, -120f);//new Vector3(80f, 0f, -120f);
 								StackNumberLabel.pivot = UIWidget.Pivot.Center;
 								InventoryItemName.pivot = UIWidget.Pivot.Right;
+								InventoryItemName.lineWidth = 200;
 
 								MultiplierLabel.enabled = true;
 								if (CurrencyType != WICurrencyType.A_Bronze) {

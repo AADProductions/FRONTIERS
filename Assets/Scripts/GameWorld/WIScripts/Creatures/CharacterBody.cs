@@ -18,6 +18,13 @@ namespace Frontiers.World
 				//character hair names are weird in the generic models we got, eg 'ponnytail'
 				public static string[] gHairTags = new string [] { "hair", "ponnytail" };
 
+				public override void Awake()
+				{
+						base.Awake();
+						//characters don't use overrides
+						Animator.UseOverrideController = false;
+				}
+
 				public Material HairMaterial {
 						get {
 								return mHairMaterial;

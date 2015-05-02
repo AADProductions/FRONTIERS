@@ -21,6 +21,7 @@ namespace Frontiers.World
 				public Transform MovementPivot;
 				public Rigidbody rb;
 				public bool IsRagdoll;
+				public int OverrideMovementMode;
 
 				[NObjectSync]
 				public Vector3 SmoothPosition {
@@ -117,6 +118,7 @@ namespace Frontiers.World
 				public Color HostileEyeColor;
 				public Color TargetEyeColor;
 				public float TargetEyeBrightness;
+				public bool IsVisible = false;
 
 				public BodyEyeMode EyeMode {
 						get {
@@ -181,6 +183,14 @@ namespace Frontiers.World
 						for (int i = 0; i < BodyParts.Count; i++) {
 								//if this is set to null the body part will set its tag so that it won't be recognized
 								BodyParts[i].Initialize(bodyPartOwner, BodyParts);
+						}
+
+						for (int i = 0; i < BodyParts.Count; i++) {
+								for (int j = 0; j < BodyParts.Count; j++) {
+										if (i != j) {
+												Physics.IgnoreCollision(BodyParts[i].PartCollider, BodyParts[j].PartCollider);
+										}
+								}
 						}
 
 						if (EyeRenderers.Count > 0) {
@@ -331,10 +341,11 @@ namespace Frontiers.World
 								}
 								//otherwise update the movement and smooth movement
 
-								if (Animator != null) {
+								if (Animator != null && IsVisible) {
 										Animator.VerticalAxisMovement = (float)Owner.CurrentMovementSpeed;
 										Animator.HorizontalAxisMovement = (float)Owner.CurrentRotationSpeed;
 										Animator.YRotation = SmoothRotation.y;
+										RefreshEyes();
 								}
 
 								//TODO reenable
@@ -370,14 +381,23 @@ namespace Frontiers.World
 										mSmoothPosition = MovementPivot.position; 
 								}
 						}
-						rb.position = Vector3.Lerp(MovementPivot.position, mSmoothPosition, 0.5f);
-						rb.rotation = Quaternion.Lerp(RotationPivot.rotation, mSmoothRotation, 0.125f);
+						rb.MovePosition(Vector3.Lerp(MovementPivot.position, mSmoothPosition, 0.5f));
+						rb.MoveRotation(Quaternion.Lerp(RotationPivot.rotation, mSmoothRotation, 0.125f));
 						//MovementPivot.position = Vector3.Lerp (MovementPivot.position, mSmoothPosition, 0.5f);
 						//RotationPivot.rotation = Quaternion.Lerp (RotationPivot.rotation, mSmoothRotation, 0.5f);
-						RefreshEyes();
 				}
 
 				public static float gSnapDistance = 5f;
+
+				public virtual void FixedUpdate() {
+						IsVisible = false;
+						for (int i = 0; i < Renderers.Count; i++) {
+								if (Renderers[i].isVisible) {
+										IsVisible = true;
+										break;
+								}
+						}
+				}
 
 				protected void RefreshEyes()
 				{

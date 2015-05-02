@@ -28,7 +28,7 @@ namespace Frontiers.World
 				public Vector3 Position {
 						get {
 								if (!mDestroyed) {
-										return tr.position;
+										return rb.position;
 								}
 								return Vector3.zero;
 						}
@@ -127,6 +127,7 @@ namespace Frontiers.World
 						if (RoamLight != null) {
 								mTargetIntensity = RoamLight.intensity;
 								RoamLight.intensity = 0f;
+								mRoomLightIntensity = 0f;
 						}
 						if (Audio != null) {
 								if (Flies && !PeriodicSound) {
@@ -151,7 +152,7 @@ namespace Frontiers.World
 								mForceDirection.z = UnityEngine.Random.Range(-MaxSpeed, MaxSpeed);
 
 						}
-						mCurrentPosition = tr.position;
+						mCurrentPosition = rb.position;
 						if (Den != null) {
 								//make sure we're within the radius
 								float distance = Vector3.Distance(mCurrentPosition, Den.Position);
@@ -171,7 +172,7 @@ namespace Frontiers.World
 						gVelocityCheck = rb.velocity;
 						mSmoothVelocity = Vector3.Lerp(mSmoothVelocity, gVelocityCheck, 0.1f);
 						if (mSmoothVelocity != Vector3.zero) {
-								tr.rotation = Quaternion.LookRotation(mSmoothVelocity);
+								rb.MoveRotation(Quaternion.LookRotation(mSmoothVelocity));
 						}
 						if (Audio != null) {
 								if (PeriodicSound && UnityEngine.Random.value < 0.001f) {
@@ -179,7 +180,8 @@ namespace Frontiers.World
 								}
 						}
 						if (RoamLight != null) {
-								RoamLight.intensity = Mathf.Lerp(RoamLight.intensity, mTargetIntensity, 0.05f);
+								mRoomLightIntensity = Mathf.Lerp(mRoomLightIntensity, mTargetIntensity, 0.05f);
+								RoamLight.intensity = mRoomLightIntensity;
 						}
 				}
 
@@ -203,6 +205,7 @@ namespace Frontiers.World
 				}
 
 				protected float mTargetIntensity;
+				protected float mRoomLightIntensity;
 				protected double mNextChangeTime;
 				protected Vector3 mCurrentPosition;
 				protected Vector3 mForceDirection;

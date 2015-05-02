@@ -320,16 +320,20 @@ namespace Frontiers.World.WIScripts
 
 				public void CheckScriptProps()
 				{
-						if (mScriptType == null) {
-								mScriptType = GetType();
+						if (mScriptType != null) {
+								return;
 						}
 
+						mScriptType = GetType();
 						mTrueType = GetType();
 						mScriptName = mTrueType.Name;
 						mSaveStateField	= mTrueType.GetField("State");
 
 						if (mSaveStateField != null) {	//only save data if we have a member called 'State'
 								mHasSaveStateField = true;
+								Type xmlType = typeof(Data.GameData.XmlHelper<>).MakeGenericType(mScriptType);
+								//mSerializeMethod = xmlType.GetMethod("XmlSerializeToString");
+								//mDeserializeMethod = xmlType.GetMethod("XmlDeserializeFromString");
 						}
 
 						if (mLocalPriceCalculator == null) {
@@ -382,7 +386,6 @@ namespace Frontiers.World.WIScripts
 						CheckScriptProps();
 
 						mWorldItem = gameObject.GetComponent <WorldItem>();
-
 
 						if (mGlobalPriceCalculator == null) {
 								var staticPriceCalculator = GetType().GetMethod("CalculateGlobalPrice", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
@@ -466,6 +469,8 @@ namespace Frontiers.World.WIScripts
 				protected bool mInitialized = false;
 				protected bool mFinished = false;
 				protected bool mDestroyed = false;
+				//protected SerializeDelegate mSerializeMethod;
+				//protected DeserializeDelegate mDeserializeMethod;
 
 				public static string XmlSerializeToString(object objectInstance)
 				{

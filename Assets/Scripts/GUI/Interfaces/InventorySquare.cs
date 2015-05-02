@@ -387,15 +387,18 @@ namespace Frontiers.GUI
 
 				public virtual void SetInventoryStackNumber()
 				{
-						string stackNumberLabelText = string.Empty;
 						if (IsEnabled && HasStack && mStack.NumItems > 1) {
+								string stackNumberLabelText = string.Empty;
 								if (mHover) {
 										stackNumberLabelText = mStack.NumItems.ToString() + "/" + Colors.ColorWrap(mStack.MaxItems.ToString(), Colors.Darken(StackNumberLabel.color));
 								} else {
 										stackNumberLabelText = mStack.NumItems.ToString();
 								}
+								StackNumberLabel.enabled = true;
+								StackNumberLabel.text = stackNumberLabelText;
+						} else {
+								StackNumberLabel.enabled = false;
 						}
-						StackNumberLabel.text = stackNumberLabelText;
 						//make sure the doppleganger isn't covering us
 						if (Doppleganger != null) {
 								Vector3 labelPosition = StackNumberLabel.transform.position;
@@ -436,7 +439,7 @@ namespace Frontiers.GUI
 								//a) our selected stack is empty and
 								//b) our stack has item
 								//so proceed as though we know those are true
-								skillToUse.TryToRemoveItem(mSkillUseTarget, mStack, Player.Local.Inventory.SelectedStack, WIGroups.Get.Player, FinishUsingSkillToRemoveItem);
+								skillToUse.TryToRemoveItem(mSkillUseTarget, mStack, Player.Local.Inventory.SelectedStack, WIGroups.Get.Player, FinishUsingSkillToRemoveItem, dialogResult.SecondaryResultFlavor);
 								//now we just have to wait!
 								//the skill will move stuff around
 								//refresh requests will be automatic

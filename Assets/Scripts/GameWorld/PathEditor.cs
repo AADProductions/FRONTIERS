@@ -329,8 +329,7 @@ namespace Frontiers.World
 								}
 						}
 
-						State.PathBounds.center = bounds.center;
-						State.PathBounds.size = bounds.size;
+						State.Bounds = bounds;
 						#endif
 				}
 

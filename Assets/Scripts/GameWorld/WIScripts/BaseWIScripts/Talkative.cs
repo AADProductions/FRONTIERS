@@ -223,7 +223,7 @@ namespace Frontiers.World.WIScripts
 				public void SayDTS(Speech speech)
 				{
 						if (!mSayingDTS) {	
-								Debug.Log("Saying DTS " + speech.Name);
+								//Debug.Log("Saying DTS " + speech.Name);
 								mDTS = speech;
 								StartCoroutine(SayDTSOverTime());
 						}

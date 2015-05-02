@@ -233,7 +233,7 @@ namespace Frontiers.World.WIScripts
 				//a) our selected stack is empty and
 				//b) our stack has item
 				//so proceed as though we know those are true
-				skillToUse.TryToRemoveItem (mSkillUseTarget, Occupant, Player.Local.Inventory, ParentReceptacle.OnItemRemovedFromReceptacle);
+				skillToUse.TryToRemoveItem (mSkillUseTarget, Occupant, Player.Local.Inventory, ParentReceptacle.OnItemRemovedFromReceptacle, dialogResult.SecondaryResultFlavor);
 				//now we just have to wait!
 				//the skill will move stuff around
 				//refresh requests will be automatic

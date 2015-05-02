@@ -48,6 +48,11 @@ namespace Frontiers.World.WIScripts
 
 				public float MinFallHeight = 1f;
 
+				public override void OnStartup ()
+				{
+					worlditem.rb.isKinematic = true;
+				}
+
 				public override void OnInitialized()
 				{
 						if (State.TopFollowsSeaLevel) {

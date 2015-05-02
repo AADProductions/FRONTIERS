@@ -429,6 +429,8 @@ namespace Frontiers.GUI
 						CharacterResponseParent.SetActive(true);
 
 						TargetOffset = 0.0f;
+						StatusKeepersAnchor.enabled = true;
+						TextAnchor.enabled = true;
 
 						SendCharacterCameraToCharacter();
 
@@ -506,6 +508,10 @@ namespace Frontiers.GUI
 								StatusKeepersAnchor.gameObject.SetActive(false);
 								PlayerDialogChoicesParent.SetActive(false);
 								CharacterResponseParent.SetActive(false);
+
+								StatusKeepersAnchor.enabled = false;
+								TextAnchor.enabled = false;
+
 								return true;
 						}
 						return false;

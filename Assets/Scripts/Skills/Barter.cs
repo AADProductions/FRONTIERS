@@ -44,45 +44,63 @@ namespace Frontiers.World.Gameplay
 						return false;
 				}
 
-				public override void TryToRemoveItem(IStackOwner skillUseTarget, IWIBase worldItemToMove, IInventory toInventory, Action callBack)
+				public override void TryToRemoveItem(IStackOwner skillUseTarget, IWIBase worldItemToMove, IInventory toInventory, Action callBack, int flavor)
 				{
 						//instead of attempting to remove it now
 						//this skill launched the barter dialog
 						//and sets up a session
-						IInventory barterInventory = null;
-						Character character = null;
-						//this only works with character-owned items
-						if (skillUseTarget.IsWorldItem && skillUseTarget.worlditem.Is <Character>(out character)) {
-								barterInventory = character;
-								//make sure we can actually barter with the player
-								ReputationState rep = Profile.Get.CurrentGame.Character.Rep.GetReputation(character.worlditem.FileName);
-								if (rep.NormalizedReputationDifference(Profile.Get.CurrentGame.Character.Rep.GlobalReputation) > Extensions.MaxNormaliedReputationDifference) {
-										GUIManager.PostWarning(character.worlditem.DisplayName + " is not interested in bartering with you.");
+						if (flavor == BuyFlavor) {
+								int baseCurrencyValue = Mathf.CeilToInt(worldItemToMove.BaseCurrencyValue);
+								if (Player.Local.Inventory.InventoryBank.CanAfford(baseCurrencyValue)) {
+										Player.Local.Inventory.InventoryBank.TryToRemove(baseCurrencyValue);
+										worldItemToMove.Add("OwnedByPlayer");
+										WIStackError error = WIStackError.None;
+										if (!Player.Local.Inventory.AddItems(worldItemToMove, ref error)) {
+												Player.Local.ItemPlacement.ItemForceCarry(worldItemToMove.worlditem);
+										}
+										//improve rep with shopkeeper
+										Profile.Get.CurrentGame.Character.Rep.GainPersonalReputation(skillUseTarget.FileName, skillUseTarget.DisplayName, Globals.ReputationChangeTiny);
+										return;
+								} else {
+										GUIManager.PostInfo("You can't afford that.");
 										return;
 								}
+						} else {
+								IInventory barterInventory = null;
+								Character character = null;
+								//this only works with character-owned items
+								if (skillUseTarget.IsWorldItem && skillUseTarget.worlditem.Is <Character>(out character)) {
+										barterInventory = character;
+										//make sure we can actually barter with the player
+										ReputationState rep = Profile.Get.CurrentGame.Character.Rep.GetReputation(character.worlditem.FileName);
+										if (rep.NormalizedReputationDifference(Profile.Get.CurrentGame.Character.Rep.GlobalReputation) > Extensions.MaxNormaliedReputationDifference) {
+												GUIManager.PostWarning(character.worlditem.DisplayName + " is not interested in bartering with you.");
+												return;
+										}
 
-								if (mCurrentSession == null) {
-										mCurrentSession = new BarterSession(this, mCharacterGoods, mPlayerGoods);
+										if (mCurrentSession == null) {
+												mCurrentSession = new BarterSession(this, mCharacterGoods, mPlayerGoods);
+										}
+										mCurrentSession.Reset(Player.Local.Inventory, barterInventory);
+										mCurrentSession.BarteringCharacter = character;
+										//add the selected goods to the current session immediately
+										//so it's there when we start bartering
+										mCurrentSession.CharacterStartupItem = worldItemToMove;
+										WIStack startupStack = null;
+										//if the startup item is already in the character's inventory
+										//no need to create a startup stack
+										//but if it isn't we'll need the startup stack to display it
+										if (!character.HasItem(worldItemToMove, out startupStack)) {
+												//TODO put entire container in inventory
+												Debug.Log("Item " + worldItemToMove.FileName + " was NOT in character's inventory, creating temporary startup stack");
+												mCurrentSession.CharacterStartupStack = character.HoldTemporaryItem(worldItemToMove);
+										}
+										SpawnBarterDialog();
 								}
-								mCurrentSession.Reset(Player.Local.Inventory, barterInventory);
-								mCurrentSession.BarteringCharacter = character;
-								//add the selected goods to the current session immediately
-								//so it's there when we start bartering
-								mCurrentSession.CharacterStartupItem = worldItemToMove;
-								WIStack startupStack = null;
-								//if the startup item is already in the character's inventory
-								//no need to create a startup stack
-								//but if it isn't we'll need the startup stack to display it
-								if (!character.HasItem(worldItemToMove, out startupStack)) {
-										//TODO put entire container in inventory
-										Debug.Log("Item " + worldItemToMove.FileName + " was NOT in character's inventory, creating temporary startup stack");
-										mCurrentSession.CharacterStartupStack = character.HoldTemporaryItem(worldItemToMove);
-								}
-								SpawnBarterDialog();
 						}
 				}
 
-				public override void TryToRemoveItem(IStackOwner skillUseTarget, WIStack fromStack, WIStack toStack, WIGroup toGroup, Action callBack)
+				public override void TryToRemoveItem(IStackOwner skillUseTarget, WIStack fromStack, WIStack toStack, WIGroup toGroup, Action callBack, int flavor)
 				{
 						//instead of attempting to remove it now
 						//this skill launched the barter dialog
@@ -132,64 +150,49 @@ namespace Frontiers.World.Gameplay
 
 				public override bool Use(IItemOfInterest targetObject, int flavorIndex)
 				{
-						Debug.Log("Using with flavor index " + flavorIndex.ToString());
-						if (flavorIndex == BuyFlavor) {
-								Debug.Log("Buying object with flavor index " + flavorIndex.ToString());
-								int baseCurrencyValue = Mathf.CeilToInt (targetObject.worlditem.BaseCurrencyValue);
-								if (Player.Local.Inventory.InventoryBank.CanAfford(baseCurrencyValue)) {
-										Player.Local.Inventory.InventoryBank.TryToRemove(baseCurrencyValue);
-										Player.Local.Inventory.AddItem(targetObject.worlditem);
-										return true;
-								} else {
-										GUIManager.PostInfo("You can't afford that.");
-										return false;
+						//first check if we're dealing directly with a barterable object
+						IInventory barterInventory = targetObject.gameObject.GetComponent("IInventory") as IInventory;
+						Container container = null;
+						Character character = null;
+						if (barterInventory == null) {
+								//if not, check if we're dealing with an owned container
+								if (targetObject.IOIType == ItemOfInterestType.WorldItem && targetObject.worlditem.Is <Container>(out container)) {
+										//get the owner of the container
+										IStackOwner owner = null;
+										if (targetObject.worlditem.Group.HasOwner(out owner) && owner.IsWorldItem) {
+												barterInventory = (IInventory)owner.worlditem.GetComponent(typeof(IInventory));
+										} else {//if the owner isn't a world item then it hasn't been loaded
+												//TODO handle unloaded shop owners
+										}
+										character = owner.worlditem.Get <Character>();
 								}
 						} else {
-								Debug.Log("Bartering normally with falvor index " + flavorIndex.ToString());
-								//first check if we're dealing directly with a barterable object
-								IInventory barterInventory = targetObject.gameObject.GetComponent("IInventory") as IInventory;
-								Container container = null;
-								Character character = null;
-								if (barterInventory == null) {
-										//if not, check if we're dealing with an owned container
-										if (targetObject.IOIType == ItemOfInterestType.WorldItem && targetObject.worlditem.Is <Container>(out container)) {
-												//get the owner of the container
-												IStackOwner owner = null;
-												if (targetObject.worlditem.Group.HasOwner(out owner) && owner.IsWorldItem) {
-														barterInventory = (IInventory)owner.worlditem.GetComponent(typeof(IInventory));
-												} else {//if the owner isn't a world item then it hasn't been loaded
-														//TODO handle unloaded shop owners
-												}
-												character = owner.worlditem.Get <Character>();
-										}
-								} else {
-										character = targetObject.worlditem.Get <Character>();
-								}
-
-								if (character != null) {
-										ReputationState rep = Profile.Get.CurrentGame.Character.Rep.GetReputation(character.worlditem.FileName);
-										if (rep.NormalizedReputationDifference(Profile.Get.CurrentGame.Character.Rep.GlobalReputation) > Extensions.MaxNormaliedReputationDifference) {
-												GUIManager.PostWarning(character.worlditem.DisplayName + " is not interested in bartering with you.");
-												return false;
-										}
-								}
-
-								if (barterInventory != null) {
-										if (mCurrentSession == null) {
-												mCurrentSession = new BarterSession(this, mCharacterGoods, mPlayerGoods);
-										}
-										mCurrentSession.Reset(Player.Local.Inventory, barterInventory);
-										mCurrentSession.BarteringCharacter = character;
-										if (flavorIndex > 0) {
-												//flavor 0 is default mode
-												//flavor 1 is zero cost mode (friends, multiplayer, etc)
-												mCurrentSession.ZeroCostMode = true;
-										}
-										SpawnBarterDialog();
-										return true;
-								}
-								return false;
+								character = targetObject.worlditem.Get <Character>();
 						}
+
+						if (character != null) {
+								ReputationState rep = Profile.Get.CurrentGame.Character.Rep.GetReputation(character.worlditem.FileName);
+								if (rep.NormalizedReputationDifference(Profile.Get.CurrentGame.Character.Rep.GlobalReputation) > Extensions.MaxNormaliedReputationDifference) {
+										GUIManager.PostWarning(character.worlditem.DisplayName + " is not interested in bartering with you.");
+										return false;
+								}
+						}
+
+						if (barterInventory != null) {
+								if (mCurrentSession == null) {
+										mCurrentSession = new BarterSession(this, mCharacterGoods, mPlayerGoods);
+								}
+								mCurrentSession.Reset(Player.Local.Inventory, barterInventory);
+								mCurrentSession.BarteringCharacter = character;
+								if (flavorIndex > 0) {
+										//flavor 0 is default mode
+										//flavor 1 is zero cost mode (friends, multiplayer, etc)
+										mCurrentSession.ZeroCostMode = true;
+								}
+								SpawnBarterDialog();
+								return true;
+						}
+						return false;
 				}
 
 				public override bool Use(bool successfully)
@@ -324,14 +327,16 @@ namespace Frontiers.World.Gameplay
 				{
 						WIListOption option = base.GetListOption(targetObject);
 						option.Flavors.Clear();
+						option.OptionText = "Barter";
+						option.DefaultFlavorIndex = -1;
 						//barter targets the owner of objects, not the object itself, so check if the owner is a shop owner
 						if (targetObject.IOIType == ItemOfInterestType.WorldItem && targetObject.worlditem.Is <ShopOwner> ()) {
 								//only do this if it's an actual worlditem	
 								//get the thing we're focusing on
 								if (Player.Local.Surroundings.IsWorldItemInRange && !Player.Local.Surroundings.WorldItemFocus.worlditem.Is <OwnedByPlayer> ()) {
 										Debug.Log("it's a shop item, returning flavored option");
-										option.Flavors.Add("Barter");
-										option.Flavors.Add("Buy for $" + Player.Local.Surroundings.WorldItemFocus.worlditem.BaseCurrencyValue.ToString());
+										option.DefaultFlavorIndex = BuyFlavor;
+										option.OptionText = "Buy for $" + Player.Local.Surroundings.WorldItemFocus.worlditem.BaseCurrencyValue.ToString();
 								}
 						}
 						return option;

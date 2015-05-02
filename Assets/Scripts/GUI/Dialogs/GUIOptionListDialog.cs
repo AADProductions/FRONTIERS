@@ -116,7 +116,7 @@ namespace Frontiers.GUI
 														buttonPosition -= RowSize;
 												}
 										}
-								} else if (CreateButton(option, -1, buttonPosition, functionName)) {
+								} else if (CreateButton(option, option.DefaultFlavorIndex, buttonPosition, functionName)) {
 										numButtonsCreated++;
 										buttonPosition -= RowSize;
 								}
@@ -146,11 +146,15 @@ namespace Frontiers.GUI
 								newButtonLabel.color = option.TextColor;
 				
 								if (flavorIndex >= 0) {
-										if (string.IsNullOrEmpty(option.Flavors[flavorIndex])) {
-												return false;
+										if (flavorIndex < option.Flavors.Count) {
+												if (string.IsNullOrEmpty(option.Flavors[flavorIndex])) {
+														return false;
+												} else {
+														newButtonLabel.text = option.Flavors[flavorIndex];
+														newButton.name += "_" + flavorIndex.ToString();
+												}
 										} else {
-												newButtonLabel.text = option.Flavors[flavorIndex];
-												newButton.name += "_" + flavorIndex.ToString();
+												newButton.name = option.Result + "_" + flavorIndex.ToString();
 										}
 								}
 
@@ -264,6 +268,13 @@ namespace Frontiers.GUI
 
 				public virtual void OnClickOptionButton(GameObject sender)
 				{
+						//check for flavors
+						string[ ] splitSenderName = sender.name.Split(new string [] {"_"}, StringSplitOptions.RemoveEmptyEntries);
+						if (splitSenderName.Length > 1) {
+								EditObject.SecondaryResultFlavor = int.Parse(splitSenderName[1]);
+						} else {
+								EditObject.SecondaryResultFlavor = -1;
+						}
 						EditObject.Result = sender.name;
 						Finish();
 				}
@@ -271,13 +282,13 @@ namespace Frontiers.GUI
 				public virtual void OnClickSecondaryOptionButton(GameObject sender)
 				{
 						//check for flavors
-						string[ ] splitSenderName = sender.name.Split('_');
+						string[ ] splitSenderName = sender.name.Split(new string [] {"_"}, StringSplitOptions.RemoveEmptyEntries);
 						if (splitSenderName.Length > 1) {
 								EditObject.SecondaryResult = splitSenderName[0];
-								EditObject.SecondaryResultFlavor	= int.Parse(splitSenderName[1]);
+								EditObject.SecondaryResultFlavor = int.Parse(splitSenderName[1]);
 						} else {
 								EditObject.SecondaryResult = sender.name;
-								EditObject.SecondaryResultFlavor	= -1;
+								EditObject.SecondaryResultFlavor = -1;
 						}
 						Finish();
 				}

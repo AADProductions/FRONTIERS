@@ -27,6 +27,8 @@ public static class Globals
 		public static string LoadingGameObjectName = "=LOADING=";
 		public static string GameManagerGameObjectName = "=GAME=";
 
+		public static int NumCachedSplinePositionsPerMeter = 5;
+
 		#region difficulty
 		[EditableDifficultySetting(0f, 10000000f, "Base price in grains for a book in the guild library")]
 		public static float GuildLibraryBasePrice = 10000;

@@ -273,6 +273,8 @@ namespace Frontiers.World.WIScripts
 										break;
 						}
 
+						yield return null;
+
 						switch (State.FillMethod) {
 								case ContainerFillMethod.AllRandomItemsFromCategory:
 								default:
@@ -290,6 +292,8 @@ namespace Frontiers.World.WIScripts
 														} else {
 																itemsSoFar.Add(genericItem.PrefabName, 1);
 														}
+
+														yield return null;
 
 														if (belowDuplicateThreshold) {
 																//this might be a currency item - if it is, add it to the bank

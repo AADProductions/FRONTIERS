@@ -38,7 +38,7 @@ namespace Frontiers.World.WIScripts
 				public override void OnModeChange()
 				{
 						if (worlditem.Is(WIMode.Stacked)) {
-								gameObject.SendMessage("OnLosePlayerFocus");
+								worlditem.HasPlayerFocus = false;
 								worlditem.ActiveStateLocked = false;
 								worlditem.ActiveState = WIActiveState.Invisible;
 								worlditem.ActiveStateLocked = true;

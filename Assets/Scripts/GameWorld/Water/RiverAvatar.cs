@@ -37,25 +37,43 @@ namespace Frontiers.World
 						tr = transform;
 						WaterSubmerge.OnItemOfInterestEnterWater += OnItemOfInterestEnterWater;
 						WaterSubmerge.OnItemOfInterestExitWater += OnItemOfInterestExitWater;
+						mSubmergedUpdate = UnityEngine.Random.Range(0, 30);
+						mColorUpdate = UnityEngine.Random.Range(0, 60);
+						mColliderPositionUpdate = UnityEngine.Random.Range(0, 10);
 				}
 
 				public void RefreshProps()
 				{
 						name = Props.Name;
+						MasterSpline.enabled = false;
+						MasterSplineMesh.enabled = false;
 						RefreshSpline();
 						RefreshFlowCollider();
 				}
 
 				public void RefreshSpline()
 				{
-						for (int i = 0; i < Props.Nodes.Count; i++) {
-								SVector3 nodePosition = Props.Nodes[i];
-								GameObject node = MasterSpline.AddSplineNode();
-								node.transform.parent = transform;
-								node.transform.localPosition = nodePosition;
+						MasterSpline.updateMode = Spline.UpdateMode.DontUpdate;
+						MasterSplineMesh.updateMode = SplineMesh.UpdateMode.DontUpdate;
+						MasterSpline.enabled = false;
+
+						if (Application.isPlaying) {
+								if (!mRefreshingSplineNodes) {
+										mRefreshingSplineNodes = true;
+										StartCoroutine(RefreshSplineNodes());
+								}
+						} else {
+								for (int i = 0; i < Props.Nodes.Count; i++) {
+										SVector3 nodePosition = Props.Nodes[i];
+										GameObject node = new GameObject("Node");//MasterSpline.AddSplineNode();
+										node.transform.parent = transform;
+										node.transform.localPosition = nodePosition;
+										SplineNode s = node.AddComponent <SplineNode>();
+										MasterSpline.splineNodesArray.Add(s);
+								}
 						}
 
-						transform.localPosition = new Vector3(0f, Props.BaseHeight + Props.CurrentWaterLevel, 0f);
+						tr.localPosition = Vector3.up * (Props.BaseHeight + Props.CurrentWaterLevel);
 						MasterSplineMesh.segmentCount = Props.SegmentCount;
 						MasterSplineMesh.uvScale = Props.UVScale;
 						MasterSplineMesh.xyScale = Props.MeshScale;
@@ -63,10 +81,6 @@ namespace Frontiers.World
 						WaterAnimation.FlowDirection = Props.FlowDirection;
 						WaterAnimation.FlowSpeed = Props.FlowSpeed;
 						WaterAnimation.FoamSpeed = Props.FoamSpeed;
-
-						MasterSpline.updateMode = Spline.UpdateMode.DontUpdate;
-						MasterSpline.UpdateSpline();
-						MasterSplineMesh.UpdateMesh();
 				}
 
 				public void RefreshFlowCollider()
@@ -101,13 +115,27 @@ namespace Frontiers.World
 						UpdateColliderPosition();
 				}
 
+				protected IEnumerator RefreshSplineNodes () {
+						for (int i = 0; i < Props.Nodes.Count; i++) {
+								SVector3 nodePosition = Props.Nodes[i];
+								GameObject node = MasterSpline.AddSplineNode();
+								node.transform.parent = tr;
+								node.transform.localPosition = nodePosition;
+								double waitUntil = WorldClock.RealTime + 0.01f;
+								while (WorldClock.RealTime < waitUntil) {
+										yield return null;
+								}
+						}
+						mRefreshingSplineNodes = false;
+						yield break;
+				}
+
+				protected bool mRefreshingSplineNodes = false;
+
 				public void Update()
 				{
-						if (ParentChunk.Is(ChunkMode.Unloaded)) {
-								MasterSpline.enabled = false;
+						if (!ParentChunk.Is(ChunkMode.Primary | ChunkMode.Adjascent | ChunkMode.Immediate) || !WaterRenderer.isVisible) {
 								return;
-						} else {
-								MasterSpline.enabled = true;
 						}
 
 						if (!Mathf.Approximately(Props.TargetWaterLevel, Props.CurrentWaterLevel)) {
@@ -124,11 +152,18 @@ namespace Frontiers.World
 
 				public void FixedUpdate()
 				{
-						if (!MasterSpline.enabled) {
+						if (!ParentChunk.Is(ChunkMode.Primary | ChunkMode.Adjascent | ChunkMode.Immediate) || !WaterRenderer.isVisible) {
 								return;
 						}
 
 						if (GameManager.Is(FGameState.InGame)) {
+
+								if (!MasterSpline.enabled) {
+										//we need to refresh
+										MasterSpline.enabled = true;
+										MasterSpline.UpdateSpline();
+										MasterSplineMesh.UpdateMesh();
+								}
 
 								mColliderPositionUpdate++;
 								mColorUpdate++;

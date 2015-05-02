@@ -1521,6 +1521,7 @@ namespace Frontiers
 				Invisible = 0,
 				Visible = 1,
 				Active = 2,
+				Any = Invisible | Visible | Active,
 		}
 
 		[Flags]

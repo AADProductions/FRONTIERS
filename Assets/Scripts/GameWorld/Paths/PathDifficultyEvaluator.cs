@@ -78,7 +78,10 @@ public class PathDifficultyEvaluator : MonoBehaviour
 								transform.position = evalPoint.TerrainPosition;
 						}
 			
-						yield return WorldClock.WaitForRTSeconds(YieldTimePerStep);
+						double start = Frontiers.WorldClock.RealTime;
+						while (Frontiers.WorldClock.RealTime < start + YieldTimePerStep) {
+								yield return null;
+						}
 				}
 
 				Evaluating = false;

@@ -107,7 +107,7 @@ namespace Frontiers.World
 
 						//let worlditems in our potential path know that the need to be 'active'
 						//otherwise the projectile might go right through them
-						WorldItems.SetActiveStateOverride (Current3DPosition, CurrentForce * 2);
+						WorldItems.Get.SetActiveStateOverride (Current3DPosition, CurrentForce * 2);
 
 						RaycastHit hitInfo;
 						if (Physics.Linecast(Last3DPosition, Current3DPosition, out hitInfo, Globals.LayersActive)) {

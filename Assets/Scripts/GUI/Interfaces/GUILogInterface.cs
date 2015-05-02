@@ -11,6 +11,7 @@ namespace Frontiers.GUI
 				public GUITabs Tabs;
 				public Vector3 VRModeOffsetFocusLog = new Vector3(400f, 0f, 0f);
 				public Vector3 VRModeOffsetFocusDetails = new Vector3(400f, 0f, 0f);
+				public UIAnchor LogInterfaceAnchor;
 				public bool VRFocusDetailsPage = false;
 
 				public override bool ShowQuickslots {
@@ -64,6 +65,7 @@ namespace Frontiers.GUI
 				public override bool Minimize()
 				{
 						if (base.Minimize()) {
+								LogInterfaceAnchor.enabled = false;
 								CloseButton.gameObject.SetActive(false);
 								Tabs.Hide();
 								return true;
@@ -74,6 +76,8 @@ namespace Frontiers.GUI
 				public override bool Maximize()
 				{
 						if (base.Maximize()) {
+								LogInterfaceAnchor.enabled = true;
+
 								#if UNITY_EDITOR
 								if (VRManager.VRMode | VRManager.VRTestingMode) {
 								#else

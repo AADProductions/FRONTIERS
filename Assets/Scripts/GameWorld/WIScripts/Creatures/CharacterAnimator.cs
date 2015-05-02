@@ -5,74 +5,74 @@ using Frontiers.World;
 
 public class CharacterAnimator : BodyAnimator
 {
-		public CharacterWeaponMode WeaponMode {
-				get {
-						return mWeaponMode;
-				}
-				set {
-						mWeaponMode = value;
-				}
+	public CharacterWeaponMode WeaponMode {
+		get {
+			return mWeaponMode;
 		}
-
-		public GenericWorldItem	Tool {
-				get {
-						return mTool;
-				}
-				set {
-						mTool = value;
-				}
+		set {
+			mWeaponMode = value;
 		}
+	}
 
-		public override void Start()
-		{
-				base.Start();
-				BaseMovementMode = 0;
-				IdleAnimation = 0;
-				WeaponMode = CharacterWeaponMode.BareHands;
-				AvailableMovementModes.Add("Sleeping");
-				animator.SetBool("CanLand", true);
+	public GenericWorldItem	Tool {
+		get {
+			return mTool;
 		}
-
-		public override void FixedUpdate()
-		{
-				base.FixedUpdate();
-
-				if (mWeaponModeLastFrame != WeaponMode) {
-						ApplyWeaponMode(WeaponMode);
-				}
+		set {
+			mTool = value;
 		}
+	}
 
-		protected void ApplyWeaponMode(CharacterWeaponMode weaponMode)
-		{
-				switch (WeaponMode) {
-						case CharacterWeaponMode.BareHands:
-						default:
-								animator.SetBool("Bow", false);
-								animator.SetBool("Pistol", false);
-								animator.SetBool("Sword", false);
-								break;
+	public override void Start()
+	{
+		base.Start();
+		BaseMovementMode = 0;
+		IdleAnimation = 0;
+		WeaponMode = CharacterWeaponMode.BareHands;
+		AvailableMovementModes.Add("Sleeping");
+		animator.SetBool("CanLand", true);
+	}
 
-						case CharacterWeaponMode.BowBasedWeapon:
-								animator.SetBool("Bow", true);
-								animator.SetBool("Pistol", false);
-								animator.SetBool("Sword", false);
-								break;
+	public override void FixedUpdate()
+	{
+		base.FixedUpdate();
 
-						case CharacterWeaponMode.RangedWeapon:
-								animator.SetBool("Bow", false);
-								animator.SetBool("Pistol", true);
-								animator.SetBool("Sword", false);
-								break;
-
-						case CharacterWeaponMode.SlashingWeapon:
-								animator.SetBool("Bow", false);
-								animator.SetBool("Pistol", false);
-								animator.SetBool("Sword", true);
-								break;
-				}
+		if (mWeaponModeLastFrame != WeaponMode) {
+			ApplyWeaponMode(WeaponMode);
 		}
+	}
 
-		protected CharacterWeaponMode mWeaponMode = CharacterWeaponMode.BareHands;
-		protected GenericWorldItem mTool = GenericWorldItem.Empty;
-		protected CharacterWeaponMode mWeaponModeLastFrame = CharacterWeaponMode.BareHands;
+	protected void ApplyWeaponMode(CharacterWeaponMode weaponMode)
+	{
+		switch (WeaponMode) {
+			case CharacterWeaponMode.BareHands:
+			default:
+				animator.SetBool("Bow", false);
+				animator.SetBool("Pistol", false);
+				animator.SetBool("Sword", false);
+				break;
+
+			case CharacterWeaponMode.BowBasedWeapon:
+				animator.SetBool("Bow", true);
+				animator.SetBool("Pistol", false);
+				animator.SetBool("Sword", false);
+				break;
+
+			case CharacterWeaponMode.RangedWeapon:
+				animator.SetBool("Bow", false);
+				animator.SetBool("Pistol", true);
+				animator.SetBool("Sword", false);
+				break;
+
+			case CharacterWeaponMode.SlashingWeapon:
+				animator.SetBool("Bow", false);
+				animator.SetBool("Pistol", false);
+				animator.SetBool("Sword", true);
+				break;
+		}
+	}
+
+	protected CharacterWeaponMode mWeaponMode = CharacterWeaponMode.BareHands;
+	protected GenericWorldItem mTool = GenericWorldItem.Empty;
+	protected CharacterWeaponMode mWeaponModeLastFrame = CharacterWeaponMode.BareHands;
 }

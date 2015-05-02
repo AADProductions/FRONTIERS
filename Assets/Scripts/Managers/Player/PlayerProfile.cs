@@ -500,6 +500,7 @@ namespace Frontiers
 								prefs.TerrainReduceTreeVariation = false;
 								prefs.StructureReduceTextureVariation = false;
 								prefs.TerrainShadows = true;
+								prefs.TerrainMaxDetailLayers = Globals.WorldChunkDetailLayers;
 								prefs.StructureShadows = true;
 								prefs.ObjectShadows = true;
 								//prefs.RefreshPostFX ();
@@ -556,6 +557,7 @@ namespace Frontiers
 								TerrainMaxMeshTrees = copyFrom.TerrainMaxMeshTrees;
 								TerrainShadows = copyFrom.TerrainShadows;
 								TerrainReduceTreeVariation = copyFrom.TerrainReduceTreeVariation;
+								TerrainMaxDetailLayers = copyFrom.TerrainMaxDetailLayers;
 								StructureReduceTextureVariation = copyFrom.StructureReduceTextureVariation;
 								StructureShadows = copyFrom.StructureShadows;
 								ObjectShadows = copyFrom.ObjectShadows;
@@ -675,11 +677,11 @@ namespace Frontiers
 														CameraFX.Get.Default.SSAO.enabled = false;
 														CameraFX.Get.Default.Grain.enabled = false;
 														SetOrDisablePostEffect(CameraFX.Get.Default.AA, true, ref PostFXAA);
-														if (Application.platform == RuntimePlatform.WindowsPlayer) {
-																SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref PostFXGlobalFog);
+														if (Application.platform == RuntimePlatform.LinuxPlayer | Application.platform == RuntimePlatform.OSXPlayer) {
+															bool fogOff = false;
+															SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref fogOff);
 														} else {
-																bool fogOff = false;
-																SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref fogOff);
+															SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref PostFXGlobalFog);
 														}
 														CameraFX.Get.Default.ColorGrading.enabled = true;
 												} else {
@@ -688,11 +690,11 @@ namespace Frontiers
 														SetOrDisablePostEffect(CameraFX.Get.Default.SSAO, true, ref PostFXSSAO);
 														SetOrDisablePostEffect(CameraFX.Get.Default.Grain, true, ref PostFXGrain);
 														SetOrDisablePostEffect(CameraFX.Get.Default.AA, true, ref PostFXAA);
-														if (Application.platform == RuntimePlatform.WindowsPlayer) {
-																SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref PostFXGlobalFog);
+														if (Application.platform == RuntimePlatform.LinuxPlayer | Application.platform == RuntimePlatform.OSXPlayer) {
+															bool fogOff = false;
+															SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref fogOff);
 														} else {
-																bool fogOff = false;
-																SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref fogOff);
+															SetOrDisablePostEffect(CameraFX.Get.Default.Fog, true, ref PostFXGlobalFog);
 														}
 												}
 
@@ -774,6 +776,7 @@ namespace Frontiers
 						public float TerrainDetail = 30.0f;
 						public float TerrainTreeBillboardDistance = 128f;
 						public float TerrainTreeDistance = 2000f;
+						public int TerrainMaxDetailLayers = 12;
 						public int TerrainMaxMeshTrees = 128;
 						public bool TerrainReduceTreeVariation = false;
 						public bool StructureReduceTextureVariation = false;

@@ -9,6 +9,7 @@ namespace Frontiers
 		public class PlayerEncounterer : MonoBehaviour
 		{
 				public SphereCollider EncounterCollider;
+				Rigidbody rb;
 
 				public void Awake()
 				{
@@ -16,7 +17,7 @@ namespace Frontiers
 						EncounterCollider = gameObject.AddComponent <SphereCollider>();
 						EncounterCollider.radius = Globals.PlayerEncounterRadius;
 						EncounterCollider.isTrigger = true;
-						Rigidbody rb = gameObject.AddComponent <Rigidbody>();
+						rb = gameObject.AddComponent <Rigidbody>();
 						rb.isKinematic = true;
 				}
 
@@ -73,7 +74,7 @@ namespace Frontiers
 
 				public void LateUpdate()
 				{
-						transform.position = TargetPlayer.Position;
+						rb.MovePosition (TargetPlayer.Position);
 
 						if (mCleanListNextFrame) {
 								LastItemsEncountered.Clear();

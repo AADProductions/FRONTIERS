@@ -29,8 +29,10 @@ namespace Frontiers
 						treeList.Clear();
 
 						for (int i = 0; i < GameWorld.Get.ImmediateChunks.Count; i++) {
-								//find all the nodes that intersect the player bounds - this is recursive so it should cover everything
-								GameWorld.Get.ImmediateChunks[i].TreeInstanceQuad.FindNodesIntersecting(player.ColliderBounds, quadTreeCells);
+								if (GameWorld.Get.ImmediateChunks[i].ChunkBounds.Intersects(player.ColliderBounds)) {
+										//find all the nodes that intersect the player bounds - this is recursive so it should cover everything
+										GameWorld.Get.ImmediateChunks[i].TreeInstanceQuad.FindNodesIntersecting(player.ColliderBounds, quadTreeCells);
+								}
 						}
 
 						for (int i = 0; i < quadTreeCells.Count; i++) {

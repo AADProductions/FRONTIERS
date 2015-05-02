@@ -69,7 +69,10 @@ namespace Frontiers.World.WIScripts
 						while (mSitting) {
 								Player.Local.Status.RestoreStatus(PlayerStatusRestore.F_Full, "Strength", (float)(ComfortLevel * Globals.RestStrengthRestoreSpeed));
 								keeper.Ping = true;
-								yield return WorldClock.WaitForRTSeconds(1.5f);
+								double start = Frontiers.WorldClock.AdjustedRealTime;
+								while (Frontiers.WorldClock.AdjustedRealTime < start + 1.5f) {
+										yield return null;
+								}
 						}
 						WorldClock.Get.SetTargetSpeed(1.0f);
 				}
@@ -81,7 +84,10 @@ namespace Frontiers.World.WIScripts
 						while (mSitting) {
 								Player.Local.Status.RestoreStatus(PlayerStatusRestore.F_Full, "Strength", (float)(ComfortLevel * Globals.RestStrengthRestoreSpeed));
 								keeper.Ping = true;
-								yield return WorldClock.WaitForRTSeconds(1f);
+								double start = Frontiers.WorldClock.AdjustedRealTime;
+								while (Frontiers.WorldClock.AdjustedRealTime < start + 1f) {
+										yield return null;
+								}
 						}
 				}
 

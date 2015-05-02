@@ -223,6 +223,7 @@ namespace Frontiers.World
 						}
 				}
 
+				public int DefaultFlavorIndex = -1;
 				public WICurrencyType RequiredCurrencyType = WICurrencyType.None;
 				public int CurrencyValue = 0;
 				public bool Divider = false;
@@ -571,12 +572,49 @@ namespace Frontiers.World
 
 				public void CopyName(SIProps copyFrom)
 				{
-						Name = ObjectClone.Clone <WIName>(copyFrom.Name);
+						WIName n = copyFrom.Name;
+						Name.AutoIncrementFileName = n.AutoIncrementFileName;
+						Name.DisplayName = n.DisplayName;
+						Name.FileName = n.FileName;
+						Name.FileNameIncrement = n.FileNameIncrement;
+						Name.PackName = n.PackName;
+						Name.PrefabName = n.PrefabName;
+						Name.QuestName = n.QuestName;
+						Name.StackName = n.StackName;
+						//Name = ObjectClone.Clone <WIName>(copyFrom.Name);
 				}
 
 				public void CopyLocal(SIProps copyFrom)
 				{
-						Local = ObjectClone.Clone <WILocalProps>(copyFrom.Local);
+						WILocalProps p = copyFrom.Local;
+						//copying values is a pain in the ass but it's way faster than anything else
+						Local.ActiveRadius = p.ActiveRadius;
+						Local.BaseCurrencyValue = p.BaseCurrencyValue;
+						Local.CauseOfDestruction = p.CauseOfDestruction;
+						Local.ChunkPosition.CopyFrom(p.ChunkPosition);
+						Local.CraftedByPlayer = p.CraftedByPlayer;
+						Local.DisplayNamerScript = p.DisplayNamerScript;
+						Local.FreezeOnSleep = p.FreezeOnSleep;
+						Local.FreezeOnStartup = p.FreezeOnStartup;
+						Local.FreezeTimeout = p.FreezeTimeout;
+						Local.HasInitializedOnce = p.HasInitializedOnce;
+						Local.HudTargetScript = p.HudTargetScript;
+						Local.IsStackContainer = p.IsStackContainer;
+						Local.LightOffset.CopyFrom(p.LightOffset);
+						Local.LightTemplateName = p.LightTemplateName;
+						Local.Mode = p.Mode;
+						Local.PreviousMode = p.PreviousMode;
+						if (Local.RemoveItemSkills.Count > 0) {
+								Local.RemoveItemSkills.Clear();
+						}
+						Local.RemoveItemSkills.AddRange(p.RemoveItemSkills);
+						Local.StackNamerScript = p.StackNamerScript;
+						Local.StolenGoods = p.StolenGoods;
+						Local.Subcategory = p.Subcategory;
+						Local.Transform.CopyFrom(p.Transform);
+						Local.UseAsContainerInInventory = p.UseAsContainerInInventory;
+						Local.VisibleDistance = p.VisibleDistance;
+						//Local = ObjectClone.Clone <WILocalProps>(copyFrom.Local);
 				}
 		}
 
@@ -608,6 +646,9 @@ namespace Frontiers.World
 		[Serializable]
 		public class WISaveState
 		{
+				[XmlIgnore]
+				[NonSerialized]
+				public bool Saved = false;
 				public bool CanEnterInventory = false;
 				public bool CanBeCarried = false;
 				public bool CanBeDropped = false;
@@ -619,5 +660,82 @@ namespace Frontiers.World
 				}
 				public string LastState = string.Empty;
 				public SDictionary <string,string> Scripts = new SDictionary <string, string>();
+
+				public void CopyFrom(WISaveState saveState)
+				{
+						CanEnterInventory = saveState.CanEnterInventory;
+						CanBeCarried = saveState.CanBeCarried;
+						CanBeDropped = saveState.CanBeDropped;
+						UnloadWhenStacked = saveState.UnloadWhenStacked;
+						LastState = saveState.LastState;
+						if (Scripts == null) {
+								Scripts = new SDictionary<string, string>();
+						} else {
+								Scripts.Clear();
+						}
+						var scriptsEnum = saveState.Scripts.GetEnumerator();
+						while (scriptsEnum.MoveNext()) {
+								Scripts.Add(scriptsEnum.Current.Key, scriptsEnum.Current.Value);
+						}
+				}
+		}
+
+		/// <summary>
+		/// A static class for reflection type functions
+		/// </summary>
+		public static class Reflection
+		{
+				/// <summary>
+				/// Extension for 'Object' that copies the properties to a destination object.
+				/// </summary>
+				/// <param name="source">The source.</param>
+				/// <param name="destination">The destination.</param>
+				public static void CopyProperties(this object source, object destination)
+				{
+						// If any this null throw an exception
+						if (source == null || destination == null)
+								throw new Exception("Source or/and Destination Objects are null");
+						// Getting the Types of the objects
+						Type typeDest = destination.GetType();
+						Type typeSrc = source.GetType();
+
+						// Iterate the Properties of the source instance and  
+						// populate them from their desination counterparts  
+						PropertyInfo[] srcProps = typeSrc.GetProperties();
+						PropertyInfo srcProp = null;
+						for (int i = 0; i < srcProps.Length; i++)
+						//foreach (PropertyInfo srcProp in srcProps)
+						{
+								srcProp = srcProps[i];
+
+								if (!srcProp.CanRead)
+								{
+										continue;
+								}
+								PropertyInfo targetProperty = typeDest.GetProperty(srcProp.Name);
+								if (targetProperty == null)
+								{
+										continue;
+								}
+								if (!targetProperty.CanWrite)
+								{
+										continue;
+								}
+								if (targetProperty.GetSetMethod(true) != null && targetProperty.GetSetMethod(true).IsPrivate)
+								{
+										continue;
+								}
+								if ((targetProperty.GetSetMethod().Attributes & MethodAttributes.Static) != 0)
+								{
+										continue;
+								}
+								if (!targetProperty.PropertyType.IsAssignableFrom(srcProp.PropertyType))
+								{
+										continue;
+								}
+								// Passed all tests, lets set the value
+								targetProperty.SetValue(destination, srcProp.GetValue(source, null), null);
+						}
+				}
 		}
 }

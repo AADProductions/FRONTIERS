@@ -34,6 +34,7 @@ public class BodyAnimator : MonoBehaviour
 		public AnimationClip AnimDying;
 		public AnimationClip AnimDead;
 		public AnimationClip AnimJump;
+		public bool UseOverrideController = true;
 		//replaces previous enum movement modes
 		//this will be defined by motile scripts
 		public static FlagSet IdleAnimationFlags = null;
@@ -188,25 +189,30 @@ public class BodyAnimator : MonoBehaviour
 				if (animator.avatar == null) {
 						mPaused = true;
 				}
-				//override clips with this creature's animation clips
-				RuntimeAnimatorController controller = animator.runtimeAnimatorController;
-				AnimatorOverrideController overrideController = new AnimatorOverrideController();
-				overrideController.runtimeAnimatorController = controller;
-				overrideController[gAnimWarnName] = AnimWarn;
-				overrideController[gAnimWalkName] = AnimWalk;
-				overrideController[gAnimSprintName] = AnimSprint;
-				overrideController[gAnimIdle1Name] = AnimIdle1;
-				overrideController[gAnimIdle2Name] = AnimIdle2;
-				overrideController[gAnimAttack1Name] = AnimAttack1;
-				overrideController[gAnimAttack2Name] = AnimAttack2;
-				overrideController[gAnimTakeDamageName] = AnimTakeDamage;
-				overrideController[gAnimDyingName] = AnimDying;
-				overrideController[gAnimDeadName] = AnimDead;
-				overrideController[gAnimJumpName] = AnimJump;
 
-				////Debug.Log ("Anim warn has clip?" + (overrideController.clips [gAnimWarnName] == null).ToString ( ));
+				animator.applyRootMotion = false;
+				animator.updateMode = AnimatorUpdateMode.Normal;
+				animator.cullingMode = AnimatorCullingMode.BasedOnRenderers;
 
-				animator.runtimeAnimatorController = overrideController;
+				if (UseOverrideController) {
+						//override clips with this creature's animation clips
+						RuntimeAnimatorController controller = animator.runtimeAnimatorController;
+						AnimatorOverrideController overrideController = new AnimatorOverrideController();
+						overrideController.runtimeAnimatorController = controller;
+						overrideController[gAnimWarnName] = AnimWarn;
+						overrideController[gAnimWalkName] = AnimWalk;
+						overrideController[gAnimSprintName] = AnimSprint;
+						overrideController[gAnimIdle1Name] = AnimIdle1;
+						overrideController[gAnimIdle2Name] = AnimIdle2;
+						overrideController[gAnimAttack1Name] = AnimAttack1;
+						overrideController[gAnimAttack2Name] = AnimAttack2;
+						overrideController[gAnimTakeDamageName] = AnimTakeDamage;
+						overrideController[gAnimDyingName] = AnimDying;
+						overrideController[gAnimDeadName] = AnimDead;
+						overrideController[gAnimJumpName] = AnimJump;
+
+						animator.runtimeAnimatorController = overrideController;
+				}
 
 				mSmoothVerticalAxisMovement = 0f;
 				mSmoothHorizontalAxisMovement = 0f;
@@ -219,10 +225,6 @@ public class BodyAnimator : MonoBehaviour
 				animator.SetBool("Falling", false);
 				animator.SetBool("Grounded", true);
 				animator.SetBool("Jump", false);
-
-				animator.applyRootMotion = false;
-				animator.updateMode = AnimatorUpdateMode.Normal;
-				animator.cullingMode = AnimatorCullingMode.BasedOnRenderers;
 
 				if (IdleAnimationFlags == null) {
 						GameWorld.Get.FlagSetByName("IdleAnimation", out IdleAnimationFlags);

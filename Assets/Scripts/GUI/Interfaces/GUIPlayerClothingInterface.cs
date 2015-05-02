@@ -203,6 +203,8 @@ namespace Frontiers.GUI
 				public void Start()
 				{
 						enabled = false;
+						Rigidbody rb = gameObject.AddComponent <Rigidbody>();
+						rb.isKinematic = true;
 				}
 
 				public void Show()
@@ -236,7 +238,7 @@ namespace Frontiers.GUI
 						if (mInitialized)
 								return;
 
-						Debug.Log("Initializing clothing interface");
+						//Debug.Log("Initializing clothing interface");
 
 						InfoLabel.alpha = 0f;
 						InfoSpriteBackground.alpha = 0f;

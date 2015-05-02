@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Light))]
+//[RequireComponent(typeof(Light))]
 public class SoftFlicker : MonoBehaviour
 {
     public float minIntensity = 0.25f;

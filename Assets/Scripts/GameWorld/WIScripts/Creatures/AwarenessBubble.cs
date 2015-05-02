@@ -34,7 +34,7 @@ namespace Frontiers.World
 						rb.isKinematic = true;
 						rb.detectCollisions = false;
 						Collider = gameObject.GetOrAdd <CapsuleCollider>();
-						Collider.enabled = false;
+						Collider.enabled = true;
 						Collider.isTrigger = true;
 				}
 
@@ -66,16 +66,16 @@ namespace Frontiers.World
 						mIsInUse = true;
 						enabled = true;
 						rb.detectCollisions = true;
-						Collider.enabled = true;
+						//Collider.enabled = true;
 
 						//this will keep us from seeing ourselves
-						if (ignoreColliders != null) {
+						/*if (ignoreColliders != null) {
 								for (int i = 0; i < ignoreColliders.Count; i++) {
 										if (ignoreColliders[i] != null && ignoreColliders[i].enabled) {
 												Physics.IgnoreCollision(Collider, ignoreColliders[i]);
 										}
 								}
-						}
+						}*/
 
 						OnStartUsing();
 				}
@@ -88,7 +88,7 @@ namespace Frontiers.World
 						mIsInUse = false;
 						enabled = false;
 						rb.detectCollisions = false;
-						Collider.enabled = false;
+						//Collider.enabled = false;
 						OnFinishUsing();
 				}
 
@@ -118,8 +118,8 @@ namespace Frontiers.World
 								return;
 						}
 
-						rb.position = mParentTrans.position;
-						rb.rotation = mParentTrans.rotation;
+						rb.MovePosition (mParentTrans.position);
+						rb.MoveRotation (mParentTrans.rotation);
 
 						OnUpdateAwareness();
 

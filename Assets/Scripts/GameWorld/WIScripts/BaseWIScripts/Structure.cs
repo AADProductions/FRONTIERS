@@ -117,7 +117,7 @@ namespace Frontiers.World.WIScripts
 				public List <Renderer> InteriorRenderers = new List<Renderer>();
 				public List <Renderer> InteriorRenderersDestroyed = new List<Renderer>();
 				public List <ChildPiece> DestroyedFires = null;
-				public FXPiece[] DestroyedFX = null;
+				public List <FXPiece> DestroyedFX = null;
 
 				public bool OwnerCharacterSpawned { 
 						get {
@@ -491,7 +491,7 @@ namespace Frontiers.World.WIScripts
 												}
 										}
 										if (DestroyedFX != null) {
-												for (int i = 0; i < DestroyedFX.Length; i++) {
+												for (int i = 0; i < DestroyedFX.Count; i++) {
 														FXManager.Get.SpawnFX(StructureBase.transform, DestroyedFX[i]);
 												}
 										}

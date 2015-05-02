@@ -97,7 +97,7 @@ public class HideWithMagic : MonoBehaviour
 
 		public IEnumerator StartIntrospection()
 		{
-				yield return WorldClock.WaitForSeconds(1.5f);
+				yield return new WaitForSeconds (1.5f);
 				CameraFX.Get.Default.Blur.enabled = false;
 		}
 }

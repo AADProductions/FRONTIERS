@@ -271,7 +271,6 @@ namespace Frontiers.GUI
 
 				protected void RefreshSize()
 				{
-						Debug.Log("Refreshing size");
 						//update the box around the text to reflect its size
 						Transform textTrans = Text.transform;
 						Vector3 offset = textTrans.localPosition;

@@ -299,6 +299,12 @@ namespace Frontiers.World
 
 		public struct LightPiece
 		{
+				public static LightPiece Empty {
+						get {
+								return gEmpty;
+						}
+				}
+
 				public string LightName;
 				public string LightType;
 				public float LightIntensity;
@@ -307,6 +313,8 @@ namespace Frontiers.World
 				public float LightSpotAngle;
 				public Vector3 Position;
 				public Vector3 Rotation;
+
+				public static LightPiece gEmpty;
 		}
 
 		public struct FXPiece
@@ -330,6 +338,14 @@ namespace Frontiers.World
 				[NonSerialized]
 				[HideInInspector]
 				public double TimeAdded;
+
+				public static FXPiece Empty {
+						get {
+								return gEmpty;
+						}
+				}
+
+				public static FXPiece gEmpty;
 		}
 
 		public struct ChildPiece

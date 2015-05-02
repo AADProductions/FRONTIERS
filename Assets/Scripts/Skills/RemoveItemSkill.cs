@@ -29,7 +29,7 @@ namespace Frontiers.World.Gameplay
 				public WIGroup LastToGroup;
 				public Action LastCallback;
 
-				public virtual void TryToRemoveItem(IStackOwner skillUseTarget, WIStack fromStack, WIStack toStack, WIGroup toGroup, Action callBack)
+				public virtual void TryToRemoveItem(IStackOwner skillUseTarget, WIStack fromStack, WIStack toStack, WIGroup toGroup, Action callBack, int flavor)
 				{
 						LastInventory = null;
 						LastFromStack = fromStack;
@@ -46,9 +46,8 @@ namespace Frontiers.World.Gameplay
 						Use(skillUseTarget.worlditem, LastSkillFlavor);
 				}
 
-				public virtual void TryToRemoveItem(IStackOwner skillUseTarget, IWIBase itemToMove, IInventory toInventory, Action callBack)
+				public virtual void TryToRemoveItem(IStackOwner skillUseTarget, IWIBase itemToMove, IInventory toInventory, Action callBack, int flavor)
 				{
-						Debug.Log("Using skill to remove item in skill " + name + ", item to move is null? " + (itemToMove == null).ToString());
 						LastFromStack = null;
 						LastToStack = null;
 						LastItemToMove = itemToMove;

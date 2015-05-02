@@ -190,6 +190,8 @@ namespace Frontiers.World
 						stackItem.Props.CopyGlobalNames(Props);
 						stackItem.Props.CopyLocal(Props);
 						stackItem.Props.CopyLocalNames(Props);
+						//we might have to continue using object clone in this case
+						//look into alternatives
 						stackItem.SaveState = ObjectClone.Clone <WISaveState>(SaveState);
 						//if (duplicateContainer) {
 						//	if (mStackContainer != null) {

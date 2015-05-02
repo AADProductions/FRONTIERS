@@ -38,7 +38,7 @@ namespace Frontiers {
 				return RB.position;
 			}
 			set {
-				RB.position = value;
+				RB.MovePosition (value);
 			}
 		}
 

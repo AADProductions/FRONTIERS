@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using Frontiers.World.WIScripts;
+using System.Collections.Generic;
 
 namespace Frontiers.World
 {
@@ -116,7 +117,7 @@ namespace Frontiers.World
 						StartCoroutine(FireBeamsAtExplosions(TargetStructure.DestroyedFX));
 				}
 
-				protected IEnumerator FireBeamsAtExplosions(FXPiece[] explosions)
+				protected IEnumerator FireBeamsAtExplosions(List<FXPiece> explosions)
 				{
 						//start the beam firing
 						Beam.AttachTo(BeamOrigin, BeamTarget);
@@ -124,12 +125,14 @@ namespace Frontiers.World
 						bool finishedFiring = false;
 						FXPiece currentExplosion = new FXPiece();
 						currentExplosion.TimeAdded = Mathf.Infinity;
+						double start;
 						while (!finishedFiring) {
 								finishedFiring = true;
 								//go through each explosion (they're in no particular order)
 								//find all explosions that haven't happened yet
 								//choose the explosion that's closest to the current time
-								for (int i = 0; i < explosions.Length; i++) {
+
+								for (int i = 0; i < explosions.Count; i++) {
 										FXPiece explosion = explosions[i];
 										if (WorldClock.AdjustedRealTime > explosion.TimeAdded + explosion.Delay) {
 												//this explosion hasn't elapsed
@@ -145,10 +148,16 @@ namespace Frontiers.World
 								}
 								//aim the beam at that spot
 								BeamTarget.position = TargetStructure.StructureBase.transform.position + currentExplosion.Position;
-								yield return Frontiers.WorldClock.WaitForSeconds(0.05);
+								start = WorldClock.AdjustedRealTime;
+								while (WorldClock.AdjustedRealTime < start + 0.05f) {
+										yield return null;
+								}
 						}
 						//wait a sec for the last explosion
-						yield return Frontiers.WorldClock.WaitForSeconds(1.5);
+						start = WorldClock.AdjustedRealTime;
+						while (WorldClock.AdjustedRealTime < start + 1.5f) {
+								yield return null;
+						}
 						//we're done firing - power down the beam
 						Beam.StopFiring();
 						//it will destroy itself
