@@ -100,12 +100,23 @@ namespace Frontiers.World
 
 		public void UpdateDirty()
 		{
+			mChildItemsToUpdateChanged = false;
 			bool announceLoad = Is(WIGroupLoadState.Loaded | WIGroupLoadState.Loading);
+			bool continueUpdating = true;
 			var childItemsToUpdate = mChildItemsToUpdate.GetEnumerator();
-			while (childItemsToUpdate.MoveNext()) {
-				childItemsToUpdate.Current.OnAddedToGroup.SafeInvoke();
-				if (announceLoad) {
-					childItemsToUpdate.Current.OnGroupLoaded.SafeInvoke();
+			while (continueUpdating) {
+				continueUpdating = false;
+				if (mChildItemsToUpdateChanged) {
+					#if UNITY_EDITOR
+					Debug.Log ("Skipping update in WIGroup because child items were changed, will update next frame");
+					#endif
+					return;
+				} else if (childItemsToUpdate.MoveNext ()) {
+					continueUpdating = true;
+					childItemsToUpdate.Current.OnAddedToGroup.SafeInvoke ();
+					if (announceLoad) {
+						childItemsToUpdate.Current.OnGroupLoaded.SafeInvoke ();
+					}
 				}
 			}
 			mChildItemsToUpdate.Clear();
@@ -180,7 +191,7 @@ namespace Frontiers.World
 
 		public bool IsDirty {
 			get {
-				return mChildItemsToUpdate.Count > 0;
+				return mChildItemsToUpdate != null && mChildItemsToUpdate.Count > 0;
 			}
 		}
 
@@ -414,6 +425,9 @@ namespace Frontiers.World
 				}
 				if (mChildItemsToUpdate == null) {
 					mChildItemsToUpdate = new List <WorldItem>();
+				}
+				if (mChildItemsToUpdate.Count != 0) {
+					mChildItemsToUpdateChanged = true;
 				}
 				mChildItemsToUpdate.Add(childItem);
 			} else {
@@ -676,6 +690,9 @@ namespace Frontiers.World
 			}
 			//Debug.Log("Beginning load in " + name);
 			LoadState = WIGroupLoadState.Loading;
+			if (!gameObject.activeSelf) {
+				gameObject.SetActive(true);
+			}
 			StartCoroutine(LoadChildItemsOverTime());
 		}
 
@@ -740,6 +757,9 @@ namespace Frontiers.World
 
 		public bool ReadyToUnload {
 			get {
+				if (IsDirty)
+					return false;
+
 				if (Is(WIGroupLoadState.PreparingToUnload)) {
 					bool readyToUnload = true;
 					var childItemEnum = ChildItems.GetEnumerator();
@@ -761,6 +781,9 @@ namespace Frontiers.World
 			if (LoadState == WIGroupLoadState.PreparingToUnload) {
 				mSavedState = false;
 				LoadState = WIGroupLoadState.Unloading;
+				if (!gameObject.activeSelf) {
+					gameObject.SetActive (true);
+				}
 				StartCoroutine(UnloadOverTime());
 				/*
 				for (int i = 0; i < ChildItems.Count; i++) {
@@ -934,7 +957,11 @@ namespace Frontiers.World
 							WorldItem worlditem = null;
 							WorldItems.CloneFromStackItem(stackItem, this, out worlditem);
 							yield return null;
-							worlditem.Initialize();
+							if (worlditem != null) {
+								worlditem.Initialize ();
+							} else {
+								Debug.Log ("CHILD ITEM WAS NULL in group " + Props.PathName);
+							}
 						}
 					}
 				}
@@ -1441,6 +1468,7 @@ namespace Frontiers.World
 		protected Dictionary <string, WorldItem> mChildItemLookup;
 		protected Dictionary <string, WIGroup> mChildGroupLookup;
 		protected List <WorldItem> mChildItemsToUpdate;
+		protected bool mChildItemsToUpdateChanged = false;
 		//protected Queue <StackItem> mStackItemsToLoad;
 	}
 

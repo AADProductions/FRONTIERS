@@ -885,6 +885,7 @@ namespace Frontiers
 				Foot,
 				Segment,
 				None,
+				Base,
 		}
 
 		[Flags]

@@ -61,6 +61,25 @@ namespace Frontiers
 				toStack.Refresh();
 				return result;
 			}
+
+			public static void ScriptToItems (WIStackContainer container, string scriptName)
+			{
+				if (container == null)
+					return;
+
+				for (int i = 0; i < container.StackList.Count; i++) {
+					ScriptToItems (container.StackList [i], scriptName);
+				}
+			}
+
+			public static void ScriptToItems (WIStack stack, string scriptName) {
+				if (stack == null)
+					return;
+
+				for (int i = 0; i < stack.NumItems; i++) {
+					stack.Items [i].Add (scriptName);
+				}
+			}
 		}
 
 		public static class Contains

@@ -19,7 +19,7 @@ namespace Frontiers
 		public GameObject StartupScenePrefab;
 		public static int BuildNumber;
 		//TODO get this from steam somehow
-		public static readonly System.Version Version = new Version(0, 4, 3);
+		public static readonly System.Version Version = new Version(0, 4, 4);
 		//since we're using this everywhere we don't want to call ToString on Version
 		//believe it or not this actually has an effect on allocations / garbage
 		public static readonly string VersionString = Version.ToString();
@@ -275,6 +275,7 @@ namespace Frontiers
 			yield return StartCoroutine(Manager.WakeUpAndInitialize <AudioManager>("Initializing audio manager"));
 			//gameplay data
 			yield return StartCoroutine(Manager.WakeUpAndInitialize <Biomes>("Initializing Biomes"));
+			yield return StartCoroutine(Manager.WakeUpAndInitialize <Meteors>("Initializing Meteors"));
 			yield return StartCoroutine(Manager.WakeUpAndInitialize <Mats>("Frontiers_ArtResourceManagers"));
 			yield return StartCoroutine(Manager.WakeUpAndInitialize <Meshes>("Frontiers_ArtResourceManagers"));
 			yield return StartCoroutine(Manager.WakeUpAndInitialize <Creatures>("Initializing Creatures"));

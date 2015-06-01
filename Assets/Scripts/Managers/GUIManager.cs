@@ -144,6 +144,9 @@ namespace Frontiers.GUI
 				public GameObject BarterContainerDisplay;
 				public GameObject BlueprintSquareDisplay;
 				public GameObject SkillObject;
+				public GameObject InventoryMakeChangeButtonLarge;
+				public GameObject InventoryMakeChangeButtonTiny;
+				
 				//Message Display
 				public GUIMessageDisplay NGUIMessageDisplay;
 				public GUIIntrospectionDisplay NGUIIntrospectionDisplay;

@@ -12,7 +12,7 @@ namespace Frontiers.World.WIScripts
 		public CreatureDenState State = new CreatureDenState();
 		public List <Creature> SpawnedCreatures = new List <Creature>();
 		public List <Creature> DeadCreatures = new List <Creature>();
-		public HostileState HostileStateTemplate = null;
+		//public CreatureTemplate StateTemplate = null;
 		public LookerBubble SharedLooker = null;
 
 		public IItemOfInterest IOI { get { return worlditem; } }
@@ -96,13 +96,10 @@ namespace Frontiers.World.WIScripts
 		public override void OnInitialized()
 		{
 			Spawner spawner = null;
-			if (worlditem.Is <Spawner>(out spawner)) {
+			/*if (worlditem.Is <Spawner>(out spawner)) {
 				//get the hostile template for creatures to draw from
-				CreatureTemplate template = null;
-				if (Creatures.GetTemplate(State.NameOfCreature, out template)) {
-					HostileStateTemplate = template.HostileTemplate;
-				}
-			}
+				Creatures.GetTemplate (State.NameOfCreature, out StateTemplate);
+			}*/
 
 			Location location = null;
 			if (worlditem.Is <Location>(out location)) {
@@ -141,13 +138,24 @@ namespace Frontiers.World.WIScripts
 		{
 			Location location = null;
 			if (worlditem.Is <Location>(out location)) {
-				spawnPosition = location.LocationGroup.tr.InverseTransformPoint(spawnPosition);
+				gCorpsePosition.Position = location.LocationGroup.tr.InverseTransformPoint(spawnPosition);
 				Debug.Log("Spawning creature at position " + spawnPosition.ToString());
-				Creature creature = null;
-				if (Creatures.SpawnCreature(this, location.LocationGroup, spawnPosition, true, causeOfDeath, timeSinceDeath, out creature)) {
-					DeadCreatures.Add(creature);
+				WorldItem corpse = null;
+				if (WorldItems.CloneWorldItem ("Corpses", "Bone Pile 1", gCorpsePosition, true, location.LocationGroup, out corpse)) {
+					CreatureTemplate t = null;
+					Creatures.GetTemplate (State.NameOfCreature, out t);
+					corpse.Initialize ();
+					FillStackContainer fsc = corpse.Get <FillStackContainer> ();
+					fsc.State.WICategoryName = t.Props.InventoryFillCategory;
+					if (corpse.Is (WIActiveState.Active)) {
+						fsc.TryToFillContainer (true);
+					}
 				}
 			}
+		}
+
+		public void SpawnCreatureCorpse (Creature deadCreature) {
+			SpawnCreatureCorpse (deadCreature.worlditem.Position, string.Empty, 0f);
 		}
 
 		public void OnVisible()
@@ -426,6 +434,7 @@ namespace Frontiers.World.WIScripts
 		protected bool mLeavingDen = false;
 		protected bool mVisitingDen = false;
 		protected bool mPlayerVisitingDenInnerRadius = false;
+		protected static STransform gCorpsePosition = new STransform ();
 		public Spawner CreatureSpawner;
 	}
 

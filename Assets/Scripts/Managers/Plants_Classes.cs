@@ -54,6 +54,8 @@ namespace Frontiers
 		public bool RawPropsRevealed = false;
 		public bool CookedPropsRevealed = false;
 		public int BaseCurrencyValue = 1;
+		[XmlIgnore]
+		public List <Vector3> FlowerPositions;
 
 		public static float FlowerSizeToFloat (PlantFlowerSize size)
 		{

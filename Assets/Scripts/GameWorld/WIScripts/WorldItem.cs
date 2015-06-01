@@ -631,6 +631,8 @@ namespace Frontiers.World
 			ActiveStateLocked = false;
 			ActiveState = WIActiveState.Active;
 			ActiveStateLocked = true;
+			//always add this in case we're going to add to recepticae
+			GetOrAdd <OwnedByPlayer> ();
 		}
 
 		protected void OnSetHiddenMode ()
@@ -687,6 +689,7 @@ namespace Frontiers.World
 
 		protected IEnumerator OnSetRemovedMode ()
 		{
+			yield return null;
 			try {
 				//if we're going into world mode then we're not in the stack any more
 				OnRemoveFromStack.SafeInvoke ();
@@ -709,7 +712,7 @@ namespace Frontiers.World
 			while (!FinishedUnloading) {
 				yield return null;
 			}
-
+			yield return null;
 			WorldItems.Unload (this);
 		}
 

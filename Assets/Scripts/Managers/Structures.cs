@@ -18,19 +18,20 @@ namespace Frontiers
 		public static Structures Get;
 		public static bool StructureShadows = true;
 		public static bool SceneryObjectShadows = true;
-		public static List <Structure> ExteriorsWaitingToLoad;
-		public static List <Structure> InteriorsWaitingToLoad;
-		public static List <MinorStructure> MinorsWaitingToLoad;
+		public static HashSet <Structure> ExteriorsWaitingToLoad;
+		public static HashSet <Structure> InteriorsWaitingToLoad;
+		public static HashSet <MinorStructure> MinorsWaitingToLoad;
 		public static List <Structure> LoadedStructures;
-		public static List <Structure> InteriorsWaitingToUnload;
-		public static List <Structure> ExteriorsWaitingToUnload;
-		public static List <MinorStructure> MinorsWaitingToUnload;
+		public static HashSet <Structure> InteriorsWaitingToUnload;
+		public static HashSet <Structure> ExteriorsWaitingToUnload;
+		public static HashSet <MinorStructure> MinorsWaitingToUnload;
 		public static List <MinorStructure> LoadedMinorStructures;
 		public GameObject EditorStructureParent;
 		public string EditorSelectedPack;
 		public string EditorSelectedItem;
 		//builders for generating exterior, interior and minor structures
 		public StructureBuilder ExteriorBuilder;
+		public StructureBuilder ExteriorBuilderDistant;
 		public StructureBuilder InteriorBuilder;
 		public StructureBuilder MinorBuilder;
 		public MeshCombiner ExteriorLODCombiner;
@@ -39,6 +40,12 @@ namespace Frontiers
 		//super-awesome combiners for combining meshes
 		public MeshCombiner ExteriorCombiner;
 		public MeshCombiner ExteriorCombinerDestroyed;
+
+		public MeshCombiner ExteriorDistantCombiner;
+		public MeshCombiner ExteriorDistantCombinerDestroyed;
+		public MeshCombiner ExteriorDistantLODCombiner;
+		public MeshCombiner ExteriorDistantLODCombinerDestroyed;
+
 		public MeshCombiner InteriorCombiner;
 		public MeshCombiner InteriorCombinerDestroyed;
 		public MeshCombiner MinorCombiner;
@@ -46,6 +53,7 @@ namespace Frontiers
 		public MeshCombiner MinorLODCombinerDestroyed;
 		//super awesome combiners for combining collision meshes
 		public MeshCombiner ExteriorColliderCombiner;
+		public MeshCombiner ExteriorDistantColliderCombiner;
 		public MeshCombiner InteriorColliderCombiner;
 		public MeshCombiner MinorColliderCombiner;
 		//used to load textures as they're used, sort of a crude pre-loader
@@ -91,7 +99,97 @@ namespace Frontiers
 
 		#region cached meshes
 
+		public Dictionary <string, HashSet<CachedMesh>> mCachedStructureMeshes;
 		public Dictionary <string, List<Structure>> mCachedTemplateInstancesExterior;
+
+		public class CachedMesh
+		{
+			public CachedMesh ()
+			{
+				materials = null;
+				meshes = null;
+				Interior = false;
+				Destroyed = false;
+				LOD = false;
+				StructureLayer = 0;
+				GameObjectLayer = 0;
+				Tag = null;
+			}
+
+			public CachedMesh (bool interior, bool destroyed, bool lod, int structureLayer, int gameObjectLayer, string tag)
+			{
+				materials = new List<Material[]> ();
+				lodMaterials = new List<Material[]> ();
+				meshes = new List<Mesh> ();
+				Interior = interior;
+				Destroyed = destroyed;
+				LOD = lod;
+				StructureLayer = structureLayer;
+				GameObjectLayer = gameObjectLayer;
+				Tag = tag;
+				Finished = false;
+			}
+
+			public List <Material[]> materials;
+			public List <Material[]> lodMaterials;
+			public List <Mesh> meshes;
+			public bool Interior;
+			public bool Destroyed;
+			public bool LOD;
+			public int StructureLayer;
+			public int GameObjectLayer;
+			public string Tag;
+			public bool Finished;
+
+			public bool IsEmpty {
+				get {
+					return materials == null || meshes == null;
+				}
+			}
+		}
+
+		protected CachedMesh mCachedMesh;
+
+		public bool GetCachedMeshes (string templateName, out HashSet<CachedMesh> meshes)
+		{
+			return mCachedStructureMeshes.TryGetValue (templateName, out meshes);
+		}
+
+		public bool GetCachedMesh (string templateName, bool interior, bool destroyed, bool lod, int structureLayer, int gameObjectLayer, string tag, out CachedMesh mesh)
+		{
+			mesh = mCachedMesh;
+			HashSet <CachedMesh> meshList = null;
+			if (mCachedStructureMeshes.TryGetValue (templateName, out meshList)) {
+				var meshEnum = meshList.GetEnumerator ();
+				while (meshEnum.MoveNext ()) {
+					CachedMesh c = meshEnum.Current;
+					if (c.Interior == interior && c.Destroyed == destroyed && c.LOD == lod && c.StructureLayer == structureLayer && c.GameObjectLayer == gameObjectLayer && c.Tag.Equals (tag)) {
+						mesh = c;
+						//make sure lod materials is set up
+						if (c.lodMaterials.Count < c.materials.Count) {
+							while (c.lodMaterials.Count < c.materials.Count) {
+								c.lodMaterials.Add (null);
+							}
+						}
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		public void AddCachedMesh (string templateName, CachedMesh cachedMesh)
+		{
+			if (cachedMesh == null)
+				return;
+
+			HashSet <CachedMesh> meshList = null;
+			if (!mCachedStructureMeshes.TryGetValue (templateName, out meshList)) {
+				meshList = new HashSet<CachedMesh> ();
+				mCachedStructureMeshes.Add (templateName, meshList);
+			}
+			meshList.Add (cachedMesh);
+		}
 		//we only cache exterior meshes for now
 		//if that works well we'll do the same for interiors later
 		public bool GetCachedInstance (string templateName, Structure parentStructure, out Structure cachedInstance)
@@ -127,7 +225,7 @@ namespace Frontiers
 				instances = new List<Structure> ();
 				mCachedTemplateInstancesExterior.Add (templateName, instances);
 			}
-			instances.SafeAdd (cachedInstance);
+			instances.Add (cachedInstance);
 		}
 
 		#endregion
@@ -166,6 +264,15 @@ namespace Frontiers
 			return dynamicTarget;
 		}
 
+		public Material[] LODMaterials (Material[] regularMaterials)
+		{
+			Material[] lodMaterials = new Material [regularMaterials.Length];
+			for (int i = 0; i < regularMaterials.Length; i++) {
+				lodMaterials [i] = Mats.Get.GetLODMaterial (regularMaterials [i]);
+			}
+			return lodMaterials;
+		}
+
 		protected Dictionary <string, StructurePack> mStructurePackLookup;
 		protected Dictionary <string, Material> mSharedMaterialLookup;
 		protected Dictionary <string, Mesh> mColliderMeshes;
@@ -187,15 +294,16 @@ namespace Frontiers
 			PreloaderCamera.enabled = false;
 
 			mCachedTemplateInstancesExterior = new Dictionary<string, List<Structure>> ();
+			mCachedStructureMeshes = new Dictionary<string, HashSet<CachedMesh>> ();
 
-			ExteriorsWaitingToLoad = new List <Structure> ();
-			InteriorsWaitingToLoad = new List <Structure> ();
-			MinorsWaitingToLoad = new List <MinorStructure> ();
+			ExteriorsWaitingToLoad = new HashSet <Structure> ();
+			InteriorsWaitingToLoad = new HashSet <Structure> ();
+			MinorsWaitingToLoad = new HashSet <MinorStructure> ();
 			LoadedStructures = new List <Structure> ();
 			LoadedMinorStructures = new List <MinorStructure> ();
-			InteriorsWaitingToUnload = new List <Structure> ();
-			ExteriorsWaitingToUnload = new List <Structure> ();
-			MinorsWaitingToUnload = new List <MinorStructure> ();
+			InteriorsWaitingToUnload = new HashSet <Structure> ();
+			ExteriorsWaitingToUnload = new HashSet <Structure> ();
+			MinorsWaitingToUnload = new HashSet <MinorStructure> ();
 
 			mStructurePackLookup = new Dictionary <string, StructurePack> ();
 			mSharedMaterialLookup = new Dictionary <string, Material> ();
@@ -385,16 +493,34 @@ namespace Frontiers
 		public override void Initialize ()
 		{
 			if (Application.isPlaying) {
+				for (int i = 0; i < StructurePacks.Count; i++) {
+					foreach (KeyValuePair <string,StructurePackPrefab> spp in StructurePacks [i].StaticPrefabLookup) {
+						if (spp.Value.MRenderer != null) {
+							Material[] materials = spp.Value.MRenderer.sharedMaterials;
+							for (int m = 0; m < materials.Length; m++) {
+								Mats.Get.CreateLODMaterial (materials [m]);
+							}
+						}
+					}
+				}
+
+				for (int i = 0; i < SharedMaterials.Count; i++) {
+					Mats.Get.CreateLODMaterial (SharedMaterials [i]);
+				}
+
 				//create and initialize structure builders
 				ExteriorBuilder = gameObject.FindOrCreateChild ("ExteriorBuilder").gameObject.GetOrAdd <StructureBuilder> ();
+				ExteriorBuilderDistant = gameObject.FindOrCreateChild ("ExteriorBuilderDistant").gameObject.GetOrAdd <StructureBuilder> ();
 				InteriorBuilder = gameObject.FindOrCreateChild ("InteriorBuilder").gameObject.GetOrAdd <StructureBuilder> ();
 				MinorBuilder = gameObject.FindOrCreateChild ("MinorBuilder").gameObject.GetOrAdd <StructureBuilder> ();
 
 				ExteriorBuilder.Mode = StructureBuilder.BuilderMode.Exterior;
+				ExteriorBuilderDistant.Mode = Builder.BuilderMode.Exterior;
 				InteriorBuilder.Mode = StructureBuilder.BuilderMode.Interior;
 				MinorBuilder.Mode = StructureBuilder.BuilderMode.Minor;
 
 				ExteriorBuilder.State = StructureBuilder.BuilderState.Dormant;
+				ExteriorBuilderDistant.State = Builder.BuilderState.Dormant;
 				InteriorBuilder.State = StructureBuilder.BuilderState.Dormant;
 				MinorBuilder.State = StructureBuilder.BuilderState.Dormant;
 
@@ -403,9 +529,17 @@ namespace Frontiers
 				ExteriorCombinerDestroyed = new MeshCombiner ();
 				ExteriorLODCombiner = new MeshCombiner ();
 				ExteriorLODCombinerDestroyed = new MeshCombiner ();
+				ExteriorColliderCombiner = new MeshCombiner ();
+
+				ExteriorDistantCombiner = new MeshCombiner ();
+				ExteriorDistantCombinerDestroyed = new MeshCombiner ();
+				ExteriorDistantLODCombiner = new MeshCombiner ();
+				ExteriorDistantLODCombinerDestroyed = new MeshCombiner ();
+				ExteriorDistantColliderCombiner = new MeshCombiner ();
 
 				InteriorCombiner = new MeshCombiner ();
 				InteriorCombinerDestroyed = new MeshCombiner ();
+				InteriorColliderCombiner = new MeshCombiner ();
 				//InteriorLODCombiner = new MeshCombiner ();
 
 				MinorCombiner = new MeshCombiner ();
@@ -418,6 +552,12 @@ namespace Frontiers
 				ExteriorBuilder.DestroyedCombiner = ExteriorCombinerDestroyed;
 				ExteriorBuilder.LODDestroyedCombiner = ExteriorLODCombinerDestroyed;
 				ExteriorBuilder.ColliderCombiner = ExteriorColliderCombiner;
+
+				ExteriorBuilderDistant.PrimaryCombiner = ExteriorDistantCombiner;
+				ExteriorBuilderDistant.LODCombiner = ExteriorDistantLODCombiner;
+				ExteriorBuilderDistant.DestroyedCombiner = ExteriorDistantCombinerDestroyed;
+				ExteriorBuilderDistant.LODDestroyedCombiner = ExteriorDistantLODCombinerDestroyed;
+				ExteriorBuilderDistant.ColliderCombiner = ExteriorDistantColliderCombiner;
 
 				InteriorBuilder.PrimaryCombiner = InteriorCombiner;
 				InteriorBuilder.DestroyedCombiner = InteriorCombinerDestroyed;
@@ -446,8 +586,10 @@ namespace Frontiers
 			Mods.Get.Runtime.LoadAvailableMods <StructureTemplate> (availableStructureTemplates, "Structure");
 			foreach (StructureTemplate t in availableStructureTemplates) {
 				mTemplateLookup.Add (t.Name, t);
+				StructureTemplate.PreloadTemplate (t);
 			}
 			base.OnModsLoadStart ();
+			GC.Collect ();
 		}
 
 		protected IEnumerator PrecomputePhysXMeshes ()
@@ -579,11 +721,15 @@ namespace Frontiers
 		{
 			SuspendStructureLoading = true;
 			yield return null;
-			ExteriorsWaitingToUnload.AddRange (LoadedStructures);
-			InteriorsWaitingToUnload.AddRange (LoadedStructures);
-			MinorsWaitingToUnload.AddRange (LoadedMinorStructures);
+			foreach (Structure s in LoadedStructures) {
+				ExteriorsWaitingToUnload.Add (s);
+				InteriorsWaitingToUnload.Add (s);
+			}
 			ExteriorsWaitingToLoad.Clear ();
 			InteriorsWaitingToLoad.Clear ();
+			foreach (MinorStructure m in LoadedMinorStructures) {
+				MinorsWaitingToUnload.Add (m);
+			}
 			MinorsWaitingToLoad.Clear ();
 			yield return null;
 			SuspendStructureLoading = false;
@@ -591,26 +737,26 @@ namespace Frontiers
 
 		public static void AddExteriorToLoad (Structure unloadedExterior)
 		{
-			if (ExteriorsWaitingToLoad.SafeAdd (unloadedExterior)) {
+			if (ExteriorsWaitingToLoad.Add (unloadedExterior)) {
 				unloadedExterior.OnPreparingToBuild.SafeInvoke ();
 			}
 		}
 
 		public static void AddInteriorToLoad (Structure unloadedInterior)
 		{
-			if (InteriorsWaitingToLoad.SafeAdd (unloadedInterior)) {
+			if (InteriorsWaitingToLoad.Add (unloadedInterior)) {
 				unloadedInterior.OnPreparingToBuild.SafeInvoke ();
 			}
 		}
 
 		public static void AddExteriorToUnload (Structure loadedExterior)
 		{
-			ExteriorsWaitingToUnload.SafeAdd (loadedExterior);
+			ExteriorsWaitingToUnload.Add (loadedExterior);
 		}
 
 		public static void AddInteriorToUnload (Structure loadedInterior)
 		{
-			InteriorsWaitingToUnload.SafeAdd (loadedInterior);
+			InteriorsWaitingToUnload.Add (loadedInterior);
 		}
 
 		public static void AddMinorToload (MinorStructure unloadedMinor, int structureNumber, WorldItem worlditem)
@@ -630,7 +776,7 @@ namespace Frontiers
 
 		public static void AddMinorToUnload (MinorStructure loadedMinor)
 		{
-			MinorsWaitingToUnload.SafeAdd (loadedMinor);
+			MinorsWaitingToUnload.Add (loadedMinor);
 		}
 
 		void PreLoadTemplateMaterials (StructureTemplate template)
@@ -651,38 +797,50 @@ namespace Frontiers
 		protected Queue <Material> mMaterialsToLoad = new Queue<Material> ();
 		protected HashSet <Material> mMaterialsLoaded = new HashSet<Material> ();
 
-		protected bool GetNextStructure (StructureLoadState desiredState, StructureLoadState precursorState, List <Structure> fromList, StructureLoadState disqualifiedState, out Structure structure)
+		protected bool GetNextStructure (StructureLoadState desiredState, StructureLoadState precursorState, HashSet <Structure> fromList, StructureLoadState disqualifiedState, out Structure structure)
 		{
 			structure = null;
-			for (int i = fromList.LastIndex (); i >= 0; i--) {
-				Structure nextStructure = fromList [i];
+			List <Structure> itemsToRemove = new List<Structure> ();
+			var fromListEnum = fromList.GetEnumerator ();
+			while (fromListEnum.MoveNext()) {
+				//for (int i = fromList.LastIndex (); i >= 0; i--) {
+				Structure nextStructure = fromListEnum.Current;//fromList [i];
 				//if it's null or it's no longer waiting to load, ditch it
 				//this could happen if the active state changed while waiting
 				if (nextStructure == null) {
-					fromList.RemoveAt (i);
+					itemsToRemove.Add (null);
 					//if the structure has the right load state
 				} else if (nextStructure.Is (desiredState) || nextStructure.Is (precursorState)) {
 					nextStructure.LoadState = desiredState;
 					//if the world item isn't initialized - this includes unloading - ditch it
 					if (nextStructure.Initialized) {
-						//if (!nextStructure.worlditem.Is (WILoadState.Initialized)) {
-						//fromList.RemoveAt (i);
-						//} else {
-						//otherwise we're good to go
-						//remove it from the list
-						fromList.RemoveAt (i);
-						structure = nextStructure;
-						//}
+						if (structure == null) {
+							structure = nextStructure;
+						} else if ((int)nextStructure.LoadPriority > (int)structure.LoadPriority) {
+							structure = nextStructure;
+						}
+
+						if (structure.LoadPriority == StructureLoadPriority.SpawnPoint) {
+							//immediately more important
+							break;
+						}
 					}
 				} else if (nextStructure.Is (disqualifiedState) && nextStructure.LoadPriority != StructureLoadPriority.SpawnPoint) {
-					fromList.RemoveAt (i);
+					itemsToRemove.Add (nextStructure);
 				}
-				break;
 			}
 
 			if (structure != null) {
+				itemsToRemove.Add (structure);
 				return true;
 			}
+
+			for (int i = 0; i < itemsToRemove.Count; i++) {
+				fromList.Remove (itemsToRemove [i]);
+			}
+			itemsToRemove.Clear ();
+			itemsToRemove = null;
+
 			return false;
 		}
 
@@ -718,6 +876,23 @@ namespace Frontiers
 					StructureLoadState.ExteriorLoading,
 					StructureLoadState.ExteriorLoaded,
 					ExteriorBuilder));
+			}
+
+			if (ExteriorBuilderDistant.State == StructureBuilder.BuilderState.Dormant ||
+				ExteriorBuilderDistant.State == StructureBuilder.BuilderState.Error ||
+				ExteriorBuilderDistant.State == StructureBuilder.BuilderState.Finished) {
+				//Debug.Log ("Exterior builder is finished, starting new load structure");
+				StartCoroutine (LoadStructures (
+					ExteriorsWaitingToLoad,
+					StructureLoadState.ExteriorWaitingToLoad,
+					StructureLoadState.ExteriorUnloaded,
+					StructureLoadState.ExteriorLoading | StructureLoadState.ExteriorLoaded
+					| StructureLoadState.InteriorWaitingToLoad
+					| StructureLoadState.InteriorLoading
+					| StructureLoadState.InteriorLoaded,
+					StructureLoadState.ExteriorLoading,
+					StructureLoadState.ExteriorLoaded,
+					ExteriorBuilderDistant));
 			}
 
 			if (InteriorBuilder.State == StructureBuilder.BuilderState.Dormant ||
@@ -762,17 +937,40 @@ namespace Frontiers
 					InteriorBuilder));
 			}
 
+			MinorStructure ms = null;
+
 			mloadMinors++;
 			if (mloadMinors > 3 && MinorsWaitingToLoad.Count > 0 &&
 			    (MinorBuilder.State == StructureBuilder.BuilderState.Dormant ||
 			    MinorBuilder.State == StructureBuilder.BuilderState.Error ||
 			    MinorBuilder.State == StructureBuilder.BuilderState.Finished)) {
 				mloadMinors = 0;
-				StartCoroutine (LoadMinorStructure (MinorsWaitingToLoad [0]));
+				using (var minorEnum = MinorsWaitingToLoad.GetEnumerator ()) {
+					while (minorEnum.MoveNext ()) {
+						ms = minorEnum.Current;
+						if (ms != null) {
+							break;
+						}
+					}
+				}
+				if (ms != null) {
+					StartCoroutine (LoadMinorStructure (ms));
+				}
 			}
 
+			ms = null;
 			if (MinorsWaitingToUnload.Count > 0 && !MinorBuilder.IsUnloading) {
-				StartCoroutine (UnloadMinorStructure (MinorsWaitingToUnload [0]));
+				using (var minorEnum = MinorsWaitingToUnload.GetEnumerator ()) {
+					while (minorEnum.MoveNext ()) {
+						ms = minorEnum.Current;
+						if (ms != null) {
+							break;
+						}
+					}
+				}
+				if (ms != null) {
+					StartCoroutine (UnloadMinorStructure (ms));
+				}
 			}
 		}
 
@@ -781,7 +979,7 @@ namespace Frontiers
 		protected int mloadMinors = 0;
 
 		protected IEnumerator LoadStructures (
-			List <Structure> fromList,
+			HashSet <Structure> fromList,
 			StructureLoadState desiredState,
 			StructureLoadState precursorState,
 			StructureLoadState disqualifiedState,
@@ -790,7 +988,7 @@ namespace Frontiers
 			StructureBuilder withBuilder)
 		{
 			//first sort the structures by load priority
-			fromList.Sort (new Comparison <Structure> (CompareStructurePriority));
+			//fromList.Sort (new Comparison <Structure> (CompareStructurePriority));
 			Structure structure = null;
 			//getting this removes it from the waiting queue
 			if (GetNextStructure (desiredState, precursorState, fromList, disqualifiedState, out structure)) {
@@ -820,8 +1018,18 @@ namespace Frontiers
 						//this prevents live objects and characters etc from falling through things
 						//TODO add some kind of time-out system
 						var generateStructureMeshes = withBuilder.GenerateStructureMeshes ();
+						int checkPriority = 0;
 						while (generateStructureMeshes.MoveNext ()) {
-							yield return initialize.Current;
+							yield return generateStructureMeshes.Current;
+							checkPriority++;
+							if (checkPriority > 30) {
+								checkPriority = 0;
+								if (withBuilder.Priority != StructureLoadPriority.SpawnPoint) {
+									if (structure.worlditem.Is (WIActiveState.Active)) {
+										withBuilder.Priority = StructureLoadPriority.Immediate;
+									}
+								}
+							}
 						}
 						if (withBuilder.State != StructureBuilder.BuilderState.Error && structure.Is (intermediateState)) {
 							//if there's an error it usually means the structure was 'unbuilt' before it could finish
@@ -837,7 +1045,7 @@ namespace Frontiers
 						if (withBuilder.State != Builder.BuilderState.Error) {
 							//let the structure know it's been built
 							structure.LoadState = finalState;
-							LoadedStructures.SafeAdd (structure);
+							LoadedStructures.Add (structure);
 							structure.OnLoadFinish (finalState);
 							//now that it's built, if it's an exterior, cache the meshes
 							/*if (structure.Is(StructureLoadState.ExteriorLoaded)) {
@@ -898,7 +1106,7 @@ namespace Frontiers
 		}
 
 		protected IEnumerator UnloadStructures (
-			List <Structure> fromList,
+			HashSet <Structure> fromList,
 			StructureLoadState desiredState,
 			StructureLoadState precursorState,
 			StructureLoadState disqualifiedState,
@@ -958,7 +1166,7 @@ namespace Frontiers
 					minorStructure.RefreshColliders ();
 					minorStructure.RefreshRenderers (true);
 					MinorBuilder.Reset ();
-					LoadedMinorStructures.SafeAdd (minorStructure);
+					LoadedMinorStructures.Add (minorStructure);
 					double start = Frontiers.WorldClock.RealTime;
 					while (Frontiers.WorldClock.RealTime < start + 0.05f) {
 						yield return null;
@@ -1217,14 +1425,17 @@ namespace Frontiers
 			//move / scale everything first
 			cfo.tr.position = chunk.ChunkOffset + chunkPrefab.Transform.Position;
 			cfo.tr.rotation = Quaternion.Euler (chunkPrefab.Transform.Rotation);
-			cfo.PrimaryTransform.localScale = Mathf.Round (chunkPrefab.Transform.Scale.x) * Vector3.one; //non-uniform scales NOT ALLOWED!
-			cfo.LodTransform.localScale = Vector3.one;//cfo.PrimaryTransform.localScale;
+			cfo.tr.localScale = chunkPrefab.Transform.Scale.x * Vector3.one; //non-uniform scales NOT ALLOWED!
+			//cfo.PrimaryTransform.localScale = chunkPrefab.Transform.Scale.x * Vector3.one; //non-uniform scales NOT ALLOWED!
+			//cfo.LodTransform.localScale = Vector3.one;//cfo.PrimaryTransform.localScale;
 
 			cfo.Layer = Globals.LayerNumSolidTerrain;//chunkPrefab.Layer;
 			cfo.TerrainType = chunkPrefab.TerrainType;
 			//cfo.go.SetActive(true);
 			//cfo.rb.detectCollisions = true;
+			#if UNITY_EDITOR
 			cfo.go.name = chunkPrefab.Name;
+			#endif
 			cfo.go.SetLayerRecursively (cfo.Layer);
 			cfo.go.tag = chunkPrefab.Tag;
 			cfo.PrimaryMeshFilter.tag = chunkPrefab.Tag;
@@ -1274,6 +1485,9 @@ namespace Frontiers
 
 			cfoSharedMaterialArray = cfoSharedMaterialList.ToArray ();
 			cfo.PrimaryRenderer.sharedMaterials = cfoSharedMaterialArray;
+			for (int i = 0; i < cfoSharedMaterialArray.Length; i++) {
+				cfoSharedMaterialArray [i] = Mats.Get.GetLODMaterial (cfoSharedMaterialArray [i]);
+			}
 			cfo.LodRenderer.sharedMaterials = cfoSharedMaterialArray;
 
 			if (Player.Local.HasSpawned && mode != ChunkMode.Primary) {
@@ -1395,11 +1609,13 @@ namespace Frontiers
 
 			Renderer[] primaryRenderers = new Renderer [] { cfo.PrimaryRenderer };
 			Renderer[] lodRenderers = new Renderer [] { cfo.LodRenderer };
+			Renderer[] offRenderers = new Renderer[0];
 
 			LOD primary = new LOD (Globals.SceneryLODRatioPrimary, primaryRenderers);
 			LOD lod = new LOD (Globals.SceneryLODRatioSecondary, lodRenderers);
+			LOD off = new LOD (Globals.SceneryLODRatioOff, offRenderers);
 			//LOD off = new LOD(Globals.SceneryLODRatioOff, gEmptyLodRenderers);
-			LOD[] lods = new LOD [] { primary, lod };
+			LOD[] lods = new LOD [] { primary, lod, off };
 
 			cfo.Lod.SetLODS (lods);
 

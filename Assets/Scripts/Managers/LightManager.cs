@@ -110,6 +110,12 @@ namespace Frontiers
 			RefreshExposure (ps);
 		}
 
+		public override void OnLocalPlayerSpawn ()
+		{
+			mUpdateLights = 100;
+			mUpdateMaterials = 100;
+		}
+
 		public static void RefreshExposure (IPhotosensitive ps)
 		{
 			float exposureBeforeRefresh = ps.LightExposure;
@@ -222,6 +228,7 @@ namespace Frontiers
 				wlt = Get.DefaultTemplate;
 			}
 			newWorldLight.SetTemplate (wlt);
+			newWorldLight.UpdateBrightness ();
 
 			return newWorldLight;
 		}
@@ -264,7 +271,7 @@ namespace Frontiers
 					ps.LightSources.RemoveAt (i);
 				} else {
 					//distance to center point of light from outer edge of object
-					float distance = Mathf.Clamp ((Vector3.Distance (worldLight.transform.position, ps.Position) - ps.Radius), 0.0001f, worldLight.TargetBaseRange);
+					float distance = Mathf.Clamp ((Vector3.Distance (worldLight.tr.position, ps.Position) - ps.Radius), 0.0001f, worldLight.TargetBaseRange);
 					//exposure = time * light intensity / distance or minimum intensity, whichever is greater
 					//multiply that by global light exposure multiplier
 					ps.LightExposure += ((wDeltaTime * worldLight.TargetBaseIntensity) / distance) * Globals.LightExposureMultiplier;
@@ -287,73 +294,54 @@ namespace Frontiers
 
 		protected static Dictionary <string, WorldLightTemplate> mTemplateLookup;
 		protected static Vector3 mInstantiateOffset = new Vector3 (-4000f, -25000f, -16000f);
-		public float MasterBrightness;
 		public int mUpdateLights = 0;
+		public int mUpdateMaterials = 0;
 		protected float mLerpThisFrame;
 
-		public void Update ()
-		{
-			if (GameManager.Is (FGameState.Cutscene)) {
+		public void Update () {
+
+			if (GameManager.Is (FGameState.Cutscene | FGameState.GameLoading)) {
 				mLerpThisFrame = 1f;
-				MasterBrightness = 1.0f;
-				if (WorldClock.IsDay) {
-					MasterBrightness = 1.0f - Mathf.Clamp01 (GameWorld.Get.Sky.LightIntensity + Colors.Value (GameWorld.Get.Sky.AmbientColor));
-				}
 				mUpdateLights = 10;
-			} else if (GameManager.Is (FGameState.InGame)) {
-				mLerpThisFrame = (float)(Frontiers.WorldClock.ARTDeltaTime * 0.5f);
-			} else {
-				return;
+				mUpdateMaterials = 30;
 			}
 
 			mUpdateLights++;
 			if (mUpdateLights > 10) {
 				mUpdateLights = 0;
-				//update all world lights based on the time of day
-				float masterBrightness = 1.0f;
-				if (WorldClock.IsDay) {
-					masterBrightness = 1.0f - Mathf.Clamp01 (GameWorld.Get.Sky.LightIntensity + Colors.Value (GameWorld.Get.Sky.AmbientColor));
-				}
-				MasterBrightness = Mathf.Round (Mathf.Lerp (MasterBrightness, masterBrightness, mLerpThisFrame));
 
 				for (int i = WorldLights.LastIndex (); i >= 0; i--) {
 					WorldLight wl = WorldLights [i];
 					if (wl == null) {
 						WorldLights.RemoveAt (i);
 					} else {
-						switch (wl.Type) {
-						case WorldLightType.Exterior:
-						default:
-							wl.MasterBrightness = MasterBrightness;
-							wl.IsDay = WorldClock.IsDay;
-							break;
-
-						case WorldLightType.InteriorOrUnderground:
-							wl.MasterBrightness = 1.0f;
-							break;
-
-						case WorldLightType.Equipped:
-							if (Player.Local.Surroundings.IsOutside) {
-								wl.MasterBrightness = MasterBrightness;
-								wl.IsDay = WorldClock.IsDay;
-							} else {
-								wl.MasterBrightness = 1.0f;
-							}
-							break;
-
-						case WorldLightType.AlwaysOn:
-							wl.MasterBrightness = 1.0f;
-							break;
-						}
+						wl.UpdateBrightness ();
 					}
 				}
+			}
+
+			mUpdateMaterials++;
+			if (mUpdateMaterials > 5) {
+				mUpdateMaterials = 0;
+				bool lightsOn = WorldClock.IsNight || !Player.Local.Surroundings.IsOutside;
+				if (lightsOn) {
+					mTargetEmissionBrightness = 1f;
+				} else {
+					mTargetEmissionBrightness = 0f;
+				}
+
+				mEmissionBrightness = Mathf.Lerp (mEmissionBrightness, mTargetEmissionBrightness, 0.35f);
 
 				for (int i = 0; i < Mats.Get.TimedGlowMaterials.Count; i++) {
 					Material mat = Mats.Get.TimedGlowMaterials [i];
-					mat.SetColor ("_EmiTint", Colors.Alpha (mat.GetColor ("_EmiTint"), MasterBrightness));
+					mat.SetColor ("_EmiTint", Colors.Alpha (mat.GetColor ("_EmiTint"), mEmissionBrightness));
 				}
 			}
 		}
+
+		protected float mTargetEmissionBrightness = 0f;
+		protected float mEmissionBrightness = 0f;
+
 		#if UNITY_EDITOR
 		public void EditorSaveLightTemplates ()
 		{

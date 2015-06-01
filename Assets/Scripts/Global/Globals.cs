@@ -30,6 +30,24 @@ public static class Globals
 		public static int NumCachedSplinePositionsPerMeter = 5;
 
 		#region difficulty
+		[EditableDifficultySettingAttribute (1f, 600f, "Time before a meteor will self-destruct during the day.")]
+		public static float MeteorDaytimeSurvivalTime = 30f;
+		[EditableDifficultySettingAttribute (0.0001f, 1f, "Odds of spawning a daytime meteor per check interval (typically very rare).")]
+		public static float MeteorSpawnProbabilityDaytime = 0.0001f;
+		[EditableDifficultySettingAttribute (0, 100, "Max number of meteors spawned in one day.")]
+		public static int MaxMeteorsPerDay = 1;
+		[EditableDifficultySettingAttribute ("If set to true, MaxMeteorsPerNight will oscillate between 0 and value over MeteorSpawnCurveDuration.")]
+		public static bool OscillateMeteorSpawnAmount = true;
+		[EditableDifficultySettingAttribute (0, 100, "Max number of meteors spawned in one night.")]
+		public static int MaxMeteorsPerNight = 15;
+		[EditableDifficultySettingAttribute (0, 100, "Min number of meteors spawned in one night. Oscillation doesn't affect this value.")]
+		public static int MinMeteorsPerNight = 1;
+		[EditableDifficultySettingAttribute (5f, 1000f, "Minimum time between asteroid spawns.")]
+		public static float MeteorMinimumSpawnTime = 20f;
+		[EditableDifficultySettingAttribute (0.0001f, 1f, "Odds of spawning an meteor per check interval.")]
+		public static float MeteorSpawnProbability = 0.01f;
+		[EditableDifficultySettingAttribute (30f, 100000f, "Duration between 0 meteors per night and MaxMeteorsPerNight.")]
+		public static float MeteorSpawnOscillateDuration = 3600f;
 		[EditableDifficultySetting(0f, 10000000f, "Base price in grains for a book in the guild library")]
 		public static float GuildLibraryBasePrice = 10000;
 		[EditableDifficultySetting(0f, 10000000f, "Minimum price in grains for a book in the guild library")]
@@ -306,6 +324,8 @@ public static class Globals
 
 		#region world
 
+		[WorldSetting]
+		public static float WorldBodyMass = 2.2f;
 		[WorldSetting]
 		public static string DefaultFontName = "PrintingPress40";
 		[WorldSetting]
@@ -649,6 +669,7 @@ public static class Globals
 		public static int ScreenAspectRatioMaxVR = 640;
 		//collision layer variables
 		public const int LayerNumDefault = 0;
+		public const int LayerNumBodyBaseCollider = 2;
 		public const int LayerNumPlayer = 8;
 		public const int LayerNumTrigger = 9;
 		public const int LayerNumBodyPart = 10;
@@ -697,9 +718,11 @@ public static class Globals
 		public static string TagNonInteractive = "NonInteractive";
 		public static string TagIgnoreTab = "IgnoreTab";
 		public static string TagIgnoreStackedDoppleganger = "IgnoreStackedDoppleganger";
+		public static string TagLightSensitiveTrigger = "LightSensitiveTrigger";
 
 		public static float BodyPartDamageForceMultiplier = 2500f;
 		public static string ControllerDefaultActionSpriteSuffix = "XBox";
+		public const int LayerBodyBaseCollider = 1 << 2;
 		public const int LayerPlayer = 1 << 8;
 		public const int LayerTrigger = 1 << 9;
 		public const int LayerBodyPart = 1 << 10;

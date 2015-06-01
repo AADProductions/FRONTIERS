@@ -14,6 +14,9 @@ namespace Frontiers.World.WIScripts
 		public Damageable damageable;
 		public Hostile hostile;
 
+		public float MeteorEatTime = 5f;
+		public float MeteorSearchRange;
+
 		public DropItemsOnDie DropItems;
 		public LuminitePowered PowerSource;
 		public WorldItem LuminiteToGather = null;
@@ -29,6 +32,8 @@ namespace Frontiers.World.WIScripts
 		public Light OrbSpotlightBottom;
 		public Light OrbSpotlightForward;
 		public Light OrbPointLight;
+
+		public Meteor TargetMeteor;
 
 		public bool HasPowerBeam {
 			get {
@@ -69,6 +74,14 @@ namespace Frontiers.World.WIScripts
 
 			worlditem.OnScriptAdded += OnScriptAdded;
 			worlditem.OnVisible += OnVisible;
+
+			Meteors.Get.OnMeteorSpawned += OnMeteorSpawned;
+
+			MeteorSearchRange = creature.Den.Radius;
+		}
+
+		public void OnMeteorSpawned () {
+			enabled = true;
 		}
 
 		public void OnVisible ( ) {
@@ -212,11 +225,7 @@ namespace Frontiers.World.WIScripts
 		{
 			ColoredDebug.Log ("ORB: On Attack Start", "Green");
 			if (!HasPowerBeam) {
-				GameObject newBeam = GameObject.Instantiate (FXManager.Get.BeamPrefab) as GameObject;
-				mPowerBeam = newBeam.GetComponent <PowerBeam> ();
-				mPowerBeam.WarmUpColor = Colors.Alpha (Color.white, 0.1f);
-				mPowerBeam.FireColor = Colors.Alpha (Color.yellow, 0.1f);
-				mPowerBeam.RequiresOriginAndTarget = false;
+				mPowerBeam = GetPowerBeam ();
 			}
 			mPowerBeam.AttachTo (LuminiteGemPivot, hostile.PrimaryTarget);
 			mPowerBeam.WarmUp ( );//go until we stop in update
@@ -375,6 +384,170 @@ namespace Frontiers.World.WIScripts
 		protected static GenericWorldItem gDeactivatedOrbGenericWorldItem = null;
 		protected static GenericWorldItem gOrbGemGenericWorldItem = null;
 		protected PowerBeam mPowerBeam = null;
+
+		public void FixedUpdate () {
+			if (WorldClock.IsDay) {
+				TargetMeteor = null;
+				if (mGetMeteorAction != null) {
+					mGetMeteorAction.Cancel ();
+					mGetMeteorAction = null;
+				}
+				return;
+			}
+
+			if (mEatingMeteor) {
+				return;
+			}
+
+			mCheckMeteor++;
+			if (mCheckMeteor > 250) {
+				mCheckMeteor = 0;
+				if (TargetMeteor == null || TargetMeteor.IsDestroyed || TargetMeteor.IncomingOrb != this) {
+					TargetMeteor = null;
+					if (FindNewMeteor ()) {
+						GoToMeteor ();
+						return;
+					}
+				} else {
+					//even if we have a meteor
+					//check to make sure we're not missing an even closer meteor
+					if (FindCloserMeteor ()) {
+						GoToMeteor ();
+						return;
+					}
+				}
+			}
+
+			if (TargetMeteor == null || TargetMeteor.IsDestroyed) {
+				if (FindNewMeteor ()) {
+					GoToMeteor ();
+					return;
+				} else {
+					if (mGetMeteorAction != null) {
+						mGetMeteorAction.Cancel ();
+						mGetMeteorAction = null;
+					}
+					enabled = false;
+					return;
+				}
+			} else { 
+				if (mGetMeteorAction == null || mGetMeteorAction.IsFinished) {
+					GoToMeteor ();
+					return;
+				}
+			}
+		}
+
+		protected bool FindCloserMeteor ( ) {
+			bool foundCloserMeteor = false;
+			List <Meteor> meteors = Meteors.Get.MeteorsSpawned;
+			Vector3 orbPos = worlditem.Position;
+			float currentMag = (orbPos - TargetMeteor.worlditem.Position).magnitude;
+			for (int i = 0; i < meteors.Count; i++) {
+				Meteor o = meteors [i];
+				if (o != null && o.IncomingOrb == null) {
+					float potentialMag = (orbPos - o.worlditem.Position).magnitude;
+					if (potentialMag < currentMag) {
+						Debug.Log ("Found a closer meteor, going for it instead");
+						TargetMeteor.IncomingOrb = null;
+						TargetMeteor = o;
+						TargetMeteor.IncomingOrb = this;
+						foundCloserMeteor = true;
+						break;
+					}
+				}
+			}
+			return foundCloserMeteor;
+		}
+
+		protected bool FindNewMeteor ( ) {
+			bool foundNewMeteor = false;
+			List <Meteor> meteors = Meteors.Get.MeteorsSpawned;
+			Vector3 orbPos = worlditem.Position;
+			for (int i = 0; i < meteors.Count; i++) {
+				Meteor m = meteors [i];
+				if (m != null && m.IncomingOrb == null && Vector3.Distance (orbPos, m.worlditem.Position) < MeteorSearchRange) {
+					TargetMeteor = m;
+					foundNewMeteor = true;
+					break;
+				}
+			}
+			if (foundNewMeteor) {
+				OrbSpeak (OrbSpeakUnit.NewTargetAcquired, worlditem.tr);
+				TargetMeteor.IncomingOrb = this;
+			}
+			return foundNewMeteor;
+		}
+
+		protected void GoToMeteor ( ) {
+			if (mGetMeteorAction == null || mGetMeteorAction.IsFinished) {
+				Debug.Log ("Going to meteor via eat thing");
+				mGetMeteorAction = creature.EatThingAction (TargetMeteor.worlditem);
+				mGetMeteorAction.OnFinishAction += OnReachMeteor;
+			} else {
+				mGetMeteorAction.LiveTarget = TargetMeteor.worlditem;
+			}
+		}
+
+		public void OnReachMeteor ( ) {
+			Debug.Log ("reached meteor in orb");
+			if (!mEatingMeteor) {
+				mEatingMeteor = true;
+				StartCoroutine (EatMeteor (TargetMeteor));
+			}
+		}
+
+		protected PowerBeam GetPowerBeam ( ) {
+			GameObject newBeam = GameObject.Instantiate (FXManager.Get.BeamPrefab) as GameObject;
+			mPowerBeam = newBeam.GetComponent <PowerBeam> ();
+			mPowerBeam.WarmUpColor = Colors.Alpha (Color.white, 0.1f);
+			mPowerBeam.FireColor = Colors.Alpha (Color.yellow, 0.1f);
+			mPowerBeam.RequiresOriginAndTarget = false;
+			return mPowerBeam;
+		}
+
+		protected IEnumerator EatMeteor (Meteor targetMeteor) {
+			double startEatTime = WorldClock.AdjustedRealTime;
+			Damageable meteorDamageable = targetMeteor.worlditem.Get <Damageable> ();
+			float damageOnStart = meteorDamageable.NormalizedDamage;
+			Debug.Log ("Starting meteor eating process, damage is " + damageOnStart.ToString ());
+			OrbSpeak (OrbSpeakUnit.MiningLuminite, worlditem.tr);
+
+			if (!HasPowerBeam) {
+				mPowerBeam = GetPowerBeam ();
+			}
+			mPowerBeam.AttachTo (LuminiteGemPivot, TargetMeteor.worlditem);
+			mPowerBeam.WarmUp ( );//go until we stop in update
+			mPowerBeam.Fire (Mathf.Infinity);
+
+			while (targetMeteor != null && !targetMeteor.IsDestroyed) {
+				if (meteorDamageable.NormalizedDamage > damageOnStart) {
+					Debug.Log ("Something attacked meteor in the meantime");
+					mPowerBeam.StopFiring ();
+					OrbSpeak (OrbSpeakUnit.TargetBehavingErratically, worlditem.tr);
+					mEatingMeteor = false;
+					yield break;
+
+				} else if (WorldClock.AdjustedRealTime > startEatTime + MeteorEatTime) {
+					//it's toast! kill it
+					//force it to not spawn any items on die
+					Debug.Log ("Eating time is done! destroying meteor and ending beam");
+					targetMeteor.worlditem.Get <DropItemsOnDie> ().MaxRandomItems = 0;
+					targetMeteor.worlditem.Get <Damageable> ().InstantKill ("Orb");
+					mPowerBeam.StopFiring ();
+					targetMeteor = null;
+				}
+
+				yield return null;
+			}
+
+			mEatingMeteor = false;
+			yield break;
+		}
+
+		MotileAction mGetMeteorAction;
+		protected bool mEatingMeteor = false;
+		protected int mCheckMeteor = 0;
 
 		#if UNITY_EDITOR
 		protected Vector3 mFireStart;

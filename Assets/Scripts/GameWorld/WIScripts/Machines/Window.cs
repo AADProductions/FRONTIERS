@@ -31,6 +31,29 @@ namespace Frontiers.World.WIScripts
 			}
 			dynamic.OnTriggersLoaded += OnTriggersLoaded;
 			//GameWorld.Get.AddGraphNode (new TerrainNode (transform.position));
+
+			if (dynamic.State.Type == WorldStructureObjectType.OuterEntrance) {
+				Damageable damageable = null;
+				if (worlditem.Is <Damageable> (out damageable)) {
+					damageable.OnDie += OnDie;
+					damageable.OnTakeDamage += OnTakeDamage;
+				}
+			}
+		}
+
+		public void OnTakeDamage ( ) {
+			//add the structure's interior to load in case we break through
+			if (dynamic.ParentStructure != null) {
+				Structures.AddInteriorToLoad (dynamic.ParentStructure);
+			}
+		}
+
+		public void OnDie ( ) {
+			//force the interior to load since we're now missing a window forever
+			if (dynamic.ParentStructure != null) {
+				dynamic.ParentStructure.State.ForceBuildInterior = true;
+				Structures.AddInteriorToLoad (dynamic.ParentStructure);
+			}
 		}
 
 		public override int OnRefreshHud(int lastHudPriority)

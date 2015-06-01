@@ -31,15 +31,6 @@ namespace Frontiers.World
 			return false;
 		}
 
-		public bool IsDay {
-			set {
-				if (mIsDay != value) {
-					mIsDay = value;
-					enabled = true;
-				}
-			}
-		}
-
 		public bool HasAtLeastOne (List <string> scriptNames)
 		{
 			return scriptNames.Count == 0;
@@ -68,11 +59,6 @@ namespace Frontiers.World
 				return mMasterBrightness;
 			}
 			set {
-				if (value < 0.01f) {
-					value = 0f;
-				} else if (value > 0.97f) {
-					value = 1f;
-				}
 				if (mMasterBrightness != value) {
 					mMasterBrightness = value;
 					enabled = true;
@@ -103,7 +89,6 @@ namespace Frontiers.World
 			mSpotlights.Add (SpotlightBack);
 			mSpotlights.Add (SpotlightLeft);
 			mSpotlights.Add (SpotlightRight);
-			mIsDay = !WorldClock.IsDay;
 			mMasterBrightness = -1f;
 		}
 
@@ -200,6 +185,13 @@ namespace Frontiers.World
 		{
 			Template = newTemplate;
 
+			mTargetHeatIntensity = -1f;
+			mTargetBaseRange = -1f;
+			mTargetSpotRange = -1f;
+			mTargetBaseIntensity = -1f;
+			mTargetSpotIntensity = -1f;
+			mMasterBrightness = -1f;
+
 			SpotlightTop.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Top, Flags.CheckType.MatchAny);
 			SpotlightBottom.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Bottom, Flags.CheckType.MatchAny);
 			SpotlightLeft.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Left, Flags.CheckType.MatchAny);
@@ -232,6 +224,40 @@ namespace Frontiers.World
 		public void Reset ()
 		{
 			mIsOff = false;
+			enabled = false;
+			mTargetHeatIntensity = -1f;
+			mTargetBaseRange = -1f;
+			mTargetSpotRange = -1f;
+			mTargetBaseIntensity = -1f;
+			mTargetSpotIntensity = -1f;
+			mMasterBrightness = -1f;
+		}
+
+		public void UpdateBrightness ()
+		{
+			switch (Type) {
+			case WorldLightType.Exterior:
+			default:
+				MasterBrightness = WorldClock.IsNight ? 1f : 0f;
+				break;
+
+			case WorldLightType.InteriorOrUnderground:
+				MasterBrightness = 1.0f;
+				break;
+
+			case WorldLightType.Equipped:
+				if (Player.Local.Surroundings.IsOutside) {
+					MasterBrightness = WorldClock.IsDay ? 1f : 0f;
+				} else {
+					MasterBrightness = 1.0f;
+				}
+				break;
+
+			case WorldLightType.AlwaysOn:
+				MasterBrightness = 1.0f;
+				break;
+			}
+			enabled = true;
 		}
 
 		public static double gLerpSpeed = 2.0;
@@ -420,7 +446,6 @@ namespace Frontiers.World
 		protected Color mTargetColor;
 		protected bool mLightEnabled = false;
 		protected bool mIsOff = false;
-		protected bool mIsDay = false;
 		protected bool mDestroyed = false;
 	}
 }

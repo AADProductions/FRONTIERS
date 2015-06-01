@@ -655,6 +655,13 @@ namespace Frontiers.World
 						Colliders [i].enabled = true;
 					}
 				}
+				if (HasStates) {
+					for (int i = 0; i < States.States.Count; i++) {
+						if (States.States [i].StateCollider != null) {
+							States.States [i].StateCollider.enabled = true;
+						}
+					}
+				}
 			}
 
 			//these won't invoke actions
@@ -1010,6 +1017,7 @@ namespace Frontiers.World
 		{
 			//most dynamic objects will not update themselves
 			if (Props.Global.ParentUnderGroup && !TransformLocked && Group != null) {
+				//Debug.Log ("Sending to group position in " + name);
 				tr.parent = Group.tr;
 				//this is called by the group whenever we're added
 				//but our transform is only valid if we're loading from a state
@@ -1020,9 +1028,10 @@ namespace Frontiers.World
 				} else {
 					//if we just received a state then use our props to update our position
 					tr.localPosition = Props.Local.Transform.Position;
-					tr.localRotation = Quaternion.Euler (Props.Local.Transform.Rotation);
+					tr.localEulerAngles = Props.Local.Transform.Rotation;
 					//sadly we can't use rb.position
 					//(maybe I can use inverse transform?)
+					//Debug.Log ("Haven't been added yet, setting local pos: " + Props.Local.Transform.Position.ToString () + " is now " + tr.position.ToString () + " in group with position " + Group.tr.position.ToString ());
 				}
 			}
 		}

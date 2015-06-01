@@ -18,7 +18,7 @@ public partial class GameWorld : Manager
 	#if UNITY_EDITOR
 	public string EditorCurrentWorldName = "FRONTIERS";
 	#endif
-	public RVOSimulator Simulator;
+	//public RVOSimulator Simulator;
 	public WorldSettings Settings = new WorldSettings ();
 	public WorldState State = new WorldState ();
 	//mod data
@@ -804,6 +804,56 @@ public partial class GameWorld : Manager
 			terrainHit.overhangNormal = mHitOverhang.normal;
 		}
 
+		return terrainHit.terrainHeight;
+	}
+
+	public float TerrainHeightAtSkyPosition (ref TerrainHeightSearch terrainHit, float raycastDistance) {
+		terrainHit.normal = Vector3.up;
+		terrainHit.overhangNormal = Vector3.down;
+		terrainHit.hitWater = false;
+		terrainHit.hitTerrain = false;
+		terrainHit.hitTerrainMesh = false;
+		terrainHit.isGrounded = false;
+		terrainHit.terrainHeight = terrainHit.feetPosition.y;//default
+		terrainHit.feetPosition.y = raycastDistance;
+
+		int layerMask = Globals.LayersSolidTerrain;
+		if (!terrainHit.ignoreWorldItems) {
+			layerMask |= Globals.LayerWorldItemActive;
+		}
+		if (!terrainHit.ignoreWater) {
+			layerMask |= Globals.LayerFluidTerrain;
+		}
+		if (Physics.Raycast (terrainHit.feetPosition, Vector3.down, out mHitGround, raycastDistance, layerMask)) {
+			terrainHit.normal = mHitGround.normal;
+			terrainHit.isGrounded = true;
+			terrainHit.terrainHeight = mHitGround.point.y;
+			switch (mHitGround.collider.gameObject.layer) {
+			case Globals.LayerNumSolidTerrain:
+			default:
+				terrainHit.hitTerrain = true;
+				if (mHitGround.collider.CompareTag ("GroundTerrain")) {
+					//only terrian has the GroundTerrain tag
+					terrainHit.hitTerrain = true;
+				} else {
+					terrainHit.hitTerrainMesh = true;
+				}
+				break;
+
+			case Globals.LayerNumFluidTerrain:
+				terrainHit.hitWater = true;
+				break;
+
+			case Globals.LayerNumWorldItemActive:
+				terrainHit.hitTerrainMesh = true;
+				break;
+
+			case Globals.LayerNumStructureTerrain:
+			case Globals.LayerNumStructureCustomCollider:
+				terrainHit.hitStructureMesh = true;
+				break;
+			}
+		}
 		return terrainHit.terrainHeight;
 	}
 

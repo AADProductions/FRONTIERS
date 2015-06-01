@@ -53,6 +53,8 @@ namespace Frontiers
 						}
 				}
 
+				public bool IsKinematic { get { return true; } }
+
 				public double CurrentMovementSpeed { get; set; }
 
 				public double CurrentRotationSpeed { get; set; }
@@ -285,7 +287,7 @@ namespace Frontiers
 
 				public virtual void OnInitialized()
 				{
-						RVOAgent = GameWorld.Get.Simulator.GetSimulator().AddAgent(tr.position);
+						//RVOAgent = GameWorld.Get.Simulator.GetSimulator().AddAgent(tr.position);
 				}
 
 				public virtual void OnGameStartFirstTime()
@@ -382,7 +384,7 @@ namespace Frontiers
 
 				public virtual void FixedUpdate()
 				{
-						if (RVOAgent == null) {
+						/*if (RVOAgent == null) {
 								return;
 						}
 
@@ -393,7 +395,7 @@ namespace Frontiers
 						RVOAgent.ObstacleTimeHorizon = 2f;
 						RVOAgent.Locked = false;
 						RVOAgent.MaxNeighbours = 4;
-						RVOAgent.NeighbourDist = 10;
+						RVOAgent.NeighbourDist = 10;*/
 				}
 
 				#endregion

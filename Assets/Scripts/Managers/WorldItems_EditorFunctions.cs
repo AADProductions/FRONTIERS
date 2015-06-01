@@ -559,86 +559,87 @@ namespace Frontiers.World
 		public void DrawEditor()
 		{
 			UnityEditor.EditorStyles.textField.wordWrap = true;
+			if (Application.isPlaying) {
+				GUILayout.Label ("Last player position: " + LastPlayerPosition.ToString ());
 
-			GUILayout.Label("Last player position: " + LastPlayerPosition.ToString());
+				GUILayout.Label ("----\n");
+				if (mInitialized) {
+					UnityEngine.GUI.color = Color.green;
+					GUILayout.Label ("\n---- Active: " + ActiveWorldItems.Count.ToString () + "----\n");
+					int i = 0;
+					foreach (WorldItem w in ActiveWorldItems) {
+						//for (int i = 0; i < ActiveSet.Count; i++) {
+						//WorldItem w = ActiveSet[i];
+						if (w != null) {
+							if (ActiveRadiusComparer.IsDirty (w)) {
+								UnityEngine.GUI.color = Color.magenta;
+							} else {
+								UnityEngine.GUI.color = Color.green;
+							}
+							GUILayout.Button (w.name + " - " + w.DistanceToPlayer.ToString ("0.##"));
+						} else {
+							GUILayout.Button ("(NULL)");
+						}
+						i++;
+					}
+					UnityEngine.GUI.color = Color.yellow;
+					GUILayout.Label ("\n---- Visible: " + VisibleWorldItems.Count.ToString () + "----\n");
+					i = 0;
+					foreach (WorldItem w in VisibleWorldItems) {
+						//for (int i = 0; i < VisibleSet.Count; i++) {
+						//WorldItem w = VisibleSet[i];
+						if (w != null) {
+							if (VisibleRadiusComparer.IsDirty (w)) {
+								UnityEngine.GUI.color = Color.magenta;
+							} else {
+								UnityEngine.GUI.color = Color.Lerp (Color.green, Color.yellow, 0.25f);
+							}
+							GUILayout.Button (w.name + " - " + w.DistanceToPlayer.ToString ("0.##"));
+						} else {
+							GUILayout.Button ("(NULL)");
+						}
+						i++;
+					}
+					UnityEngine.GUI.color = Color.red;
+					GUILayout.Label ("\n---- Invisible: " + InvisibleWorldItems.Count.ToString () + "----\n");
+					i = 0;
+					foreach (WorldItem w in InvisibleWorldItems) {
+						//for (int i = 0; i < InvisibleSet.Count; i++) {
+						//WorldItem w = InvisibleSet[i];
+						if (w != null) {
+							if (InvisibleRadiusComparer.IsDirty (w)) {
+								UnityEngine.GUI.color = Color.magenta;
+							} else {
+								UnityEngine.GUI.color = Color.Lerp (Color.green, Color.yellow, 0.75f);
+							}
+							GUILayout.Button (w.name + " - " + w.DistanceToPlayer.ToString ("0.##"));
+						} else {
+							GUILayout.Button ("(NULL)");
+						}
+						i++;
+					}
+					UnityEngine.GUI.color = Color.red;
+					GUILayout.Label ("\n---- Locked: " + LockedWorldItems.Count.ToString () + "----\n");
+					foreach (WorldItem w in LockedWorldItems) {
+						//for (int i = 0; i < LockedSet.Count; i++) {
+						//WorldItem w = LockedSet[i];
+						if (w != null) {
+							if (LockedComparer.IsDirty (w)) {
+								UnityEngine.GUI.color = Color.magenta;
+							} else {
+								UnityEngine.GUI.color = Color.Lerp (Color.blue, Color.green, 0.75f);
+							}
+							GUILayout.Button (w.name + " - " + w.DistanceToPlayer.ToString ("0.##"));
+						} else {
+							GUILayout.Button ("(NULL)");
+						}
+					}
 
-			GUILayout.Label("----\n");
-			if (mInitialized) {
-				UnityEngine.GUI.color = Color.green;
-				GUILayout.Label("\n---- Active: " + ActiveWorldItems.Count.ToString() + "----\n");
-				int i = 0;
-				foreach (WorldItem w in ActiveWorldItems) {
-					//for (int i = 0; i < ActiveSet.Count; i++) {
-					//WorldItem w = ActiveSet[i];
-					if (w != null) {
-						if (ActiveRadiusComparer.IsDirty (w)) {
-							UnityEngine.GUI.color = Color.magenta;
-						} else {
-							UnityEngine.GUI.color = Color.green;
-						}
-						GUILayout.Button(w.name + " - " + w.DistanceToPlayer.ToString("0.##"));
-					} else {
-						GUILayout.Button("(NULL)");
-					}
-					i++;
+					UnityEditor.EditorUtility.SetDirty (this);
+					UnityEditor.EditorUtility.SetDirty (gameObject);
 				}
-				UnityEngine.GUI.color = Color.yellow;
-				GUILayout.Label("\n---- Visible: " + VisibleWorldItems.Count.ToString() + "----\n");
-				i = 0;
-				foreach (WorldItem w in VisibleWorldItems) {
-					//for (int i = 0; i < VisibleSet.Count; i++) {
-					//WorldItem w = VisibleSet[i];
-					if (w != null) {
-						if (VisibleRadiusComparer.IsDirty (w)) {
-							UnityEngine.GUI.color = Color.magenta;
-						} else {
-							UnityEngine.GUI.color = Color.Lerp(Color.green, Color.yellow, 0.25f);
-						}
-						GUILayout.Button(w.name + " - " + w.DistanceToPlayer.ToString("0.##"));
-					} else {
-						GUILayout.Button("(NULL)");
-					}
-					i++;
-				}
-				UnityEngine.GUI.color = Color.red;
-				GUILayout.Label("\n---- Invisible: " + InvisibleWorldItems.Count.ToString() + "----\n");
-				i = 0;
-				foreach (WorldItem w in InvisibleWorldItems) {
-					//for (int i = 0; i < InvisibleSet.Count; i++) {
-					//WorldItem w = InvisibleSet[i];
-					if (w != null) {
-						if (InvisibleRadiusComparer.IsDirty (w)) {
-							UnityEngine.GUI.color = Color.magenta;
-						} else {
-							UnityEngine.GUI.color = Color.Lerp(Color.green, Color.yellow, 0.75f);
-						}
-						GUILayout.Button(w.name + " - " + w.DistanceToPlayer.ToString("0.##"));
-					} else {
-						GUILayout.Button("(NULL)");
-					}
-					i++;
-				}
-				UnityEngine.GUI.color = Color.red;
-				GUILayout.Label("\n---- Locked: " + LockedWorldItems.Count.ToString() + "----\n");
-				foreach (WorldItem w in LockedWorldItems) {
-				//for (int i = 0; i < LockedSet.Count; i++) {
-				//WorldItem w = LockedSet[i];
-					if (w != null) {
-						if (LockedComparer.IsDirty (w)) {
-							UnityEngine.GUI.color = Color.magenta;
-						} else {
-							UnityEngine.GUI.color = Color.Lerp(Color.blue, Color.green, 0.75f);
-						}
-						GUILayout.Button(w.name + " - " + w.DistanceToPlayer.ToString("0.##"));
-					} else {
-						GUILayout.Button("(NULL)");
-					}
-				}
-
-				UnityEditor.EditorUtility.SetDirty(this);
-				UnityEditor.EditorUtility.SetDirty(gameObject);
+				GUILayout.Label ("\n----");
 			}
-			GUILayout.Label("\n----");
 
 			if (GUILayout.Button("\n\nSave Categories to CSV\n\n", UnityEditor.EditorStyles.miniButton)) {
 				ExportCategoriesDatabase();

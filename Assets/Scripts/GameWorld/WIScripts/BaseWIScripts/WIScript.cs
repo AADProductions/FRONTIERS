@@ -218,7 +218,11 @@ namespace Frontiers.World.WIScripts
 
 				public virtual string FileNamer(int increment)
 				{
-						return gameObject.name + "-" + increment;
+					gFileNameBuilder.Clear ();
+					gFileNameBuilder.Append (gameObject.name);
+					gFileNameBuilder.Append ("-");
+					gFileNameBuilder.Append (increment.ToString ());
+					return gFileNameBuilder.ToString ();
 				}
 
 				public virtual string DisplayNamer(int increment)
@@ -525,5 +529,7 @@ namespace Frontiers.World.WIScripts
 
 						return deserializedObject;
 				}
+
+				protected static StringBuilder gFileNameBuilder = new StringBuilder ();
 		}
 }

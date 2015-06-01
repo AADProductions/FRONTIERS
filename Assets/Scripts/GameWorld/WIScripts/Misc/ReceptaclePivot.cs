@@ -75,8 +75,8 @@ namespace Frontiers.World.WIScripts
 				mParentStack.RefreshAction += mRefreshAction;
 			}
 
-			mBounds.center = tr.position;
-			mBounds.size = Vector3.one * 0.25f;
+			mBounds.center = tr.position + Vector3.up * 0.05f;
+			mBounds.size = Vector3.one * 0.1f;
 
 			name = ParentReceptacle.name + "_" + State.Index;
 			State.Offset.ApplyTo (transform);
@@ -137,8 +137,14 @@ namespace Frontiers.World.WIScripts
 					Occupant.worlditem.tr.localPosition = Occupant.worlditem.BasePivotOffset;
 					Occupant.worlditem.tr.localRotation = Quaternion.identity;
 
-					mBounds.center = tr.position + Occupant.worlditem.BaseObjectBounds.center;
-					mBounds.size = Occupant.worlditem.BaseObjectBounds.size;
+					mBounds.center = Occupant.Position;
+					mBounds.size = Vector3.one * 0.001f;
+
+					for (int i = 0; i < Occupant.Renderers.Count; i++) {
+						if (Occupant.Renderers [i].enabled) {
+							mBounds.Encapsulate (Occupant.Renderers [i].bounds);
+						}
+					}
 
 					if (OccupantDoppleganger != null) {
 						GameObject.Destroy (OccupantDoppleganger);
@@ -146,6 +152,8 @@ namespace Frontiers.World.WIScripts
 				}
 			} else if (OccupantDoppleganger != null) {
 				GameObject.Destroy (OccupantDoppleganger);
+				mBounds.center = tr.position + Vector3.up * 0.05f;
+				mBounds.size = Vector3.one * 0.1f;
 			}
 
 			mRefreshing = false;
@@ -181,6 +189,8 @@ namespace Frontiers.World.WIScripts
 			Gizmos.DrawLine (transform.position, transform.position + transform.up);
 			Gizmos.color = Color.blue;
 			Gizmos.DrawLine (transform.position, transform.position + transform.forward);
+			Gizmos.color = Colors.Alpha (Color.yellow, 0.5f);
+			Gizmos.DrawCube (mBounds.center, mBounds.size);
 		}
 
 		protected void UseSkillsToPickUpItem ( )

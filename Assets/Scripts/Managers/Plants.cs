@@ -523,6 +523,29 @@ namespace Frontiers
 			return 1;
 		}
 
+		public bool NearestFloweringPlant (Vector3 position, float min, WorldPlant lastFlower, ref WorldPlant flower)
+		{
+			if (ActivePlants.Count == 0) {
+				return false;
+			}
+
+			float closestSoFar = Mathf.Infinity;
+			float current = 0f;
+			for (int i = 0; i < ActivePlants.Count; i++) {
+				//don't return the same flower twice
+				if (ActivePlants [i].HasPlantProps && ActivePlants [i].Props.HasFlowers && ActivePlants [i] != lastFlower) {
+					current = Vector3.Distance (position, ActivePlants [i].Position);
+					if (current < (closestSoFar)) {
+						flower = ActivePlants [i];
+						if (current <= min) {
+							break;
+						}
+					}
+				}
+			}
+			return flower != null;
+		}
+
 		public static void SaveProps (Plant props)
 		{
 			Mods.Get.Runtime.SaveMod <Plant> (props, "Plant", props.Name);
@@ -772,6 +795,12 @@ namespace Frontiers
 				//plant.FlowerVariation = Mathf.Clamp (plant.FlowerVariation, 0, FlowerBaseMeshes
 				try {
 					List <STransform> flowerPoints = BodyBaseMeshes [plant.BodyType].FlowerPoints [plant.BodyVariation];
+					//add this position to the plant properties so butterflies can use it later
+					bool addFlowerPoints = false;
+					if (plant.FlowerPositions == null) {
+						addFlowerPoints = true;
+						plant.FlowerPositions = new List <Vector3> ();
+					}
 					PlantMeshList flowerBaseMeshList = FlowerBaseMeshes [Mathf.Clamp (plant.FlowerType, 0, FlowerBaseMeshes.Count - 1)];
 					if (flowerBaseMeshList.BufferedMeshes.Count > 0) {
 						flowerBaseMesh = flowerBaseMeshList.BufferedMeshes [Mathf.Clamp (plant.FlowerVariation, 0, flowerBaseMeshList.BufferedMeshes.Count - 1)];
@@ -787,6 +816,10 @@ namespace Frontiers
 							flowerInput.WorldMatrix = gPlantFlowerBuilderHelper.localToWorldMatrix;
 							flowerInput.Materials = new int [] { FlowerMaterialHash };
 							PlantCombiner.AddMesh (flowerInput);
+
+							if (addFlowerPoints) {
+								plant.FlowerPositions.Add (flowerPoint.Position);
+							}
 						}
 					}
 				} catch (Exception e) {

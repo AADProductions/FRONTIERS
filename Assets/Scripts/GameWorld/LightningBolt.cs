@@ -25,7 +25,7 @@ namespace Frontiers.World
 						BoltRenderers.Shuffle();
 						BoltIndex = 0;
 						BoltRenderers[0].enabled = true;
-						Biomes.Get.LightingFlash(transform.position);
+						Biomes.Get.LightingFlash(transform.position, true);
 						PointLight.enabled = true;
 						PointLight.intensity = 5f;
 						LightningAudio.Play();

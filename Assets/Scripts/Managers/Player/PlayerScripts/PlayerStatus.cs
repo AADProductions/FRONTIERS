@@ -156,14 +156,19 @@ namespace Frontiers
 			}
 
 			RecentActions.Clear();
-			mWaitForConditions = new WaitForSeconds((float)CheckConditionsInterval);
+
+			for (int i = State.ActiveConditions.LastIndex (); i >= 0; i--) {
+				if (State.ActiveConditions [i].HasExpired) {
+					State.ActiveConditions.RemoveAt (i);
+				}
+			}
 
 			if (!mCheckingStatusKeepers) {
 				mCheckingStatusKeepers = true;
 				StartCoroutine(CheckStatusKeepers());
 			}
-			if (!mCheckingConditions) {
-				mCheckingConditions = true;
+			if (!mCheckingActiveConditions) {
+				mCheckingActiveConditions = true;
 				StartCoroutine(CheckActiveConditions());
 			}
 			if (!mCheckingEnvironment) {
@@ -329,28 +334,33 @@ namespace Frontiers
 
 		public void AddCondition(string conditionName)
 		{
+			Debug.Log ("Adding condition " + conditionName);
 			bool conditionAdded = false;
 			//first see if the condition is already present
 			//if it is, don't clone the condition, stack it instead of creating a new one
 			for (int i = 0; i < State.ActiveConditions.Count; i++) {
 				Condition activeCondition = State.ActiveConditions[i];
 				if (string.Equals(activeCondition.Name, conditionName) && !activeCondition.HasExpired) {//double its duration so it'll last twice as long
+					Debug.Log ("Condition is already active, not adding new");
 					activeCondition.IncreaseDuration(activeCondition.Duration * Globals.StatusKeeperTimecale);
 					return;
 				}
 			}
 
 			Condition condition = null;
-			if (Frontiers.Conditions.Get.ConditionByName(conditionName, out condition)) {	//if we have no active conditions try looking it up
-				condition.Initialize();
-				State.ActiveConditions.Add(condition);
+			if (Frontiers.Conditions.Get.ConditionByName (conditionName, out condition)) {	//if we have no active conditions try looking it up
+				Debug.Log ("Condition found, adding now");
+				condition.Initialize ();
+				State.ActiveConditions.Add (condition);
 				for (int i = 0; i < StatusKeepers.Count; i++) {
-					StatusKeeper statusKeeper = StatusKeepers[i];
-					if (condition.HasSymptomFor(statusKeeper.Name)) {
+					StatusKeeper statusKeeper = StatusKeepers [i];
+					if (condition.HasSymptomFor (statusKeeper.Name)) {
 						conditionAdded = true;
-						statusKeeper.ReceiveCondition(condition);
+						statusKeeper.ReceiveCondition (condition);
 					}
 				}
+			} else {
+				Debug.Log ("Condition " + conditionName + " not found");
 			}
 
 			if (conditionAdded) {
@@ -439,28 +449,41 @@ namespace Frontiers
 					yield return null;
 				}
 
-				for (int i = State.ActiveConditions.Count - 1; i >= 0; i--) {
-					//use the last checked time to get a delta time
-					double deltaTime = (WorldClock.AdjustedRealTime - mLastConditionCheckTime) * Globals.StatusKeeperTimecale;
-					if (State.ActiveConditions[i].CheckExpired(
-						         deltaTime,
-						         RecentActions,
-						         State.ActiveConditions,
-						         ActiveStateList)) {	//it's toast, remove it
-						Debug.Log("Condition " + State.ActiveConditions[i].Name + " is expired, removing");
-						State.ActiveConditions.RemoveAt(i);
-						Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalConditionRemove, WorldClock.RealTime);
+				while (!player.HasSpawned) {
+					mLastConditionCheckTime = WorldClock.AdjustedRealTime;
+					yield return null;
+				}
+
+				//use the last checked time to get a delta time
+				double deltaTime = (WorldClock.AdjustedRealTime - mLastConditionCheckTime) * Globals.StatusKeeperTimecale;
+				float lightExposure = player.Surroundings.LightExposure;
+				float heatExposure = player.Surroundings.HeatExposure;
+
+				for (int i = State.ActiveConditions.LastIndex(); i >= 0; i--) {
+					//Debug.Log ("Checking condition " + State.ActiveConditions [i].Name + " with delta time " + deltaTime.ToString());
+					if (State.ActiveConditions [i].CheckExpired (
+						    deltaTime,
+							lightExposure,
+							heatExposure,
+						    RecentActions,
+						    State.ActiveConditions,
+						    ActiveStateList)) {	//it's toast, remove it
+						//Debug.Log ("Condition " + State.ActiveConditions [i].Name + " is expired, removing");
+						State.ActiveConditions.RemoveAt (i);
+						Player.Get.AvatarActions.ReceiveAction (AvatarAction.SurvivalConditionRemove, WorldClock.RealTime);
 					}
 					yield return null;//TODO check if this is wise?
 				}
 				mLastConditionCheckTime = WorldClock.AdjustedRealTime;
-				yield return mWaitForConditions;
+				double waitUntil = WorldClock.AdjustedRealTime + 0.1f;
+				while (WorldClock.AdjustedRealTime > waitUntil) {
+					yield return null;
+				}
+				yield return null;
 			}
 			mCheckingActiveConditions = false;
 			yield break;
 		}
-
-		protected WaitForSeconds mWaitForConditions;
 		//we keep an active state list of strings in addition to our local settings
 		//this is make it easy for modders who want to add new states that affect the player
 		//status keepers use this list to determine their active state
@@ -641,13 +664,16 @@ namespace Frontiers
 					}
 					CheckForFlows();
 				}
-				yield return mWaitForActiveStateList;
+				double waitUntil = WorldClock.AdjustedRealTime + 0.05f;
+				while (WorldClock.AdjustedRealTime > waitUntil) {
+					yield return null;
+				}
+				yield return null;
 			}
 			mCheckingActiveStateList = false;
 			yield break;
 		}
 
-		protected WaitForSeconds mWaitForActiveStateList = new WaitForSeconds(0.05f);
 		protected List <string> mNewStateList = new List<string>();
 
 		protected IEnumerator CheckEnvironment()
@@ -670,13 +696,15 @@ namespace Frontiers
 					AddCondition("Wet");
 				}
 
-				yield return mWaitForCheckEnvironment;
+				double waitUntil = WorldClock.AdjustedRealTime + 1f;
+				while (WorldClock.AdjustedRealTime > waitUntil) {
+					yield return null;
+				}
+				yield return null;
 			}
 			yield break;
 			mCheckingEnvironment = false;
 		}
-
-		protected WaitForSeconds mWaitForCheckEnvironment = new WaitForSeconds(1f);
 
 		protected IEnumerator CheckStatusKeepers()
 		{
@@ -791,7 +819,6 @@ namespace Frontiers
 		protected Bed mLastBed = null;
 		protected GameObject mChildEditor = null;
 		protected bool mInCivilizationLastFrame = false;
-		protected bool mCheckingConditions = false;
 		protected bool mCheckingStatusKeepers = false;
 		protected bool mCheckingNearbyFires = false;
 		protected bool mCheckingActiveConditions = false;

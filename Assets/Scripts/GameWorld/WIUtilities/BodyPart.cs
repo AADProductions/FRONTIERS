@@ -21,14 +21,14 @@ public class BodyPart : MonoBehaviour
 	public Vector3 ForceOnConvertToRagdoll {
 		set {
 			if (RagdollRB != null) {
-				RagdollRB.AddForce(value * Globals.BodyPartDamageForceMultiplier);
+				RagdollRB.AddForce (value * Globals.BodyPartDamageForceMultiplier);
 			} else {
 				mForceOnConvertToRagdoll = value;
 			}
 		}
 	}
 
-	public void ConvertToRagdoll()
+	public void ConvertToRagdoll ()
 	{
 		if (RagdollRB != null) {
 			//already converted
@@ -46,7 +46,7 @@ public class BodyPart : MonoBehaviour
 		gameObject.layer = Globals.LayerNumWorldItemActive;//make sure it collides with the ground
 
 		PartCollider.enabled = true;
-		RagdollRB = ragdollRbObject.GetOrAdd <Rigidbody>();
+		RagdollRB = ragdollRbObject.GetOrAdd <Rigidbody> ();
 		RagdollRB.isKinematic = false;
 		RagdollRB.useGravity = true;
 		RagdollRB.velocity = Vector3.zero;
@@ -59,20 +59,20 @@ public class BodyPart : MonoBehaviour
 		enabled = true;
 	}
 
-	public void LinkRagdollParts(WorldBody body)
+	public void LinkRagdollParts (WorldBody body)
 	{
 		if (Type != BodyPartType.Chest && RagdollRB != null) {
 			if (ParentPart == null) {
-				if (!body.GetBodyPart(BodyPartType.Chest, out ParentPart)) {
+				if (!body.GetBodyPart (BodyPartType.Chest, out ParentPart)) {
 					if (Type != BodyPartType.Hip) {
-						body.GetBodyPart(BodyPartType.Hip, out ParentPart);
+						body.GetBodyPart (BodyPartType.Hip, out ParentPart);
 					}
 				}
 			}
 
 			if (ParentPart != null && ParentPart.RagdollRB != null) {
 				//RagdollRB.constraints = RigidbodyConstraints.FreezeAll;
-				CharacterJoint joint = gameObject.AddComponent<CharacterJoint>();//ParentPart.RagdollRB.gameObject.AddComponent <ConfigurableJoint>();
+				CharacterJoint joint = gameObject.AddComponent<CharacterJoint> ();//ParentPart.RagdollRB.gameObject.AddComponent <ConfigurableJoint>();
 				joint.connectedBody = ParentPart.RagdollRB;//RagdollRB;
 				//RagdollRB.constraints = RigidbodyConstraints.FreezePosition;
 				//joint.connectedBody = RagdollRB;
@@ -80,17 +80,17 @@ public class BodyPart : MonoBehaviour
 				joint.enableCollision = false;
 			}
 
-			RagdollRB.WakeUp();
+			RagdollRB.WakeUp ();
 		}
 	}
 
-	public void ConvertToAnimated()
+	public void ConvertToAnimated ()
 	{
 		if (RagdollRB != null) {
-			GameObject.Destroy(RagdollRB);
-			CharacterJoint[] joints = gameObject.GetComponents<CharacterJoint>();
+			GameObject.Destroy (RagdollRB);
+			CharacterJoint[] joints = gameObject.GetComponents<CharacterJoint> ();
 			for (int i = 0; i < joints.Length; i++) {
-				GameObject.Destroy(joints[i]);
+				GameObject.Destroy (joints [i]);
 			}
 		}
 
@@ -105,56 +105,17 @@ public class BodyPart : MonoBehaviour
 		enabled = false;
 	}
 
-	public void Awake()
+	public void Awake ()
 	{
 		enabled = false;
 		gameObject.layer = Globals.LayerNumWorldItemActive;
 		tr = transform;
 		PartCollider = collider;
+		PartCollider.enabled = false;
 	}
 
-	public void Initialize(IItemOfInterest newOwner, List <BodyPart> otherBodyParts)
+	public void Initialize (IItemOfInterest newOwner, List <BodyPart> otherBodyParts)
 	{
-		switch (Type) {
-			case BodyPartType.Head:
-				gameObject.tag = "BodyHead";
-				gameObject.layer = Globals.LayerNumAwarenessReceiver;//the head is what listens for sound
-				break;
-
-			case BodyPartType.Face:
-			case BodyPartType.Neck:
-				gameObject.tag = "BodyHead";
-				break;
-			
-			case BodyPartType.Arm:
-			case BodyPartType.Hand:
-			case BodyPartType.Finger:
-			case BodyPartType.Wrist:
-				gameObject.tag = "BodyArm";
-				break;
-			
-			case BodyPartType.Leg:
-			case BodyPartType.Foot:
-			case BodyPartType.Shin:
-				gameObject.tag = "BodyLeg";
-				break;
-			
-			case BodyPartType.Chest:
-			case BodyPartType.Shoulder:
-			case BodyPartType.Hip:
-				gameObject.tag = "BodyTorso";
-				break;
-			
-			default:
-				gameObject.tag = "BodyGeneral";
-				break;			
-		}
-
-		//which kind of collider are we?
-		PartCollider.enabled = true;
-		PartCollider.isTrigger = false;
-		mColliderType = PartCollider.GetType();
-
 		Owner = newOwner;
 
 		if (Owner == null) {
@@ -164,21 +125,66 @@ public class BodyPart : MonoBehaviour
 		} else {
 			gameObject.layer = Globals.LayerNumBodyPart;
 		}
+
+		switch (Type) {
+		case BodyPartType.Base:
+			gameObject.tag = Globals.TagBodyLeg;
+			gameObject.layer = Globals.LayerNumBodyBaseCollider;
+			break;
+
+		case BodyPartType.Head:
+			gameObject.tag = Globals.TagBodyHead;
+			break;
+
+		case BodyPartType.Face:
+		case BodyPartType.Neck:
+			gameObject.tag = Globals.TagBodyHead;
+			gameObject.layer = Globals.LayerNumAwarenessReceiver;//the head is what listens for sound
+			break;
+			
+		case BodyPartType.Arm:
+		case BodyPartType.Hand:
+		case BodyPartType.Finger:
+		case BodyPartType.Wrist:
+			gameObject.tag = Globals.TagBodyArm;
+			break;
+			
+		case BodyPartType.Leg:
+		case BodyPartType.Foot:
+		case BodyPartType.Shin:
+			gameObject.tag = Globals.TagBodyLeg;
+			break;
+			
+		case BodyPartType.Chest:
+		case BodyPartType.Shoulder:
+		case BodyPartType.Hip:
+			gameObject.tag = Globals.TagBodyTorso;
+			break;
+			
+		default:
+			gameObject.tag = Globals.TagBodyTorso;
+			break;			
+		}
+
+		//which kind of collider are we?
+		PartCollider.enabled = true;
+		PartCollider.isTrigger = false;
+		mColliderType = PartCollider.GetType ();
 	}
 
-	public void FixedUpdate()
+	public void FixedUpdate ()
 	{
 		if (RagdollRB != null && mForceOnConvertToRagdoll != Vector3.zero) {
-			RagdollRB.AddForce(mForceOnConvertToRagdoll * Globals.BodyPartDamageForceMultiplier);
+			RagdollRB.AddForce (mForceOnConvertToRagdoll * Globals.BodyPartDamageForceMultiplier);
 			mForceOnConvertToRagdoll = Vector3.zero;
 		}
 	}
 
-	public void OnDrawGizmos()
+	public void OnDrawGizmos ()
 	{
 		if (RagdollRB != null) {
 			Gizmos.color = Color.red;
-			Gizmos.DrawSphere(RagdollRB.worldCenterOfMass, 0.1f);
+			Gizmos.DrawSphere (RagdollRB.worldCenterOfMass, 0.1f);
 		}
 	}
 

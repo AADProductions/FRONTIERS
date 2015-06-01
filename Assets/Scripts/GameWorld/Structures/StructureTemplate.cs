@@ -986,6 +986,57 @@ namespace Frontiers.World
 			return true;
 		}
 
+		public static void PreloadTemplate (StructureTemplate t)
+		{
+			PreloadStructureLayerGroup (t.Exterior);
+			for (int i = 0; i < t.InteriorVariants.Count; i++) {
+				PreloadStructureLayerGroup (t.InteriorVariants [i]);
+			}
+		}
+
+		public static void PreloadStructureLayerGroup (StructureTemplateGroup g) {
+			//break up the text into pieces
+			ExtractChildPiecesFromLayer (ref g.DestroyedFiresPieces, g.DestroyedFires);
+			ExtractFXPiecesFromLayer (ref g.DestroyedFXPieces, g.DestroyedFX);
+			ExtractChildPiecesFromLayer (ref g.GenericDoorsPieces, g.GenericDoors);
+			ExtractChildPiecesFromLayer (ref g.GenericDynamicPieces, g.GenericDynamic);
+			ExtractLightPiecesFromLayer (ref g.GenericLightsPieces, g.GenericLights);
+			ExtractChildPiecesFromLayer (ref g.GenericWindowsPieces, g.GenericWindows);
+			ExtractChildPiecesFromLayer (ref g.GenericWItemsPieces, g.GenericWItems);
+			//get rid of the pieces strings
+			g.DestroyedFires = null;
+			g.DestroyedFX = null;
+			g.GenericDoors = null;
+			g.GenericDynamic = null;
+			g.GenericLights = null;
+			g.GenericWindows = null;
+			g.GenericWItems = null;
+
+			for (int i = 0; i < g.StaticStructureLayers.Count; i++) {
+				StructureLayer l = g.StaticStructureLayers [i];
+				ExtractChildPiecesFromLayer (ref l.InstancePieces, l.Instances);
+				l.Instances = null;
+			}
+
+			for (int i = 0; i < g.StaticStructureColliders.Count; i++) {
+				StructureLayer l = g.StaticStructureColliders [i];
+				ExtractChildPiecesFromLayer (ref l.InstancePieces, l.Instances);
+				l.Instances = null;
+			}
+
+			for (int i = 0; i < g.CustomStructureColliders.Count; i++) {
+				StructureLayer l = g.CustomStructureColliders [i];
+				ExtractChildPiecesFromLayer (ref l.InstancePieces, l.Instances);
+				l.Instances = null;
+			}
+
+			for (int i = 0; i < g.CustomStructureColliders.Count; i++) {
+				StructureLayer l = g.CustomStructureColliders [i];
+				ExtractChildPiecesFromLayer (ref l.InstancePieces, l.Instances);
+				l.Instances = null;
+			}
+		}
+
 		protected static string[] gTabStringArray = new string[] { ",\t" };
 		protected static string[] gNewlineStringArray = new string[] { "\n" };
 		protected static string gTab = ",\t";

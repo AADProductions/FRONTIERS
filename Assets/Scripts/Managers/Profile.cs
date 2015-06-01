@@ -156,7 +156,7 @@ namespace Frontiers
 										}*/
 										mCurrentPreferences = prefs;
 										//now's the time to detect if we have a controller plugged in
-										if (HasControllerPluggedIn) {
+										if (HasControllerPluggedIn && mCurrentPreferences.Controls.ShowCPromptsWhenControllerIsPresent) {
 												Debug.Log("===Found controller plugged in - showing controller prompts");
 												mCurrentPreferences.Controls.ShowControllerPrompts = true;
 										} else {
