@@ -113,6 +113,7 @@ namespace Frontiers.World
 					return;
 				} else if (childItemsToUpdate.MoveNext ()) {
 					continueUpdating = true;
+					childItemsToUpdate.Current.Group = this;
 					childItemsToUpdate.Current.OnAddedToGroup.SafeInvoke ();
 					if (announceLoad) {
 						childItemsToUpdate.Current.OnGroupLoaded.SafeInvoke ();
@@ -1327,8 +1328,16 @@ namespace Frontiers.World
 
 			Props.UnloadedChildGroups.Clear();
 			Props.UnloadedChildItems.Clear();
-			ChildItems.Clear();
-			ChildGroups.Clear();
+			if (ChildItems != null) {
+				ChildItems.Clear ();
+			} else {
+				ChildItems = new HashSet<WorldItem> ();
+			}
+			if (ChildGroups != null) {
+				ChildGroups.Clear ();
+			} else {
+				ChildGroups = new List<WIGroup> ();
+			}
 
 			foreach (Transform child in transform) {
 				WorldItem worlditem = child.GetComponent <WorldItem>();

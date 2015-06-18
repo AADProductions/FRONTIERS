@@ -252,12 +252,14 @@ namespace Frontiers.World.WIScripts
 			OnDaytimeStart += RefreshBehavior;
 			OnNightTimeStart += RefreshBehavior;
 			OnHourStart += RefreshBehavior;
+
+			//WanderAction ();
 		}
 
 		protected void CheckTemplate () {
 			if (mTemplate == null) {
 				if (!Creatures.GetTemplate (State.TemplateName, out mTemplate)) {
-					Debug.Log ("Couldn't get template in check template");
+					Debug.Log ("Couldn't get template in check template: " + State.TemplateName);
 					return;
 				}
 			}
@@ -351,7 +353,9 @@ namespace Frontiers.World.WIScripts
 				mFollowAction = new MotileAction ();
 				mFollowAction.Name = "Follow action by Creature";
 				mFollowAction.Type = MotileActionType.FollowTargetHolder;
+				mFollowAction.FollowType = MotileFollowType.Follower;
 				mFollowAction.Expiration = MotileExpiration.TargetOutOfRange;
+				mFollowAction.OutOfRange = Den.Radius;
 				mFollowAction.Range = Den.Radius;
 				//mFollowAction.TerritoryType = MotileTerritoryType.Den;
 				mFollowAction.TerritoryBase = Den;
@@ -360,7 +364,7 @@ namespace Frontiers.World.WIScripts
 				mEatAction.Name = "Eat action by Creature";
 				mEatAction.Type = MotileActionType.FollowGoal;
 				mEatAction.Expiration = MotileExpiration.TargetInRange;
-				mEatAction.Range = Template.Props.EatItemRange;
+				mEatAction.Range = Template.MotileTemplate.MotileProps.RVORadius * 2;
 				//mEatAction.TerritoryType = MotileTerritoryType.Den;
 				mEatAction.TerritoryBase = Den;
 
@@ -368,7 +372,7 @@ namespace Frontiers.World.WIScripts
 				mReturnToDenAction.Name = "Return to Den action by Creature";
 				mReturnToDenAction.Type = MotileActionType.FollowGoal;
 				mReturnToDenAction.Expiration = MotileExpiration.TargetInRange;
-				mReturnToDenAction.Range = Den.Radius;
+				mReturnToDenAction.Range = Template.MotileTemplate.MotileProps.RVORadius;
 				mReturnToDenAction.LiveTarget = Den.IOI;
 				//mReturnToDenAction.TerritoryType = MotileTerritoryType.Den;
 				mReturnToDenAction.TerritoryBase = Den;
@@ -401,14 +405,14 @@ namespace Frontiers.World.WIScripts
 				//mFocusAction.TerritoryType = MotileTerritoryType.Den;
 				mFocusAction.TerritoryBase = Den;
 
-				MotileAction baseAction = motile.BaseAction;
-				baseAction.Name = "Base Action Set By Creature";
-				baseAction.Type = MotileActionType.WanderIdly;
-				baseAction.LiveTarget = Den.IOI;
-				//motile.State.BaseAction.TerritoryType = MotileTerritoryType.Den;
-				baseAction.TerritoryBase = Den;
-				baseAction.Range = 1f;
-				baseAction.OutOfRange = 5f;
+				mWanderAction = motile.BaseAction;
+				mWanderAction.Name = "Base Action (wander) Set By Creature";
+				mWanderAction.Type = MotileActionType.WanderIdly;
+				mWanderAction.LiveTarget = Den.IOI;
+				//mWanderAction.TerritoryType = MotileTerritoryType.Den;
+				mWanderAction.TerritoryBase = Den;
+				mWanderAction.Range = Den.Radius;
+				mWanderAction.OutOfRange = Den.Radius;
 
 				if (!IsDead) {
 					motile.StartMotileActions ();
@@ -475,17 +479,17 @@ namespace Frontiers.World.WIScripts
 			//TODO move this into a delegate so mods can link up something else
 			switch (State.Domestication) {
 			case DomesticatedState.Domesticated:
-				Debug.Log (Template.Name + " is domesticated, addng domesticated");
+				//Debug.Log (Template.Name + " is domesticated, addng domesticated");
 				worlditem.GetOrAdd <Domesticated> ();
 				break;
 
 			case DomesticatedState.Tamed:
-				Debug.Log (Template.Name + " is tamed, addng tamed");
+				//Debug.Log (Template.Name + " is tamed, addng tamed");
 				worlditem.GetOrAdd <Tamed> ();
 				break;
 
 			case DomesticatedState.Wild:
-				Debug.Log (Template.Name + " is wild, addng wild");
+				//Debug.Log (Template.Name + " is wild, addng wild");
 				worlditem.GetOrAdd <Wild> ();
 				break;
 
@@ -588,9 +592,9 @@ namespace Frontiers.World.WIScripts
 				GameObject.Destroy (Body.gameObject);
 			}
 
-			if (HasDen) {
+			/*if (HasDen) {
 				Den.SpawnCreatureCorpse (this);
-			}
+			}*/
 		}
 
 		#endregion
@@ -635,6 +639,7 @@ namespace Frontiers.World.WIScripts
 				//copy the properties quickly
 				Reflection.CopyProperties (Template.HostileTemplate, hostile.State);
 				//copy the attacks directly
+				hostile.TerritoryBase = Den;
 				hostile.State.Attack1 = ObjectClone.Clone <AttackStyle> (Template.HostileTemplate.Attack1);
 				hostile.State.Attack2 = ObjectClone.Clone <AttackStyle> (Template.HostileTemplate.Attack2);
 				hostile.OnAttack1Start += OnAttack1;
@@ -649,12 +654,27 @@ namespace Frontiers.World.WIScripts
 			Body.Animator.Idling = false;
 		}
 
+		public MotileAction WanderAction ()
+		{
+			Motile motile = null;
+			if (worlditem.Is <Motile> (out motile)) {
+				if (mWanderAction == null) {
+					mWanderAction = motile.BaseAction;
+				}
+				if (mWanderAction.State == MotileActionState.NotStarted || mWanderAction.IsFinished) {
+					mWanderAction.Reset ();
+					motile.PushMotileAction (mWanderAction, MotileActionPriority.ForceBase);
+				}
+			}
+			return mWanderAction;
+		}
+
 		public MotileAction WatchThingAction (IItemOfInterest itemOfInterest)
 		{
 			//if the creature is idle, turn to look at the player
 			Motile motile = null;
 			if (worlditem.Is <Motile> (out motile)) {
-				if (mFocusAction.IsFinished || mFocusAction.LiveTarget != itemOfInterest) {
+				if (mFocusAction.State == MotileActionState.NotStarted || mFocusAction.IsFinished || mFocusAction.LiveTarget != itemOfInterest) {
 					mFocusAction.Reset ();
 					mFocusAction.LiveTarget = itemOfInterest;
 					motile.PushMotileAction (mFocusAction, MotileActionPriority.ForceTop);
@@ -665,10 +685,9 @@ namespace Frontiers.World.WIScripts
 
 		public MotileAction FollowThingAction (IItemOfInterest itemOfInterest)
 		{
-			//if the creature is idle, turn to look at the player
 			Motile motile = null;
 			if (worlditem.Is <Motile> (out motile)) {
-				if (mFollowAction.IsFinished || mFollowAction.LiveTarget != itemOfInterest) {
+				if (mFollowAction.State == MotileActionState.NotStarted || mFollowAction.IsFinished || mFollowAction.LiveTarget != itemOfInterest) {
 					mFollowAction.Reset ();
 					mFollowAction.LiveTarget = itemOfInterest;
 					motile.PushMotileAction (mFollowAction, MotileActionPriority.ForceTop);
@@ -682,7 +701,7 @@ namespace Frontiers.World.WIScripts
 			Body.EyeMode = BodyEyeMode.Timid;
 			Motile motile = null;
 			if (worlditem.Is <Motile> (out motile)) {
-				if (mFleeThreatAction.IsFinished || mFleeThreatAction.LiveTarget != itemOfInterest) {
+				if (mFleeThreatAction.State == MotileActionState.NotStarted || mFleeThreatAction.IsFinished || mFleeThreatAction.LiveTarget != itemOfInterest) {
 					mFleeThreatAction.Reset ();
 					mFleeThreatAction.LiveTarget = itemOfInterest;
 					mFleeThreatAction.YieldBehavior = MotileYieldBehavior.DoNotYield;
@@ -697,7 +716,7 @@ namespace Frontiers.World.WIScripts
 			mLastThingTryToEat = itemOfInterest;
 			Motile motile = null;
 			if (worlditem.Is <Motile> (out motile)) {
-				if (mEatAction.IsFinished || mEatAction.LiveTarget != itemOfInterest) {
+				if (mEatAction.State == MotileActionState.NotStarted || mEatAction.IsFinished || mEatAction.LiveTarget != itemOfInterest) {
 					mEatAction.Reset ();
 					mEatAction.LiveTarget = itemOfInterest;
 					mEatAction.Range = Template.MotileTemplate.MotileProps.RVORadius;
@@ -992,6 +1011,7 @@ namespace Frontiers.World.WIScripts
 		protected MotileAction mFocusAction = null;
 		protected MotileAction mFollowAction = null;
 		protected MotileAction mEatAction = null;
+		protected MotileAction mWanderAction = null;
 		protected List <MotileAction> mMotileActions = new List <MotileAction> ();
 		protected IItemOfInterest mLastThingTryToEat;
 	}

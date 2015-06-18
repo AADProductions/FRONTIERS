@@ -39,6 +39,7 @@ namespace Frontiers.World
 		public List <StructureLayer> StaticStructureLayers = new List <StructureLayer> ();
 		public List <StructureLayer> StaticStructureColliders = new List<StructureLayer> ();
 		public List <StructureLayer> CustomStructureColliders = new List<StructureLayer> ();
+		public List <MovementNode> MovementNodes = new List<MovementNode> ();
 		public string GenericWItems = "\n";
 		public string GenericWindows = "\n";
 		public string GenericDoors = "\n";

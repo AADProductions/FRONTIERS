@@ -361,6 +361,7 @@ namespace Frontiers.World
 				public Action OnStateChange;
 				public Action OnModeChange;
 				//interaction
+				public Action OnPlayerCollide;
 				public Action OnPlayerEncounter;
 				//public Action OnPlayerInteract;
 				public Action OnPlayerUse;

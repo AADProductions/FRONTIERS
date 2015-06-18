@@ -8,6 +8,19 @@ namespace Frontiers
 {
 	namespace World
 	{
+		public interface IMovementNodeSet
+		{
+			string name { get; }
+
+			bool HasMovementNodes (LocationTerrainType locationType, bool interior, int occupationFlags);
+
+			bool IsActive (LocationTerrainType locationType, bool interior, int occupationFlags);
+
+			MovementNode GetNextNode (MovementNode lastMovementNode, LocationTerrainType locationType, bool interior, int occupationFlags);
+
+			MovementNode GetNodeNearest (Vector3 position, LocationTerrainType locationType, bool interior, int occupationFlags);
+		}
+
 		public interface IBodyOfWater
 		{
 			float WaterHeightAtPosition (Vector3 position);
@@ -283,6 +296,8 @@ namespace Frontiers
 
 			bool IsGrounded { get; }
 
+			bool UseGravity { get; }
+
 			bool IsRagdoll { get; }
 
 			bool IsDestroyed { get; }
@@ -294,6 +309,8 @@ namespace Frontiers
 			double CurrentRotationSpeed { get; set; }
 
 			int CurrentIdleAnimation { get; set; }
+
+			bool ForceWalk { get; }
 		}
 
 		public interface IPhotosensitive

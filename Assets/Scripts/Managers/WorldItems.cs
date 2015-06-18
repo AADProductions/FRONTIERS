@@ -967,7 +967,7 @@ namespace Frontiers.World
 				InitializeWorldItem(worlditem);
 				return true;
 			} else {
-				Debug.LogWarning("Couldn't get pack prefab in clone from stack item");
+				Debug.LogWarning("Couldn't get pack prefab in clone from stack item - " + stackItem.PackName + ", " + stackItem.PrefabName);
 			}
 			return false;
 		}
@@ -1405,7 +1405,7 @@ namespace Frontiers.World
 			//this is a total kludge - treat the player differently
 			if (target.IOIType == ItemOfInterestType.Player) {
 				targetPosition = target.player.ChestPosition;
-			} else {
+			} else if (targetPosition == Vector3.zero) {
 				targetPosition = target.Position;
 			}
 			hitPosition = targetPosition;
@@ -1416,6 +1416,7 @@ namespace Frontiers.World
 					return target == hitIOI;
 				}
 			}
+
 			return false;
 		}
 

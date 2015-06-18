@@ -18,6 +18,8 @@ namespace Frontiers.World.WIScripts
 		public HostileState State = new HostileState ();
 		public Motile motile = null;
 		public Looker looker = null;
+		public ITerritoryBase TerritoryBase;
+
 		WorldBody body = null;
 		public int NumTimesWarned;
 		public float Attack1MinimumDistance = 0f;
@@ -185,6 +187,7 @@ namespace Frontiers.World.WIScripts
 			Mode = HostileMode.Stalking;
 			//start stalking our target
 			mStalkAction.Reset ();
+			mStalkAction.TerritoryBase = TerritoryBase;
 			mStalkAction.LiveTarget = mPrimaryTarget;
 			mStalkAction.Type = MotileActionType.FollowTargetHolder;
 			mStalkAction.Method = MotileGoToMethod.Pathfinding;
@@ -203,6 +206,7 @@ namespace Frontiers.World.WIScripts
 			Mode = HostileMode.Attacking;
 
 			mStalkAction.LiveTarget = mPrimaryTarget;
+			mStalkAction.TerritoryBase = TerritoryBase;
 			mStalkAction.Type = MotileActionType.FollowTargetHolder;
 			mStalkAction.YieldBehavior = MotileYieldBehavior.YieldAndWait;
 			mStalkAction.FollowType = MotileFollowType.Attacker;
@@ -224,6 +228,7 @@ namespace Frontiers.World.WIScripts
 			Mode = HostileMode.Dormant;
 
 			mWatchAction.Reset ();
+			mWatchAction.TerritoryBase = TerritoryBase;
 			mWatchAction.Type = MotileActionType.FocusOnTarget;
 			mWatchAction.LiveTarget = mPrimaryTarget;
 			mWatchAction.Expiration = MotileExpiration.Duration;
@@ -241,6 +246,7 @@ namespace Frontiers.World.WIScripts
 			Mode = HostileMode.Warning;
 
 			mWarnAction.Reset ();
+			mWarnAction.TerritoryBase = TerritoryBase;
 			mWarnAction.Type = MotileActionType.FollowTargetHolder;
 			mWarnAction.LiveTarget = mPrimaryTarget;
 			mWarnAction.Expiration = MotileExpiration.TargetInRange;
@@ -399,6 +405,9 @@ namespace Frontiers.World.WIScripts
 			//now check and see if we actually hit
 			//by default use the position in case we don't have a body
 			//or in case we aren't motile
+			if (mPrimaryTarget == null) {
+				yield break;
+			}
 			mLastAttackOrigin = attackOrigin.tr.position;
 			mAttackBodyPart = attackOrigin.tr;
 			mAttackRange = style.AttackRadius;

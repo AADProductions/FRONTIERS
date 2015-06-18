@@ -72,6 +72,8 @@ namespace Frontiers.World
 		public BodyTransforms Transforms = null;
 		public BodySounds Sounds = null;
 		public BodyPart RootBodyPart = null;
+		public BodyPart BaseBodyPart = null;
+
 		public float FootstepDistance = 0.15f;
 		public System.Collections.Generic.List <BodyPart> BodyParts = new System.Collections.Generic.List <BodyPart> ();
 		public System.Collections.Generic.List <WearablePart> WearableParts = new System.Collections.Generic.List <WearablePart> ();
@@ -285,10 +287,14 @@ namespace Frontiers.World
 
 		public virtual void OnSpawn (IBodyOwner owner)
 		{
-			if (RootBodyPart == null) {
+			if (RootBodyPart == null || BaseBodyPart == null) {
 				for (int i = 0; i < BodyParts.Count; i++) {
 					if (BodyParts [i].Type == BodyPartType.Hip) {
 						RootBodyPart = BodyParts [i];
+					} else if (BodyParts [i].Type == BodyPartType.Base) {
+						BaseBodyPart = BodyParts [i];
+					}
+					if (RootBodyPart != null && BaseBodyPart != null) {
 						break;
 					}
 				}
@@ -313,6 +319,9 @@ namespace Frontiers.World
 		{		//we're guaranteed to have this
 			rb = gameObject.GetOrAdd <Rigidbody> ();
 			rb.interpolation = RigidbodyInterpolation.None;
+			rb.useGravity = false;
+			rb.isKinematic = true;
+
 			gameObject.layer = Globals.LayerNumBodyPart;
 			NObject = gameObject.GetComponent <TNObject> ();
 			MovementPivot = transform;
@@ -421,19 +430,29 @@ namespace Frontiers.World
 
 		public virtual void FixedUpdate ()
 		{
-			if (!mInitialized)
-				return;
-
-			IsVisible = false;
-			for (int i = 0; i < Renderers.Count; i++) {
-				if (Renderers [i].isVisible) {
-					IsVisible = true;
-					break;
+			if (!mInitialized && !HasSpawned) {
+				if (HasOwner) {
+					rb.position = Owner.Position;
+					rb.rotation = Owner.Rotation;
 				}
+				return;
+			}
+
+			if (Renderers.Count > 0) {
+				IsVisible = false;
+				for (int i = 0; i < Renderers.Count; i++) {
+					if (Renderers [i].isVisible) {
+						IsVisible = true;
+						break;
+					}
+				}
+			} else {
+				IsVisible = true;
 			}
 
 			if (rb != null) {
 				if (Owner == null) {
+					Debug.Log ("Owner null in body " + name + " setting to kinematic");
 					rb.isKinematic = true;
 					return;
 				}
@@ -441,7 +460,7 @@ namespace Frontiers.World
 				if (Owner.IsDead) {
 					Animator.Dead = true;
 					rb.isKinematic = false;
-					rb.useGravity = rb.detectCollisions;
+					rb.useGravity = rb.detectCollisions && Owner.UseGravity;
 					rb.constraints = RigidbodyConstraints.None;
 					rb.drag = 0.25f;
 					rb.angularDrag = 0.25f;
@@ -450,20 +469,16 @@ namespace Frontiers.World
 				}
 
 				if (IsVisible) {
-					#if UNITY_EDITOR
 					rb.isKinematic = Owner.IsKinematic;
-					#else
-					rb.isKinematic = false;
-					#endif
 				} else {
-					rb.isKinematic = true;
+					rb.isKinematic = rb.detectCollisions && Owner.UseGravity;
 				}
 
 				if (rb.isKinematic) {
 					rb.useGravity = false;
 					rb.constraints = RigidbodyConstraints.FreezeAll;
 				} else {
-					rb.useGravity = rb.detectCollisions;
+					rb.useGravity = rb.detectCollisions && Owner.UseGravity;
 					rb.constraints = RigidbodyConstraints.FreezeRotation;
 					rb.drag = Owner.IsGrounded ? 0.95f : 0.25f;
 					rb.angularDrag = Owner.IsGrounded ? 0.95f : 0.25f;
@@ -481,6 +496,8 @@ namespace Frontiers.World
 						Animator.VerticalAxisMovement = mag;
 					}
 					Animator.HorizontalAxisMovement = (float)Owner.CurrentRotationSpeed;
+					Animator.ForceWalk = Owner.ForceWalk;
+					Animator.IdleAnimation = Owner.CurrentIdleAnimation;
 					RefreshEyes ();
 				}
 
@@ -510,30 +527,35 @@ namespace Frontiers.World
 
 		public void UpdateForces (Vector3 position, Vector3 forceDirection, Vector3 groundNormal, bool isGrounded, float jumpForce, float targetMovementSpeed)
 		{			//use the normal of the ground we're on to determine if we need to add upwards force
-			if (isGrounded) {
-				float dot = Vector3.Dot (groundNormal, Vector3.up);
-				if (dot < 0.75f && dot > 0) {
-					//a dot of 1 would mean the ground is straight up
-					//a dot of less than 0 is impossible / wrong in this case
-					//anything less than 0.75 is going to offer substantial resistance
-					//so add force in the up direction
-					forceDirection.y = forceDirection.y + (1f - dot);
+			if (targetMovementSpeed > 0f) {
+				if (isGrounded) {
+					float dot = Vector3.Dot (groundNormal, Vector3.up);
+					if (dot < 0.75f && dot > 0) {
+						//a dot of 1 would mean the ground is straight up
+						//a dot of less than 0 is impossible / wrong in this case
+						//anything less than 0.75 is going to offer substantial resistance
+						//so add force in the up direction
+						forceDirection.y = forceDirection.y + (1f - dot);
+					}
+					forceDirection = Vector3.Lerp (forceDirection, -groundNormal, 0.25f);
 				}
-				forceDirection = Vector3.Lerp (forceDirection, -groundNormal, 0.25f);
-			}
+				forceDirection += Vector3.up * rb.mass * 0.25f;
 
-			if (jumpForce > 0f) {
-				Animator.Jump = true;
-				//add an impulse force immediately
-				rb.AddForce (Vector3.up * jumpForce * JumpForceMultiplier, ForceMode.Force);
+				if (jumpForce > 0f) {
+					Animator.Jump = true;
+					//add an impulse force immediately
+					rb.AddForce (Vector3.up * jumpForce * JumpForceMultiplier, ForceMode.Force);
+				} else {
+					Animator.Jump = false;
+				}
+
+				if (forceDirection != Vector3.zero) {
+					rb.AddForce (forceDirection * targetMovementSpeed);
+				}
+				rb.maxAngularVelocity = targetMovementSpeed;
 			} else {
-				Animator.Jump = false;
+				rb.maxAngularVelocity = 0f;
 			}
-
-			if (forceDirection != Vector3.zero) {
-				rb.AddForce (forceDirection * targetMovementSpeed);
-			}
-			rb.maxAngularVelocity = targetMovementSpeed;
 		}
 
 		#region Network Specific Code

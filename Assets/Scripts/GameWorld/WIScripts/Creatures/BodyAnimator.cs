@@ -10,6 +10,7 @@ public class BodyAnimator : MonoBehaviour
 	public float MovementMultiplier	= 25f;
 	public float RunVerticalAxisCutoff = 15f;
 	public bool SupportsWalking = false;
+	public bool ForceWalk = false;
 	//these are the base names for the animation controller
 	//they're arbitrarily based on the wolf creature animation
 	public static string gAnimWalkName = "walk";
@@ -281,7 +282,11 @@ public class BodyAnimator : MonoBehaviour
 			float verticalAxisMovement = mSmoothVerticalAxisMovement * MovementMultiplier;
 			animator.SetFloat ("VerticalAxisMovement", verticalAxisMovement);
 			if (SupportsWalking) {
-				animator.SetBool ("Walking", verticalAxisMovement < RunVerticalAxisCutoff);
+				if (ForceWalk) {
+					animator.SetBool ("Walking", true);
+				} else {
+					animator.SetBool ("Walking", (verticalAxisMovement < RunVerticalAxisCutoff));
+				}
 			}
 			//animator.SetFloat ("HorizontalAxisMovement", mSmoothHorizontalAxisMovement * MovementMultiplier);
 			mYRotationDifference = mYRotationDifference * 0.5f;

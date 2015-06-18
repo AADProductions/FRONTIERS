@@ -361,6 +361,7 @@ namespace Frontiers
 		public UIFont VerySloppyHandwriting48Font;
 		public UIFont WolgastCursive72Font;
 		public UIFont OpenDyslexic40Font;
+		public UIFont ObexFont;
 		public Material WorldPathGroundParticleMaterial;
 		public Material DefaultDiffuseMaterial;
 		public Material WaveOverlayMaterial;

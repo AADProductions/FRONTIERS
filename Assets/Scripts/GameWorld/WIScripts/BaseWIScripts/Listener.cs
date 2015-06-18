@@ -47,6 +47,7 @@ namespace Frontiers.World.WIScripts
 
 				switch (command) {
 				case "Listen":
+					FXManager.Get.SpawnFX (motile.Body.Transforms.HeadTop, "ListenEffect");
 					if (!IsListeningTo (audibleSpeech)) {
 						if (topAction.Type == MotileActionType.GoToActionNode) {
 							priority = MotileActionPriority.Next;
@@ -56,10 +57,10 @@ namespace Frontiers.World.WIScripts
 							mListenAction = new MotileAction ();
 						}
 						mListenAction.Type = MotileActionType.FocusOnTarget;
-						mListenAction.Expiration	= MotileExpiration.TargetOutOfRange;
-						mListenAction.OutOfRange	= audibleSpeech.ParentSpeech.AudibleRange * 2.0f;
+						mListenAction.Expiration = MotileExpiration.TargetOutOfRange;
+						mListenAction.OutOfRange = audibleSpeech.ParentSpeech.AudibleRange * 2.0f;
 						mListenAction.Target = new MobileReference (audibleSpeech.Speaker.worlditem.FileName, audibleSpeech.Speaker.worlditem.Group.Props.PathName);
-						mListenAction.LiveTarget	= audibleSpeech.Speaker.worlditem;
+						mListenAction.LiveTarget = audibleSpeech.Speaker.worlditem;
 						mListenAction.YieldBehavior	= MotileYieldBehavior.YieldAndFinish;
 						motile.PushMotileAction (mListenAction, priority);
 					}
@@ -72,10 +73,10 @@ namespace Frontiers.World.WIScripts
 							mFollowAction = new MotileAction ();
 						}
 						mFollowAction.Type = MotileActionType.FollowTargetHolder;
-						mFollowAction.LiveTarget	= audibleSpeech.Speaker.worlditem;
+						mFollowAction.LiveTarget = audibleSpeech.Speaker.worlditem;
 						mFollowAction.Target = new MobileReference (audibleSpeech.Speaker.worlditem.FileName, audibleSpeech.Speaker.worlditem.Group.Props.PathName);
-						mFollowAction.Expiration	= MotileExpiration.Duration;
-						mFollowAction.RTDuration	= 600.0f;
+						mFollowAction.Expiration = MotileExpiration.Duration;
+						mFollowAction.RTDuration = 600.0f;
 						mFollowAction.YieldBehavior	= MotileYieldBehavior.DoNotYield;
 						motile.PushMotileAction (mFollowAction, priority);
 					}
@@ -100,6 +101,11 @@ namespace Frontiers.World.WIScripts
 					if (IsFollowing (audibleSpeech)) {
 						mFollowAction.TryToFinish ();
 					}
+					break;
+
+				case "LookAtPlayer":
+					FXManager.Get.SpawnFX (motile.Body.Transforms.HeadTop, "ListenEffect", UnityEngine.Random.value * 3f);
+					worlditem.Get <Character> ().LookAtPlayer ();
 					break;
 
 				default:

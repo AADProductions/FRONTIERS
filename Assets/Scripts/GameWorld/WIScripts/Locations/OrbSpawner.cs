@@ -4,138 +4,104 @@ using System.Collections;
 
 namespace Frontiers.World.WIScripts
 {
-		public class OrbSpawner : WIScript
+	public class OrbSpawner : WIScript
+	{
+		public OrbSpawnerState State = new OrbSpawnerState ();
+		public ParticleSystem SandGeyser;
+		public ParticleSystem Vapor;
+		public ActionNode SpawnerActionNode;
+		public Transform SpawnerParent;
+		public string DispenseAnimationName;
+		public CreatureDen Den;
+
+		public override void OnInitialized ()
 		{
-				public OrbSpawnerState State = new OrbSpawnerState();
-				public Animation DispenseAnimator;
-				public ActionNode SpawnerActionNode;
-				public Transform SpawnerParent;
-				public string DispenseAnimationName;
-				public CreatureDen Den;
+			//hide on map
+			Revealable revealable = worlditem.Get<Revealable> ();
+			revealable.State.CustomMapSettings = true;
+			revealable.State.IconStyle = MapIconStyle.None;
+			revealable.State.LabelStyle = MapLabelStyle.None;
 
-				public override void OnInitialized()
-				{
-						//hide on map
-						Revealable revealable = worlditem.Get<Revealable>();
-						revealable.State.CustomMapSettings = true;
-						revealable.State.IconStyle = MapIconStyle.None;
-						revealable.State.LabelStyle = MapLabelStyle.None;
+			Den = worlditem.Get <CreatureDen> ();
+			WorldClock.Get.TimeActions.Subscribe (TimeActionType.NightTimeStart, new ActionListener (NightTimeStart));
+			WorldClock.Get.TimeActions.Subscribe (TimeActionType.DaytimeStart, new ActionListener (DaytimeStart));
 
-						Den = worlditem.Get <CreatureDen>();
-						WorldClock.Get.TimeActions.Subscribe(TimeActionType.DaytimeStart, new ActionListener(DaytimeStart));
-						WorldClock.Get.TimeActions.Subscribe(TimeActionType.NightTimeStart, new ActionListener(NightTimeStart));
-
-						if (WorldClock.IsNight) {
-								if (!mDispensingOrbs && !mCallingOrbsHome) {
-										mDispensingOrbs = true;
-										StartCoroutine(DispenseOrbs());
-								}
-						}
+			if (WorldClock.IsNight) {
+				if (!mDispensingOrbs) {
+					mDispensingOrbs = true;
+					StartCoroutine (DispenseOrbs ());
 				}
-
-				public bool DaytimeStart(double timeStamp)
-				{
-						if (!mInitialized) {
-								return true;
-						}
-
-						if (!mCallingOrbsHome && !mDispensingOrbs) {
-								mCallingOrbsHome = true;
-								StartCoroutine(CallOrbsHome());
-						}
-						return true;
-				}
-
-				public bool NightTimeStart(double timeStamp)
-				{
-						if (!mInitialized) {
-								return true;
-						}
-
-						if (!mDispensingOrbs && !mCallingOrbsHome) {
-								mDispensingOrbs = true;
-								StartCoroutine(DispenseOrbs());
-						}
-						return true;
-				}
-
-				protected IEnumerator DispenseOrbs()
-				{
-						Location location = worlditem.Get <Location>();
-						while (location.LocationGroup == null || !location.LocationGroup.Is(WIGroupLoadState.Loaded)) {
-								double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 0.5f;
-								while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
-										yield return null;
-								}
-								if (worlditem.Is(WIActiveState.Invisible) || !worlditem.Is(WILoadState.Initialized)) {
-										yield break;
-								}
-						}
-						while (Den.SpawnedCreatures.Count < State.NumOrbs) {
-								if (worlditem.Is(WIActiveState.Invisible) || !worlditem.Is(WILoadState.Initialized)) {
-										yield break;
-								}
-								Creature orb = null;
-								Motile motile = null;
-								try {
-									//spawn an orb and immobilize it
-									if (!Creatures.SpawnCreature(Den, location.LocationGroup, SpawnerParent.position, out orb)) {
-											yield break;
-									}
-									motile = orb.worlditem.Get <Motile>();
-									motile.IsImmobilized = true;
-									//start the animation and move the orb along with the spawner parent object
-									//the body will follow it automatically
-								}
-								catch (Exception e) {
-										Debug.LogError("Orb spawner error, proceeding normally: " + e.ToString());
-										yield break;
-								}
-								yield return null;
-
-								if (DispenseAnimator == null) {
-										yield break;
-								}
-
-								try {
-										DispenseAnimator[DispenseAnimationName].normalizedTime = 0f;
-										DispenseAnimator.Play(DispenseAnimationName);
-								} catch (Exception e) {
-										Debug.LogError(e.ToString());
-										yield break;
-								}
-
-								while (DispenseAnimator != null && DispenseAnimator[DispenseAnimationName].normalizedTime < 1f) {
-										orb.worlditem.tr.position = SpawnerParent.position;
-										orb.worlditem.tr.rotation = SpawnerParent.rotation;
-										yield return null;
-								}
-								//now release the orb and let it do whatever
-								motile.IsImmobilized = false;
-								yield return null;
-								if (DispenseAnimator == null) {
-										yield break;
-								} else {
-										DispenseAnimator.Stop();
-								}
-						}
-						mDispensingOrbs = false;
-						yield break;
-				}
-
-				protected IEnumerator CallOrbsHome()
-				{
-						mCallingOrbsHome = false;
-						yield break;
-				}
-
-				protected bool mCallingOrbsHome = false;
-				protected bool mDispensingOrbs = false;
+			}
 		}
 
-		[Serializable]
-		public class OrbSpawnerState
+		public bool NightTimeStart (double timeStamp)
 		{
-				public int NumOrbs = 2;
+			if (!mInitialized) {
+				return true;
+			}
+
+			if (!mDispensingOrbs && !mDispensedOrbsTonight) {
+				mDispensingOrbs = true;
+				StartCoroutine (DispenseOrbs ());
+			}
+			return true;
 		}
+
+		public bool DaytimeStart (double timeStamp)
+		{
+			mDispensedOrbsTonight = false;
+			return true;
+		}
+
+		protected IEnumerator DispenseOrbs ()
+		{
+			Location location = worlditem.Get <Location> ();
+			while (location.LocationGroup == null || !location.LocationGroup.Is (WIGroupLoadState.Loaded)) {
+				double waitUntil = Frontiers.WorldClock.AdjustedRealTime + 0.5f;
+				while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+					yield return null;
+				}
+			}
+
+			while (Den.SpawnedCreatures.Count < State.NumOrbs) {
+				Creature newCreature = null;
+				if (!Creatures.SpawnCreature (Den, location.LocationGroup, Vector3.zero, out newCreature)) {
+					Debug.Log ("Couldn't spawn orb");
+					SandGeyser.enableEmission = false;
+					Vapor.enableEmission = false;
+					mDispensingOrbs = false;
+					yield break;
+				}
+
+				newCreature.worlditem.tr.position = worlditem.Position + (Vector3.up * 2f);
+
+				SandGeyser.enableEmission = true;
+				Vapor.enableEmission = true;
+				double waitUntil = WorldClock.AdjustedRealTime + 3f;
+				while (WorldClock.AdjustedRealTime < waitUntil) {
+					yield return null;
+				}
+				SandGeyser.enableEmission = false;
+				waitUntil = WorldClock.AdjustedRealTime + 3f;
+				while (WorldClock.AdjustedRealTime < waitUntil) {
+					yield return null;
+				}
+				Vapor.enableEmission = false;
+			}
+			SandGeyser.enableEmission = false;
+			Vapor.enableEmission = false;
+			mDispensingOrbs = false;
+			mDispensedOrbsTonight = true;
+			yield break;
+		}
+
+		protected bool mDispensingOrbs = false;
+		protected bool mDispensedOrbsTonight = false;
+	}
+
+	[Serializable]
+	public class OrbSpawnerState
+	{
+		public int NumOrbs = 2;
+	}
 }

@@ -28,6 +28,8 @@ namespace Frontiers.World.WIScripts
 		public Photosensitive photosensitive;
 		public CharacterAnimator animator;
 		public Damageable damageable;
+		//movement
+		public ITerritoryBase TerritoryBase;
 
 		public override bool CanBeCarried {
 			get {
@@ -64,6 +66,32 @@ namespace Frontiers.World.WIScripts
 			}
 		}
 
+		public void OnPlayerCollide () {
+
+			if (State.KnowsPlayer) {
+				return;
+			}
+
+			Talkative t = worlditem.Get <Talkative> ();
+			string dtsSpeechName = t.State.DTSSpeechName;
+			if (string.IsNullOrEmpty (dtsSpeechName)) {
+				//get a dts based on reputation
+				int rep = Profile.Get.CurrentGame.Character.Rep.GetPersonalReputation (worlditem.FileName);
+				if (rep > 90) {
+					dtsSpeechName = Globals.SpeechOnPlayerEncounterRepPerfect;
+				} else if (rep > 75) {
+					dtsSpeechName = Globals.SpeechOnPlayerEncounterRepHigh;
+				} else if (rep > 5) {
+					dtsSpeechName = Globals.SpeechOnPlayerEncounterRepDecent;
+				} else if (rep > 25) {
+					dtsSpeechName = Globals.SpeechOnPlayerEncounterRepLow;
+				} else {
+					dtsSpeechName = Globals.SpeechOnPlayerEncounterRepTerrible;
+				}
+			}
+			t.GiveSpeech (dtsSpeechName, null);
+		}
+
 		public override int OnRefreshHud (int lastHudPriority)
 		{
 			if (IsDead || IsStunned || IsSleeping) {
@@ -97,6 +125,20 @@ namespace Frontiers.World.WIScripts
 		}
 
 		#region initialization
+
+		public void OnPlayerEnterResidence ()
+		{
+			if (!State.KnowsPlayer) {
+				worlditem.Get <Talkative> ().GiveSpeech (Globals.SpeechOnPlayerEnterResidenceUnknown, null);
+				Profile.Get.CurrentGame.Character.Rep.LoseGlobalReputation (Globals.ReputationChangeSmall);
+				Profile.Get.CurrentGame.Character.Rep.LosePersonalReputation (
+					worlditem.FileName,
+					worlditem.DisplayName,
+					Globals.ReputationChangeHuge);
+			} else {
+				worlditem.Get <Talkative> ().GiveSpeech (Globals.SpeechOnPlayerEnterResidenceKnown, null);
+			}
+		}
 
 		public override void OnInitializedFirstTime ()
 		{
@@ -145,6 +187,7 @@ namespace Frontiers.World.WIScripts
 			worlditem.OnAddedToGroup += OnAddedToGroup;
 			worlditem.OnScriptAdded += OnScriptAdded;
 			worlditem.HudTargeter = new HudTargetSupplier (HudTargeter);
+			worlditem.OnPlayerCollide += OnPlayerCollide;
 			//set this so the body has something to lerp to
 			if (Body != null) {
 				//this tells the body what to follow
@@ -152,6 +195,7 @@ namespace Frontiers.World.WIScripts
 				if (Template.TemplateType == CharacterTemplateType.UniquePrimary || Template.TemplateType == CharacterTemplateType.UniqueAlternate) {
 					motile.State.MotileProps.UseKinematicBody = false;
 				}
+				motile.BaseAction.WalkingSpeed = true;
 				Body.OnSpawn (motile);
 				Body.transform.parent = worlditem.Group.transform;
 				Body.name = worlditem.FileName + "-Body";
@@ -213,7 +257,7 @@ namespace Frontiers.World.WIScripts
 			mPursueGoalAction.Type = MotileActionType.FollowGoal;
 			mPursueGoalAction.Expiration = MotileExpiration.TargetInRange;
 			mPursueGoalAction.YieldBehavior = MotileYieldBehavior.YieldAndWait;
-			mPursueGoalAction.Range = Template.MotileTemplate.MotileProps.RVORadius;
+			mPursueGoalAction.Range = Template.MotileTemplate.MotileProps.RVORadius * 1.5f;
 
 			mFocusAction = new MotileAction ();
 			mFocusAction.Name = "Focus action by Character";
@@ -222,12 +266,19 @@ namespace Frontiers.World.WIScripts
 			mFocusAction.RTDuration = 5f;
 			mFocusAction.Range = 10f;
 			mFocusAction.OutOfRange = 15f;
+			mFocusAction.WalkingSpeed = true;
 			mFocusAction.YieldBehavior = MotileYieldBehavior.YieldAndFinish;
 
 		}
 
 		public void OnAddedToGroup ()
 		{
+			CurrentThought.OnFleeFromIt += FleeFromThing;
+			CurrentThought.OnKillIt += AttackThing;
+			CurrentThought.OnEatIt += WatchThing;//TODO fix this
+			CurrentThought.OnFollowIt += FollowThing;
+			CurrentThought.OnWatchIt += WatchThing;
+
 			worlditem.Get <Motile> ().StartMotileActions ();
 			Characters.Get.BodyTexturesAndMaterials (this);
 		}
@@ -404,10 +455,20 @@ namespace Frontiers.World.WIScripts
 						PushMotileAction(newMotileAction, MotileActionPriority.ForceTop);
 						*/
 		}
+
+		public void OnLosePlayerAttention ()
+		{
+			//if we're currently focusing on the player, finsih that action
+			if (!mFocusAction.IsFinished && mFocusAction.LiveTarget == Player.Local) {//tell it to finish externally
+				mFocusAction.TryToFinish ();
+			}
+		}
+
 		//convenience
 		public MotileAction LookAtPlayer ()
 		{
-			MotileAction lookAtPlayerAction = WatchThing (Player.Local);
+			FXManager.Get.SpawnFX (Body.Transforms.HeadTop, "ListenEffect", UnityEngine.Random.value);
+			MotileAction lookAtPlayerAction = WatchThingAction (Player.Local);
 			lookAtPlayerAction.Name = "LookAtPlayer";
 			if (!lookAtPlayerAction.HasStarted) {
 				MasterAudio.PlaySound (MasterAudio.SoundType.PlayerInterface, "NpcNoticePlayer");
@@ -445,9 +506,28 @@ namespace Frontiers.World.WIScripts
 			ThinkAboutItemOfInterest (listener.LastHeardItemOfInterest);
 		}
 
-		public MotileAction WatchThing (IItemOfInterest itemOfInterest)
+		public void WatchThing (IItemOfInterest itemOfInterest)
 		{
-			//if the creature is idle, turn to look at the player
+			WatchThingAction (itemOfInterest);
+		}
+
+		public void FollowThing (IItemOfInterest itemOfInterest)
+		{
+			FollowThingAction (itemOfInterest);
+		}
+
+		public void FleeFromThing (IItemOfInterest itemOfInterest)
+		{
+			FleeFromThingAction (itemOfInterest);
+		}
+
+		public void AttackThing (IItemOfInterest itemOfInterest)
+		{
+			AttackThingAction (itemOfInterest);
+		}
+
+		public MotileAction WatchThingAction (IItemOfInterest itemOfInterest)
+		{
 			Motile motile = null;
 			if (worlditem.Is <Motile> (out motile)) {
 				if (mFocusAction.IsFinished || mFocusAction.LiveTarget != itemOfInterest) {
@@ -459,32 +539,32 @@ namespace Frontiers.World.WIScripts
 			return mFocusAction;
 		}
 
-		public void FollowThing (IItemOfInterest itemOfInterest)
+		public MotileAction FollowThingAction (IItemOfInterest itemOfInterest)
 		{
-			//if the creature is idle, turn to look at the player
-			//Debug.Log ("Looking at player in " + name);
 			Motile motile = null;
 			if (worlditem.Is <Motile> (out motile)) {
 				if (mFollowAction.IsFinished || mFollowAction.LiveTarget != itemOfInterest) {
 					mFollowAction.Reset ();
 					mFollowAction.LiveTarget = itemOfInterest;
+					mFollowAction.TerritoryBase = TerritoryBase;//null typically
 					motile.PushMotileAction (mFollowAction, MotileActionPriority.ForceTop);
 				}
 			}
+			return mFollowAction;
 		}
 
-		public void GoToThing (IItemOfInterest itemOfInterest)
+		public MotileAction GoToThing (IItemOfInterest itemOfInterest)
 		{
-			//if the creature is idle, turn to look at the player
-			//Debug.Log ("Looking at player in " + name);
 			Motile motile = null;
 			if (worlditem.Is <Motile> (out motile)) {
-				if (mPursueGoalAction.IsFinished || mPursueGoalAction.LiveTarget != itemOfInterest) {
+				if (mPursueGoalAction.IsFinished || mPursueGoalAction.LiveTarget != itemOfInterest || itemOfInterest == null) {
 					mPursueGoalAction.Reset ();
 					mPursueGoalAction.LiveTarget = itemOfInterest;
+					mPursueGoalAction.TerritoryBase = TerritoryBase;//null typically
 					motile.PushMotileAction (mPursueGoalAction, MotileActionPriority.ForceTop);
 				}
 			}
+			return mPursueGoalAction;
 		}
 
 		public void SleepInBed (Bed bed)
@@ -495,7 +575,7 @@ namespace Frontiers.World.WIScripts
 			}
 		}
 
-		public void FleeFromThing (IItemOfInterest itemOfInterest)
+		public MotileAction FleeFromThingAction (IItemOfInterest itemOfInterest)
 		{
 			Motile motile = null;
 			if (worlditem.Is <Motile> (out motile)) {
@@ -503,19 +583,25 @@ namespace Frontiers.World.WIScripts
 					mFleeThreatAction.Reset ();
 					mFleeThreatAction.LiveTarget = itemOfInterest;
 					mFleeThreatAction.YieldBehavior = MotileYieldBehavior.DoNotYield;
+					mFleeThreatAction.TerritoryBase = TerritoryBase;//null typically
 					motile.PushMotileAction (mFleeThreatAction, MotileActionPriority.ForceTop);
 				}
 			}
+			return mFleeThreatAction;
 		}
 
-		public bool AttackThing (IItemOfInterest itemOfInterest)
+		public bool AttackThingAction (IItemOfInterest itemOfInterest)
 		{
 			bool result = false;
 			Hostile hostile = null;
 			if (!worlditem.Is <Hostile> (out hostile)) {
 				hostile = worlditem.GetOrAdd <Hostile> ();
+				//copy the properties quickly
 				Reflection.CopyProperties (Template.HostileTemplate, hostile.State);
-				//hostile.State = ObjectClone.Clone <HostileState>(Template.HostileTemplate);
+				//copy the attacks directly
+				hostile.TerritoryBase = TerritoryBase;
+				hostile.State.Attack1 = ObjectClone.Clone <AttackStyle> (Template.HostileTemplate.Attack1);
+				hostile.State.Attack2 = ObjectClone.Clone <AttackStyle> (Template.HostileTemplate.Attack2);
 				hostile.OnAttack1Start += OnAttack1;
 				hostile.OnAttack2Start += OnAttack2;
 				hostile.OnWarn += OnWarn;
@@ -669,14 +755,6 @@ namespace Frontiers.World.WIScripts
 		}
 
 		#endregion
-
-		public void Update ()
-		{
-			if (!worlditem.HasPlayerFocus) {
-				enabled = false;
-				return;
-			}
-		}
 
 		public override void OnModeChange ()
 		{

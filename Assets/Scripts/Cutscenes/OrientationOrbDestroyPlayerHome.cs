@@ -7,7 +7,6 @@ namespace Frontiers.World
 {
 	public class OrientationOrbDestroyPlayerHome : MonoBehaviour, IBodyOwner, IHostile
 	{
-
 		#region IBodyOwner implementation
 
 		public Vector3 Position {
@@ -45,6 +44,8 @@ namespace Frontiers.World
 
 		public bool IsGrounded { get; set; }
 
+		public bool UseGravity { get; set; }
+
 		public bool IsRagdoll { get; set; }
 
 		public bool IsDead { get { return false; } }
@@ -54,6 +55,8 @@ namespace Frontiers.World
 		public int CurrentIdleAnimation { get; set; }
 
 		public float NormalizedDamage { get { return 0f; } }
+
+		public bool ForceWalk { get; set; }
 		//temp
 		public string Speech1 = "eɗǁuabaɭaʒəɡ uaɗaw ʒipuaws";
 		public string Speech2 = "eɗəadeaŋsuiɠ ɡluaɓ uiɭzzliimuej";

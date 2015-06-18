@@ -67,7 +67,8 @@ public partial class GameWorld : Manager
 	public List <TerrainNode> PointGraphNodes = new List <TerrainNode> ();
 	public List <WorldItem> ActiveQuestItems = new List <WorldItem> ();
 	public GameObject EmptyTerrainPrefab = null;
-	public GameObject RiverPrefab = null;
+	public GameObject RiverPrefabStatic = null;
+	public GameObject RiverPrefabDynamic = null;
 	public float TideBaseElevationAtPlayerPosition;
 
 	#region terrain & chunks
@@ -1444,6 +1445,33 @@ public partial class GameWorld : Manager
 	public static TemperatureRange ClampTemperature (TemperatureRange temperature, TemperatureRange minTemperature, TemperatureRange maxTemperature)
 	{
 		return (TemperatureRange)Mathf.Clamp ((int)temperature, (int)minTemperature, (int)maxTemperature);
+	}
+
+	public static bool CheckTerrainType (Color colorAtPosition, TerrainType terrainType, float minToQualify)
+	{
+		switch (terrainType) {
+		case TerrainType.All:
+		default:
+			return true;
+
+		case TerrainType.AllButCivilization:
+			return colorAtPosition.b < minToQualify;
+
+		case TerrainType.Civilization:
+			return colorAtPosition.b > minToQualify;
+
+		case TerrainType.Coastal:
+			return colorAtPosition.r > minToQualify;
+
+		case TerrainType.DeepForest:
+			return (1f - colorAtPosition.grayscale) > minToQualify;
+
+		case TerrainType.LightForest:
+			return colorAtPosition.g > minToQualify;
+
+		case TerrainType.OpenField:
+			return colorAtPosition.a > minToQualify;
+		}
 	}
 
 	protected TemperatureRange mTemperatureOverride = TemperatureRange.C_Warm;

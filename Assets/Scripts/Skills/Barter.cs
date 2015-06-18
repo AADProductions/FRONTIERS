@@ -29,10 +29,16 @@ namespace Frontiers.World.Gameplay
 		public override bool DoesContextAllowForUse (IItemOfInterest targetObject)
 		{
 			if (base.DoesContextAllowForUse (targetObject)) {
+				Bandit bandit = null;
+				if (targetObject.worlditem.Is <Bandit> (out bandit) && !bandit.WillAssociateWithPlayer) {
+					return false;
+				}
 				Character character = null;
 				if (targetObject.worlditem.Is <Character> (out character)) {
 					if (character.IsDead || character.IsStunned) {
 						Debug.Log ("Can't barter with dead characters");
+						return false;
+					} else if (targetObject.worlditem.Is <Hostile> ()) {
 						return false;
 					} else {
 						return true;

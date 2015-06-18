@@ -24,6 +24,7 @@ public class RVOTargetHolder : MonoBehaviour
 	public float OuterCircleOffset = 0f;
 	public float FollowSeparation = 2.5f;
 	public Transform SpotHelper;
+	public bool IsDestroyed = false;
 
 	public void OnEnabled ()
 	{
@@ -205,8 +206,6 @@ public class RVOTargetHolder : MonoBehaviour
 	{
 		//if we're not already being followed
 		if (!mFollowers.Contains (target)) {	//parent under this object
-			target.parent = tr;
-			target.localPosition = Vector3.zero;
 			mFollowers.Add (target);
 
 			mGroundAttackers.Remove (target);
@@ -214,6 +213,8 @@ public class RVOTargetHolder : MonoBehaviour
 			mGroundStalkers.Remove (target);
 			mCompanions.Remove (target);
 		}
+		target.parent = tr;
+		target.localPosition = Vector3.zero;
 		CheckTargetUpdater ();
 	}
 
@@ -365,6 +366,31 @@ public class RVOTargetHolder : MonoBehaviour
 	{
 		if (HasTargets) {
 			enabled = true;
+		}
+	}
+
+	protected void OnDestroy () {
+		IsDestroyed = true;
+
+		foreach (Transform f in mFollowers) {
+			if (f.parent == tr) {
+				f.parent = null;
+			}
+		}
+		foreach (Transform f in mGroundAttackers) {
+			if (f.parent == tr) {
+				f.parent = null;
+			}
+		}
+		foreach (Transform f in mGroundStalkers) {
+			if (f.parent == tr) {
+				f.parent = null;
+			}
+		}
+		foreach (Transform f in mGroundStalkers) {
+			if (f.parent == tr) {
+				f.parent = null;
+			}
 		}
 	}
 

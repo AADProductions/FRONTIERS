@@ -634,6 +634,31 @@ namespace Frontiers.World
 			}
 		}
 
+		public static void AddMovementNodesToStructureTemplate (Transform start, Transform staticPieces, List <MovementNode> movementNodes) {
+			ActionNodePlaceholder acp = null;
+			ActionNode node = null;
+
+			List <ActionNodePlaceholder> acps = new List<ActionNodePlaceholder> ();
+			List <ActionNode> nodes = new List<ActionNode> ();
+
+			ActionNodePlaceholder[] staticAcps = staticPieces.GetComponentsInChildren <ActionNodePlaceholder> ();
+			foreach (ActionNodePlaceholder staticAcp in staticAcps) {
+				if (staticAcp.SaveToStructure) {
+					//move it to the start transform so it doesn't get picked up every time
+					staticAcp.transform.parent = start;
+				}
+			}
+
+			foreach (Transform child in start) {
+				if (child.gameObject.HasComponent <ActionNodePlaceholder> (out acp) && acp.SaveToStructure) {
+					acps.Add (acp);
+				} else if (child.gameObject.HasComponent <ActionNode> (out node) && node.State.Users == ActionNodeUsers.AnyOccupant) {
+					nodes.Add (node);
+				}
+			}
+			ActionNodePlaceholder.LinkNodes (acps, nodes, movementNodes);
+		}
+
 		public static Light LightFromLightPiece (LightPiece piece, Transform parentTransform)
 		{
 			GameObject newLightGameObject = new GameObject (piece.LightName);
@@ -1037,6 +1062,11 @@ namespace Frontiers.World
 			}
 		}
 
+		public static void LinkPlaceholders (List<ActionNodePlaceholder> acps, List<MovementNode> movementNodes)
+		{
+			throw new NotImplementedException ();
+		}
+
 		protected static string[] gTabStringArray = new string[] { ",\t" };
 		protected static string[] gNewlineStringArray = new string[] { "\n" };
 		protected static string gTab = ",\t";
@@ -1046,5 +1076,64 @@ namespace Frontiers.World
 
 		#endregion
 
+	}
+
+	[Serializable]
+	public struct MovementNode
+	{
+		public MovementNode (int index)
+		{
+			X = 0;
+			Y = 0;
+			Z = 0;
+			Index = index;
+			OccupationFlags = Int32.MaxValue;
+			Position = Vector3.zero;
+			ConnectingNodes = new List<int> ();
+		}
+
+		public MovementNode (bool empty)
+		{
+			X = 0f;
+			Y = 0f;
+			Z = 0f;
+			Index = -1;
+			OccupationFlags = Int32.MaxValue;
+			Position = Vector3.zero;
+			ConnectingNodes = null;
+		}
+
+		public float X;
+		public float Y;
+		public float Z;
+		[XmlIgnore]
+		public Vector3 Position;
+		public int Index;
+		public int OccupationFlags;
+		public List <int> ConnectingNodes;
+		public static Vector3 gPosition;
+		public static MovementNode gEmpty = new MovementNode (true);
+
+		public static bool IsEmpty (MovementNode m)
+		{
+			return m.Index < 0 || m.Position == Vector3.zero;
+		}
+
+		public static MovementNode Empty {
+			get {
+				return gEmpty;
+			}
+		}
+
+		public static Vector3 GetPosition (Transform tr, MovementNode m)
+		{
+			gPosition.x = m.X;
+			gPosition.y = m.Y;
+			gPosition.z = m.Z;
+			if (m.OccupationFlags <= 0) {
+				m.OccupationFlags = Int32.MaxValue;
+			}
+			return tr.TransformPoint (gPosition);
+		}
 	}
 }

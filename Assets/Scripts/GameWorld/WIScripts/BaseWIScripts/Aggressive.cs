@@ -15,7 +15,7 @@ namespace Frontiers.World.WIScripts
 		{
 			creature = worlditem.Get <Creature> ();
 
-			Debug.Log (creature.Template.Name + " is aggressive");
+			//Debug.Log (creature.Template.Name + " is aggressive");
 
 			creature.OnPlayerLeaveDen += OnPlayerLeaveDen;
 			creature.OnCollectiveThoughtStart += OnCollectiveThoughtStart;

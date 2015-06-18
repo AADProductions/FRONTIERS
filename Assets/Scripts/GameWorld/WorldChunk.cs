@@ -54,6 +54,12 @@ namespace Frontiers.World
 			return Flags.Check ((int)chunkMode, (int)mCurrentMode, Flags.CheckType.MatchAny);
 		}
 
+		public bool HasCollider {
+			get {
+				return PrimaryCollider != null && PrimaryCollider.enabled;
+			}
+		}
+
 		protected Vector3 mChunkScale;
 		protected Bounds mChunkBounds;
 
@@ -698,7 +704,12 @@ namespace Frontiers.World
 		protected void CreateRiver (River river)
 		{
 			Transform agRivers = Transforms.AboveGroundRivers;
-			GameObject riverAvatarObject = GameObject.Instantiate (GameWorld.Get.RiverPrefab, Transforms.AboveGroundRivers.position, Quaternion.identity) as GameObject;
+			GameObject riverAvatarObject = null;
+			if (river.DynamicMode) {
+				riverAvatarObject = GameObject.Instantiate (GameWorld.Get.RiverPrefabDynamic, Transforms.AboveGroundRivers.position, Quaternion.identity) as GameObject;
+			} else {
+				riverAvatarObject = GameObject.Instantiate (GameWorld.Get.RiverPrefabStatic, Transforms.AboveGroundRivers.position, Quaternion.identity) as GameObject;
+			}
 			riverAvatarObject.transform.parent = Transforms.AboveGroundRivers;
 			RiverAvatar riverAvatar = riverAvatarObject.GetComponent <RiverAvatar> ();
 			river.river = riverAvatar;

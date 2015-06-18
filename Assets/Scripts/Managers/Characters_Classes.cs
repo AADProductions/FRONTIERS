@@ -14,6 +14,7 @@ namespace Frontiers.World
 		public bool Hovers = false;
 		public bool UseKinematicBody = true;
 		public bool CanJump = true;
+		public float DirectionalRandomness = 0.1f;
 		public float HoverChangeSpeed = 1.0f;
 		public float SpeedRun = 4.5f;
 		public float SpeedWalk = 2.5f;

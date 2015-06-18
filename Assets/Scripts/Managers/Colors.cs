@@ -437,6 +437,7 @@ namespace Frontiers
 		public Color HairColorBrown = Color.white;
 		public Color HairColorBlonde = Color.white;
 		public Color HairColorRed = Color.white;
+		public Color OrbFlareMaterialColor = Color.black;
 
 		public Color ByName(string colorName)
 		{

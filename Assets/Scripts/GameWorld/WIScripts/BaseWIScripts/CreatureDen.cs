@@ -12,6 +12,7 @@ namespace Frontiers.World.WIScripts
 		public CreatureDenState State = new CreatureDenState();
 		public List <Creature> SpawnedCreatures = new List <Creature>();
 		public List <Creature> DeadCreatures = new List <Creature>();
+		public string SoundOnRemainInDen;
 		//public CreatureTemplate StateTemplate = null;
 		public LookerBubble SharedLooker = null;
 
@@ -139,7 +140,11 @@ namespace Frontiers.World.WIScripts
 			Location location = null;
 			if (worlditem.Is <Location>(out location)) {
 				gCorpsePosition.Position = location.LocationGroup.tr.InverseTransformPoint(spawnPosition);
-				Debug.Log("Spawning creature at position " + spawnPosition.ToString());
+				Creature deadCreature = null;
+				if (Creatures.SpawnCreature (this, location.LocationGroup, gCorpsePosition.Position, out deadCreature)) {
+					deadCreature.State.IsDead = true;
+				}
+				/*Debug.Log("Spawning creature at position " + spawnPosition.ToString());
 				WorldItem corpse = null;
 				if (WorldItems.CloneWorldItem ("Corpses", "Bone Pile 1", gCorpsePosition, true, location.LocationGroup, out corpse)) {
 					CreatureTemplate t = null;
@@ -150,7 +155,7 @@ namespace Frontiers.World.WIScripts
 					if (corpse.Is (WIActiveState.Active)) {
 						fsc.TryToFillContainer (true);
 					}
-				}
+				}*/
 			}
 		}
 
@@ -335,7 +340,6 @@ namespace Frontiers.World.WIScripts
 				for (int i = 0; i < SpawnedCreatures.Count; i++) {
 					if (SpawnedCreatures[i] != null) {
 						if (Vector3.Distance(SpawnedCreatures[i].worlditem.tr.position, worlditem.tr.position) > Radius) {
-							SpawnedCreatures[i].worlditem.GetOrAdd <DenSick>();
 							SpawnedCreatures[i].IsInDen = false;
 						} else {
 							SpawnedCreatures[i].IsInDen = true;
@@ -412,10 +416,14 @@ namespace Frontiers.World.WIScripts
 				yield return null;
 			}
 			//wait for creatures to finish spawning
+			bool playedSound = false;
 			for (int i = SpawnedCreatures.Count - 1; i >= 0; i--) {
 				if (SpawnedCreatures[i] == null) {
 					SpawnedCreatures.RemoveAt(i);
 				} else {
+					if (!playedSound && !string.IsNullOrEmpty (SoundOnRemainInDen)) {
+						MasterAudio.PlaySound (MasterAudio.SoundType.AnimalVoice, SpawnedCreatures [i].worlditem.tr, SoundOnRemainInDen);
+					}
 					SpawnedCreatures[i].OnPlayerVisitDen.SafeInvoke();
 				}
 				yield return null;

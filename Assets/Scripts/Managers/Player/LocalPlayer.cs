@@ -741,7 +741,7 @@ namespace Frontiers
 			HijackedLookTarget = globalParent.CreateChild("HijackedLookTarget");
 			Grabber = globalParent.CreateChild("Grabber").gameObject.AddComponent <PlayerGrabber>();
 			Grabber.Target = GrabberTargetObject;
-			EncountererObject = globalParent.CreateChild("Encounterer").gameObject.AddComponent <PlayerEncounterer>();
+			EncountererObject = globalParent.CreateChild ("Encounterer").gameObject.AddComponent <PlayerEncounterer> ();
 			EncountererObject.TargetPlayer = this;
 			GroundPath = globalParent.CreateChild("GroundPath").gameObject.AddComponent <PlayerGroundPath>();
 		}
@@ -956,6 +956,16 @@ namespace Frontiers
 		#endregion
 
 		List <string> LightSourceScripts = new List <string>() { "Luminite" };
+
+		public void OnControllerColliderHit (ControllerColliderHit hit) {
+			if (hit.collider.isTrigger || hit.collider.CompareTag (Globals.TagGroundTerrain)) {
+				return;
+			}
+
+			if (EncountererObject != null) {
+				EncountererObject.HandleControllerCollision (hit.collider);
+			}
+		}
 
 		public override void FixedUpdate()
 		{

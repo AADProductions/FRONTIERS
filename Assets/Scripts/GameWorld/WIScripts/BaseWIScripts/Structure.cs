@@ -9,7 +9,7 @@ using System.Xml.Serialization;
 
 namespace Frontiers.World.WIScripts
 {
-	public class Structure : WIScript
+	public class Structure : WIScript, IMovementNodeSet
 	{
 		public StructureState State = new StructureState ();
 
@@ -117,6 +117,8 @@ namespace Frontiers.World.WIScripts
 		public List <Renderer> InteriorRenderersDestroyed = new List<Renderer> ();
 		public List <ChildPiece> DestroyedFires = null;
 		public List <FXPiece> DestroyedFX = null;
+		public List <MovementNode> ExteriorMovmementNodes;
+		public List <MovementNode> InteriorMovementNodes;
 
 		public bool OwnerCharacterSpawned { 
 			get {
@@ -597,6 +599,7 @@ namespace Frontiers.World.WIScripts
 		{
 			WorldChunk chunk = worlditem.Group.GetParentChunk ();
 			WIGroup group = StructureGroup;
+			MovementNode mn = MovementNode.Empty;
 			//Debug.Log("LOAD FINISH: Structure " + name + " load finish: " + finalState.ToString());
 			switch (finalState) {
 			case StructureLoadState.ExteriorLoaded:
@@ -607,6 +610,22 @@ namespace Frontiers.World.WIScripts
 				State.ExteriorLoadedOnce = true;
 										//this will refresh colliders and renderers
 				SetDestroyed (StructureShingle.PropertyIsDestroyed);
+
+				if (gTransformHelper == null) {
+					gTransformHelper = new GameObject ("Structure Transform Helper").transform;
+				}
+				gTransformHelper.position = StructureBase.transform.position;
+				gTransformHelper.rotation = StructureBase.transform.rotation;
+				gTransformHelper.localScale = StructureBase.transform.lossyScale;
+
+				//transform the movement node positions
+				mn = MovementNode.Empty;
+				for (int i = 0; i < ExteriorMovmementNodes.Count; i++) {
+					mn = ExteriorMovmementNodes [i];
+					mn.Position = MovementNode.GetPosition (gTransformHelper, mn);
+					ExteriorMovmementNodes [i] = mn;
+				}
+
 				SpawnExteriorCharacters ();
 				OnExteriorLoaded.SafeInvoke ();
 				break;
@@ -622,18 +641,36 @@ namespace Frontiers.World.WIScripts
 				State.ExteriorLoadedOnce = true;//just in fucking case
 										//this will refresh colliders and renderers
 				SetDestroyed (StructureShingle.PropertyIsDestroyed);
+
+				if (gTransformHelper == null) {
+					gTransformHelper = new GameObject ("Structure Transform Helper").transform;
+				}
+				gTransformHelper.position = StructureBase.transform.position;
+				gTransformHelper.rotation = StructureBase.transform.rotation;
+				gTransformHelper.localScale = StructureBase.transform.lossyScale;
+
+				//transform the movement node positions
+				mn = MovementNode.Empty;
+				for (int i = 0; i < InteriorMovementNodes.Count; i++) {
+					mn = InteriorMovementNodes [i];
+					mn.Position = MovementNode.GetPosition (gTransformHelper, mn);
+					InteriorMovementNodes [i] = mn;
+				}
+
 				for (int i = 0; i < interiorVariants.Count; i++) {
 					int interiorVariant = interiorVariants [i];
 					State.InteriorsLoadedOnce.SafeAdd (interiorVariant);
 					SpawnInteriorCharacters (interiorVariant);
 				}
-										//we've finished loading
-										//reset this to eliminate any 'spawn point' loading priorities
+				//we've finished loading
+				//reset this to eliminate any 'spawn point' loading priorities
 				LoadPriority = StructureLoadPriority.Adjascent;
 				OnInteriorLoaded.SafeInvoke ();
 				break;
 			}
 		}
+
+		public static Transform gTransformHelper;
 
 		public void OnUnloadFinish (StructureLoadState finalState)
 		{
@@ -978,7 +1015,85 @@ namespace Frontiers.World.WIScripts
 					break;
 				}
 			}
+			//make sure to hook any daily routines up to our node set
+			if (spawnedCharacter) {
+				DailyRoutine r = null;
+				if (character.worlditem.Is <DailyRoutine> (out r)) {
+					r.ParentSite = this;
+				}
+			}
 			return spawnedCharacter;
+		}
+
+		#endregion
+
+		#region IMovementNodeSet implementation
+
+		public bool HasMovementNodes (LocationTerrainType locationType, bool interior, int occupationFlags) {
+			if (interior) {
+				return InteriorMovementNodes != null && InteriorMovementNodes.Count > 0;
+			} else {
+				return ExteriorMovmementNodes != null && ExteriorMovmementNodes.Count > 0;
+			}
+		}
+
+		public bool IsActive (LocationTerrainType locationType, bool interior, int occupationFlags) {
+			if (interior) {
+				return Is (StructureLoadState.InteriorLoaded);
+			} else {
+				return Is (StructureLoadState.ExteriorLoaded);
+			}
+		}
+
+		public MovementNode GetNextNode (MovementNode lastMovementNode, LocationTerrainType locationType, bool interior, int occupationFlags)
+		{	
+			List <MovementNode> movementNodes = interior ? InteriorMovementNodes : ExteriorMovmementNodes;
+			//we only have one location type
+			MovementNode mn = MovementNode.Empty;
+			if (movementNodes.Count == 0) {
+				return mn;
+			}
+			if (lastMovementNode.ConnectingNodes != null && lastMovementNode.ConnectingNodes.Count > 0) {
+				int nodeIndex = 0;
+				if (lastMovementNode.ConnectingNodes.Count > 1) {
+					int startNodeNum = UnityEngine.Random.Range (0, lastMovementNode.ConnectingNodes.Count);
+					int totalNodes = lastMovementNode.ConnectingNodes.Count;
+					for (int i = 0; i < totalNodes; i++) {
+						nodeIndex = lastMovementNode.ConnectingNodes [startNodeNum + 1 % totalNodes];
+						mn = movementNodes [nodeIndex];
+						if (mn.OccupationFlags == Int32.MaxValue || Flags.Check (occupationFlags, mn.OccupationFlags, Flags.CheckType.MatchAny)) {
+							break;
+						}
+					}
+				} else {
+					nodeIndex = lastMovementNode.ConnectingNodes [0];
+					mn = movementNodes [nodeIndex];
+				}
+			}
+			return mn;
+		}
+
+		public MovementNode GetNodeNearest (Vector3 position, LocationTerrainType locationType, bool interior, int occupationFlags)
+		{
+			List <MovementNode> movementNodes = interior ? InteriorMovementNodes : ExteriorMovmementNodes;
+			MovementNode closest = MovementNode.Empty;
+			MovementNode m = MovementNode.Empty;
+			float closestSoFar = Mathf.Infinity;
+			float current = 0f;
+			for (int i = 0; i < movementNodes.Count; i++) {
+				m = movementNodes [i];
+					if (m.OccupationFlags == Int32.MaxValue || Flags.Check (occupationFlags, m.OccupationFlags, Flags.CheckType.MatchAny)) {
+					current = Vector3.Distance (position, m.Position);
+					if (current < 2f) {
+						return closest = m;
+						break;
+					} else if (current < closestSoFar) {
+						closest = m;
+						closestSoFar = current;
+					}
+				}
+			}
+			return closest;
 		}
 
 		#endregion
@@ -1014,6 +1129,19 @@ namespace Frontiers.World.WIScripts
 					shingle = sb.gameObject.FindOrCreateChild ("__SHINGLE").gameObject;
 				}
 				Gizmos.DrawWireSphere (shingle.transform.position, 1);
+			}
+
+			if (ExteriorMovmementNodes != null) {
+				Gizmos.color = Color.cyan;
+				foreach (MovementNode mn in ExteriorMovmementNodes) {
+					Gizmos.DrawSphere (mn.Position, 0.125f);
+				}
+			}
+			if (InteriorMovementNodes != null) {
+				Gizmos.color = Color.Lerp (Color.cyan, Color.magenta, 0.5f);
+				foreach (MovementNode mn in InteriorMovementNodes) {
+					Gizmos.DrawSphere (mn.Position, 0.125f);
+				}
 			}
 		}
 

@@ -279,7 +279,7 @@ namespace Frontiers.World
 			case BuilderMode.Exterior:
 			default:
 				mCurrentTemplateGroup = Template.Exterior;
-										//extract the fires from the template and add it to the template
+				//extract the fires from the template and add it to the template
 				StructureTemplate.ExtractChildPiecesFromLayer (ref ParentStructure.DestroyedFires, Template.Exterior.DestroyedFires);
 				StructureTemplate.ExtractFXPiecesFromLayer (ref ParentStructure.DestroyedFX, Template.Exterior.DestroyedFX);
 				switch (Template.BuildMethod) {
@@ -367,6 +367,11 @@ namespace Frontiers.World
 					}
 					break;
 				}
+
+				if (ParentStructure.ExteriorMovmementNodes == null) {
+				ParentStructure.ExteriorMovmementNodes = new List <MovementNode> ();
+				}
+				ParentStructure.ExteriorMovmementNodes.AddRange (mCurrentTemplateGroup.MovementNodes);
 				mCurrentTemplateGroup = null;
 				break;
 
@@ -376,6 +381,7 @@ namespace Frontiers.World
 					int interiorVariant = InteriorVariants [i];
 					if (interiorVariant < Template.InteriorVariants.Count) {
 						mCurrentTemplateGroup = Template.InteriorVariants [interiorVariant];
+
 						var generateMeshes = StructureBuilder.GenerateMeshes (
 							                     mCurrentTemplateGroup,
 							                     PrimaryCombiner,
@@ -426,6 +432,12 @@ namespace Frontiers.World
 							yield return generateStaticColliders.Current;
 						}
 						yield return null;
+
+
+						if (ParentStructure.InteriorMovementNodes == null) {
+							ParentStructure.InteriorMovementNodes = new List <MovementNode> ();
+						}
+						ParentStructure.InteriorMovementNodes.AddRange (mCurrentTemplateGroup.MovementNodes);
 						//Debug.Log ("Done generating interior variant " + interiorVariant.ToString () + ", state is " + State.ToString ());
 					} else {
 						Debug.Log ("Interior variant " + i.ToString () + " is out of range");
@@ -589,7 +601,7 @@ namespace Frontiers.World
 				break;
 
 			case BuilderMode.Minor:
-										//minor structures don't generate items
+				//minor structures don't generate items
 				break;
 			}
 		}

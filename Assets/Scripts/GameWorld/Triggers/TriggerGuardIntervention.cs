@@ -120,6 +120,11 @@ namespace Frontiers.World
 						//Debug.Log ("Couldn't get character from guard node occupant, quitting in " + name);
 						return false;
 					}
+					DailyRoutine dr = null;
+					if (GuardNode.Occupant.Has <DailyRoutine> (out dr)) {
+						//guard nodes don't get to have routines
+						dr.Finish ();
+					}
 				} else {
 					//Debug.Log ("Guard node didn't have occupant, quitting in " + name);
 					WIGroup group = null;

@@ -89,7 +89,7 @@ namespace Frontiers.World.WIScripts
 				if (!mInitialized) {
 					return true;
 				}
-				return terrainHit.isGrounded;
+				return terrainHit.isGrounded || State.MotileProps.Hovers;
 			}
 			set { terrainHit.isGrounded = value; }
 		}
@@ -97,6 +97,12 @@ namespace Frontiers.World.WIScripts
 		public bool IsRagdoll { get; set; }
 
 		public bool IsDead { get; set; }
+
+		public bool UseGravity { get; set; }
+
+		public bool ForceWalk { get; set; }
+
+		public int IndleAnimation { get; set; }
 
 		public bool IsKinematic {
 			get {
@@ -119,6 +125,18 @@ namespace Frontiers.World.WIScripts
 
 		#endregion
 
+		public bool AvoidingObstacle { 
+			get {
+				return WorldClock.AdjustedRealTime < mAvoidObstaclesUntil;
+			} set {
+				if (value) {
+					mAvoidObstaclesUntil = -1f;
+				} else {
+					mAvoidObstaclesUntil = WorldClock.AdjustedRealTime + 1f;
+				}
+			}
+		}
+		protected double mAvoidObstaclesUntil;
 		public double TargetMovementSpeed = 0.0f;
 		public Transform GoalObject = null;
 		public Vector3 GoalDirection;
@@ -128,7 +146,7 @@ namespace Frontiers.World.WIScripts
 
 		public bool HasGoalHolder {
 			get {
-				return GoalHolder != null;
+				return GoalHolder != null && !GoalHolder.IsDestroyed;
 			}
 		}
 
@@ -259,14 +277,12 @@ namespace Frontiers.World.WIScripts
 				}
 
 				if (spawnBodyNow) {
-					Debug.Log ("Spawning body in " + name);
+					//Debug.Log ("Spawning body in " + name);
 					//set immobilized to false and start updating everything
 					IsImmobilized = false;
 					//spawn the body so it will zap to our position
 					Body.OnSpawn (this);
 					Body.Initialize (worlditem);
-				} else {
-					Debug.Log ("Waiting to spawn body in " + name + ", structure isn't loaded");
 				}
 			}
 		}
@@ -291,6 +307,7 @@ namespace Frontiers.World.WIScripts
 
 		public void StopMotileActions ()
 		{
+			//Debug.Log ("Stopping motile actions...");
 			//this will timeout on its own now
 			mDoingActionsOverTime = false;
 
@@ -314,11 +331,11 @@ namespace Frontiers.World.WIScripts
 		protected IEnumerator WaitToSpawnBodyInStructure (Structure parentStructure, StructureLoadState loadState)
 		{
 			yield return null;
-			Debug.Log ("Waiting to spawn body in structure....");
+			//Debug.Log ("Waiting to spawn body in structure....");
 			while (!Body.IsInitialized) {
 				yield return null;
 				if (parentStructure == null) {
-					Debug.Log ("Warning: parent structure null while waiting to spawn body");
+					//Debug.Log ("Warning: parent structure null while waiting to spawn body");
 					yield break;
 				} else if (parentStructure.Is (loadState)) {
 					//set immobilized to false and start updating everything
@@ -453,7 +470,7 @@ namespace Frontiers.World.WIScripts
 					if (checkAction == null
 						|| checkAction.State == MotileActionState.Finished
 						|| checkAction.State == MotileActionState.Error) {	//get rid of it
-						//Debug.Log(checkAction.Name + " action is finished or error, removing");
+						//Debug.Log (checkAction.Name + " action is finished or error, removing");
 						mActions.RemoveAt (i);
 					}
 				}
@@ -466,6 +483,7 @@ namespace Frontiers.World.WIScripts
 				if (topAction.FinishCalledExternally) {	//if finish was called externally deal with that now
 					//this should only get called once, since FinishAction sets
 					//to state 'Finishing' immediately
+					//Debug.Log ("Finish called externally on top action " + topAction.Name);
 					Characters.FinishAction (this, topAction);
 				} else {//otherwise deal with the action by state
 					switch (topAction.State) {
@@ -476,6 +494,7 @@ namespace Frontiers.World.WIScripts
 						while (!IsGrounded) {
 							yield return null;
 						}
+						//Debug.Log ("Top action not started, starting now");
 						Characters.StartAction (this, topAction);
 						break;
 
@@ -483,9 +502,13 @@ namespace Frontiers.World.WIScripts
 						//if the action has started, update it
 						//then check to see if it has expired
 						if (Characters.UpdateExpiration (this, topAction)) {
+							//Debug.Log ("Expiration finished on top action " + topAction.Name);
 							Characters.FinishAction (this, topAction);
 						} else {
-							yield return Characters.UpdateAction (this, topAction);
+							if (topAction.UpdateCoroutine == null || !topAction.UpdateCoroutine.MoveNext ()) {
+								Characters.GetUpdateCoroutine (this, topAction);
+							}
+							yield return topAction.UpdateCoroutine.Current;
 						}
 						break;
 
@@ -581,6 +604,9 @@ namespace Frontiers.World.WIScripts
 		public bool PushMotileAction (MotileAction newAction, MotileActionPriority priority)
 		{
 			if (IsDead) {
+				//Debug.Log("Motile thing is dead, cancelling");
+				newAction.State = MotileActionState.Error;
+				newAction.Error = MotileActionError.MotileIsDead;
 				return false;
 			}
 
@@ -590,10 +616,10 @@ namespace Frontiers.World.WIScripts
 				return false;
 			}
 
-			if (worlditem.IsNObject && !worlditem.NObject.isMine) {
+			/*if (worlditem.IsNObject && !worlditem.NObject.isMine) {
 				//TODO send this motile action to the server somehow
 				return true;
-			}
+			}*/
 
 			//otherwise handle it locally
 			if (worlditem.Is (WIMode.RemovedFromGame)) {
@@ -634,6 +660,7 @@ namespace Frontiers.World.WIScripts
 						//remove the existing action and push the new action
 						MotileAction existingAction = State.Actions [i];
 						if (existingAction == newAction) {	//whoops! it's already in there
+							//Debug.Log ("Action is already in here, not adding");
 							return true;
 						}
 						//TODO figure out some sensible replacement rules
@@ -647,7 +674,7 @@ namespace Frontiers.World.WIScripts
 						//}
 					}
 				}
-				//Debug.Log("Enqueued!");
+				//Debug.Log("Enqueued " + newAction.Name);
 				mNewActions.Enqueue (new KeyValuePair <MotileActionPriority, MotileAction> (priority, newAction));
 			}
 			return true;
@@ -701,14 +728,6 @@ namespace Frontiers.World.WIScripts
 						//	hud.GetPlayerAttention = false;
 						//}
 				}*/
-		public void OnLosePlayerAttention ()
-		{
-			//if we're currently focusing on the player, finsih that action
-			if (TopAction.Type == MotileActionType.FocusOnTarget
-			    && TopAction.LiveTarget == Player.Local) {//tell it to finish externally
-				TopAction.TryToFinish ();
-			}
-		}
 
 		public override void PopulateOptionsList (List <WIListOption> options, List <string> message)
 		{
@@ -840,8 +859,14 @@ namespace Frontiers.World.WIScripts
 			if (WorldClock.SkippingAhead)
 				return;
 
-			if (!Initialized || !HasBody || IsDead)
+			if (!Initialized || !HasBody || IsDead || mFinished || worlditem.Group == null)
 				return;
+
+			WorldChunk wc = worlditem.Group.GetParentChunk ();
+			if (wc != null && !wc.HasCollider) {
+				UseGravity = false;
+				return;
+			}
 
 			//if (worlditem.IsNObject && !worlditem.NObject.isMine)
 			//return;
@@ -857,6 +882,8 @@ namespace Frontiers.World.WIScripts
 
 			//we're calling this a lot so store it as a bool
 			bool isKinematic = IsKinematic;
+
+			UseGravity = !State.MotileProps.Hovers;
 
 			if (IsImmobilized) {
 				IsGrounded = true;
@@ -892,7 +919,7 @@ namespace Frontiers.World.WIScripts
 			//if we're moving quickly check more often
 			mCheckTerrainHeight++;
 			if (mCheckTerrainHeight > 4 || mCurrentMovementSpeed > 0.1f) {
-
+				terrainHit.ignoreWater = false;
 				mCheckTerrainHeight = 0;
 				float newAdjustedYPosition = AdjustedYPosition;
 				if (worlditem.Group.Props.Interior) {
@@ -901,10 +928,12 @@ namespace Frontiers.World.WIScripts
 					newAdjustedYPosition = GameWorld.Get.TerrainHeightAtInGamePosition (ref terrainHit);
 				}
 
+				AdjustedYPosition = newAdjustedYPosition;
+				/*
 				if (State.MotileProps.Hovers) {
 					//update our adjusted y position over time to ease into our hover height
 					//use max to ensure that you'll never be UNDER the terrain height
-					AdjustedYPosition = Mathf.Max (newAdjustedYPosition, Mathf.Lerp (mPosition.y, newAdjustedYPosition + State.MotileProps.HoverHeight, (float)(State.MotileProps.HoverChangeSpeed * Time.fixedDeltaTime)));
+					//AdjustedYPosition = Mathf.Max (newAdjustedYPosition, Mathf.Lerp (mPosition.y, newAdjustedYPosition + State.MotileProps.HoverHeight, (float)(State.MotileProps.HoverChangeSpeed * Time.fixedDeltaTime)));
 				} else {
 					//make sure that we can continue to step up or down by this amount
 					if (Mathf.Abs (newAdjustedYPosition - AdjustedYPosition) > this.State.MotileProps.MaxElevationChange) {
@@ -914,32 +943,40 @@ namespace Frontiers.World.WIScripts
 					}
 					//in either case adjust the new y position
 					AdjustedYPosition = newAdjustedYPosition;
-				}
+				}*/
 			}
+
+			MotileAction topAction = TopAction;
 
 			mCheckTopActionAnimation++;
 			if (mCheckTopActionAnimation > 6 && Body.IsVisible) {
 				mCheckTopActionAnimation = 0;
-				MotileAction topAction = TopAction;
-				Body.Animator.IdleAnimation = topAction.IdleAnimation;
+				ForceWalk = topAction.WalkingSpeed;
+				CurrentIdleAnimation = topAction.IdleAnimation;
 			}
 
-			if (mCurrentMovementSpeed > 0.1f && !worlditem.Group.Props.Interior && (IsGrounded || State.MotileProps.Hovers)) {
+			if (TargetMovementSpeed > 0.1f && (IsGrounded || State.MotileProps.Hovers) && !worlditem.Group.Props.Interior) {
 				mCheckForObstacles++;
-				if (mCheckForObstacles > 60) {
+				if (mCheckForObstacles > 50) {
 					mCheckForObstacles = 0;
 					if (Characters.CheckForObstacles (this, ref mObstacleBounds)) {
+						AvoidingObstacle = true;
 						//time to jump
 						//see if we could possibly clear it
-						float obstacleHeight = Mathf.Abs (mPosition.y - mObstacleBounds.max.y);
-						if (State.MotileProps.CanJump && obstacleHeight < State.MotileProps.MaxElevationChange) {
-							//Debug.Log ("Found obstacle, can clear it, jumping!");
-							JumpForce = State.MotileProps.JumpForce;
-						} else {
-							//avoid it instead
-							//Debug.Log ("Found obstacle but can't jump, avoiding obstacle of " + obstacleHeight.ToString () + " height");
+						Characters.SendGoalAwayFromObstacle (this, worlditem.Position, 2f, 3f, mObstacleBounds);
+						/*if (State.MotileProps.Hovers) {
 							Characters.SendGoalAwayFromObstacle (this, worlditem.Position, 2f, 3f, mObstacleBounds);
-						}
+						} else {
+							float obstacleHeight = Mathf.Abs (mPosition.y - mObstacleBounds.max.y);
+							if (State.MotileProps.CanJump && obstacleHeight < State.MotileProps.MaxElevationChange) {
+								//Debug.Log ("Found obstacle, can clear it, jumping!");
+								JumpForce = State.MotileProps.JumpForce;
+							} else {
+								//avoid it instead
+								//Debug.Log ("Found obstacle but can't jump, avoiding obstacle of " + obstacleHeight.ToString () + " height");
+								Characters.SendGoalAwayFromObstacle (this, worlditem.Position, 2f, 3f, mObstacleBounds);
+							}
+						}*/
 					}
 				}
 			} else {
@@ -983,7 +1020,11 @@ namespace Frontiers.World.WIScripts
 				LookDirection = (GoalHolder.tr.position - mPosition).normalized;
 			}
 			//the distance is always to the goal object
-			GoalDistance = Vector3.Distance (GoalObject.position, mPosition);
+			if (State.MotileProps.Hovers) {
+				GoalDistance = Vector3.Distance (GoalObject.position, Body.BaseBodyPart.tr.position);
+			} else {
+				GoalDistance = Vector3.Distance (GoalObject.position, mPosition);
+			}
 			//figure out how fast we're going
 			//target movement speed is set by our motile update scripts
 
@@ -992,11 +1033,23 @@ namespace Frontiers.World.WIScripts
 			LookDirection.y = 0f;
 			//figure out our desired velocity
 			mDesiredLookDirection = LookDirection;
-			if (!HasReachedGoal (State.MotileProps.RVORadius)) {
-				mDesiredDirection = GoalDirection;
-			} else {
-				mDesiredDirection = Vector3.zero;
+			switch (topAction.Type) {
+			default:
+				if (!HasReachedGoal (State.MotileProps.RVORadius)) {
+					mDesiredDirection = GoalDirection;
+				} else {
+					mDesiredDirection = Vector3.zero;
+					TargetMovementSpeed = 0f;
+					CurrentMovementSpeed = 0f;
+				}
+				break;
+
+			case MotileActionType.FocusOnTarget:
+			case MotileActionType.Wait:
+				mDesiredDirection = mDesiredLookDirection;
+				TargetMovementSpeed = 0f;
 				CurrentMovementSpeed = 0f;
+				break;
 			}
 
 			//we're grounded now and we were before
@@ -1034,7 +1087,7 @@ namespace Frontiers.World.WIScripts
 						mUpdateBodyPosition = 0;
 					}
 					mTr.rotation = Body.SmoothRotation;
-					Body.UpdateForces (mPosition, mDesiredDirection, terrainHit.normal, IsGrounded, JumpForce, (float)CurrentMovementSpeed);
+					Body.UpdateForces (mPosition, mDesiredDirection, terrainHit.normal, IsGrounded, JumpForce, (float)TargetMovementSpeed);
 				}
 			}
 		}
