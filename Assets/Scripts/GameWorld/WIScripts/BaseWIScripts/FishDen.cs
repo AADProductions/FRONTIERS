@@ -249,7 +249,7 @@ namespace Frontiers.World.WIScripts
 		{
 			mDespawningFish = true;
 			for (int i = SpawnedFish.LastIndex (); i > 0; i--) {
-				Debug.Log ("Despawning fish");
+				//Debug.Log ("Despawning fish");
 				GameObject.Destroy (SpawnedFish [i].gameObject);
 				SpawnedFish.RemoveAt (i);
 				yield return null;

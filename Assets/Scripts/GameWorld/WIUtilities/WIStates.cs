@@ -449,20 +449,22 @@ namespace Frontiers.World
 				}
 			}
 
-			if (!string.IsNullOrEmpty (newState.FXOnChange)) {
-				newState.FXObject = FXManager.Get.SpawnFX (worlditem, newState.FXOnChange);
-				newState.FXObject.transform.localPosition = newState.FXOffset;
-			}
-			if (newState.SoundType != MasterAudio.SoundType.None) {
-				MasterAudio.PlaySound (newState.SoundType, newState.StateObject.transform, newState.SoundOnChange);
-			}
-			if (!string.IsNullOrEmpty (newState.AnimationOnChange)) {
-				if (newState.StateObject.animation != null) {
-					newState.StateObject.animation.Play (newState.AnimationOnChange);
+			if (Application.isPlaying) {
+				if (!string.IsNullOrEmpty (newState.FXOnChange)) {
+					newState.FXObject = FXManager.Get.SpawnFX (worlditem, newState.FXOnChange);
+					newState.FXObject.transform.localPosition = newState.FXOffset;
 				}
-			}
-			if (newState.EarthQuakeOnChange > 0f) {
-				Player.Local.DoEarthquake (newState.EarthQuakeOnChange);
+				if (newState.SoundType != MasterAudio.SoundType.None) {
+					MasterAudio.PlaySound (newState.SoundType, newState.StateObject.transform, newState.SoundOnChange);
+				}
+				if (!string.IsNullOrEmpty (newState.AnimationOnChange)) {
+					if (newState.StateObject.animation != null) {
+						newState.StateObject.animation.Play (newState.AnimationOnChange);
+					}
+				}
+				if (newState.EarthQuakeOnChange > 0f) {
+					Player.Local.DoEarthquake (newState.EarthQuakeOnChange);
+				}
 			}
 		}
 

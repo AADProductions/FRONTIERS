@@ -9,6 +9,7 @@ namespace Frontiers.GUI
 	{
 		public static NGUIScreenDialog Get;
 		public GameObject ConversationBubblePrototype;
+		public GameObject ConversationBubblePrototypeObex;
 		public UIPanel Panel;
 		public Color CharacterColor;
 		public GameObject BubbleParent;
@@ -139,19 +140,19 @@ namespace Frontiers.GUI
 			CharacterColor = Colors.Saturate (Colors.ColorFromString (mCurrentSpeech.CharacterName, 100));
 			Panel.enabled = true;
 
-			if (CurrentBubble != null && !CurrentBubble.IsDestroying && CurrentBubble.ObexFont == mCurrentSpeech.ObexFont) {
+			if (CurrentBubble != null && !CurrentBubble.IsDestroying) {
 				//we may be able to use the same bubble
 				//if the character's name is the same
-				if (mCurrentSpeech.CharacterName != CurrentBubble.CharacterName.text) {
+				if (mCurrentSpeech.CharacterName != CurrentBubble.CharacterName.text || mCurrentSpeech.ObexFont != mCurrentSpeech.ObexFont) {
 					CurrentBubble.DestroyBubble ();
-					CurrentBubble = CreateBubble ();
+					CurrentBubble = CreateBubble (mCurrentSpeech.ObexFont);
 				}
 			} else {
-				CurrentBubble = CreateBubble ();
+				CurrentBubble = CreateBubble (mCurrentSpeech.ObexFont);
 			}
 			//set the properties on the speech bubble
 			//it will fade in on its own
-			CurrentBubble.SetProps (mCurrentSpeech.Speech, mCurrentSpeech.CharacterName, CharacterColor, Colors.Get.MenuButtonTextColorDefault, mCurrentSpeech.ObexFont);
+			CurrentBubble.SetProps (mCurrentSpeech.Speech, mCurrentSpeech.CharacterName, CharacterColor, Colors.Get.MenuButtonTextColorDefault);
 
 			while (CurrentBubble.Alpha < 1f) {
 				//Debug.Log("Waiting for alwpha to hit 1...");
@@ -201,7 +202,7 @@ namespace Frontiers.GUI
 			yield break;
 		}
 
-		protected GUIConversationBubble CreateBubble ()
+		protected GUIConversationBubble CreateBubble (bool obex)
 		{
 			if (VRManager.VRMode) {
 				BubbleParent.transform.localPosition = VROffset;
@@ -209,7 +210,7 @@ namespace Frontiers.GUI
 				BubbleParent.transform.localPosition = DefaultOffset;
 			}
 			//create the new conversation bubble
-			GameObject newBubbleGameObject = NGUITools.AddChild (BubbleParent, ConversationBubblePrototype);
+			GameObject newBubbleGameObject = NGUITools.AddChild (BubbleParent, obex ? ConversationBubblePrototypeObex : ConversationBubblePrototype);
 			GUIConversationBubble bubble = newBubbleGameObject.GetComponent <GUIConversationBubble> ();
 			//bubble.SetProps (mCurrentSpeech.Speech, mCurrentSpeech.CharacterName, CharacterColor, Colors.Get.MenuButtonTextColorDefault);
 			bubble.FadedColor = false;

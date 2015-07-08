@@ -39,7 +39,7 @@ namespace Frontiers.World.WIScripts
 
 		public override void OnFinish ()
 		{
-			Debug.Log ("FINISHED in daily routine in " + name);
+			//Debug.Log ("FINISHED in daily routine in " + name);
 		}
 
 		public IEnumerator FollowRoutineOverTime ()
@@ -55,15 +55,15 @@ namespace Frontiers.World.WIScripts
 			}
 
 			if (ParentSite == null) {
-				Debug.Log ("Parent site was null in " + name + ", removing routine");
+				//Debug.Log ("Parent site was null in " + name + ", removing routine");
 				Finish ();
 				yield break;
 			}
 
-			Debug.Log (worlditem.Group.Props.TerrainType.ToString () + " in " + worlditem.name);
+			//Debug.Log (worlditem.Group.Props.TerrainType.ToString () + " in " + worlditem.name);
 			//if we don't have a parent site within a second of spawning then we're toast
 			if (!ParentSite.HasMovementNodes (worlditem.Group.Props.TerrainType, worlditem.Group.Props.Interior, OccupationFlags)) {
-				Debug.Log ("Parent site " + ParentSite.name + " had no movement nodes, quitting routine");
+				//Debug.Log ("Parent site " + ParentSite.name + " had no movement nodes, quitting routine");
 				Finish ();
 				yield break;
 			}
@@ -92,7 +92,7 @@ namespace Frontiers.World.WIScripts
 				//get the next movement node
 				LastMovementNode = ParentSite.GetNextNode (LastMovementNode, worlditem.Group.Props.TerrainType, worlditem.Group.Props.Interior, OccupationFlags);
 				if (MovementNode.IsEmpty (LastMovementNode)) {
-					Debug.Log ("Node was empty in routine from " + ParentSite.name + ", ending routine");
+					//Debug.Log ("Node was empty in routine from " + ParentSite.name + ", ending routine");
 					mFollowingRoutine = false;
 					Finish ();
 					yield break;

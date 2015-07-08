@@ -286,6 +286,9 @@ public static class Globals
 	public static float DamageBodyPartLimbMultiplier = 0.25f;
 	public static float FallDamageImpactMultiplier = 100f;
 
+	public static float OuterSpaceGravity = -2f;
+	public static float DefaultGravity = -9.81f;
+
 	#endregion
 
 	#region profile

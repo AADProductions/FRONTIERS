@@ -27,14 +27,6 @@ namespace Frontiers.World.WIScripts
 
 		public override bool ReadyToUnload {
 			get {
-				//it's being used as a template at the moment
-				//if (InUseAsTemplate > 0)
-				//		return false;
-
-				//we have to wait for these processes to be over before we can unload
-				if (worlditem.Is (WIActiveState.Invisible)) {
-					return true;
-				}
 				return !Is (StructureLoadState.ExteriorLoading | StructureLoadState.InteriorLoading);
 			}
 		}
@@ -300,7 +292,7 @@ namespace Frontiers.World.WIScripts
 
 		public void OnVisible ()
 		{
-			if (worlditem.Is (WILoadState.Unloading | WILoadState.Unloaded)) {
+			if (worlditem.Is (WILoadState.Unloading | WILoadState.Unloaded | WILoadState.PreparingToUnload)) {
 				return;
 			}
 
@@ -336,6 +328,20 @@ namespace Frontiers.World.WIScripts
 			}
 			RefreshColliders (false);
 			RefreshRenderers (true);
+		}
+
+		public void CleanUpError ()
+		{
+			if (StructureGroup != null) {
+				StructureGroup.SaveOnUnload = false;
+				State.ExteriorLoadedOnce = false;
+			}
+			foreach (KeyValuePair <int,WIGroup> interiorGroup in StructureGroupInteriors) {
+				if (interiorGroup.Value != null) {
+					interiorGroup.Value.SaveOnUnload = false;
+				}
+				State.InteriorsLoadedOnce.Clear ();
+			}
 		}
 
 		public void RefreshRenderers (bool forceOn)
@@ -604,11 +610,11 @@ namespace Frontiers.World.WIScripts
 			switch (finalState) {
 			case StructureLoadState.ExteriorLoaded:
 			default:
-										//we've finished loading
-										//depending on our current state we may have been asked to unload
-										//so take care of that now
+				//we've finished loading
+				//depending on our current state we may have been asked to unload
+				//so take care of that now
 				State.ExteriorLoadedOnce = true;
-										//this will refresh colliders and renderers
+				//this will refresh colliders and renderers
 				SetDestroyed (StructureShingle.PropertyIsDestroyed);
 
 				if (gTransformHelper == null) {
@@ -628,18 +634,19 @@ namespace Frontiers.World.WIScripts
 
 				SpawnExteriorCharacters ();
 				OnExteriorLoaded.SafeInvoke ();
+				group.SaveOnUnload = true;
 				break;
 
 			case StructureLoadState.InteriorLoaded: 	
-										//check each interior variant to see if it's been loaded once
-										//if it hasn't been loaded once, add any action nodes that were just sent by the structure builder to the chunk
-										//then use those action nodes to spawn characters
+				//check each interior variant to see if it's been loaded once
+				//if it hasn't been loaded once, add any action nodes that were just sent by the structure builder to the chunk
+				//then use those action nodes to spawn characters
 				List <ActionNodeState> actionNodes = null;
 				List <int> interiorVariants = new List<int> ();
 				interiorVariants.Add (State.BaseInteriorVariant);
 				interiorVariants.AddRange (State.AdditionalInteriorVariants);
 				State.ExteriorLoadedOnce = true;//just in fucking case
-										//this will refresh colliders and renderers
+				//this will refresh colliders and renderers
 				SetDestroyed (StructureShingle.PropertyIsDestroyed);
 
 				if (gTransformHelper == null) {
@@ -666,6 +673,12 @@ namespace Frontiers.World.WIScripts
 				//reset this to eliminate any 'spawn point' loading priorities
 				LoadPriority = StructureLoadPriority.Adjascent;
 				OnInteriorLoaded.SafeInvoke ();
+
+				foreach (KeyValuePair <int, WIGroup> interiorGroup in StructureGroupInteriors) {
+					if (interiorGroup.Value != null) {
+						interiorGroup.Value.SaveOnUnload = true;
+					}
+				}
 				break;
 			}
 		}
@@ -724,9 +737,12 @@ namespace Frontiers.World.WIScripts
 			if (StructureGroup == null) {
 				Location location = worlditem.Get <Location> ();
 				while (location.LocationGroup == null || !location.LocationGroup.Is (WIGroupLoadState.Loaded)) {
-					if (location.LocationGroup != null && location.LocationGroup.Is (WIGroupLoadState.PreparingToUnload | WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
+					if (worlditem.Is (WILoadState.PreparingToUnload | WILoadState.Unloading | WILoadState.Unloaded)) {
 						yield break;
 					}
+					/*if (location.LocationGroup != null && location.LocationGroup.Is (WIGroupLoadState.PreparingToUnload | WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
+						yield break;
+					}*/
 					//wait for structure group to load
 					yield return null;
 				}
@@ -737,9 +753,14 @@ namespace Frontiers.World.WIScripts
 				StructureGroup.ParentStructure = this;
 			}
 
+			//set this to false until we've been loaded correctly
+			StructureGroup.SaveOnUnload = false;
 			StructureGroup.Load ();
 
 			while (!StructureGroup.Is (WIGroupLoadState.Loaded)) {
+				if (worlditem.Is (WILoadState.PreparingToUnload | WILoadState.Unloading | WILoadState.Unloaded)) {
+					yield break;
+				}
 				if (StructureGroup.Is (WIGroupLoadState.PreparingToUnload | WIGroupLoadState.Unloading)) {
 					yield break;
 				}
@@ -755,8 +776,12 @@ namespace Frontiers.World.WIScripts
 				} else if (StructureGroupInteriors [State.BaseInteriorVariant] == null) {
 					StructureGroupInteriors [State.BaseInteriorVariant] = interiorBaseGroup;
 				}
+				interiorBaseGroup.SaveOnUnload = false;
 				interiorBaseGroup.Load ();
 				while (!interiorBaseGroup.Is (WIGroupLoadState.Loaded)) {
+					if (worlditem.Is (WILoadState.PreparingToUnload | WILoadState.Unloading | WILoadState.Unloaded)) {
+						yield break;
+					}
 					//interior base group isn't loaded yet, waiting...
 					yield return null;
 				}
@@ -773,8 +798,12 @@ namespace Frontiers.World.WIScripts
 						StructureGroupInteriors [interiorVariant] = interiorGroup;
 					}
 					if (!interiorGroup.Is (WIGroupLoadState.Loaded)) {
+						interiorGroup.SaveOnUnload = false;
 						interiorGroup.Load ();
 						while (!interiorGroup.Is (WIGroupLoadState.Loaded)) {
+							if (worlditem.Is (WILoadState.PreparingToUnload | WILoadState.Unloading | WILoadState.Unloaded)) {
+								yield break;
+							}
 							//waiting for interior group to load...
 							yield return null;
 						}
@@ -1029,7 +1058,8 @@ namespace Frontiers.World.WIScripts
 
 		#region IMovementNodeSet implementation
 
-		public bool HasMovementNodes (LocationTerrainType locationType, bool interior, int occupationFlags) {
+		public bool HasMovementNodes (LocationTerrainType locationType, bool interior, int occupationFlags)
+		{
 			if (interior) {
 				return InteriorMovementNodes != null && InteriorMovementNodes.Count > 0;
 			} else {
@@ -1037,7 +1067,8 @@ namespace Frontiers.World.WIScripts
 			}
 		}
 
-		public bool IsActive (LocationTerrainType locationType, bool interior, int occupationFlags) {
+		public bool IsActive (LocationTerrainType locationType, bool interior, int occupationFlags)
+		{
 			if (interior) {
 				return Is (StructureLoadState.InteriorLoaded);
 			} else {
@@ -1082,7 +1113,7 @@ namespace Frontiers.World.WIScripts
 			float current = 0f;
 			for (int i = 0; i < movementNodes.Count; i++) {
 				m = movementNodes [i];
-					if (m.OccupationFlags == Int32.MaxValue || Flags.Check (occupationFlags, m.OccupationFlags, Flags.CheckType.MatchAny)) {
+				if (m.OccupationFlags == Int32.MaxValue || Flags.Check (occupationFlags, m.OccupationFlags, Flags.CheckType.MatchAny)) {
 					current = Vector3.Distance (position, m.Position);
 					if (current < 2f) {
 						return closest = m;

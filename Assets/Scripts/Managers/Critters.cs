@@ -62,7 +62,7 @@ namespace Frontiers.World
 			mSpawnCritters++;
 			if (mSpawnCritters > 40) {
 				mSpawnCritters = 0;
-				if (Player.Local.Surroundings.IsOutside) {
+				if (Player.Local.Surroundings.IsOutside && !GameWorld.Get.CurrentBiome.OuterSpace) {
 					CurrentCritterTypes.Clear ();
 					if (WorldClock.IsDay) {
 						CurrentCritterTypes.AddRange (GameWorld.Get.CurrentBiome.DayCritterTypes);

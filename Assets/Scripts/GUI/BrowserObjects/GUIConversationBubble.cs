@@ -36,7 +36,6 @@ namespace Frontiers.GUI
 		protected float mShadowAlpha = 0.35f;
 		protected float mOverlayAlpha = 0.5f;
 		protected float mTextureAlpha = 0.5f;
-		protected bool mObexFont = false;
 		public float MaxScrollTargetSize = 0f;
 		public float ScrollTarget = 1f;
 
@@ -152,36 +151,25 @@ namespace Frontiers.GUI
 
 		public void SetProps (string text, Color bgColor, Color textColor)
 		{
-			SetProps (text, string.Empty, bgColor, textColor, false, null, false);
+			SetProps (text, string.Empty, bgColor, textColor, false, null);
 		}
 
 		public void SetProps (string text, string characterName, Color bgColor, Color textColor)
 		{
-			SetProps (text, characterName, bgColor, textColor, false, null, false);
-		}
-
-		public void SetProps (string text, string characterName, Color bgColor, Color textColor, bool obex)
-		{
-			SetProps (text, characterName, bgColor, textColor, false, null, obex);
+			SetProps (text, characterName, bgColor, textColor, false, null);
 		}
 
 		public void SetProps (string text, Color bgColor, Color textColor, bool resetPosition, UIScrollBar targetScrollbar)
 		{
-			SetProps (text, string.Empty, bgColor, textColor, resetPosition, targetScrollbar, false);
+			SetProps (text, string.Empty, bgColor, textColor, resetPosition, targetScrollbar);
 		}
 
-		public void SetProps (string text, string characterName, Color bgColor, Color textColor, bool resetPosition, UIScrollBar targetScrollbar) {
-			SetProps (text, characterName, bgColor, textColor, resetPosition, targetScrollbar, false);
-		}
-
-		public void SetProps (string text, string characterName, Color bgColor, Color textColor, bool resetPosition, UIScrollBar targetScrollbar, bool obexFont)
+		public void SetProps (string text, string characterName, Color bgColor, Color textColor, bool resetPosition, UIScrollBar targetScrollbar)
 		{
 			if (mDestroying) {
 				//Debug.Log("Setting props on a destroyed convo bubble, returning");
 				return;
 			}
-
-			ObexFont = obexFont;
 
 			mSetPropsOnce = true;
 
@@ -197,10 +185,6 @@ namespace Frontiers.GUI
 			TargetTextColor = textColor;
 			ResetPosition = resetPosition;
 			TargetScrollbar = targetScrollbar;
-			if (obexFont) {
-				Text.font = Mats.Get.ObexFont;
-				CharacterName.font = Mats.Get.ObexFont;
-			}
 
 			if (!mSettingProps) {
 				mSettingProps = true;

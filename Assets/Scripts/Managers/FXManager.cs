@@ -244,7 +244,7 @@ namespace Frontiers
 			for (int i = DelayedFXPieces.LastIndex (); i >= 0; i--) {
 				FXPiece piece = DelayedFXPieces [i];
 				if (WorldClock.AdjustedRealTime > (piece.TimeAdded + piece.Delay)) {
-					Debug.Log ("piece was ready to be spawned at " + WorldClock.AdjustedRealTime.ToString ());
+					//Debug.Log ("piece was ready to be spawned at " + WorldClock.AdjustedRealTime.ToString ());
 					DelayedFXPieces.RemoveAt (i);
 					if (piece.Explosion) {
 						if (piece.JustForShow) {

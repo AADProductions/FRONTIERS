@@ -103,6 +103,7 @@ namespace Frontiers.World
 			BeamColor.g = BeamColor.g * 2;
 			BeamColor.b = BeamColor.b * 2;
 
+			BeamAudio.loop = false;
 			BeamAudio.Play ();
 
 			MasterSpline.enabled = true;
@@ -117,7 +118,6 @@ namespace Frontiers.World
 
 		public void StopFiring ()
 		{
-			BeamAudio.Stop ();
 			BeamAudio.PlayOneShot (BeamFinish);
 
 			mFiring = false;
@@ -132,8 +132,7 @@ namespace Frontiers.World
 		protected bool mFiring = false;
 		protected bool mWarmingUp = false;
 
-		public void Start ()
-		{
+		public void Awake () {
 			StartBaseRotation = Quaternion.Euler (0f, 90f, 0f);
 			MiddleBaseRotation = Quaternion.Euler (0f, 90f, 90f);
 			EndBaseRotation = Quaternion.Euler (0f, 90f, 0f);
@@ -141,7 +140,7 @@ namespace Frontiers.World
 			mFiring = false;
 		}
 
-		public void Update ()
+		public void FixedUpdate ()
 		{
 			if (mDestroyed)
 				return;
@@ -149,16 +148,24 @@ namespace Frontiers.World
 			if (!mFiring && !mWarmingUp)
 				return;
 
+			if (mFiring && !BeamAudio.isPlaying) {
+				if (TargetObject != null && OriginObject != null) {
+					BeamAudio.Play ();
+				}
+			}
+
 			//if either one is gone we have to destroy the beam
 			if ((TargetObject == null || OriginObject == null) && RequiresOriginAndTarget) {
 				if (!mDestroyingBeam) {
 					mDestroyingBeam = true;
 					StartCoroutine (DestroyBeamOverTime ());
+					return;
 				}
 			}
 			//if either one still exists
 			//update that one until we've been destroyed
 			tr.position = OriginPosition;
+
 			StartNode.localPosition = Vector3.Lerp ((RandomWiggleStart * OriginWiggleRange), StartNode.localPosition, 0.25f);
 			StartNode.localRotation = Quaternion.Lerp (StartNode.localRotation, Quaternion.Euler (RandomWiggleStart * 90), 0.15f) * StartBaseRotation;
 			//then update the end node
@@ -180,7 +187,7 @@ namespace Frontiers.World
 			LightValue = UnityEngine.Random.value;
 			BeamLight.intensity = LightValue * LightIntensity;
 			BeamLight.color = BeamColor;
-			Renderer.material.SetColor ("_TintColor", Colors.Alpha (BeamColor, LightValue));
+			Renderer.sharedMaterial.SetColor ("_RimColor", Colors.Alpha (BeamColor, LightValue));
 			//start and end are stable, middle is crazy
 			RandomWiggleStart.x = (UnityEngine.Random.value - 0.5f);
 			RandomWiggleStart.y = (UnityEngine.Random.value - 0.5f);
@@ -199,13 +206,7 @@ namespace Frontiers.World
 				targetAlpha = 0f;
 			}
 			BeamColor.a = Mathf.Lerp (BeamColor.a, targetAlpha, (float)Frontiers.WorldClock.ARTDeltaTime * 2f);
-		}
 
-		public void FixedUpdate ()
-		{
-			if (mDestroyed || !mFiring) {
-				return;
-			}
 			//emit some cool particles
 			Particles.Emit (StartNode.position, (RandomWiggleStart * 0.2f) + Vector3.down, ParticleSize * RandomWiggleMiddle.y, 0.25f + RandomWiggleEnd.z, BeamColor);
 			Particles.Emit (EndNode.position, (RandomWiggleEnd * 0.2f) + Vector3.down, ParticleSize * RandomWiggleMiddle.x, 0.25f + RandomWiggleStart.z, BeamColor);

@@ -64,6 +64,10 @@ namespace Frontiers.World.WIScripts
 
 		public void OnVisible ()
 		{
+			if (worlditem.Is (WILoadState.Unloading | WILoadState.PreparingToUnload | WILoadState.Unloaded)) {
+				return;
+			}
+
 			if (!HasSpawnedMinorStructures && !mSpawningMinorStructures) {
 				mSpawningMinorStructures = true;
 				StartCoroutine (SpawnMinorStructuresOverTime ());

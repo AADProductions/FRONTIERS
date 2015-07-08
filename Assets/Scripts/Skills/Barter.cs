@@ -351,20 +351,25 @@ namespace Frontiers.World.Gameplay
 			} else {
 				//don't make it possible to barter for books
 				BookAvatar bookAvatar = null;
-				if (Player.Local.Surroundings.WorldItemFocus.worlditem.Is <BookAvatar> (out bookAvatar) && !bookAvatar.worlditem.Is <OwnedByPlayer> ()) {
-					option.DefaultFlavorIndex = BuyFlavor;
-					Book b = null;
-					if (Books.Get.BookByName (bookAvatar.State.BookName, out b)) {
-						if (b.TypeOfBook == BookType.Diary) {
-							//can't buy diaries
-							option.Disabled = true;
-							option.OptionText = "Won't sell";
+				try {
+					if (Player.Local.Surroundings.WorldItemFocus.worlditem.Is <BookAvatar> (out bookAvatar) && !bookAvatar.worlditem.Is <OwnedByPlayer> ()) {
+						option.DefaultFlavorIndex = BuyFlavor;
+						Book b = null;
+						if (Books.Get.BookByName (bookAvatar.State.BookName, out b)) {
+							if (b.TypeOfBook == BookType.Diary) {
+								//can't buy diaries
+								option.Disabled = true;
+								option.OptionText = "Won't sell";
+							} else {
+								option.OptionText = "Buy for $" + Player.Local.Surroundings.WorldItemFocus.worlditem.BaseCurrencyValue.ToString ();
+							}
 						} else {
-							option.OptionText = "Buy for $" + Player.Local.Surroundings.WorldItemFocus.worlditem.BaseCurrencyValue.ToString ();
+							option.Disabled = true;
 						}
-					} else {
-						option.Disabled = true;
 					}
+				} catch (Exception e) {
+					Debug.Log ("Couldn't get option because: " + e.ToString ());
+					option.Disabled = true;
 				}
 			}
 			return option;

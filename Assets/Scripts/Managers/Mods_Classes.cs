@@ -785,6 +785,7 @@ namespace Frontiers
 		public float WaveIntensity = 0.15f;
 		public float TideBaseElevation = 15f;
 		public float WaveSpeed = 4f;
+		public bool OuterSpace = false;
 		public float FogDistanceMultiplier = 1f;
 		public List<string> DayCritterTypes = new List<string> ();
 		public List<string> NightCritterTypes = new List<string> ();
@@ -1402,6 +1403,7 @@ namespace Frontiers
 		public int ZTilePosition = 0;
 		public float YOffset = 0.0f;
 		public SVector3 TileOffset = SVector3.zero;
+		public bool LoadInIsolation = false;
 		public ChunkDisplaySettings DisplaySettings = new ChunkDisplaySettings ();
 	}
 

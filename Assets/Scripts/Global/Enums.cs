@@ -2846,6 +2846,7 @@ namespace Frontiers
 		Temperate,
 		TropicalCoast,
 		Wetland,
+		Stratosphere,
 	}
 
 	[Serializable]

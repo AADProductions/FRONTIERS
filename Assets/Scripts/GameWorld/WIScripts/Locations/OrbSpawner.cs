@@ -75,17 +75,31 @@ namespace Frontiers.World.WIScripts
 
 				newCreature.worlditem.tr.position = worlditem.Position + (Vector3.up * 2f);
 
+				if (mFinished || mDestroyed) {
+					yield break;
+				}
+				
 				SandGeyser.enableEmission = true;
 				Vapor.enableEmission = true;
 				double waitUntil = WorldClock.AdjustedRealTime + 3f;
 				while (WorldClock.AdjustedRealTime < waitUntil) {
 					yield return null;
 				}
+
+				if (mFinished || mDestroyed) {
+					yield break;
+				}
+
 				SandGeyser.enableEmission = false;
 				waitUntil = WorldClock.AdjustedRealTime + 3f;
 				while (WorldClock.AdjustedRealTime < waitUntil) {
 					yield return null;
 				}
+
+				if (mFinished || mDestroyed) {
+					yield break;
+				}
+
 				Vapor.enableEmission = false;
 			}
 			SandGeyser.enableEmission = false;

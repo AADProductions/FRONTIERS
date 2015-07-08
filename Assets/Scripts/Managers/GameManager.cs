@@ -19,13 +19,13 @@ namespace Frontiers
 		public GameObject StartupScenePrefab;
 		public static int BuildNumber;
 		//TODO get this from steam somehow
-		public static readonly System.Version Version = new Version(0, 4, 4);
+	public static readonly System.Version Version = new Version(0, 4, 5);
 		//since we're using this everywhere we don't want to call ToString on Version
 		//believe it or not this actually has an effect on allocations / garbage
 		public static readonly string VersionString = Version.ToString();
 		public static readonly uint SteamAppID = 293480;
 		public static readonly string FocusOnCheatCode = "skiptotheend";
-		public static readonly string FocusOnSubject = "FocusOnBartering";
+	public static readonly string FocusOnSubject = "FocusOnYouAreNotAlone";
 
 		public static bool Is(FGameState state)
 		{

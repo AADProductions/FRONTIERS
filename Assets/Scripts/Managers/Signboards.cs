@@ -194,7 +194,7 @@ namespace Frontiers
 				protected static void CleanAndSort(List <Signboard> signs)
 				{
 						for (int i = signs.LastIndex(); i >= 0; i--) {
-								if (signs[i] == null) {
+						if (signs[i] == null || signs [i].worlditem.Is (WILoadState.Unloading | WILoadState.Unloaded)) {
 										signs.RemoveAt(i);
 								}
 						}

@@ -128,6 +128,8 @@ namespace Frontiers.World
 
 		protected IEnumerator FireBeamsAtExplosions (List<FXPiece> explosions)
 		{
+			if (explosions == null)
+				yield break;
 			//start the beam firing
 			Beam.AttachTo (BeamOrigin, BeamTarget);
 			Beam.Fire (1000f);

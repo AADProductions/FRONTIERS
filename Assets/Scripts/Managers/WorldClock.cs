@@ -43,11 +43,15 @@ namespace Frontiers
 
 		public override void OnGameStart ()
 		{
-			//set the current adjusted real time to the last saved realtime offset
-			SetCycleLength (Profile.Get.CurrentGame.InGameMinutesPerRealtimeSecond);
-			//game time offset is raw adjusted realtime, not world time
-			//so don't modify it in any way
-			mARTime = Profile.Get.CurrentGame.GameTimeOffset;
+			if (Profile.Get != null) {
+				//set the current adjusted real time to the last saved realtime offset
+				SetCycleLength (Profile.Get.CurrentGame.InGameMinutesPerRealtimeSecond);
+				//game time offset is raw adjusted realtime, not world time
+				//so don't modify it in any way
+				mARTime = Profile.Get.CurrentGame.GameTimeOffset;
+			} else {
+				mARTime = 0f;
+			}
 			SetTargetSpeed (1.0f);
 		}
 
@@ -62,6 +66,14 @@ namespace Frontiers
 			mRTDeltaTime = mRTime - mRTLastUpdateTime;
 			mRTDeltaTimeSmooth = Lerp (mRTDeltaTimeSmooth, mRTDeltaTime, 0.5);
 			mRTLastUpdateTime = mRTime;
+
+			if (Profile.Get == null) {
+				mARTDeltaTime = mRTDeltaTime;
+				mARTime = mRTime;
+				mARTimeScale = 1f;
+				mARTOffsetTime = mARTime;
+				return;
+			}
 
 			//-----ADJUSTED REAL TIME-----//
 			//this is where we adjust real time to our game needs

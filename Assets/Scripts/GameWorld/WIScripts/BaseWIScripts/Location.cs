@@ -155,6 +155,7 @@ namespace Frontiers.World.WIScripts
 
 		public void OnGroupLoadStateChange()
 		{
+			//Debug.Log ("On group load state change in " + worlditem.FileName + " is now " + mLocationGroup.LoadState.ToString ());
 			if (mLocationGroup.Is(WIGroupLoadState.Loaded)) {
 				OnLocationGroupLoaded.SafeInvoke();
 			} else if (mLocationGroup.Is(WIGroupLoadState.Unloaded)) {

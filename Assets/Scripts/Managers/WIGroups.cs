@@ -550,7 +550,6 @@ namespace Frontiers
 		protected IEnumerator DestroyGroup(WIGroup group)
 		{
 			if (group != null && !group.IsDestroyed) {
-				//GameObject.Destroy (group.gameObject, 0.1f);
 				List <Transform> transformsToDestroy = new List <Transform>();
 				List <Transform> transformsToReclaim = new List <Transform>();
 				foreach (Transform childTransform in group.tr) {
@@ -564,6 +563,7 @@ namespace Frontiers
 				}
 				yield return null;
 			}
+			//GameObject.Destroy (group.gameObject, 0.1f);
 			yield break;
 		}
 
@@ -1027,7 +1027,7 @@ namespace Frontiers
 						rootGroup += "(" + unloader.NotPreparedToUnload.Count.ToString() + " NOT PREPARED)\n";
 						rootGroup += "(" + unloader.PreparingToUnload.Count.ToString() + " PREPARING)\n";
 						rootGroup += "(" + unloader.ReadyToUnload.Count.ToString() + " READY TO UNLOAD)\n";
-						rootGroup += "(" + unloader.Unloading.Count.ToString() + " UNLOADING)\n";
+						rootGroup += "(" + unloader.Unloading.Count.ToString() + " UNLOADING - LH: " + unloader.LastHoldout + ")\n";
 						rootGroup += "(" + unloader.FinishedUnloading.Count.ToString() + " FINISHED UNLOADING)\n";
 					}
 					UnityEngine.GUILayout.Button(rootGroup + ": " + unloader.LoadState.ToString());

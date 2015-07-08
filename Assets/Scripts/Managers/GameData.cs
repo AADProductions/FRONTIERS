@@ -291,11 +291,13 @@ namespace Frontiers
 												gLoadedMaps = new Dictionary<string, Texture2D>();
 										}
 
+										#if UNITY_STANDALONE
 										Debug.Log(gGlobalWorldsPath);
 										Debug.Log(gGlobalProfilesPath);
 										Debug.Log(gBaseWorldPath);
 										Debug.Log(gBaseWorldModsPath);
 										Debug.Log(gCurrentWorldModsPath);
+										#endif
 
 										return result;
 								}

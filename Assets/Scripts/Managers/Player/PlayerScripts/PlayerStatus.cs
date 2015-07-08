@@ -334,14 +334,14 @@ namespace Frontiers
 
 		public void AddCondition(string conditionName)
 		{
-			Debug.Log ("Adding condition " + conditionName);
+			//Debug.Log ("Adding condition " + conditionName);
 			bool conditionAdded = false;
 			//first see if the condition is already present
 			//if it is, don't clone the condition, stack it instead of creating a new one
 			for (int i = 0; i < State.ActiveConditions.Count; i++) {
 				Condition activeCondition = State.ActiveConditions[i];
 				if (string.Equals(activeCondition.Name, conditionName) && !activeCondition.HasExpired) {//double its duration so it'll last twice as long
-					Debug.Log ("Condition is already active, not adding new");
+					//Debug.Log ("Condition is already active, not adding new");
 					activeCondition.IncreaseDuration(activeCondition.Duration * Globals.StatusKeeperTimecale);
 					return;
 				}
@@ -349,7 +349,7 @@ namespace Frontiers
 
 			Condition condition = null;
 			if (Frontiers.Conditions.Get.ConditionByName (conditionName, out condition)) {	//if we have no active conditions try looking it up
-				Debug.Log ("Condition found, adding now");
+				//Debug.Log ("Condition found, adding now");
 				condition.Initialize ();
 				State.ActiveConditions.Add (condition);
 				for (int i = 0; i < StatusKeepers.Count; i++) {
@@ -360,7 +360,7 @@ namespace Frontiers
 					}
 				}
 			} else {
-				Debug.Log ("Condition " + conditionName + " not found");
+				//Debug.Log ("Condition " + conditionName + " not found");
 			}
 
 			if (conditionAdded) {

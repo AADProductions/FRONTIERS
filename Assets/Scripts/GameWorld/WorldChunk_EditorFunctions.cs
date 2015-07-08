@@ -662,7 +662,7 @@ namespace Frontiers.World
 
 			GameObject spawnPointObject = null;
 			PlayerStartupPosition pos = null;
-			if (UnityEditor.Selection.activeGameObject != gameObject) {
+			/*if (UnityEditor.Selection.activeGameObject != gameObject) {
 				//we're not looking for a generic spawn point
 				spawnPointObject = UnityEditor.Selection.activeGameObject;
 				ActionNode node = spawnPointObject.GetComponent <ActionNode>();
@@ -674,7 +674,7 @@ namespace Frontiers.World
 				//action nodes can be in buildings or in locations
 				GameObject locationObject = null;
 				if (node.transform.parent.name == "__ACTION_NODES") {
-					/*
+					*./*
 								if (node.transform.parent.parent.name.Contains ("=VARIANT")) {
 									//action nodes->interior->variant->normal->structure base->location
 									locationObject = node.transform.parent.parent.parent.parent.parent.parent.gameObject;//jesus christ...
@@ -686,7 +686,7 @@ namespace Frontiers.World
 									pos.Interior = false;
 									pos.StructureName = locationObject.name;
 								}
-								*/
+								*//*
 					//do nothing
 				} else {
 					locationObject = node.transform.parent.gameObject;
@@ -699,7 +699,7 @@ namespace Frontiers.World
 					MobileReference mb = locationWorldItem.StaticReference;
 					pos.LocationReference = new MobileReference(mb.FileName, mb.GroupPath);
 				}
-			} else {
+				} else {*/
 				//find and create generic spawn point
 				spawnPointObject = GameObject.Find("StartupPosition");
 				Vector3 spawnPoint = spawnPointObject.transform.position;
@@ -712,7 +712,7 @@ namespace Frontiers.World
 				WorldItem locationWorldItem = locationObject.GetComponent <WorldItem>();
 				MobileReference mb = locationWorldItem.StaticReference;
 				pos.LocationReference = new MobileReference(mb.FileName, mb.GroupPath);
-			}
+			//}
 			bool foundExisting = false;
 			for (int i = 0; i < GameWorld.Get.WorldStartupPositions.Count; i++) {
 				if (GameWorld.Get.WorldStartupPositions[i].Name == pos.Name) {

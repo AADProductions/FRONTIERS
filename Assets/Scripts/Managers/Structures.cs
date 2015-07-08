@@ -807,8 +807,8 @@ namespace Frontiers
 				Structure nextStructure = fromListEnum.Current;//fromList [i];
 				//if it's null or it's no longer waiting to load, ditch it
 				//this could happen if the active state changed while waiting
-				if (nextStructure == null) {
-					itemsToRemove.Add (null);
+				if (nextStructure == null || nextStructure.worlditem.Is (WILoadState.Unloading | WILoadState.Unloaded)) {
+					itemsToRemove.Add (nextStructure);
 					//if the structure has the right load state
 				} else if (nextStructure.Is (desiredState) || nextStructure.Is (precursorState)) {
 					nextStructure.LoadState = desiredState;
@@ -819,7 +819,6 @@ namespace Frontiers
 						} else if ((int)nextStructure.LoadPriority > (int)structure.LoadPriority) {
 							structure = nextStructure;
 						}
-
 						if (structure.LoadPriority == StructureLoadPriority.SpawnPoint) {
 							//immediately more important
 							break;
@@ -830,18 +829,13 @@ namespace Frontiers
 				}
 			}
 
-			if (structure != null) {
-				itemsToRemove.Add (structure);
-				return true;
-			}
-
 			for (int i = 0; i < itemsToRemove.Count; i++) {
 				fromList.Remove (itemsToRemove [i]);
 			}
 			itemsToRemove.Clear ();
 			itemsToRemove = null;
 
-			return false;
+			return structure != null;
 		}
 
 		public void Update ()
@@ -1002,6 +996,19 @@ namespace Frontiers
 					while (createStructureGroups.MoveNext ()) {
 						yield return createStructureGroups.Current;
 					}
+					//make sure it didn't unload while we were waiting
+					if (structure == null) {
+						Debug.LogError ("Structure was null when attempting to build structure, quitting");
+						yield break;
+					}
+					if (structure.StructureGroup == null) {
+						Debug.LogError ("Structure group was null when attempting to build structure " + structure.name + ", quitting");
+						yield break;
+					}
+					if (structure.worlditem.Is (WILoadState.Unloading | WILoadState.Unloaded) ||
+					    structure.StructureGroup.Is (WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
+						Debug.LogError ("Structure was unloading / unloaded or structure group was unloading / unloaded - " + structure.worlditem.LoadState.ToString () + " / " + structure.StructureGroup.LoadState.ToString ());
+					}
 					//this will run in parallel with the exterior building
 					structure.LoadMinorStructures (finalState);
 					//initialize structure (it'll wait until it's ready to start), then build the exterior
@@ -1039,6 +1046,7 @@ namespace Frontiers
 								yield return generateStructureItems.Current;
 							}
 						} else {
+							structure.CleanUpError ();
 							Debug.Log ("ERROR in structure builder when building " + mainTemplate.Name);
 						}
 						yield return null;
@@ -1050,8 +1058,9 @@ namespace Frontiers
 							//now that it's built, if it's an exterior, cache the meshes
 							/*if (structure.Is(StructureLoadState.ExteriorLoaded)) {
 														AddCachedInstance(mainTemplate.Name, structure);
-												}*/
+							}*/
 						} else {
+							structure.CleanUpError ();
 							Debug.Log ("ERROR in structure builder when finished generating " + mainTemplate.Name);
 						}
 					} else {
@@ -1062,8 +1071,6 @@ namespace Frontiers
 				}
 
 				mainTemplate = null;
-				//TODO see if this is really necessary...
-				//System.GC.Collect( );
 				yield return null;
 				yield return null;
 			}

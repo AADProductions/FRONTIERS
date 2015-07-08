@@ -575,7 +575,7 @@ namespace Frontiers.World
 			//get a body based on the newly chosen gender
 			if (combinedFlags.Gender == 1) {
 				//get a male body
-				faceTextures = Get.AvailableGenericFaceTextures;//template.AvailableFaceTexturesMale;
+				faceTextures = template.AvailableFaceTexturesMale;
 				bodyTextures = template.AvailableBodyTexturesMale;
 				if (!mBodyLookup.TryGetValue (template.BodyNameMale, out bodyTemplate)) {
 					//DebugConsole.Get.Log.Add("#Couldn't find body " + template.BodyNameMale);
@@ -584,7 +584,7 @@ namespace Frontiers.World
 				}
 			} else {
 				//faceTextures = template.AvailableFaceTexturesFemale;
-				faceTextures = Get.AvailableGenericFaceTextures;//template.AvailableFaceTexturesMale;
+				faceTextures = template.AvailableFaceTexturesMale;
 				bodyTextures = template.AvailableBodyTexturesFemale;
 				if (!mBodyLookup.TryGetValue (template.BodyNameFemale, out bodyTemplate)) {
 					//DebugConsole.Get.Log.Add("#Couldn't find body " + template.BodyNameFemale);
@@ -958,7 +958,7 @@ namespace Frontiers.World
 			//get a body based on the newly chosen gender
 			if (combinedFlags.Gender == 1) {
 				//get a male body
-				faceTextures = Get.AvailableGenericFaceTextures;//template.AvailableFaceTexturesMale;
+				faceTextures = template.AvailableFaceTexturesMale;
 				//faceTextures = template.AvailableFaceTexturesMale;
 				bodyTextures = template.AvailableBodyTexturesMale;
 				if (!mBodyLookup.TryGetValue (template.BodyNameMale, out bodyTemplate)) {
@@ -967,7 +967,7 @@ namespace Frontiers.World
 					return false;
 				}
 			} else {
-				faceTextures = Get.AvailableGenericFaceTextures;//template.AvailableFaceTexturesMale;
+				faceTextures = template.AvailableFaceTexturesMale;
 				//faceTextures = template.AvailableFaceTexturesFemale;
 				bodyTextures = template.AvailableBodyTexturesFemale;
 				if (!mBodyLookup.TryGetValue (template.BodyNameFemale, out bodyTemplate)) {

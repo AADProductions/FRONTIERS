@@ -35,22 +35,33 @@ namespace Frontiers.World
 				yield return null;
 			}
 
+			Template = template;
+			State = BuilderState.Initialized;
+			Priority = priority;
+
 			gHelperTransform = gameObject.FindOrCreateChild ("StructureBuilderHelper_" + name);
 
-			try {
-				StructureBase = parentStructure.StructureGroup.gameObject;
-				ParentStructure = parentStructure;
-				Template = template;
-				State = BuilderState.Initialized;
-				Priority = priority;
-				StructureChunk = parentStructure.worlditem.Group.GetParentChunk ();
-				InteriorVariants.Clear ();
-				InteriorVariants.Add (ParentStructure.State.BaseInteriorVariant);
-				InteriorVariants.AddRange (ParentStructure.State.AdditionalInteriorVariants);
-			} catch (Exception e) {
-				Debug.LogError ("Error in structure builder, proceeding normally:" + e.ToString ());
+			ParentStructure = parentStructure;
+			if (ParentStructure == null) {
+				Debug.LogError ("Parent structure null in builder, proceeding normally");
 				State = BuilderState.Error;
+				yield break;
 			}
+			if (ParentStructure.worlditem.Group == null) {
+				Debug.Log ("Parent structure worlditem group was null, proceeding normally");
+				State = BuilderState.Error;
+				yield break;
+			}
+			if (ParentStructure.StructureGroup == null) {
+				Debug.Log ("Parent structure StructureGroup was null, waiting until group exists");
+				State = BuilderState.Error;
+				yield break;
+			}
+			StructureBase = parentStructure.StructureGroup.gameObject;
+			StructureChunk = parentStructure.worlditem.Group.GetParentChunk ();
+			InteriorVariants.Clear ();
+			InteriorVariants.Add (ParentStructure.State.BaseInteriorVariant);
+			InteriorVariants.AddRange (ParentStructure.State.AdditionalInteriorVariants);
 
 			yield break;
 		}
@@ -369,7 +380,7 @@ namespace Frontiers.World
 				}
 
 				if (ParentStructure.ExteriorMovmementNodes == null) {
-				ParentStructure.ExteriorMovmementNodes = new List <MovementNode> ();
+					ParentStructure.ExteriorMovmementNodes = new List <MovementNode> ();
 				}
 				ParentStructure.ExteriorMovmementNodes.AddRange (mCurrentTemplateGroup.MovementNodes);
 				mCurrentTemplateGroup = null;

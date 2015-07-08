@@ -49,7 +49,7 @@ namespace Frontiers.World
 				return mActiveState;
 			}
 			set {
-				if (mActiveStateLocked)
+				if (mActiveStateLocked || Is (WILoadState.Unloading | WILoadState.Unloaded))
 					return;
 
 				if (value != mActiveState) {
@@ -434,10 +434,7 @@ namespace Frontiers.World
 		#region mode settings
 
 		public void RemoveFromGame ()
-		{	
-			if (mDestroyed)
-				return;
-
+		{
 			//convenience
 			SetMode (WIMode.RemovedFromGame);
 		}

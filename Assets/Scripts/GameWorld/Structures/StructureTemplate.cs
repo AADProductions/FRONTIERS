@@ -656,7 +656,9 @@ namespace Frontiers.World
 					nodes.Add (node);
 				}
 			}
+			#if UNITY_EDITOR
 			ActionNodePlaceholder.LinkNodes (acps, nodes, movementNodes);
+			#endif
 		}
 
 		public static Light LightFromLightPiece (LightPiece piece, Transform parentTransform)
@@ -1007,7 +1009,6 @@ namespace Frontiers.World
 
 				fxPieces.Add (fxPiece);
 			}
-
 			return true;
 		}
 

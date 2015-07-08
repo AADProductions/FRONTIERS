@@ -26,6 +26,10 @@ namespace Frontiers.World
 			}
 		}
 
+		#if UNITY_EDITOR
+		public string HoldoutChildItem;
+		#endif
+
 		public string FileName {
 			get {
 				return Props.FileName;
@@ -110,6 +114,7 @@ namespace Frontiers.World
 					#if UNITY_EDITOR
 					Debug.Log ("Skipping update in WIGroup because child items were changed, will update next frame");
 					#endif
+					WIGroups.UpdateDirtyGroup (this);
 					return;
 				} else if (childItemsToUpdate.MoveNext ()) {
 					continueUpdating = true;
@@ -485,8 +490,10 @@ namespace Frontiers.World
 
 		public bool UnloadChildItem(WorldItem childItem)
 		{
-			if (mDestroyed)
+			if (mDestroyed) {
+				Debug.Log ("Attempting to remove child item " + childItem.FileName + " from group " + Props.FileName + " but group was destroyed");
 				return false;
+			}
 
 			//we assume that group ownership check and the like have been
 			//resolved by the time this function is called
@@ -737,8 +744,14 @@ namespace Frontiers.World
 				bool prepareToUnload = true;
 				var childItemEnum = ChildItems.GetEnumerator();
 				while (childItemEnum.MoveNext ()) {
-					//for (int i = 0; i < ChildItems.Count; i++) {
-					prepareToUnload &= childItemEnum.Current.PrepareToUnload();//ChildItems[i].PrepareToUnload();
+					#if UNITY_EDITOR
+					if (!childItemEnum.Current.PrepareToUnload ()) {
+						HoldoutChildItem = childItemEnum.Current.FileName;
+						prepareToUnload = false;
+					}
+					#else
+					prepareToUnload &= childItemEnum.Current.PrepareToUnload();
+					#endif
 				}
 				if (prepareToUnload) {
 					LoadState = WIGroupLoadState.PreparingToUnload;
@@ -765,8 +778,14 @@ namespace Frontiers.World
 					bool readyToUnload = true;
 					var childItemEnum = ChildItems.GetEnumerator();
 					while (childItemEnum.MoveNext ()) {
-					//for (int i = 0; i < ChildItems.Count; i++) {
-						readyToUnload &= childItemEnum.Current.ReadyToUnload;//ChildItems[i].ReadyToUnload;
+						#if UNITY_EDITOR
+						if (!childItemEnum.Current.ReadyToUnload) {
+							HoldoutChildItem = childItemEnum.Current.FileName;
+							readyToUnload = false;
+						}
+						#else
+						readyToUnload &= childItemEnum.Current.ReadyToUnload;
+						#endif
 					}
 					return readyToUnload;
 				} else if (Is(WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
@@ -786,17 +805,14 @@ namespace Frontiers.World
 					gameObject.SetActive (true);
 				}
 				StartCoroutine(UnloadOverTime());
-				/*
-				for (int i = 0; i < ChildItems.Count; i++) {
-						ChildItems[i].BeginUnload();
-				}
-				*/
 			}
 		}
 
 		protected IEnumerator UnloadOverTime()
 		{
-			//Debug.Log("Unloading over time in " + name);
+			#if UNITY_EDITOR
+			Debug.Log("Unloading over time in " + Props.FileName);
+			#endif
 			//start by telling the worlditems to begin unloading
 			var childItemEnum = ChildItems.GetEnumerator();
 			while (childItemEnum.MoveNext()) {
@@ -805,15 +821,6 @@ namespace Frontiers.World
 				}
 				yield return null;
 			}
-			/*
-			for (int i = ChildItems.LastIndex(); i >= 0; i--) {
-				if (ChildItems[i] == null) {
-					ChildItems.RemoveAt(i);
-				} else {
-					ChildItems[i].BeginUnload();
-				}
-				yield return null;
-			}*/
 			yield return null;
 			while (ChildItems.Count > 0) {
 				//save each child item one at a time
@@ -822,11 +829,16 @@ namespace Frontiers.World
 				childItemEnum = ChildItems.GetEnumerator();
 				if (childItemEnum.MoveNext()) {
 					childItemToRemove = childItemEnum.Current;
-					if (childItemToRemove != null && childItemToRemove.FinishedUnloading) {
-						childItemToRemove = childItemEnum.Current;
-						yield return null;
-					} else {
-						childItemToRemove = null;
+					if (childItemToRemove != null) {
+						if (childItemToRemove.FinishedUnloading) {
+							childItemToRemove = childItemEnum.Current;
+							yield return null;
+						} else {
+							#if UNITY_EDITOR
+							HoldoutChildItem = childItemEnum.Current.FileName;
+							#endif
+							childItemToRemove = null;
+						}
 					}
 				}
 				//removes null as well
@@ -867,6 +879,9 @@ namespace Frontiers.World
 
 		public bool FinishedUnloading {
 			get {
+				if (Is (WIGroupLoadState.Unloading) && (ChildItems.Count == 0 && ChildGroups.Count == 0)) {
+					LoadState = WIGroupLoadState.Unloaded;
+				}
 				if (Is(WIGroupLoadState.Unloaded)) {
 					return true;
 				}
@@ -1461,6 +1476,15 @@ namespace Frontiers.World
 			if (GUILayout.Button("\n\nUNLOAD GROUP\n\n") && EditorLoaded) {
 				Debug.Log("Unloading editor...");
 				UnloadEditor();
+			}
+			foreach (WorldItem item in ChildItems) {
+				if (item == null) {
+					GUILayout.Button ("NULL");
+				} else {
+					if (GUILayout.Button (item.FileName)) {
+						UnityEditor.Selection.activeGameObject = item.gameObject;
+					}
+				}
 			}
 
 		}

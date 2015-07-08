@@ -70,7 +70,7 @@ namespace Frontiers
 								}
 								CfSceneryScripts.Clear();
 						}
-						go.SetActive(false);
+						//go.SetActive(false);
 				}
 
 				public void RefreshShadowCasters(bool terrainShadows)

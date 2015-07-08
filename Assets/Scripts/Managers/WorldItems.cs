@@ -304,8 +304,9 @@ namespace Frontiers.World
 
 			//get the worlditem's transform and chunk position before we unparent it
 			worlditem.RefreshTransform();
+			worlditem.gameObject.layer = Globals.LayerNumHidden;
 			//deactivate it entirely
-			worlditem.gameObject.SetActive(false);
+			//worlditem.gameObject.SetActive(false);
 			//move it to the graveyard
 			worlditem.tr.parent = WIGroups.Get.Graveyard.tr;
 			worlditem.tr.localPosition = Vector3.zero;
@@ -326,7 +327,6 @@ namespace Frontiers.World
 					Get.Save(worlditem, true);
 				}
 			}
-
 			GameObject.Destroy(worlditem.gameObject);
 		}
 		//adds them to a queue to be loaded over time
@@ -538,6 +538,8 @@ namespace Frontiers.World
 
 		public static void ApplyDopplegangerRenderers(WorldItem item, GameObject doppleGanger, string state, WIMode mode)
 		{
+			try {
+
 			List <GameObject> renderersToCreate = new List <GameObject>();
 			List <Renderer> renderersToCopy = new List <Renderer>();
 			bool transformEachRenderer = false;
@@ -718,6 +720,10 @@ namespace Frontiers.World
 
 				dopMr.sharedMaterials = materials.ToArray();
 				dopMr.enabled = true;
+			}
+			}
+			catch (Exception e) {
+				Debug.LogError ("Exception when attempting to apply doppleganger renderers, proceeding normally: " + e.ToString ());
 			}
 
 			//add a collider to the doppleganger using bounds
@@ -951,7 +957,14 @@ namespace Frontiers.World
 				}
 				worlditem.ClearStackContainer();
 				worlditem.IsTemplate = false;
+				if (group == null) {
+					Debug.Log ("Group was null when cloning stack item " + stackItem.FileName + " - setting to WORLD");
+					group = WIGroups.Get.World;
+				}
 				worlditem.Group = group;
+				if (worlditem.tr == null) {
+					worlditem.tr = worlditem.transform;
+				}
 				worlditem.tr.parent = group.tr;
 				//copy global properties into new worlditem
 				//copy local and stack item props to worlditem

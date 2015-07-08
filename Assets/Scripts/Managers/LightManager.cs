@@ -323,7 +323,7 @@ namespace Frontiers
 			mUpdateMaterials++;
 			if (mUpdateMaterials > 5) {
 				mUpdateMaterials = 0;
-				bool lightsOn = WorldClock.IsNight || !Player.Local.Surroundings.IsOutside;
+				bool lightsOn = WorldClock.IsNight || !Player.Local.Surroundings.IsOutside || GameWorld.Get.CurrentBiome.OuterSpace;
 				if (lightsOn) {
 					mTargetEmissionBrightness = 1f;
 				} else {

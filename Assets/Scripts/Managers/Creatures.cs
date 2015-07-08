@@ -248,7 +248,7 @@ namespace Frontiers.World
 					}
 					//see if we're supposed to create new nodes
 
-					if (SpawnDarkrot && (WorldClock.IsNight)) {
+					if (SpawnDarkrot && !GameWorld.Get.CurrentBiome.OuterSpace && (WorldClock.IsNight)) {
 						if ((!Player.Local.Surroundings.IsInCivilization || Player.Local.Surroundings.IsUnderground) && DarkrotNodes.Count < Globals.DarkrotMaxNodes) {//darkrot only spawns in the wild regardless of difficulty
 							if (UnityEngine.Random.value < Globals.DarkrotBaseSpawnProbability) {
 								mRandomPointAroundPlayer = Vector3.MoveTowards (Player.Local.Position, Player.Local.FocusVector.ToXZ (), Globals.DarkrotSpawnDistance);

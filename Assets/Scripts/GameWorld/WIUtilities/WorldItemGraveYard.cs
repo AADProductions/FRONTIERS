@@ -23,9 +23,8 @@ public class WorldItemGraveYard : MonoBehaviour
 			deadWorldItem.transform.parent 			= transform;
 			deadWorldItem.gameObject.layer 			= Globals.LayerNumHidden;
 			deadWorldItem.transform.localPosition 	= Vector3.zero;
-			deadWorldItem.StopAllCoroutines ();
-			deadWorldItem.gameObject.SetActive (false);
-			
+			//deadWorldItem.StopAllCoroutines ();
+			//deadWorldItem.gameObject.SetActive (false);
 			GameObject.Destroy (deadWorldItem.gameObject, 1.0f);
 		}
 	}

@@ -125,21 +125,29 @@ public partial class GameWorld : Manager
 
 	public void SetDistantChunks (Vector3 position)
 	{
-		List <WorldChunk> ClosestChunks = new List<WorldChunk> ();
-		ClosestChunks.AddRange (WorldChunks);
-		//don't bother with the primary chunk, we're not changing it
-		ClosestChunks.Remove (PrimaryChunk);
-		ClosestChunks.Sort (delegate (WorldChunk c1, WorldChunk c2) {
-			float c1Distance = Vector3.Distance (position, c1.transform.position);
-			float c2Distance = Vector3.Distance (position, c2.transform.position);
-			return c1Distance.CompareTo (c2Distance);
-		});
-		for (int i = 0; i < ClosestChunks.Count; i++) {
-			//this will target 8 chunks, total chunks minus 1 for primary
-			if (i < TerrainObjects.Count - 1) {
-				ClosestChunks [i].TargetMode = ChunkMode.Distant;
-			} else {
-				ClosestChunks [i].TargetMode = ChunkMode.Unloaded;
+		if (PrimaryChunk.State.LoadInIsolation) {
+			for (int i = 0; i < WorldChunks.Count; i++) {
+				if (WorldChunks [i].State.ID != PrimaryChunkID) {
+					WorldChunks [i].TargetMode = ChunkMode.Unloaded;
+				}
+			}
+		} else {
+			List <WorldChunk> ClosestChunks = new List<WorldChunk> ();
+			ClosestChunks.AddRange (WorldChunks);
+			//don't bother with the primary chunk, we're not changing it
+			ClosestChunks.Remove (PrimaryChunk);
+			ClosestChunks.Sort (delegate (WorldChunk c1, WorldChunk c2) {
+				float c1Distance = Vector3.Distance (position, c1.transform.position);
+				float c2Distance = Vector3.Distance (position, c2.transform.position);
+				return c1Distance.CompareTo (c2Distance);
+			});
+			for (int i = 0; i < ClosestChunks.Count; i++) {
+				//this will target 8 chunks, total chunks minus 1 for primary
+				if (i < TerrainObjects.Count - 1) {
+					ClosestChunks [i].TargetMode = ChunkMode.Distant;
+				} else {
+					ClosestChunks [i].TargetMode = ChunkMode.Unloaded;
+				}
 			}
 		}
 	}
@@ -1142,6 +1150,8 @@ public partial class GameWorld : Manager
 
 			mLatestPlayerPosition = Player.Local.Position;
 			FindBiomeAndRegion (mLatestPlayerPosition, ref CurrentRegionData, ref CurrentRegion, ref CurrentBiome, ref CurrentAudioProfile);
+			Sky.SpaceMode = CurrentBiome.OuterSpace;
+			Physics.gravity = Vector3.up * (CurrentBiome.OuterSpace ? Globals.OuterSpaceGravity : Globals.DefaultGravity);
 			//calculate the current tide base height
 			//if the value is <= 0, use the last base height
 			if (CurrentRegionData.a > 0) {
@@ -1161,6 +1171,7 @@ public partial class GameWorld : Manager
 			//so we're going to loop through them really quick and set the modes straight away
 			//that way they won't accidentally delete assets we need
 			ImmediateChunks.Clear ();
+			bool isolatePrimaryChunk = PrimaryChunk.State.LoadInIsolation;
 			for (int i = 0; i < WorldChunks.Count; i++) {
 				ChunkMode currentMode = WorldChunks [i].CurrentMode;
 				if (currentMode == ChunkMode.Immediate || currentMode == ChunkMode.Primary) {
@@ -1170,7 +1181,11 @@ public partial class GameWorld : Manager
 				if (i == mPrimaryChunkIndex) {	//it may already be trying to go primary but set it anyway
 					WorldChunks [i].TargetMode = ChunkMode.Primary;
 				} else {
-					GetChunkMode (WorldChunks [i], i, Player.Local.Position, true);
+					if (isolatePrimaryChunk) {
+						WorldChunks [i].TargetMode = ChunkMode.Unloaded;
+					} else {
+						GetChunkMode (WorldChunks [i], i, Player.Local.Position, true);
+					}
 				}
 				yield return null;
 			}
