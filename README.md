@@ -21,18 +21,20 @@ massive open world.
 > ~[Lars (aka Railboy)](http://frontiers.prophpbb.com/topic839.html#p9734)
 > </cite>
 
+* Third party assets:
+
+* NGUI 2.0.5
+* TNet 1.7.2c
+* SuperSplines 3.0
+* InControl 1.3.9
+* ProMouse 1.4.0
+* SSAO Pro 1.4
+* TOD 2.0.5
+* SE Natural Bloom 1.011
+* Advanced Foliage Shader v.4 3.02
+* Painterly v.5
+
+
 # Links
 * [Website](http://explore-frontiers.com/)
 * [Forums](http://frontiers.prophpbb.com/)
-
-Third party assets:
-NGUI 2.0.5
-TNet 1.7.2c
-SuperSplines 3.0
-InControl 1.3.9
-ProMouse 1.4.0
-SSAO Pro 1.4
-TOD 2.0.5
-SE Natural Bloom 1.011
-Advanced Foliage Shader v.4 3.02
-Painterly v.5
