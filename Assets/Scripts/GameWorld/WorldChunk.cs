@@ -898,11 +898,13 @@ namespace Frontiers.World
 			if (AboveGroundGroup == null) {
 				AboveGroundGroup = WIGroups.GetOrAdd (Transforms.AboveGroundWorldItems.gameObject, Transforms.AboveGroundWorldItems.name, WorldItemsGroup, null);
 				AboveGroundGroup.Props.IgnoreOnSave = true;
+				AboveGroundGroup.Props.TerrainType = LocationTerrainType.AboveGround;
 			}
 
 			if (BelowGroundGroup == null) {
 				BelowGroundGroup = WIGroups.GetOrAdd (Transforms.BelowGroundWorldItems.gameObject, Transforms.BelowGroundWorldItems.name, WorldItemsGroup, null);
 				BelowGroundGroup.Props.IgnoreOnSave = true;
+				BelowGroundGroup.Props.TerrainType = LocationTerrainType.BelowGround;
 			}
 
 			AboveGroundGroup.Load ();

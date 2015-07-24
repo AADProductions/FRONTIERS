@@ -42,6 +42,7 @@ namespace Frontiers.World.WIScripts
 			if (StructureOwner != null) {
 				StructureOwner.worlditem.Get<Motile> ().enabled = false;
 			}
+			RefreshColliders (false);
 			//structures will figure out if this is a good idea or not
 			Structures.AddInteriorToUnload (this);
 			Structures.AddExteriorToUnload (this);
@@ -288,6 +289,16 @@ namespace Frontiers.World.WIScripts
 			if (LoadPriority != StructureLoadPriority.SpawnPoint) {
 				LoadPriority = StructureLoadPriority.Immediate;
 			}
+
+			if (!Is (StructureLoadState.ExteriorLoaded | StructureLoadState.InteriorLoaded)) {
+				Structures.AddExteriorToLoad (this);
+				if (ForceBuildInterior) {
+					Debug.Log ("Force build interior on active in " + name);
+					Structures.AddInteriorToLoad (this);
+				}
+			} else {
+				SetDestroyed (StructureShingle.PropertyIsDestroyed);
+			}
 		}
 
 		public void OnVisible ()
@@ -303,6 +314,7 @@ namespace Frontiers.World.WIScripts
 			if (!Is (StructureLoadState.ExteriorLoaded | StructureLoadState.InteriorLoaded)) {
 				Structures.AddExteriorToLoad (this);
 				if (ForceBuildInterior) {
+					Debug.Log ("Force build interior on visible in " + name);
 					Structures.AddInteriorToLoad (this);
 				}
 			} else {
@@ -394,6 +406,19 @@ namespace Frontiers.World.WIScripts
 		public void RefreshColliders (bool forceOn)
 		{
 			bool enableColliders = DisplayExterior && (forceOn || worlditem.Is (WIActiveState.Active) || (Player.Local.Surroundings.IsVisitingStructure (this)));
+			if (!enableColliders) {
+				for (int i = 0; i < SpawnedCharacters.Count; i++) {
+					if (SpawnedCharacters [i] != null) {
+						SpawnedCharacters [i].worlditem.Get <Motile> ().IsImmobilized = true;
+					}
+				}
+			} else {
+				for (int i = 0; i < SpawnedCharacters.Count; i++) {
+					if (SpawnedCharacters [i] != null) {
+						SpawnedCharacters [i].worlditem.Get <Motile> ().IsImmobilized = false;
+					}
+				}
+			}
 			//normal exterior colliders
 			for (int i = ExteriorBoxColliders.LastIndex (); i >= 0; i--) {
 				if (ExteriorBoxColliders [i] != null) {
@@ -658,10 +683,12 @@ namespace Frontiers.World.WIScripts
 
 				//transform the movement node positions
 				mn = MovementNode.Empty;
-				for (int i = 0; i < InteriorMovementNodes.Count; i++) {
-					mn = InteriorMovementNodes [i];
-					mn.Position = MovementNode.GetPosition (gTransformHelper, mn);
-					InteriorMovementNodes [i] = mn;
+				if (InteriorMovementNodes != null) {
+					for (int i = 0; i < InteriorMovementNodes.Count; i++) {
+						mn = InteriorMovementNodes [i];
+						mn.Position = MovementNode.GetPosition (gTransformHelper, mn);
+						InteriorMovementNodes [i] = mn;
+					}
 				}
 
 				for (int i = 0; i < interiorVariants.Count; i++) {

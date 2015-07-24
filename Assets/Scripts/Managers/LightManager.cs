@@ -11,6 +11,7 @@ namespace Frontiers
 	public class LightManager : Manager
 	{
 		public static LightManager Get;
+
 		public WorldLight WorldLightPrefab;
 		public Light LightPrefab;
 		public WorldLightTemplate DefaultTemplate = new WorldLightTemplate ();

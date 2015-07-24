@@ -49,6 +49,7 @@ public partial class GameWorld : Manager
 	public bool EditorMode = false;
 	public bool ChunksLoaded = false;
 	public int TotalChunkPrefabs = 0;
+	public LocationTerrainType ActiveTerrainType;
 
 	public int PrimaryChunkID { get { return mPrimaryChunkID; } }
 
@@ -185,6 +186,7 @@ public partial class GameWorld : Manager
 	{
 		SuspendChunkLoading = true;
 		yield return new WaitForEndOfFrame ();
+		ActiveTerrainType = (show ? LocationTerrainType.AboveGround : LocationTerrainType.BelowGround);
 		for (int i = 0; i < WorldChunks.Count; i++) {
 			WorldChunks [i].ShowAboveGround (show);
 			yield return null;
@@ -697,7 +699,7 @@ public partial class GameWorld : Manager
 		mRaycastStartPosition.y = terrainHit.feetPosition.y + raycastDistance;
 		mRaycastStartPosition.z = terrainHit.feetPosition.z;
 		//first get the ground
-		int layerMask = Globals.LayersSolidTerrain;
+		int layerMask = Globals.LayerStructureTerrain | Globals.LayerObstacleTerrain;
 		if (!terrainHit.ignoreWorldItems) {
 			layerMask |= Globals.LayerWorldItemActive;
 		}

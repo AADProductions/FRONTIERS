@@ -43,6 +43,7 @@ namespace Frontiers.World
 				public int InstanceWeight = 1;
 				public bool LimitInstances = false;
 				public int MaxInstances = 0;
+				public int MinInstances = 0;
 
 				public static bool IsNullOrEmpty(GenericWorldItem gwi)
 				{

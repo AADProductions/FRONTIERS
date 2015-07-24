@@ -865,13 +865,22 @@ namespace Frontiers.World
 					GUILayout.EndHorizontal();
 					GUILayout.BeginHorizontal();
 
-					GUILayout.Label("Instances: " + template.InstanceWeight);
+					GUILayout.Label("Inst: " + template.InstanceWeight);
 					if (GUILayout.Button("+", GUILayout.Width(20f))) {
 						template.InstanceWeight++;
 					}
 					if (GUILayout.Button("-", GUILayout.Width(20f))) {
 						if (template.InstanceWeight > 0) {
 							template.InstanceWeight--;
+						}
+					}
+					GUILayout.Label("Min Inst: " + template.MinInstances);
+					if (GUILayout.Button("+", GUILayout.Width(20f))) {
+						template.MinInstances++;
+					}
+					if (GUILayout.Button("-", GUILayout.Width(20f))) {
+						if (template.MinInstances > 0) {
+							template.MinInstances--;
 						}
 					}
 					UnityEngine.GUI.color = Color.red;

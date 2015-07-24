@@ -291,8 +291,16 @@ namespace Frontiers.World
 			default:
 				mCurrentTemplateGroup = Template.Exterior;
 				//extract the fires from the template and add it to the template
-				StructureTemplate.ExtractChildPiecesFromLayer (ref ParentStructure.DestroyedFires, Template.Exterior.DestroyedFires);
-				StructureTemplate.ExtractFXPiecesFromLayer (ref ParentStructure.DestroyedFX, Template.Exterior.DestroyedFX);
+				//StructureTemplate.ExtractChildPiecesFromLayer (ref ParentStructure.DestroyedFires, Template.Exterior.DestroyedFires);
+				//StructureTemplate.ExtractFXPiecesFromLayer (ref ParentStructure.DestroyedFX, Template.Exterior.DestroyedFX);
+				if (ParentStructure.DestroyedFX == null) {
+					ParentStructure.DestroyedFX = new List<FXPiece> ();
+				}
+				if (ParentStructure.DestroyedFires == null) {
+					ParentStructure.DestroyedFires = new List<ChildPiece> ();
+				}
+				ParentStructure.DestroyedFX.AddRange (Template.Exterior.DestroyedFXPieces);
+				ParentStructure.DestroyedFires.AddRange (Template.Exterior.DestroyedFiresPieces);
 				switch (Template.BuildMethod) {
 				case StructureBuildMethod.MeshCombiner:
 														//before we actually generate the meshes
@@ -361,12 +369,16 @@ namespace Frontiers.World
 					break;
 
 				case StructureBuildMethod.MeshInstances:
-														//extract the fires from the template and add it to the template
+					if (ParentStructure.DestroyedFX == null) {
+						ParentStructure.DestroyedFX = new List<FXPiece> ();
+					}
 					if (ParentStructure.DestroyedFires == null) {
 						ParentStructure.DestroyedFires = new List<ChildPiece> ();
-					}
-					StructureTemplate.ExtractChildPiecesFromLayer (ref ParentStructure.DestroyedFires, Template.Exterior.DestroyedFires);
-					StructureTemplate.ExtractFXPiecesFromLayer (ref ParentStructure.DestroyedFX, Template.Exterior.DestroyedFX);
+					}													//extract the fires from the template and add it to the template
+					ParentStructure.DestroyedFires.AddRange (Template.Exterior.DestroyedFiresPieces);
+					ParentStructure.DestroyedFX.AddRange (Template.Exterior.DestroyedFXPieces);
+					//StructureTemplate.ExtractChildPiecesFromLayer (ref ParentStructure.DestroyedFires, Template.Exterior.DestroyedFires);
+					//StructureTemplate.ExtractFXPiecesFromLayer (ref ParentStructure.DestroyedFX, Template.Exterior.DestroyedFX);
 					var instanceMeshes = InstanceMeshes (
 						                     mCurrentTemplateGroup,
 						                     GetChildName (false, false),

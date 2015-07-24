@@ -93,13 +93,13 @@ namespace Frontiers.World
 
 		public void SaySpeech1 ()
 		{
-			GUI.NGUIScreenDialog.AddSpeech (Speech1, OrbName, 2f);
+			GUI.NGUIScreenDialog.AddSpeech (Speech1, OrbName, 2f, true);
 			MasterAudio.PlaySound (MasterAudio.SoundType.AnimalVoice, Body.transform, "OrbWarn");
 		}
 
 		public void SaySpeech2 ()
 		{
-			GUI.NGUIScreenDialog.AddSpeech (Speech2, OrbName, 2f);
+			GUI.NGUIScreenDialog.AddSpeech (Speech2, OrbName, 2f, true);
 			MasterAudio.PlaySound (MasterAudio.SoundType.AnimalVoice, Body.transform, "OrbAttack1");
 		}
 
@@ -128,8 +128,10 @@ namespace Frontiers.World
 
 		protected IEnumerator FireBeamsAtExplosions (List<FXPiece> explosions)
 		{
-			if (explosions == null)
+			if (explosions == null) {
+				Debug.Log ("Explosions were null in destroy player home.");
 				yield break;
+			}
 			//start the beam firing
 			Beam.AttachTo (BeamOrigin, BeamTarget);
 			Beam.Fire (1000f);

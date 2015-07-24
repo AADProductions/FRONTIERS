@@ -483,6 +483,9 @@ namespace Frontiers.World
 			#endregion
 
 			#region deal with generated meshes
+
+			double timeout = WorldClock.AdjustedRealTime + 10f;
+
 			if (generatedMeshes) {
 				//create all the cached meshes immediately, so other structures know we got here first
 				Structures.CachedMesh normalCachedMesh = new Structures.CachedMesh (interior, false, false, staticLayer.LayerNum, staticLayer.Layer, staticLayer.Tag);
@@ -564,6 +567,11 @@ namespace Frontiers.World
 						builder.State = Builder.BuilderState.HandlingMeshes;
 					}
 					yield return null;//TODO add some sort of timeout?
+					if (WorldClock.AdjustedRealTime > timeout) {
+						builder.State = BuilderState.Error;
+						Debug.LogError ("Timed out when building minor structure, returning now");
+						yield break;
+					}
 				}
 				//the mesh results should have been sent to our public props
 				//take them and put them in the right place now

@@ -462,6 +462,7 @@ namespace Frontiers.World
 			//we assume that group ownership check and the like have been
 			//resolved by the time this function is called
 			if (childGroup != this && !ChildGroups.Contains(childGroup)) {
+				childGroup.Props.TerrainType = Props.TerrainType;
 				//increment file name - this shouldn't be necessary very often
 				//but better safe than sorry
 				string fileName	= childGroup.FileName;

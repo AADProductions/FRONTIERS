@@ -359,6 +359,7 @@ namespace Frontiers.World
 
 			if (Owner.IsDead) {
 				Animator.Dead = true;
+				Debug.Log ("Body is dead");
 				return;
 			}
 

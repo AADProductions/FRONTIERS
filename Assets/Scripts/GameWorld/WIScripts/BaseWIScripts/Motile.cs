@@ -82,7 +82,19 @@ namespace Frontiers.World.WIScripts
 
 		public override bool Initialized { get { return mInitialized; } }
 
-		public bool IsImmobilized { get; set; }
+		public bool IsImmobilized {
+			get {
+				return mIsImmobilized;
+			}
+			set {
+				if (!mInitialized || !HasBody)
+					return;
+
+				mIsImmobilized = value;
+			}
+		}
+
+		protected bool mIsImmobilized = true;
 
 		public bool IsGrounded {
 			get {
@@ -190,7 +202,7 @@ namespace Frontiers.World.WIScripts
 			//rvoController.enabled = false;
 			//set immobilized to true
 			//this will prevent anything from moving before we're ready
-			IsImmobilized = true;
+			mIsImmobilized = true;
 			//create goal objects, focus objects etc.
 			//we will only need these if we're the brain
 			//put the goal object out in the world, not in the group
@@ -357,7 +369,7 @@ namespace Frontiers.World.WIScripts
 			}
 
 			while (!mFinished && mDoingActionsOverTime) {
-
+	
 				//keep going until stop motile actions is called or the script is finished
 				MotileAction topAction = TopAction;//keep a copy of the current top action
 				while (mNewActions.Count > 0) {
@@ -810,6 +822,7 @@ namespace Frontiers.World.WIScripts
 		{
 			StopMotileActions ();
 			IsDead = true;
+			Debug.Log ("Setting dead in motile");
 			//IsRagdoll = true;
 		}
 
@@ -863,7 +876,7 @@ namespace Frontiers.World.WIScripts
 				return;
 
 			WorldChunk wc = worlditem.Group.GetParentChunk ();
-			if (wc != null && !wc.HasCollider) {
+			if (wc != null && !wc.HasCollider || !(GameWorld.Get.ActiveTerrainType != worlditem.Group.Props.TerrainType)) {
 				UseGravity = false;
 				return;
 			}
@@ -922,7 +935,7 @@ namespace Frontiers.World.WIScripts
 				terrainHit.ignoreWater = false;
 				mCheckTerrainHeight = 0;
 				float newAdjustedYPosition = AdjustedYPosition;
-				if (worlditem.Group.Props.Interior) {
+				if (worlditem.Group.Props.Interior || worlditem.Group.Props.TerrainType == LocationTerrainType.BelowGround) {
 					newAdjustedYPosition = GameWorld.Get.InteriorHeightAtInGamePosition (ref terrainHit);
 				} else {
 					newAdjustedYPosition = GameWorld.Get.TerrainHeightAtInGamePosition (ref terrainHit);

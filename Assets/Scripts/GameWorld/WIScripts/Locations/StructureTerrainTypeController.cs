@@ -61,30 +61,30 @@ namespace Frontiers.World.WIScripts
 		}
 
 		public bool LocationUndergroundEnter (double timeStamp) {
-			Debug.Log ("Location underground enter");
+			//Debug.Log ("Location underground enter");
 			//set the exterior renderers
 			switch (State.ExteriorTerrainType) {
 			case LocationTerrainType.AboveGround:
-				Debug.Log ("DO NOT display exterior");
+				//Debug.Log ("DO NOT display exterior");
 				structure.DisplayExterior = false;
 				break;
 
 			case LocationTerrainType.BelowGround:
 			default://transition
-				Debug.Log ("DO display exterior");
+				//Debug.Log ("DO display exterior");
 				structure.DisplayExterior = true;
 				break;
 			}
 			//set the interior renderers
 			switch (State.InteriorTerrainType) {
 			case LocationTerrainType.AboveGround:
-				Debug.Log ("DO NOT display interior");
+				//Debug.Log ("DO NOT display interior");
 				structure.DisplayInterior = false;
 				break;
 
 			case LocationTerrainType.BelowGround:
 			default://transition
-				Debug.Log ("DO display interior");
+				//Debug.Log ("DO display interior");
 				structure.DisplayInterior = true;
 				break;
 			}
@@ -96,17 +96,17 @@ namespace Frontiers.World.WIScripts
 		}
 
 		public bool LocationUndergroundExit (double timeStamp) {
-			Debug.Log ("Location underground exit");
+			//Debug.Log ("Location underground exit");
 			//set the exterior renderers
 			switch (State.ExteriorTerrainType) {
 			case LocationTerrainType.AboveGround:
 			default://transition
-				Debug.Log ("DO display exterior");
+				//Debug.Log ("DO display exterior");
 				structure.DisplayExterior = true;
 				break;
 
 			case LocationTerrainType.BelowGround:
-				Debug.Log ("DO NOT display exterior");
+				//Debug.Log ("DO NOT display exterior");
 				structure.DisplayExterior = false;
 				break;
 			}
@@ -114,12 +114,12 @@ namespace Frontiers.World.WIScripts
 			switch (State.InteriorTerrainType) {
 			case LocationTerrainType.AboveGround:
 			default://transition
-				Debug.Log ("DO display interior");
+				//Debug.Log ("DO display interior");
 				structure.DisplayInterior = true;
 				break;
 
 			case LocationTerrainType.BelowGround:
-				Debug.Log ("DO NOT display interior");
+				//Debug.Log ("DO NOT display interior");
 				structure.DisplayInterior = false;
 				break;
 			}

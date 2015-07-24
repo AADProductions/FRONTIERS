@@ -136,8 +136,11 @@ namespace Frontiers
 										posLabelList.Add("Camera shake speed: " + Player.Local.FPSCamera.m_Shake.ToString());
 										posLabelList.Add("Platform below player? " + Player.Local.Surroundings.IsOnMovingPlatform.ToString());
 										posLabelList.Add("Num cached PNG textures: " + GameData.IO.gLoadedMaps.Count.ToString() + " - loaded texture memory: " + (GameData.IO.gLoadedMapsMemory / 1000000).ToString() + " MB");
+										if (Player.Local.Surroundings.IsSomethingBelowPlayer) {
+											posLabelList.Add("Thing below player " + Player.Local.Surroundings.ClosestObjectBelowHitInfo.collider.name);
+										}
 										if (Player.Local.Surroundings.IsOnMovingPlatform) {
-												posLabelList.Add("Platform velocity: " + Player.Local.Surroundings.MovingPlatformUnderPlayer.VelocityLastFrame.ToString());
+											posLabelList.Add("Platform velocity: " + Player.Local.Surroundings.MovingPlatformUnderPlayer.CurrentVelocity.ToString());
 										}
 										posLabelList.Add("Light sources / exposure: " + Player.Local.Surroundings.LightSources.Count.ToString() + " / " + Player.Local.Surroundings.LightExposure.ToString());
 										posLabelList.Add("Fires / heat: " + Player.Local.Surroundings.FireSources.Count.ToString() + " / " + Player.Local.Surroundings.HeatExposure.ToString());

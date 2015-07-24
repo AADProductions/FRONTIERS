@@ -116,7 +116,7 @@ namespace Frontiers.World
 			if (GuardCharacter == null) {
 				//use the guard node to get the character
 				if (GuardNode.HasOccupant) {
-					if (!GuardNode.Occupant.Is <Character> (out GuardCharacter)) {
+					if (!GuardNode.Occupant.Is <Character> (out GuardCharacter) || GuardCharacter.IsDead) {
 						//Debug.Log ("Couldn't get character from guard node occupant, quitting in " + name);
 						return false;
 					}
@@ -208,6 +208,7 @@ namespace Frontiers.World
 			} else {
 				GuardCharacter.LookAtPlayer ();
 			}
+			GuardCharacter.worlditem.GetOrAdd <Guard> ();
 			//do this second so the guard occupies the node first, then pays attention to the player
 			if (sayDTS && !string.IsNullOrEmpty (State.DTSOnFailure)) {
 				Talkative talkative = null;

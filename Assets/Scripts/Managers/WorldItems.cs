@@ -1465,7 +1465,7 @@ namespace Frontiers.World
 			mIoiRBCheck = other.attachedRigidbody;
 			if (mIoiRBCheck != null && !mIoiRBCheck.CompareTag(Globals.TagNonInteractive)) {
 				ioi = (IItemOfInterest)mIoiRBCheck.GetComponent(typeof(IItemOfInterest));
-				if (ioi != null) {
+				if (ioi != null && !ioi.Destroyed) {
 					return true;
 				}
 			}

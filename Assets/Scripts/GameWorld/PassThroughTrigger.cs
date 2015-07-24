@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿﻿using UnityEngine;
 using System.Collections;
 
 //can you believe it's so fucking difficult
@@ -24,6 +24,7 @@ namespace Frontiers.World
 
 				public void TriggerPairEnter(PassThroughTriggerPair trigger)
 				{
+						Debug.Log ("Trigger pair enter: " + trigger.name);
 						if (LastSingleIntersection == null) {
 								//if we have no last single intersection
 								//then whatever just triggered this is the last single
@@ -98,13 +99,14 @@ namespace Frontiers.World
 								//too fast for Unity to send the correct OnEnter / OnExit messages
 								//SO we're going to try a sanity check before saying that we're done
 								if (LastSingleIntersection != null) {
-
+									LastSingleIntersection = null;
 								}
 						}
 				}
 
 				protected void OnPassThrough()
 				{
+						Debug.Log ("On pass through in trigger pair " + name);
 						TargetObject.SendMessage(PassThroughFunctionName, SendMessageOptions.DontRequireReceiver);
 				}
 		}

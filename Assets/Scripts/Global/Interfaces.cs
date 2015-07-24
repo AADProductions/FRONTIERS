@@ -23,7 +23,11 @@ namespace Frontiers
 
 		public interface IBodyOfWater
 		{
+			string name { get; }
+
 			float WaterHeightAtPosition (Vector3 position);
+
+			bool SortSubmergedObjects (IItemOfInterest seeker, double interestInterval, out SubmergedObject subjergedObject);
 		}
 
 		public interface IMeleeWeapon

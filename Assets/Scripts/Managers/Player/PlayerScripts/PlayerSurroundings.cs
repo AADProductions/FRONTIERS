@@ -1044,15 +1044,17 @@ namespace Frontiers
 		{
 			//if we're on a moving platform take the platform's velocity into account when doing raycasts
 			//we don't want to lose the platform
-			downRaycastStart = player.Position;
+			downRaycastStart = player.Position + Vector3.up * 0.01f;
+			float distance = Globals.RaycastAllDownDistance + 0.01f;
 			if (IsOnMovingPlatform) {
-				downRaycastStart.y += MovingPlatformUnderPlayer.VelocityLastFrame.y * 1.5f;
+				downRaycastStart.y = MovingPlatformUnderPlayer.tr.position.y + 0.15f;
+				distance += 0.15f;
 			}
-
-			if (Physics.Raycast(downRaycastStart, player.DownVector, out downHit, Globals.RaycastAllDownDistance, Globals.LayersActive)) {
+			MovingPlatform mp = null;
+			if (Physics.Raycast(downRaycastStart, player.DownVector, out downHit, distance, Globals.LayersActive)) {
 				//check for moving platforms directly
 				if (downHit.collider.attachedRigidbody != null) {
-					MovingPlatformUnderPlayer = downHit.collider.attachedRigidbody.GetComponent <MovingPlatform>();
+					mp = downHit.collider.attachedRigidbody.GetComponent <MovingPlatform>();
 				}
 				downItemOfInterest = null;
 				if (WorldItems.GetIOIFromCollider(downHit.collider, out downItemOfInterest)) {
@@ -1109,9 +1111,26 @@ namespace Frontiers
 						}
 					}
 				}
-			} else {
-				MovingPlatformUnderPlayer = null;
 			}
+
+			if (IsOnMovingPlatform) {
+				if (mp == null) {
+					if (downHit.collider != null) {
+						Debug.Log ("Stepping off moving platform, thing below player is: " + downHit.collider.name);
+					} else {
+						Debug.Log ("Stepping off moving platform, nothing below player");
+					}
+				}
+			} else {
+				if (mp != null) {
+					if (downHit.collider != null) {
+						Debug.Log ("Stepping on moving platform, thing below player is: " + downHit.collider.name);
+					} else {
+						Debug.Log ("Stepping on moving platform, nothing below player");
+					}
+				}
+			}
+			MovingPlatformUnderPlayer = mp;
 		}
 
 		public void RaycastAllFocus()

@@ -257,6 +257,7 @@ public class BodyAnimator : MonoBehaviour
 				animator.SetFloat ("MouseX", 0f);
 				animator.SetBool ("Grounded", true);
 				animator.SetBool ("Jump", false);
+				animator.SetBool ("Walking", false);
 			}
 			return;
 		}
@@ -267,26 +268,36 @@ public class BodyAnimator : MonoBehaviour
 			mSmoothVerticalAxisMovement = Mathf.Lerp (mSmoothVerticalAxisMovement, VerticalAxisMovement, Time.deltaTime * 15f);
 			mSmoothHorizontalAxisMovement = Mathf.Lerp (mSmoothHorizontalAxisMovement, HorizontalAxisMovement, Time.deltaTime * 15f);
 
+			bool setWalking = true;
+
 			//animator.SetBool ("Idling", Idling);
 			if (Attack1) {
 				animator.SetBool ("Attack1", true);
+				setWalking = false;
 			} else if (Attack2) {
 				animator.SetBool ("Attack2", true);
+				setWalking = false;
 			} else if (Warn) {
 				animator.SetBool ("Warn", true);
+				setWalking = false;
 			}
 			if (TakingDamage) {
 				animator.SetBool ("TakingDamage", true);
+				setWalking = false;
 			}
 
 			float verticalAxisMovement = mSmoothVerticalAxisMovement * MovementMultiplier;
 			animator.SetFloat ("VerticalAxisMovement", verticalAxisMovement);
-			if (SupportsWalking) {
-				if (ForceWalk) {
-					animator.SetBool ("Walking", true);
-				} else {
-					animator.SetBool ("Walking", (verticalAxisMovement < RunVerticalAxisCutoff));
+			if (setWalking) {
+				if (SupportsWalking) {
+					if (ForceWalk) {
+						animator.SetBool ("Walking", true);
+					} else {
+						animator.SetBool ("Walking", (verticalAxisMovement < RunVerticalAxisCutoff));
+					}
 				}
+			} else {
+				animator.SetBool ("Walking", false);
 			}
 			//animator.SetFloat ("HorizontalAxisMovement", mSmoothHorizontalAxisMovement * MovementMultiplier);
 			mYRotationDifference = mYRotationDifference * 0.5f;
@@ -296,7 +307,6 @@ public class BodyAnimator : MonoBehaviour
 			}
 			mYRotationLastFrame = mYRotation;
 			animator.SetFloat ("MouseX", mYRotationDifference);
-
 		} else {
 			mToggle = true;
 

@@ -129,7 +129,11 @@ namespace Frontiers
 		public GameObject SpawnFX (GameObject parentObject, string fxName, Vector3 offset)
 		{
 			GameObject fx = SpawnFX (parentObject, fxName);
-			fx.transform.localPosition = offset;
+			if (fx != null) {
+				fx.transform.localPosition = offset;
+			} else {
+				Debug.Log ("FX name " + fxName + " was null");
+			}
 			return fx;
 		}
 

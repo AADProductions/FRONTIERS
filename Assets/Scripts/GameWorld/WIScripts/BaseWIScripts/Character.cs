@@ -227,6 +227,7 @@ namespace Frontiers.World.WIScripts
 			}
 
 			damageable = worlditem.Get<Damageable> ();
+			damageable.State.Result = DamageableResult.Die;
 			damageable.OnTakeDamage += OnTakeDamage;
 			damageable.OnTakeCriticalDamage += OnTakeCriticalDamage;
 			damageable.OnTakeOverkillDamage += OnTakeOverkillDamage;
@@ -300,9 +301,9 @@ namespace Frontiers.World.WIScripts
 			}
 			set {
 				if (damageable != null) {
-					damageable.IsDead = true;
+					damageable.IsDead = value;
 				}
-				State.IsDead = true;
+				State.IsDead = value;
 			}
 		}
 

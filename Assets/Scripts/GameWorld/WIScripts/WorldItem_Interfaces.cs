@@ -182,8 +182,10 @@ namespace Frontiers.World
 				if (States != null) {
 					if (Is (WILoadState.Initialized | WILoadState.Initializing)) {
 						States.State = value;
-					} else if (SaveState != null) {
+					} else if (HasSaveState) {
 						SaveState.LastState = value;
+					} else {
+						Debug.Log ("Tried to set state with no save state " + value);
 					}
 				}
 			}

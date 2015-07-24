@@ -12,10 +12,12 @@ namespace Frontiers.World.WIScripts
 {
 	public class Talkative : WIScript
 	{
+		Character character;
 		public TalkativeState State = new TalkativeState ();
 
 		public override void OnInitialized ()
 		{
+			character = worlditem.Get<Character> ();
 			worlditem.OnPlayerEncounter += OnPlayerEncounter;
 			worlditem.OnPlayerUse += OnPlayerUse;
 
@@ -26,7 +28,6 @@ namespace Frontiers.World.WIScripts
 
 		public void OnPlayerUse ()
 		{
-			Character character = worlditem.Get <Character> ();
 			if (character.IsDead || character.IsStunned || character.IsSleeping) {
 				return;
 			}
@@ -39,6 +40,10 @@ namespace Frontiers.World.WIScripts
 
 		public void OnPlayerEncounter ()
 		{
+			if (character.IsDead || character.IsStunned || character.IsSleeping) {
+				return;
+			}
+
 			if (State.DTSOnPlayerEncounter && !string.IsNullOrEmpty (State.DTSSpeechName)) {
 				Motile motile = null;
 				if (worlditem.Is <Motile> (out motile)) {//get the listener target = use focus object
@@ -62,10 +67,10 @@ namespace Frontiers.World.WIScripts
 
 		public override void PopulateOptionsList (System.Collections.Generic.List<WIListOption> options, List <string> message)
 		{
-			Character character = null;
-			if (worlditem.Is <Character> (out character) && character.IsDead) {
+			if (character.IsDead || character.IsStunned || character.IsSleeping) {
 				return;
 			}
+
 			if (!string.IsNullOrEmpty (State.DTSSpeechName) || !string.IsNullOrEmpty (State.ConversationName)) {
 				WIListOption talkOption = new WIListOption ("Talk");
 				if (State.GivingSpeech && !mSpeech.speech.CanBeInterrupted) {
@@ -226,6 +231,10 @@ namespace Frontiers.World.WIScripts
 
 		public void SayDTS (Speech speech)
 		{
+			if (character.IsDead || character.IsStunned || character.IsSleeping) {
+				return;
+			}
+
 			if (!mSayingDTS) {	
 				//Debug.Log("Saying DTS " + speech.Name);
 				mDTS = speech;
@@ -245,6 +254,10 @@ namespace Frontiers.World.WIScripts
 
 		public void GiveSpeech (Speech speech, ActionNode dispatcher)
 		{
+			if (character.IsDead || character.IsStunned || character.IsSleeping) {
+				return;
+			}
+
 			if (speech == null) {
 				Debug.Log ("Speech was null, returning");
 			}
@@ -445,10 +458,12 @@ namespace Frontiers.World.WIScripts
 			yield return null;
 			while (continueDTS) {
 				continueDTS = mDTS.GetPage (ref pageText, ref pageDuration, ref mLastDTSPage, true);
-				NGUIScreenDialog.AddSpeech (pageText, worlditem.DisplayName, pageDuration);
-				double waitUntil = Frontiers.WorldClock.AdjustedRealTime + pageDuration;
-				while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
-					yield return null;
+				if (continueDTS) {
+					NGUIScreenDialog.AddSpeech (pageText, worlditem.DisplayName, pageDuration);
+					double waitUntil = Frontiers.WorldClock.AdjustedRealTime + pageDuration;
+					while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
+						yield return null;
+					}
 				}
 			}
 			if (mSpeechBubble != null) {

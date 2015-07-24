@@ -80,8 +80,6 @@ namespace Frontiers.World
 		{
 			if (!mStartedDestroying) {
 				StartCoroutine (DestroyOverTime ());
-				Listeners.Clear ();
-				Listeners = null;
 			}
 		}
 
@@ -119,6 +117,8 @@ namespace Frontiers.World
 			while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
 				yield return null;
 			}
+			Listeners.Clear ();
+			Listeners = null;
 			GameObject.Destroy (gameObject);
 			yield break;
 		}

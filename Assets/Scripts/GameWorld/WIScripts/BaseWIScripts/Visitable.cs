@@ -33,9 +33,24 @@ namespace Frontiers.World.WIScripts
 			}
 		}
 
+		public void OnInvisible () {
+			if (Trigger != null) {
+				Trigger.VisitableCollider.enabled = false;
+			}
+		}
+
+		public void OnVisibleOrActive () {
+			if (Trigger != null) {
+				Trigger.VisitableCollider.enabled = true;
+			}
+		}
+
 		public override void OnInitialized ()
 		{
 			worlditem.OnAddedToGroup += OnAddedToGroup;
+			worlditem.OnVisible += OnVisibleOrActive;
+			worlditem.OnActive += OnVisibleOrActive;
+			worlditem.OnInvisible += OnInvisible;
 		}
 
 		public void OnAddedToGroup ()

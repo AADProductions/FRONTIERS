@@ -17,7 +17,8 @@ namespace Frontiers.World
 		//public PassThroughState PreviousState = PassThroughState.InnerOff_OuterOff;
 		public void OnTriggerEnter(Collider other)
 		{
-			if (other.isTrigger || other.gameObject.layer != Globals.LayerNumPlayer) {
+			//Debug.Log ("On trigger enter in pass through trigger pair: " + other.name);
+			if (other.isTrigger || other.gameObject.layer != Globals.LayerNumPlayer || !other.CompareTag ("Player")) {
 				return;
 			}
 
@@ -26,13 +27,14 @@ namespace Frontiers.World
 			if (ParentTrigger != null) {
 				ParentTrigger.TriggerPairEnter(this);
 			} else {
-				Debug.LogWarning("Pass through trigger pair parent trigger is null, proceeding normally");
+				//Debug.LogWarning("Pass through trigger pair parent trigger is null, proceeding normally");
 			}
 		}
 
 		public void OnTriggerExit(Collider other)
 		{
-			if (other.isTrigger || other.gameObject.layer != Globals.LayerNumPlayer) {
+			//Debug.Log ("On trigger exit in pass through trigger pair: " + other.name);
+			if (other.isTrigger || other.gameObject.layer != Globals.LayerNumPlayer || !other.CompareTag ("Player")) {
 				return;
 			}
 

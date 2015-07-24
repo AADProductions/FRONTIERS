@@ -38,6 +38,11 @@ namespace Frontiers.World.WIScripts
 		{
 			//the minor structures will need to be created again
 			//Debug.Log("ON LOCATION GROUP LOADED IN CITY " + name);
+			HasSpawnedCharacters = false;
+			HasSpawnedMinorStructures = false;
+			SpawnedCharacters.Clear ();
+			mSpawningCharacters = false;
+			mSpawningMinorStructures = false;
 			OnVisible ();
 		}
 
@@ -46,6 +51,7 @@ namespace Frontiers.World.WIScripts
 			//the minor structures are going to be destroyed
 			HasSpawnedCharacters = false;
 			HasSpawnedMinorStructures = false;
+			SpawnedCharacters.Clear ();
 			mSpawningCharacters = false;
 			mSpawningMinorStructures = false;
 		}

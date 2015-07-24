@@ -228,6 +228,8 @@ namespace Frontiers.World.WIScripts
 			Finish ();
 		}
 
+		static List <GenericWorldItem> gMinInstanceItems = new List<GenericWorldItem> ();
+
 		IEnumerator FillContainerOverTime (bool immediately)
 		{
 			if (!immediately) {
@@ -280,6 +282,19 @@ namespace Frontiers.World.WIScripts
 			default:
 				if (WorldItems.Get.Category (State.WICategoryName, out category)) {
 					Dictionary <string,int> itemsSoFar = new Dictionary <string, int> ();
+					if (category.HasMinInstanceItems) {
+						gMinInstanceItems.Clear ();
+						category.GetMinInstanceItems (gMinInstanceItems);
+						for (int i = 0; i < gMinInstanceItems.Count; i++) {
+							if (itemsSoFar.TryGetValue (gMinInstanceItems [i].PrefabName, out numDuplicates)) {
+								numDuplicates++;
+								itemsSoFar [gMinInstanceItems [i].PrefabName] = numDuplicates;
+							} else {
+								itemsSoFar.Add (gMinInstanceItems [i].PrefabName, 1);
+							}
+						}
+						gMinInstanceItems.Clear ();
+					}
 					while (continueFilling && category.GetItem (State.Flags, hashCode, ref lastItemIndex, out genericItem)) {
 						//make sure we don't have a duplicate
 						if (itemsSoFar.TryGetValue (genericItem.PrefabName, out numDuplicates)) {

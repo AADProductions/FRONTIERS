@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System;
 using System.Xml.Serialization;
 using Frontiers.GUI;
+using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {
@@ -72,20 +73,7 @@ namespace Frontiers.World
 			}
 			return displayName;
 		}
-		/*public string StackName(string stackName)
-				{
-						if (mCurrentState != null) {
-								if (!string.IsNullOrEmpty(mCurrentState.StackName)) {
-										return mCurrentState.StackName;
-								}
-						}
-						return stackName;
-				}
 
-				public static string StackName(string stackName, string lastStateName)
-				{
-						return stackName + " (" + lastStateName + ")";
-				}*/
 		public List <WIState> States = new List <WIState> ();
 
 		public void InitializeTemplate ()
@@ -222,6 +210,24 @@ namespace Frontiers.World
 			SetState (startupState);
 			worlditem.OnModeChange += OnModeChange;
 			worlditem.OnAddedToGroup += OnAddedToGroup;
+			Equippable e = null;
+			if (worlditem.Is <Equippable> (out e)) {
+				e.OnEquip += OnEquip;
+			}
+		}
+
+		public void OnEquip () {
+			if (worlditem.HasLightSource) {
+				WorldLightType wlType = ((worlditem.Group.Props.Interior || worlditem.Group.Props.TerrainType == LocationTerrainType.BelowGround) ? WorldLightType.InteriorOrUnderground : WorldLightType.Exterior);
+				if (worlditem.Is (WIMode.Equipped)) {
+					wlType = WorldLightType.Equipped;
+				} else if (worlditem.Group != null) {
+					if (worlditem.Group.Props.Interior || worlditem.Group.Props.TerrainType == LocationTerrainType.BelowGround) {
+						wlType = WorldLightType.InteriorOrUnderground;
+					}
+				}
+				worlditem.Light.Type = wlType;
+			}
 		}
 
 		public void OnAddedToGroup () {
@@ -241,6 +247,17 @@ namespace Frontiers.World
 		public void OnModeChange ()
 		{
 			RefreshState ();
+			if (worlditem.HasLightSource) {
+				WorldLightType wlType = ((worlditem.Group.Props.Interior || worlditem.Group.Props.TerrainType == LocationTerrainType.BelowGround) ? WorldLightType.InteriorOrUnderground : WorldLightType.Exterior);
+				if (worlditem.Is (WIMode.Equipped)) {
+					wlType = WorldLightType.Equipped;
+				} else if (worlditem.Group != null) {
+					if (worlditem.Group.Props.Interior || worlditem.Group.Props.TerrainType == LocationTerrainType.BelowGround) {
+						wlType = WorldLightType.InteriorOrUnderground;
+					}
+				}
+				worlditem.Light.Type = wlType;
+			}
 		}
 
 		public void RefreshState ()
@@ -422,7 +439,10 @@ namespace Frontiers.World
 				WorldLightType wlType = WorldLightType.Exterior;
 				if (worlditem.Is (WIMode.Equipped)) {
 					wlType = WorldLightType.Equipped;
-				} else if (worlditem.Group != null) {
+				} else {
+					while (worlditem.Group == null) {
+						yield return null;
+					}
 					if (worlditem.Group.Props.Interior || worlditem.Group.Props.TerrainType == LocationTerrainType.BelowGround) {
 						wlType = WorldLightType.InteriorOrUnderground;
 					}
@@ -435,6 +455,7 @@ namespace Frontiers.World
 				BlendState (oldState, newState, mCurrentState, normalizedTransition);
 				yield return null;
 			}
+
 			//finish transition
 			BlendState (oldState, newState, mCurrentState, 1.0f);
 			OnTransitionFinish (oldState, newState, mCurrentState);

@@ -238,7 +238,7 @@ namespace Frontiers.World
 			switch (Type) {
 			case WorldLightType.Exterior:
 			default:
-				MasterBrightness = WorldClock.IsNight ? 1f : 0f;
+				MasterBrightness = WorldClock.IsNight ? 1f : 0.25f;
 				break;
 
 			case WorldLightType.InteriorOrUnderground:
@@ -247,7 +247,7 @@ namespace Frontiers.World
 
 			case WorldLightType.Equipped:
 				if (Player.Local.Surroundings.IsOutside) {
-					MasterBrightness = WorldClock.IsDay ? 1f : 0f;
+					MasterBrightness = WorldClock.IsNight ? 1f : 0.25f;
 				} else {
 					MasterBrightness = 1.0f;
 				}
