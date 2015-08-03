@@ -283,7 +283,10 @@ namespace Frontiers.World
 				Debug.LogError ("Warning: Renderer null in " + name);
 			}
 			//Animator.animator.enabled = !visible;
+			IsVisible = visible;
 		}
+
+		public bool LockVisible = false;
 
 		public virtual void OnSpawn (IBodyOwner owner)
 		{
@@ -439,16 +442,18 @@ namespace Frontiers.World
 				return;
 			}
 
-			if (Renderers.Count > 0) {
-				IsVisible = false;
-				for (int i = 0; i < Renderers.Count; i++) {
-					if (Renderers [i].isVisible) {
-						IsVisible = true;
-						break;
+			if (!LockVisible) {
+				if (Renderers.Count > 0) {
+					IsVisible = false;
+					for (int i = 0; i < Renderers.Count; i++) {
+						if (Renderers [i].isVisible) {
+							IsVisible = true;
+							break;
+						}
 					}
+				} else {
+					IsVisible = true;
 				}
-			} else {
-				IsVisible = true;
 			}
 
 			if (rb != null) {

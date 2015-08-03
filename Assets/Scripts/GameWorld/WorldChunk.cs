@@ -1087,6 +1087,13 @@ namespace Frontiers.World
 
 		public bool GetNodesForLocation (string groupPath, out List <ActionNodeState> nodeStates)
 		{
+			#if UNITY_EDITOR
+			if (!NodeData.NodeStates.ContainsKey (groupPath)) {
+				Debug.Log ("Group path " + groupPath + " does not exist in chunk when searching for nodes");
+			} else if (NodeData.NodeStates [groupPath] == null || NodeData.NodeStates [groupPath].Count == 0) {
+				Debug.Log ("Group path " + groupPath + " exists, but there are no nodes in it");
+			}
+			#endif
 			return NodeData.NodeStates.TryGetValue (groupPath, out nodeStates);
 		}
 

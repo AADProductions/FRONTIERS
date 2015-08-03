@@ -275,6 +275,10 @@ namespace Frontiers
 
 						yield return StartCoroutine(PlayAnimation("ToolGenericEquip"));
 
+						if (mEquippable != null) {
+							mEquippable.FullyEquipped = true;
+						}
+
 						ToolState = PlayerToolState.Equipped;
 						yield break;
 				}

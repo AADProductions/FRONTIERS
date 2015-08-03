@@ -575,7 +575,6 @@ namespace Frontiers.World
 
 			case BuilderMode.Interior:
 				for (int i = 0; i < InteriorVariants.Count; i++) {
-
 					int interiorVariant = InteriorVariants [i];
 					if (!ParentStructure.StructureGroupInteriors.ContainsKey (interiorVariant)) {
 						Debug.Log ("Didn't find interior variant " + interiorVariant.ToString () + " in " + ParentStructure.name + " - waiting for a bit...");
@@ -602,8 +601,10 @@ namespace Frontiers.World
 						continue;
 					}
 
-					//Debug.Log ("Generating items for interior variant " + interiorVariant.ToString ());
 					if (!ParentStructure.State.InteriorsLoadedOnce.Contains (interiorVariant) && interiorVariant < Template.InteriorVariants.Count) {
+						#if UNITY_EDITOR
+						Debug.Log ("Generating items for interior variant " + interiorVariant.ToString ());
+						#endif
 						var generateIntItems = StructureBuilder.GenerateInteriorItems (
 							                       ParentStructure,
 							                       interiorVariant,
@@ -618,6 +619,14 @@ namespace Frontiers.World
 							yield return generateIntItems.Current;
 						}
 					}
+					#if UNITY_EDITOR
+					else {
+						Debug.Log ("Didn't generate items for interior variant "
+							+ interiorVariant.ToString ()
+							+ " because it has either been loaded once (" + ParentStructure.State.InteriorsLoadedOnce.Contains (interiorVariant).ToString()
+							+ ") or it's out of range (" + (interiorVariant >= Template.InteriorVariants.Count).ToString () + ")");
+					}
+					#endif
 
 					yield return null;
 				}

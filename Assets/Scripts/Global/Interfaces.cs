@@ -284,6 +284,15 @@ namespace Frontiers
 			void InstantKill (IItemOfInterest source);
 		}
 
+		public interface IConversationIntermediary
+		{
+			Character SpeakingCharacter { get; }
+
+			Transform CameraTarget { get; }
+
+			void FinishConversation ();
+		}
+
 		public interface IBodyOwner
 		{
 			Vector3 Position { get; set; }

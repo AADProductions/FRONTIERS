@@ -569,7 +569,7 @@ namespace Frontiers.World
 					yield return null;//TODO add some sort of timeout?
 					if (WorldClock.AdjustedRealTime > timeout) {
 						builder.State = BuilderState.Error;
-						Debug.LogError ("Timed out when building minor structure, returning now");
+						Debug.LogError ("Timed out when building minor structure, returning now " + templateName);
 						yield break;
 					}
 				}
@@ -877,8 +877,10 @@ namespace Frontiers.World
 				yield return nextTask.Current;
 			}
 
-			WorldChunk chunk = parentStructure.worlditem.Group.GetParentChunk ();
-			//Debug.Log ("Adding nodes to group " + structureGroup.ActionNodes.Count.ToString ());
+			WorldChunk chunk = group.GetParentChunk ();
+			#if UNITY_EDITOR
+			Debug.Log ("Adding " + structureGroup.ActionNodes.Count.ToString ( ) + " exterior action nodes to " + group.Path);
+			#endif
 			chunk.AddNodesToGroup (structureGroup.ActionNodes, group, structurePiece);
 			yield break;
 		}
@@ -939,8 +941,10 @@ namespace Frontiers.World
 			}
 
 			List <ActionNodeState> interiorActionNodes = null;
-			//Debug.Log ("Adding " + structureGroup.ActionNodes.Count.ToString ( ) + " interior action nodes for variant " + interiorVariant.ToString ());
-			WorldChunk chunk = parentStructure.worlditem.Group.GetParentChunk ();
+			#if UNITY_EDITOR
+			Debug.Log ("Adding " + structureGroup.ActionNodes.Count.ToString ( ) + " interior action nodes for variant " + interiorVariant.ToString () + " to group " + group.Path);
+			#endif
+			WorldChunk chunk = group.GetParentChunk ();
 			chunk.AddNodesToGroup (structureGroup.ActionNodes, group, structurePiece);
 			yield break;
 		}

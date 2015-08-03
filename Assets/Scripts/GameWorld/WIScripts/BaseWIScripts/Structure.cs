@@ -631,7 +631,9 @@ namespace Frontiers.World.WIScripts
 			WorldChunk chunk = worlditem.Group.GetParentChunk ();
 			WIGroup group = StructureGroup;
 			MovementNode mn = MovementNode.Empty;
-			//Debug.Log("LOAD FINISH: Structure " + name + " load finish: " + finalState.ToString());
+			#if UNITY_EDITOR
+			Debug.Log("LOAD FINISH: Structure " + name + " load finish: " + finalState.ToString());
+			#endif
 			switch (finalState) {
 			case StructureLoadState.ExteriorLoaded:
 			default:
@@ -691,6 +693,12 @@ namespace Frontiers.World.WIScripts
 					}
 				}
 
+				#if UNITY_EDITOR
+				Debug.Log ("Total of " + interiorVariants.ToString () + " found: ");
+				foreach (int variant in interiorVariants) {
+					Debug.Log (variant);
+				}
+				#endif
 				for (int i = 0; i < interiorVariants.Count; i++) {
 					int interiorVariant = interiorVariants [i];
 					State.InteriorsLoadedOnce.SafeAdd (interiorVariant);
@@ -797,6 +805,9 @@ namespace Frontiers.World.WIScripts
 			if (forState == StructureLoadState.InteriorLoaded) {
 				WIGroup interiorBaseGroup = WIGroups.GetOrAdd (GroupNameInterior (State.BaseInteriorVariant), StructureGroup, null);//worlditem);set to null so it will inherit parent owner
 				interiorBaseGroup.Props.Interior = true;
+				if (State.ForceExteriorGroups) {
+					interiorBaseGroup.Props.Interior = false;
+				}
 				interiorBaseGroup.ParentStructure = this;
 				if (!StructureGroupInteriors.ContainsKey (State.BaseInteriorVariant)) {
 					StructureGroupInteriors.Add (State.BaseInteriorVariant, interiorBaseGroup);
@@ -817,6 +828,9 @@ namespace Frontiers.World.WIScripts
 					int interiorVariant = State.AdditionalInteriorVariants [i];
 					WIGroup interiorGroup = WIGroups.GetOrAdd (GroupNameInterior (interiorVariant), StructureGroup, null);
 					interiorGroup.Props.Interior = true;
+					if (State.ForceExteriorGroups) {
+						interiorGroup.Props.Interior = false;
+					}
 					interiorGroup.ParentStructure = this;
 
 					if (!StructureGroupInteriors.ContainsKey (interiorVariant)) {
@@ -1011,9 +1025,9 @@ namespace Frontiers.World.WIScripts
 
 		public void SpawnInteriorCharacters (int interiorVariant)
 		{
-			if (GameManager.Get.TestingEnvironment)
-				return;
-
+			#if UNITY_EDITOR
+			Debug.Log ("Spawning interior characters in structure for variant " + interiorVariant.ToString ());
+			#endif
 			WIGroup interiorGroup = null;
 			if (StructureGroupInteriors.TryGetValue (interiorVariant, out interiorGroup)) {
 				SpawnCharacters (interiorGroup.GetActionNodes (), State.InteriorCharacters, interiorGroup, State.IntResidentFlags);
@@ -1035,6 +1049,9 @@ namespace Frontiers.World.WIScripts
 			}
 
 			if (!OwnerCharacterSpawned) {
+				#if UNITY_EDITOR
+				Debug.Log ("Owner character not spawned, checking now");
+				#endif
 				if (!State.OwnerSpawn.IsEmpty && State.OwnerSpawn.Interior == group.Props.Interior) {
 					//spawn a character for the owner node
 					spawnedCharacter |= SpawnCharacter (nodes, State.OwnerSpawn, group, flags, out StructureOwner);
@@ -1043,6 +1060,8 @@ namespace Frontiers.World.WIScripts
 						StructureGroup.Owner = StructureOwner.worlditem;
 						OnOwnerCharacterSpawned.SafeInvoke ();
 					}
+				} else {
+					Debug.Log ("Owner spawn was empty or owner spawn interior setting " + State.OwnerSpawn.Interior.ToString () + " didn't match group setting " + group.Props.Interior.ToString ());
 				}
 			}
 			//let everyone know what just happened
@@ -1053,11 +1072,14 @@ namespace Frontiers.World.WIScripts
 
 		protected bool SpawnCharacter (List <ActionNodeState> nodes, StructureSpawn spawn, WIGroup group, WIFlags flags, out Character character)
 		{
+			Debug.Log ("Spawning character " + spawn.TemplateName + " in " + name + " at node " + spawn.ActionNodeName + " out of " + nodes.Count.ToString () + " nodes");
 			bool spawnedCharacter = false;
 			character = null;
 			for (int j = 0; j < nodes.Count; j++) {
+				Debug.Log ("Checking node " + nodes [j].Name);
 				//if we've found the node we're supposed to be using
 				if (string.Equals (nodes [j].Name, spawn.ActionNodeName)) {
+					Debug.Log ("Found node " + spawn.ActionNodeName);
 					ActionNodeState node = nodes [j];
 					//do we use a custom speech or conversation?
 					if (!string.IsNullOrEmpty (spawn.CustomConversation)) {
@@ -1077,6 +1099,8 @@ namespace Frontiers.World.WIScripts
 				if (character.worlditem.Is <DailyRoutine> (out r)) {
 					r.ParentSite = this;
 				}
+			} else {
+				Debug.Log ("Didn't spawn character");
 			}
 			return spawnedCharacter;
 		}
@@ -1117,7 +1141,7 @@ namespace Frontiers.World.WIScripts
 					int startNodeNum = UnityEngine.Random.Range (0, lastMovementNode.ConnectingNodes.Count);
 					int totalNodes = lastMovementNode.ConnectingNodes.Count;
 					for (int i = 0; i < totalNodes; i++) {
-						nodeIndex = lastMovementNode.ConnectingNodes [startNodeNum + 1 % totalNodes];
+						nodeIndex = lastMovementNode.ConnectingNodes [Mathf.Clamp (startNodeNum + 1 % totalNodes, 0, totalNodes - 1)];
 						mn = movementNodes [nodeIndex];
 						if (mn.OccupationFlags == Int32.MaxValue || Flags.Check (occupationFlags, mn.OccupationFlags, Flags.CheckType.MatchAny)) {
 							break;
@@ -1805,6 +1829,7 @@ namespace Frontiers.World.WIScripts
 		public bool IsRespawnStructure = false;
 		public bool ForceBuildInterior = false;
 		public bool HasSetFlags = false;
+		public bool ForceExteriorGroups = false;
 		public PlayerIDFlag PlayerOwnerID = PlayerIDFlag.Local;
 		public AmbientAudioManager.ChunkAudioItem AmbientAudio = new AmbientAudioManager.ChunkAudioItem ();
 		public TimeOfDay GenericEntrancesLockedTimes = TimeOfDay.ff_All;

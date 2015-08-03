@@ -1145,22 +1145,27 @@ namespace Frontiers.World
 			return true;
 		}
 
-		public void BodyTexturesAndMaterials (Character character)
+		public void BodyTexturesAndMaterials (Character character, bool asGhost)
 		{
 			Mods.Get.Runtime.FaceTexture (ref face, character.State.FaceTextureName);
 			Mods.Get.Runtime.BodyTexture (ref body, character.State.BodyTextureName);
-			Mods.Get.Runtime.MaskTexture (ref bodyMask, character.State.BodyMaskTextureName);
-			Mods.Get.Runtime.MaskTexture (ref faceMask, character.State.FaceMaskTextureName);
+			if (!asGhost) {
+				Mods.Get.Runtime.MaskTexture (ref bodyMask, character.State.BodyMaskTextureName);
+				Mods.Get.Runtime.MaskTexture (ref faceMask, character.State.FaceMaskTextureName);
+			}
 			//create an instance of the body material and store it
-			Material bodyMaterial = new Material (Get.CharacterBodyMaterial);
-			Material faceMaterial = new Material (Get.CharacterFaceMaterial);
+			Material bodyMaterial = new Material (asGhost ? Mats.Get.CharacterGhostBodyMaterial : Mats.Get.CharacterBodyMaterial);
+			Material faceMaterial = new Material (asGhost ? Mats.Get.CharacterGhostFaceMaterial : Mats.Get.CharacterFaceMaterial);
 			bodyMaterial.SetTexture ("_MainTex", body);
-			bodyMaterial.SetTexture ("_MaskTex", bodyMask);
 			faceMaterial.SetTexture ("_MainTex", face);
-			faceMaterial.SetTexture ("_MaskTex", faceMask);
+			if (!asGhost) {
+				bodyMaterial.SetTexture ("_MaskTex", bodyMask);
+				faceMaterial.SetTexture ("_MaskTex", faceMask);
+			}
 			//TODO apply body colors
-			character.Body.MainMaterial = bodyMaterial;
-			character.Body.FaceMaterial = faceMaterial;
+			CharacterBody b = (CharacterBody)character.Body;
+			b.MainMaterial = bodyMaterial;
+			b.FaceMaterial = faceMaterial;
 		}
 
 		protected Texture2D body = null;
@@ -1174,7 +1179,11 @@ namespace Frontiers.World
 			return Get.mSpawnedCharacters.TryGetValue (characterName, out character);
 		}
 
-		public static bool GetOrSpawnCharacter (ActionNode node, string characterName, WIGroup group, out Character newCharacter)
+		public static bool GetOrSpawnCharacter (ActionNode node, string characterName, WIGroup group, out Character newCharacter) {
+			return GetOrSpawnCharacter (node, characterName, group, false, out newCharacter);
+		}
+
+		public static bool GetOrSpawnCharacter (ActionNode node, string characterName, WIGroup group, bool asGhost, out Character newCharacter)
 		{
 			characterName = characterName.Trim ().ToLower ();
 			int spawnValue = characterName.GetHashCode ();
@@ -1253,6 +1262,7 @@ namespace Frontiers.World
 			newCharacter.Body.transform.rotation = newCharacterBase.transform.rotation;
 
 			newCharacter.Template = template;
+			newCharacter.Ghost = asGhost;
 
 			//initialize immediately
 			newCharacterWorlditem.Initialize ();

@@ -1089,6 +1089,10 @@ namespace Frontiers.World
 							//AddRequiredComponentsToObject (prefabGameObject);
 							worlditem = prefabGameObject.GetComponent <WorldItem>();
 						}
+						if (worlditem == null) {
+							Debug.LogError ("Worlditem was null " + finalPath);
+							continue;
+						}
 						worlditem.Props.Name.PackName = newPack.Name;
 						worlditem.Props.Name.PrefabName = prefabGameObject.name;
 

@@ -203,36 +203,38 @@ public class PlayerFocusHighlight : MonoBehaviour
 	protected static void AddCustomMatToRenderers(List <Renderer> renderers, Material matBase, List <Material> customMats, string propName)
 	{
 		for (int i = 0; i < renderers.Count; i++) {
-			//ugh, sooo inefficient...
-			List <Material> finalRendererMaterials = new List<Material>();
-			List <Material> finalCustomMaterials = new List<Material>();
-			for (int j = 0; j < renderers[i].sharedMaterials.Length; j++) {
-				//get the next shared material from the object
-				Material customMat = null;
-				Material sharedMat = renderers[i].sharedMaterials[j];
-				//baseRenderQueue = sharedMat.renderQueue;
-				finalRendererMaterials.Add(sharedMat);
-				string customMatName = renderers[i].name + sharedMat.name;
-				//see if the custom outline material already exists
-				for (int k = 0; k < customMats.Count; k++) {
-					if (customMats[k].name == customMatName) {
-						customMat = customMats[k];
-						break;
+			if (renderers [i] != null && !renderers [i].CompareTag (Globals.TagIgnoreStackedDoppleganger)) {
+				//ugh, sooo inefficient...
+				List <Material> finalRendererMaterials = new List<Material> ();
+				List <Material> finalCustomMaterials = new List<Material> ();
+				for (int j = 0; j < renderers [i].sharedMaterials.Length; j++) {
+					//get the next shared material from the object
+					Material customMat = null;
+					Material sharedMat = renderers [i].sharedMaterials [j];
+					//baseRenderQueue = sharedMat.renderQueue;
+					finalRendererMaterials.Add (sharedMat);
+					string customMatName = renderers [i].name + sharedMat.name;
+					//see if the custom outline material already exists
+					for (int k = 0; k < customMats.Count; k++) {
+						if (customMats [k].name == customMatName) {
+							customMat = customMats [k];
+							break;
+						}
 					}
+					//if we didn't find it then create it
+					if (customMat == null) {
+						customMat = new Material (matBase);
+						customMat.SetColor (propName, Colors.Alpha (Colors.Get.GeneralHighlightColor, customMat.GetColor (propName).a));
+						customMat.name = customMatName;
+						customMats.Add (customMat);
+						//set the main texture to the main texture of the shared material
+						customMat.SetTexture ("_MainTex", sharedMat.GetTexture ("_MainTex"));
+					}
+					finalCustomMaterials.Add (customMat);
 				}
-				//if we didn't find it then create it
-				if (customMat == null) {
-					customMat = new Material(matBase);
-					customMat.SetColor(propName, Colors.Alpha(Colors.Get.GeneralHighlightColor, customMat.GetColor(propName).a));
-					customMat.name = customMatName;
-					customMats.Add(customMat);
-					//set the main texture to the main texture of the shared material
-					customMat.SetTexture("_MainTex", sharedMat.GetTexture("_MainTex"));
-				}
-				finalCustomMaterials.Add(customMat);
+				finalRendererMaterials.AddRange (finalCustomMaterials);
+				renderers [i].sharedMaterials = finalRendererMaterials.ToArray ();
 			}
-			finalRendererMaterials.AddRange(finalCustomMaterials);
-			renderers[i].sharedMaterials = finalRendererMaterials.ToArray();
 		}
 	}
 
@@ -240,7 +242,7 @@ public class PlayerFocusHighlight : MonoBehaviour
 	{
 		mat.SetColor(propName, Colors.Alpha(Colors.Get.GeneralHighlightColor, mat.GetColor(propName).a));
 		for (int i = 0; i < renderers.Count; i++) {
-			if (renderers[i] != null) {
+			if (renderers[i] != null && !renderers [i].CompareTag (Globals.TagIgnoreStackedDoppleganger)) {
 				List <Material> currentMaterials = new List<Material>(renderers[i].sharedMaterials);
 				if (!currentMaterials.Contains(mat)) {
 					currentMaterials.Add(mat);
@@ -265,7 +267,7 @@ public class PlayerFocusHighlight : MonoBehaviour
 		}
 
 		for (int i = 0; i < renderers.Count; i++) {
-			if (renderers[i] != null) {
+			if (renderers[i] != null && !renderers [i].CompareTag (Globals.TagIgnoreStackedDoppleganger)) {
 				List <Material> currentMaterials = new List<Material>(renderers[i].sharedMaterials);
 				//use the name because it may be instanced
 				for (int j = currentMaterials.Count - 1; j >= 0; j--) {

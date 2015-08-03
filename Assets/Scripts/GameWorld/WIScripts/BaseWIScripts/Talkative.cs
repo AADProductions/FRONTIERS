@@ -34,7 +34,21 @@ namespace Frontiers.World.WIScripts
 
 			if (!mInitiatingConversation) {
 				mInitiatingConversation = true;
-				StartCoroutine (InitiateConversation ());
+				StartCoroutine (InitiateConversation (null));
+			}
+		}
+
+		public void SpeakThroughIntermediary (IConversationIntermediary intermediary)
+		{
+			Debug.Log ("Speaking through intermeidiary in " + name);
+
+			if (character.IsDead || character.IsStunned || character.IsSleeping) {
+				return;
+			}
+
+			if (!mInitiatingConversation) {
+				mInitiatingConversation = true;
+				StartCoroutine (InitiateConversation (intermediary));
 			}
 		}
 
@@ -91,7 +105,7 @@ namespace Frontiers.World.WIScripts
 				}
 				if (!mInitiatingConversation) {
 					mInitiatingConversation = true;
-					StartCoroutine (InitiateConversation ());
+					StartCoroutine (InitiateConversation (null));
 				}
 				break;
 
@@ -122,26 +136,30 @@ namespace Frontiers.World.WIScripts
 			}
 		}
 
-		public IEnumerator InitiateConversation ()
+		public IEnumerator InitiateConversation (IConversationIntermediary intermediary)
 		{
 			mInitiatingConversation = true;
-			if (!worlditem.HasPlayerAttention) {
+			if (intermediary == null && !worlditem.HasPlayerAttention) {
 				//Debug.Log("We don't have player's attention");
 				mInitiatingConversation = false;
 				yield break;
 			}
-			//make the character stand still
-			Character character = null;
-			if (worlditem.Is <Character> (out character)) {
-				mTalkMotileAction = character.LookAtPlayer ();
-			}
+			Motile m = null;
+			if (worlditem.Is <Motile> (out m) && !m.IsImmobilized) {
+				//if the character isn't already immobile
+				//make the character stand still
+				Character character = null;
+				if (worlditem.Is <Character> (out character)) {
+					mTalkMotileAction = character.LookAtPlayer ();
+				}
 
-			yield return StartCoroutine (mTalkMotileAction.WaitForActionToStart (0f));
+				yield return StartCoroutine (mTalkMotileAction.WaitForActionToStart (0f));
 
-			if (mTalkMotileAction.IsFinished) {
-				//Debug.Log("Talk motile action got finished for some reason, quitting");
-				mInitiatingConversation = false;
-				yield break;
+				if (mTalkMotileAction.IsFinished) {
+					Debug.Log ("Talk motile action got finished for some reason, quitting");
+					mInitiatingConversation = false;
+					yield break;
+				}
 			}
 
 			if (State.DefaultToDTS) {
@@ -150,29 +168,30 @@ namespace Frontiers.World.WIScripts
 				if (Mods.Get.Runtime.LoadMod (ref speech, "Speech", State.DTSSpeechName)) {
 					SayDTS (speech);
 				}
-				//Debug.Log("Defaulting to DTS");
+				Debug.Log("Defaulting to DTS");
 				mInitiatingConversation = false;
 				yield break;
 			}
+
 			yield return null;
 			Conversation conversation = null;
 			string DTSOverride = string.Empty;
 			if (Conversations.Get.ConversationByName (State.ConversationName, worlditem.FileName, out conversation, out DTSOverride)) {
 				//wuhoo we got the conversation
 				State.ConversationName = conversation.Props.Name;
-				conversation.Initiate (character, this);
+				conversation.Initiate (character, this, intermediary);
 				while (conversation.Initiating) {
 					yield return null;
 				}
 				//this will load the conversation without hitches
 				//now we may just have a dts - in which case the conversation won't be in progress
 				if (!Conversation.ConversationInProgress) {
-					//Debug.Log("Conversation not in progress, must have defaulted to DTS");
+					Debug.Log("Conversation not in progress, must have defaulted to DTS");
 					mInitiatingConversation = false;
 					yield break;
 				}
 			} else if (!string.IsNullOrEmpty (DTSOverride)) {
-				//Debug.Log("We have a dts override: " + DTSOverride);
+				Debug.Log("We have a dts override: " + DTSOverride);
 				//whoa we have a DTS override
 				State.DTSSpeechName = DTSOverride;
 				mInitiatingConversation	= false;
@@ -183,10 +202,16 @@ namespace Frontiers.World.WIScripts
 				mInitiatingConversation = false;
 				yield break;
 			} else {
-				//Debug.Log("Couldn't get the conversation, canceling");
+				Debug.Log("Couldn't get the conversation, canceling");
 				//aw shit we never got the conversation
 				mInitiatingConversation = false;
 				yield break;
+			}
+
+			Character c = worlditem.Get <Character> ();
+			AnimatorUpdateMode updateMode = c.Body.Animator.animator.updateMode;
+			if (c.Ghost) {
+				c.Body.Animator.animator.updateMode = AnimatorUpdateMode.UnscaledTime;
 			}
 
 			yield return null;
@@ -194,16 +219,18 @@ namespace Frontiers.World.WIScripts
 				//wait for the player to end the conversation
 				yield return null;
 			}
+
+			if (c.Ghost) {
+				c.Body.Animator.animator.updateMode = updateMode;
+			}
+
 			mInitiatingConversation = false;
 			yield break;
 		}
 
 		public void EndConversation ()
 		{
-			if (GameManager.Get.TestingEnvironment)
-				return;
-
-			if (mTalkMotileAction.State != MotileActionState.Finished) {
+			if (mTalkMotileAction != null && mTalkMotileAction.State != MotileActionState.Finished) {
 				mTalkMotileAction.TryToFinish ();
 			}
 		}

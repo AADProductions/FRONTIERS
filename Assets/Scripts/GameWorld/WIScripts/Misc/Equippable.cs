@@ -15,6 +15,8 @@ namespace Frontiers.World.WIScripts
 				public Vector3 EquipOffset = Vector3.zero;
 				public Vector3 EquipRotation = Vector3.zero;
 				public PlayerToolType Type = PlayerToolType.Generic;
+
+				public bool FullyEquipped = false;
 				public bool ForceEquip = false;
 				public bool DisplayAsTool = true;
 				public bool UseDoppleganger = true;
@@ -50,6 +52,7 @@ namespace Frontiers.World.WIScripts
 
 				public void EquipStart()
 				{
+						FullyEquipped = false;
 						if (!mCheckingEquippedStatus) {
 								mCheckingEquippedStatus = true;
 								StartCoroutine(CheckEquippedStatus());
@@ -171,6 +174,7 @@ namespace Frontiers.World.WIScripts
 								yield return null;
 						}
 						mCheckingEquippedStatus = false;
+						FullyEquipped = false;
 						OnUnequip.SafeInvoke();
 				}
 

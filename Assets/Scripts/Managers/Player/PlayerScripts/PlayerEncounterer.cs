@@ -26,7 +26,9 @@ namespace Frontiers
 			"Obstruction",
 			"Trap",
 			"Machine",
-			"Creature"
+			"Creature",
+			"ObexTransmitter",
+			"ObexKey",
 		};
 		public HashSet <WorldItem> LastItemsEncountered = new HashSet <WorldItem> ();
 		protected IItemOfInterest mIoiCheck = null;
@@ -36,7 +38,7 @@ namespace Frontiers
 				if (mIoiCheck.HasAtLeastOne (ObstructionTypes)) {
 					LastItemsEncountered.Add (mIoiCheck.worlditem);
 				}
-				//always send OnPlayerEncounter regardless of whether it's an obstruction
+				//always send OnPlayerCollide regardless of whether it's an obstruction
 				//this is used by creatures and plants etc.
 				mIoiCheck.worlditem.OnPlayerCollide.SafeInvoke ();
 			}

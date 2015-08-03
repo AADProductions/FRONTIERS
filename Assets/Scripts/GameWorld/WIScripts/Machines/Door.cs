@@ -10,6 +10,7 @@ namespace Frontiers.World.WIScripts
 	public class Door : WIScript
 	{
 		public GameObject PivotObject;
+		public Animation AnimationTarget;
 		public DoorState State = new DoorState ();
 		public Dynamic dynamic = null;
 		public bool IsGeneric = false;
@@ -41,6 +42,13 @@ namespace Frontiers.World.WIScripts
 					damageable.OnDie += OnDie;
 					damageable.OnTakeDamage += OnTakeDamage;
 				}
+			}
+
+			if (string.IsNullOrEmpty (State.AnimationClosing)) {
+				State.AnimationClosing = "HingeDoorClosing";
+			}
+			if (string.IsNullOrEmpty (State.AnimationOpening)) {
+				State.AnimationOpening = "HingeDoorOpening";
 			}
 		}
 
@@ -174,6 +182,13 @@ namespace Frontiers.World.WIScripts
 			mChangingDoorState = true;
 			State.TargetState = newTargetState;
 			mStateLastFrame = State.CurrentState;
+			Animation anim = null;
+			if (AnimationTarget != null) {
+				anim = AnimationTarget;
+			} else {
+				anim = PivotObject.animation;
+			}
+
 			while (State.CurrentState != State.TargetState) {
 				switch (State.CurrentState) {
 				case EntranceState.Closed:
@@ -187,26 +202,26 @@ namespace Frontiers.World.WIScripts
 							yield return onOpen.Current;
 						}
 						State.CurrentState = EntranceState.Opening;
-						PivotObject.animation.Play (State.AnimationOpening);
+						anim.Play (State.AnimationOpening);
 						MasterAudio.PlaySound (State.SoundType, transform, State.SoundOnOpen);
 					}
 					break;
 
 				case EntranceState.Open:
 					if (State.TargetState == EntranceState.Closed) {
-						PivotObject.animation.Play (State.AnimationClosing);
+						anim.Play (State.AnimationClosing);
 						State.CurrentState = EntranceState.Closing;
 					}
 					break;
 
 				case EntranceState.Opening:
-					if (PivotObject.animation [State.AnimationOpening].normalizedTime > 1f) {
+					if (anim [State.AnimationOpening].normalizedTime > 1f) {
 						State.CurrentState = EntranceState.Open;
 					}
 					break;
 
 				case EntranceState.Closing:
-					if (PivotObject.animation [State.AnimationClosing].normalizedTime > 1f) {
+					if (anim [State.AnimationClosing].normalizedTime > 1f) {
 						State.CurrentState = EntranceState.Closed;
 					}
 					break;

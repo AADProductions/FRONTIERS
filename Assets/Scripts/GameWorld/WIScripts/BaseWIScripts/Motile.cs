@@ -101,6 +101,9 @@ namespace Frontiers.World.WIScripts
 				if (!mInitialized) {
 					return true;
 				}
+				if (!worlditem.Is (WIActiveState.Active)) {
+					return true;
+				}
 				return terrainHit.isGrounded || State.MotileProps.Hovers;
 			}
 			set { terrainHit.isGrounded = value; }
@@ -136,7 +139,6 @@ namespace Frontiers.World.WIScripts
 		}
 
 		#endregion
-
 		public bool AvoidingObstacle { 
 			get {
 				return WorldClock.AdjustedRealTime < mAvoidObstaclesUntil;
@@ -875,8 +877,13 @@ namespace Frontiers.World.WIScripts
 			if (!Initialized || !HasBody || IsDead || mFinished || worlditem.Group == null)
 				return;
 
+			if (GameWorld.Get.ActiveTerrainType != worlditem.Group.Props.TerrainType) {
+				UseGravity = false;
+				return;
+			}
+
 			WorldChunk wc = worlditem.Group.GetParentChunk ();
-			if (wc != null && !wc.HasCollider || !(GameWorld.Get.ActiveTerrainType != worlditem.Group.Props.TerrainType)) {
+			if (wc == null || !wc.HasCollider) {
 				UseGravity = false;
 				return;
 			}

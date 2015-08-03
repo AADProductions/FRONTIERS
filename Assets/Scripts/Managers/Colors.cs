@@ -329,6 +329,8 @@ namespace Frontiers
 		public Color FoodStuffMedicinal = Color.white;
 		public Color WorldRouteMarkerRevealed = Color.white;
 		public Color WorldRouteMarkerVisited = Color.white;
+		public Color GhostColor = Color.white;
+
 		[InterfaceColorAttribute]
 		public Color GenericHighValue = Color.white;
 		[InterfaceColorAttribute]

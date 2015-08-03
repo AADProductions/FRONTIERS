@@ -15,6 +15,7 @@ namespace Frontiers.World
 		public Renderer ShortHairRenderer;
 		public CharacterHairLength HairLength = CharacterHairLength.Short;
 		public CharacterHairColor HairColor = CharacterHairColor.Brown;
+		public bool Ghost = false;
 		//character hair names are weird in the generic models we got, eg 'ponnytail'
 		public static string[] gHairTags = new string [] { "hair", "ponnytail" };
 

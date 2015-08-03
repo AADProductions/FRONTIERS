@@ -371,6 +371,8 @@ namespace Frontiers
 		public Material BloodSplatterMaterial;
 		public Material CharacterBodyMaterial;
 		public Material CharacterFaceMaterial;
+		public Material CharacterGhostBodyMaterial;
+		public Material CharacterGhostFaceMaterial;
 		public Material ItemPlacementMaterial;
 		public Material ItemPlacementOutlineMaterial;
 		public Material ItemPlacementOutlineCutoutMaterial;

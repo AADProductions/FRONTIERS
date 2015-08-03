@@ -72,6 +72,8 @@ namespace Frontiers
 		public PlayerProjections Projections;
 		public PlayerCharacterSpawner CharacterSpawner;
 		public PlayerIllumination Illumination;
+		public double LastSpawnTime;
+
 		public float HijackLookSpeed = 1f;
 
 		public override Vector3 HeadPosition {
@@ -209,6 +211,7 @@ namespace Frontiers
 
 		public override void OnLocalPlayerSpawn()
 		{
+			LastSpawnTime = WorldClock.AdjustedRealTime;
 			ApplyOffsets();
 			StealGameCamera();
 			Scripts.OnLocalPlayerSpawn();
@@ -645,6 +648,8 @@ namespace Frontiers
 				Debug.Log("Death mode is set to 'No Death' so not applying death");
 				return;
 			}
+
+			Debug.Log ("Player has died: " + causeOfDeath);
 
 			Status.LatestCauseOfDeath = causeOfDeath;
 			State.HasSpawned = false;

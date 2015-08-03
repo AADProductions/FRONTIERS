@@ -9,12 +9,11 @@ using ExtensionMethods;
 
 namespace Frontiers.World.WIScripts
 {
-	public class Character : WIScript, IInventory
+	public class Character : WIScript, IInventory, IBodyOwner
 	{
 		public CharacterTemplate Template;
 		//set by Characters on spawn
 		public CharacterState State = new CharacterState ();
-		public CharacterBody Body;
 		public GameObject FocusObject;
 		public WIGroup CharacterInventoryGroup;
 		//brain behavior
@@ -30,6 +29,7 @@ namespace Frontiers.World.WIScripts
 		public Damageable damageable;
 		//movement
 		public ITerritoryBase TerritoryBase;
+		public bool Ghost = false;
 
 		public override bool CanBeCarried {
 			get {
@@ -178,8 +178,9 @@ namespace Frontiers.World.WIScripts
 
 		public override void OnInitialized ()
 		{
-			Body.HairLength = State.HairLength;
-			Body.HairColor = State.HairColor;
+			CharacterBody body = (CharacterBody)mBody;
+			body.HairLength = State.HairLength;
+			body.HairColor = State.HairColor;
 
 			animator = Body.GetComponent <CharacterAnimator> ();
 
@@ -189,21 +190,25 @@ namespace Frontiers.World.WIScripts
 			worlditem.HudTargeter = new HudTargetSupplier (HudTargeter);
 			worlditem.OnPlayerCollide += OnPlayerCollide;
 			//set this so the body has something to lerp to
-			if (Body != null) {
+			if (mBody != null) {
 				//this tells the body what to follow
-				Motile motile = worlditem.Get<Motile> ();
-				if (Template.TemplateType == CharacterTemplateType.UniquePrimary || Template.TemplateType == CharacterTemplateType.UniqueAlternate) {
-					motile.State.MotileProps.UseKinematicBody = false;
-				}
-				motile.BaseAction.WalkingSpeed = true;
-				Body.OnSpawn (motile);
-				Body.transform.parent = worlditem.Group.transform;
-				Body.name = worlditem.FileName + "-Body";
-				Body.Initialize (worlditem);
-				if (State.Flags.Gender == 1) {
-					Body.Sounds.MotionSoundType = MasterAudio.SoundType.CharacterVoiceMale;
+				Motile motile = null;
+				if (worlditem.Is <Motile> (out motile)) {
+					if (Template.TemplateType == CharacterTemplateType.UniquePrimary || Template.TemplateType == CharacterTemplateType.UniqueAlternate) {
+						motile.State.MotileProps.UseKinematicBody = false;
+					}
+					motile.BaseAction.WalkingSpeed = true;
+					mBody.OnSpawn (motile);
 				} else {
-					Body.Sounds.MotionSoundType = MasterAudio.SoundType.CharacterVoiceFemale;
+					mBody.OnSpawn (this);
+				}
+				mBody.transform.parent = worlditem.Group.transform;
+				mBody.name = worlditem.FileName + "-Body";
+				mBody.Initialize (worlditem);
+				if (State.Flags.Gender == 1) {
+					mBody.Sounds.MotionSoundType = MasterAudio.SoundType.CharacterVoiceMale;
+				} else {
+					mBody.Sounds.MotionSoundType = MasterAudio.SoundType.CharacterVoiceFemale;
 				}
 			}
 
@@ -269,7 +274,6 @@ namespace Frontiers.World.WIScripts
 			mFocusAction.OutOfRange = 15f;
 			mFocusAction.WalkingSpeed = true;
 			mFocusAction.YieldBehavior = MotileYieldBehavior.YieldAndFinish;
-
 		}
 
 		public void OnAddedToGroup ()
@@ -280,8 +284,11 @@ namespace Frontiers.World.WIScripts
 			CurrentThought.OnFollowIt += FollowThing;
 			CurrentThought.OnWatchIt += WatchThing;
 
-			worlditem.Get <Motile> ().StartMotileActions ();
-			Characters.Get.BodyTexturesAndMaterials (this);
+			Motile motile = null;
+			if (worlditem.Is <Motile> (out motile)) {
+				motile.StartMotileActions ();
+			}
+			Characters.Get.BodyTexturesAndMaterials (this, Ghost);
 		}
 
 		#endregion
@@ -341,16 +348,18 @@ namespace Frontiers.World.WIScripts
 			//first go to the bed sleep point
 			//TODO make this a motile action
 			worlditem.tr.position = bed.SleepingPosition;
-			Motile motile = worlditem.Get <Motile> ();
-			mSleepAction.Reset ();
-			mSleepAction.IdleAnimation = GameWorld.Get.FlagByName ("IdleAnimation", "Sleeping");
-			motile.PushMotileAction (mSleepAction, MotileActionPriority.ForceTop);
-			//let them sleep zzzzz
-			yield return mSleepAction.WaitForActionToFinish (0.25f);
-			//once we wake up, if the bed is not null
-			//clear its occupant!
-			if (bed != null) {
-				bed.Occupant = null;
+			Motile motile = null;
+			if (worlditem.Is <Motile> (out motile)) {
+				mSleepAction.Reset ();
+				mSleepAction.IdleAnimation = GameWorld.Get.FlagByName ("IdleAnimation", "Sleeping");
+				motile.PushMotileAction (mSleepAction, MotileActionPriority.ForceTop);
+				//let them sleep zzzzz
+				yield return mSleepAction.WaitForActionToFinish (0.25f);
+				//once we wake up, if the bed is not null
+				//clear its occupant!
+				if (bed != null) {
+					bed.Occupant = null;
+				}
 			}
 			mIsSleeping = false;
 			yield break;
@@ -432,7 +441,10 @@ namespace Frontiers.World.WIScripts
 
 		public void OnGainPlayerFocus ()
 		{
-			worlditem.Get <Motile> ().StartMotileActions ();
+			Motile motile = null;
+			if (worlditem.Is <Motile> (out motile)) {
+				motile.StartMotileActions ();
+			}
 			if (State.BroadcastFocus) {
 				Player.Get.AvatarActions.ReceiveAction (AvatarAction.NpcFocus, WorldClock.AdjustedRealTime);
 			}
@@ -1011,6 +1023,25 @@ namespace Frontiers.World.WIScripts
 			}
 		}
 
+		#endregion
+
+		#region IBodyOwner implementation
+		public Vector3 Position { get { return worlditem.Position; } set { worlditem.tr.position = value; } }
+		public Quaternion Rotation { get { return worlditem.tr.rotation; } }
+		public WorldBody Body { get { return mBody; } set { mBody = value; } }
+		public bool IsKinematic { get { return true; } }
+		public bool Initialized { get { return mInitialized; } }
+		public bool IsImmobilized { get { return true; } }
+		public bool IsGrounded { get { return true; } }
+		public bool UseGravity { get { return false; } }
+		public bool IsRagdoll { get { return false; } }
+		public bool IsDestroyed { get { return mFinished; } }
+		public double CurrentMovementSpeed { get { return 0; } set { } }
+		public double CurrentRotationSpeed { get { return 0; } set { } }
+		public int CurrentIdleAnimation { get { return 0; } set { } }
+		public bool ForceWalk { get { return true; } }
+
+		protected WorldBody mBody;
 		#endregion
 
 		protected MotileAction mReturnToDenAction = null;

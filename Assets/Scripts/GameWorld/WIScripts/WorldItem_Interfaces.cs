@@ -185,7 +185,9 @@ namespace Frontiers.World
 					} else if (HasSaveState) {
 						SaveState.LastState = value;
 					} else {
-						Debug.Log ("Tried to set state with no save state " + value);
+						SaveState = new WISaveState ();
+						SaveState.LastState = value;
+						//Debug.Log ("Tried to set state with no save state " + value);
 					}
 				}
 			}
