@@ -7,6 +7,7 @@ using Frontiers.World;
 using Frontiers.Story;
 using Frontiers.World.WIScripts;
 using ExtensionMethods;
+using System.Text;
 
 namespace Frontiers.World
 {
@@ -525,6 +526,41 @@ namespace Frontiers.World
 			SpawnRandomCharacter (node, templateName, locationFlags, group, out newCharacter);
 		}
 
+		public static string MatchFaceTextureEthnicity (string faceTextureName, CharacterEthnicity ethnicity)
+		{
+			if (!(faceTextureName.EndsWith ("_A") || faceTextureName.EndsWith ("_B") || faceTextureName.EndsWith ("_C") || faceTextureName.EndsWith ("_D"))) {
+				return faceTextureName;
+			}
+
+			string replaceWith = "A";
+			switch (ethnicity) {
+			case CharacterEthnicity.Caucasian:
+			default:
+				break;
+
+			case CharacterEthnicity.BlackCarribean:
+				replaceWith = "B";
+				break;
+
+			case CharacterEthnicity.EastIndian:
+				replaceWith = "C";
+				break;
+
+			case CharacterEthnicity.HanChinese:
+				replaceWith = "D";
+				break;
+			}
+
+			StringBuilder s = new StringBuilder (faceTextureName);
+			s.Remove (faceTextureName.Length - 1, 1);
+			s.Append (replaceWith);
+			faceTextureName = s.ToString ();
+
+			Debug.Log ("Face texture name: " + faceTextureName);
+
+			return faceTextureName;
+		}
+
 		protected IEnumerator DespawnCharacterOverTime (Character character, bool fade)
 		{
 			if (fade) {
@@ -715,7 +751,9 @@ namespace Frontiers.World
 						}
 						*/
 			//get a face texture from the available face textures
-			newCharacter.State.FaceTextureName = Get.DefaultFaceTexture;
+			if (string.IsNullOrEmpty (newCharacter.State.FaceTextureName)) {
+				newCharacter.State.FaceTextureName = Get.DefaultFaceTexture;
+			}
 
 			if (faceTextures.Count > 0) {
 				//we'll choose a face based on the chosen ethnicity
@@ -1120,7 +1158,9 @@ namespace Frontiers.World
 						}
 						*/
 			//get a face texture from the available face textures
-			newCharacter.State.FaceTextureName = Get.DefaultFaceTexture;
+			if (string.IsNullOrEmpty (newCharacter.State.FaceTextureName)) {
+				newCharacter.State.FaceTextureName = Get.DefaultFaceTexture;
+			}
 
 			if (faceTextures.Count > 0) {
 				//we'll choose a face based on the chosen ethnicity
@@ -1147,6 +1187,10 @@ namespace Frontiers.World
 
 		public void BodyTexturesAndMaterials (Character character, bool asGhost)
 		{
+			if (character.State.RelatedToPlayer) {
+				character.State.FaceTextureName = MatchFaceTextureEthnicity (character.State.FaceTextureName, Profile.Get.CurrentGame.Character.Ethnicity);
+			}
+
 			Mods.Get.Runtime.FaceTexture (ref face, character.State.FaceTextureName);
 			Mods.Get.Runtime.BodyTexture (ref body, character.State.BodyTextureName);
 			if (!asGhost) {
@@ -1179,7 +1223,8 @@ namespace Frontiers.World
 			return Get.mSpawnedCharacters.TryGetValue (characterName, out character);
 		}
 
-		public static bool GetOrSpawnCharacter (ActionNode node, string characterName, WIGroup group, out Character newCharacter) {
+		public static bool GetOrSpawnCharacter (ActionNode node, string characterName, WIGroup group, out Character newCharacter)
+		{
 			return GetOrSpawnCharacter (node, characterName, group, false, out newCharacter);
 		}
 
@@ -1397,7 +1442,7 @@ namespace Frontiers.World
 					double waitUntil = 0;
 					//check to see if we need to spawn any more
 					System.Random random = new System.Random (Profile.Get.CurrentGame.Seed);
-					while (SpawnedPilgrims.Count < Globals.MaxSpawnedPilgrims) {
+					while (SpawnedPilgrims.Count < Mathf.Min (Globals.MaxSpawnedPilgrims, GameWorld.Get.Settings.MaxRandomPilgrims)) {
 						if (WorldClock.RTDeltaTimeSmooth < Time.fixedDeltaTime) {
 							//Debug.Log("waiting in pilgrims due to low frame rate");
 							yield return null;

@@ -13,52 +13,52 @@ namespace Frontiers
 {
 	public class PlayerSurroundings : PlayerScript, IPhotosensitive
 	{
-		public PlayerSurroundingsState State = new PlayerSurroundingsState();
+		public PlayerSurroundingsState State = new PlayerSurroundingsState ();
 		//TODO remove this
 		public List <string> VisitNotificationTypes = new List <string> { "City" };
 		public Structure StartupStructure = null;
 
 		#region initialization
 
-		public override void OnGameStart()
+		public override void OnGameStart ()
 		{
 			if (GameManager.Get.TestingEnvironment)
 				return;
 
-			Player.Get.AvatarActions.Subscribe(AvatarAction.MoveEnterWater, new ActionListener(MoveEnterWater));
-			Player.Get.AvatarActions.Subscribe(AvatarAction.MoveExitWater, new ActionListener(MoveExitWater));
+			Player.Get.AvatarActions.Subscribe (AvatarAction.MoveEnterWater, new ActionListener (MoveEnterWater));
+			Player.Get.AvatarActions.Subscribe (AvatarAction.MoveExitWater, new ActionListener (MoveExitWater));
 
 			for (int i = 0; i < GameWorld.Get.Settings.DefaultRevealedLocations.Count; i++) {
-				Profile.Get.CurrentGame.RevealedLocations.SafeAdd(GameWorld.Get.Settings.DefaultRevealedLocations[i]);
+				Profile.Get.CurrentGame.RevealedLocations.SafeAdd (GameWorld.Get.Settings.DefaultRevealedLocations [i]);
 			}
 
 			for (int i = 0; i < GameWorld.Get.Regions.Count; i++) {
-				State.VisitedRespawnStructures.SafeAdd(GameWorld.Get.Regions[i].DefaultRespawnStructure);
+				State.VisitedRespawnStructures.SafeAdd (GameWorld.Get.Regions [i].DefaultRespawnStructure);
 			}
 
-			FXManager.Get.SpawnMapMarkers(State.ActiveMapMarkers);
+			FXManager.Get.SpawnMapMarkers (State.ActiveMapMarkers);
 
 			enabled = true;
 		}
 
-		public override void OnLocalPlayerDie()
+		public override void OnLocalPlayerDie ()
 		{
-			FireSources.Clear();
-			LightSources.Clear();
+			FireSources.Clear ();
+			LightSources.Clear ();
 			//cancel all hostile threats
 			for (int i = 0; i < Hostiles.Count; i++) {
-				if (Hostiles[i] != null && Hostiles[i].PrimaryTarget == player) {
-					Hostiles[i].CoolOff();
+				if (Hostiles [i] != null && Hostiles [i].PrimaryTarget == player) {
+					Hostiles [i].CoolOff ();
 				}
 			}
-			Hostiles.Clear();
+			Hostiles.Clear ();
 			HostilesTargetingPlayer = 0;
 		}
 
-		public override void OnLocalPlayerSpawn()
+		public override void OnLocalPlayerSpawn ()
 		{
 			if (StartupStructure != null) {
-				StructureEnter(StartupStructure);
+				StructureEnter (StartupStructure);
 				StartupStructure = null;
 			}
 
@@ -66,42 +66,42 @@ namespace Frontiers
 				PlayerStartupPosition psp = SpawnManager.Get.CurrentStartupPosition;
 
 				if (psp.ClearRevealedLocations) {
-					Profile.Get.CurrentGame.RevealedLocations.Clear();
+					Profile.Get.CurrentGame.RevealedLocations.Clear ();
 				}
 
 				State.IsInWater = false;
 				State.GroundBeneathPlayer = GroundType.Dirt;
 				State.LastChunkID = psp.ChunkID;
-				State.LastPosition.CopyFrom(psp.WorldPosition);
-				State.VisitingLocations.SafeAdd(psp.LocationReference);
-				Profile.Get.CurrentGame.RevealedLocations.SafeAdd(psp.LocationReference);
+				State.LastPosition.CopyFrom (psp.WorldPosition);
+				State.VisitingLocations.SafeAdd (psp.LocationReference);
+				Profile.Get.CurrentGame.RevealedLocations.SafeAdd (psp.LocationReference);
 				State.IsInsideStructure = psp.Interior;
 				if (State.IsInsideStructure) {
-					State.LastStructureEntered = psp.LocationReference.AppendLocation(psp.StructureName);
-					Profile.Get.CurrentGame.RevealedLocations.SafeAdd(State.LastStructureEntered);
+					State.LastStructureEntered = psp.LocationReference.AppendLocation (psp.StructureName);
+					Profile.Get.CurrentGame.RevealedLocations.SafeAdd (State.LastStructureEntered);
 				}
 				//add the latest respawn structures to our state
 				for (int i = 0; i < SpawnManager.Get.CurrentStartupPosition.NewVisitedRespawnStructures.Count; i++) {
-					State.VisitedRespawnStructures.SafeAdd(SpawnManager.Get.CurrentStartupPosition.NewVisitedRespawnStructures[i]);
+					State.VisitedRespawnStructures.SafeAdd (SpawnManager.Get.CurrentStartupPosition.NewVisitedRespawnStructures [i]);
 				}
 			}
 
 			if (!mCheckingSurroundings) {
 				mCheckingSurroundings = true;
-				StartCoroutine(CheckSurroundings());
+				StartCoroutine (CheckSurroundings ());
 			}
 
-			mTerrainType = Colors.Alpha(Color.black, 0f);
+			mTerrainType = Colors.Alpha (Color.black, 0f);
 		}
 
-		public override void OnLocalPlayerDespawn()
+		public override void OnLocalPlayerDespawn ()
 		{
-			LeaveAllLocations();
+			LeaveAllLocations ();
 			State.IsInWater = false;
 			State.GroundBeneathPlayer = GroundType.Dirt;
 		}
 
-		public override void AdjustPlayerMotor(ref float mMotorAccelerationMultiplier, ref float mMotorJumpForceMultiplier, ref float mMotorSlopeAngleMultiplier)
+		public override void AdjustPlayerMotor (ref float mMotorAccelerationMultiplier, ref float mMotorJumpForceMultiplier, ref float mMotorSlopeAngleMultiplier)
 		{
 			if (IsInWater) {
 				mMotorAccelerationMultiplier *= Globals.DefaultWaterAccelerationPenalty;
@@ -109,54 +109,54 @@ namespace Frontiers
 			}
 		}
 
-		public override void OnGameSaveStart()
+		public override void OnGameSaveStart ()
 		{
-			Debug.Log("Save starting in player surroundings, last chunk ID was " + GameWorld.Get.PrimaryChunkID.ToString());
+			Debug.Log ("Save starting in player surroundings, last chunk ID was " + GameWorld.Get.PrimaryChunkID.ToString ());
 			State.LastChunkID = GameWorld.Get.PrimaryChunkID;
 			//if we haven't spawned all this stuff will be set by the spawn manager
 			if (player.HasSpawned) {
 				//but if we have spawned we need to
 				//make sure our state is up-to-date
-				State.LastPosition.CopyFrom(player.tr);
+				State.LastPosition.CopyFrom (player.tr);
 				//if we're not inside a structure
 				//see if we're on top of one
 				if (State.IsInsideStructure) {
 					State.IsOnTopOfMeshTerrain = false;
 				} else if (IsSomethingBelowPlayer) {
 					if (ClosestObjectBelow.IOIType == ItemOfInterestType.Scenery) {
-						Debug.Log("Something below player: " + ClosestObjectBelow.gameObject.name);
+						Debug.Log ("Something below player: " + ClosestObjectBelow.gameObject.name);
 						switch (ClosestObjectBelow.gameObject.tag) {
-							case Globals.TagGroundTerrain:
+						case Globals.TagGroundTerrain:
 																//we're standing on terrain
 																//get our last chunk ID from this in case it's an arbitrarily-placed chunk
-								Terrain t = ClosestObjectBelow.gameObject.GetComponent <Terrain>();
-								int chunkID = 0;
-								if (GameWorld.Get.ChunkIDByTerrain(t, out chunkID)) {
-									Debug.Log("Got chunk ID " + chunkID.ToString() + " from terrain");
-									State.LastChunkID = chunkID;
-								}
-								break;
+							Terrain t = ClosestObjectBelow.gameObject.GetComponent <Terrain> ();
+							int chunkID = 0;
+							if (GameWorld.Get.ChunkIDByTerrain (t, out chunkID)) {
+								Debug.Log ("Got chunk ID " + chunkID.ToString () + " from terrain");
+								State.LastChunkID = chunkID;
+							}
+							break;
 
-							default:
+						default:
 																//we're standing on something else
-								Debug.Log("Standing on mesh terrain");
-								State.IsOnTopOfMeshTerrain = true;
+							Debug.Log ("Standing on mesh terrain");
+							State.IsOnTopOfMeshTerrain = true;
 																//we may be able to figure out which chunk it belongs to
-								DamageableScenery ds = null;
-								if (ClosestObjectBelow.gameObject.HasComponent <DamageableScenery>(out ds)) {
-									Debug.Log("Got chunk ID " + ds.ParentChunk.State.ID.ToString() + " from mesh");
-									State.LastChunkID = ds.ParentChunk.State.ID;
-								}
-								break;
+							DamageableScenery ds = null;
+							if (ClosestObjectBelow.gameObject.HasComponent <DamageableScenery> (out ds)) {
+								Debug.Log ("Got chunk ID " + ds.ParentChunk.State.ID.ToString () + " from mesh");
+								State.LastChunkID = ds.ParentChunk.State.ID;
+							}
+							break;
 						}
 					}
 				}
 			}
 		}
 
-		public override void OnStateLoaded()
+		public override void OnStateLoaded ()
 		{
-			Debug.Log("State was loaded, last chunk ID is: " + State.LastChunkID.ToString());
+			Debug.Log ("State was loaded, last chunk ID is: " + State.LastChunkID.ToString ());
 		}
 
 		#endregion
@@ -167,7 +167,7 @@ namespace Frontiers
 		//these make it easier to tell what i'm asking
 		public string CurrentDescription {
 			get {
-				BuildDescription();
+				BuildDescription ();
 				return mCurrentDescription;
 			}
 		}
@@ -223,26 +223,26 @@ namespace Frontiers
 		public bool IsWorldItemInRange {
 			get {
 				return (IsWorldItemInPlayerFocus
-				&& Vector3.Distance(player.Position, WorldItemFocusHitInfo.point) < Globals.PlayerPickUpRange
+				&& Vector3.Distance (player.Position, WorldItemFocusHitInfo.point) < Globals.PlayerPickUpRange
 				&& ClosestObjectFocus == WorldItemFocus);
 			}
 		}
 
 		public bool IsTerrainInRange {
 			get {
-				return (IsTerrainInPlayerFocus && Vector3.Distance(player.Position, TerrainFocusHitInfo.point) < Globals.PlayerPickUpRange);
+				return (IsTerrainInPlayerFocus && Vector3.Distance (player.Position, TerrainFocusHitInfo.point) < Globals.PlayerPickUpRange);
 			}
 		}
 
 		public bool IsTerrainUnderGrabber {
 			get {
-				return (TerrainUnderGrabber != null && Vector3.Distance(player.Position, TerrainUnderGrabberHitInfo.point) < Globals.PlayerPickUpRange);
+				return (TerrainUnderGrabber != null && Vector3.Distance (player.Position, TerrainUnderGrabberHitInfo.point) < Globals.PlayerPickUpRange);
 			}
 		}
 
 		public bool IsWorldItemUnderGrabber {
 			get {
-				return (WorldItemUnderGrabber != null && Vector3.Distance(player.Position, WorldItemUnderGrabberHitInfo.point) < Globals.PlayerPickUpRange);
+				return (WorldItemUnderGrabber != null && Vector3.Distance (player.Position, WorldItemUnderGrabberHitInfo.point) < Globals.PlayerPickUpRange);
 			}
 		}
 
@@ -270,47 +270,47 @@ namespace Frontiers
 			}
 		}
 
-		protected void BuildDescription()
+		protected void BuildDescription ()
 		{
-			StringBuilder sb = new StringBuilder();
+			StringBuilder sb = new StringBuilder ();
 
 			if (IsUnderground) {
-				sb.AppendLine("You are underground");
+				sb.AppendLine ("You are underground");
 			} else if (IsInSafeLocation) {
-				sb.AppendLine("You are in a safe location");
+				sb.AppendLine ("You are in a safe location");
 			} else if (IsInsideStructure) {
-				sb.AppendLine("You are inside a structure");
+				sb.AppendLine ("You are inside a structure");
 			}
 			if (IsInCivilization) {
-				sb.AppendLine("You are in a location with ties to civilization.");
+				sb.AppendLine ("You are in a location with ties to civilization.");
 			} else {
-				sb.AppendLine("You are in the wild.");
+				sb.AppendLine ("You are in the wild.");
 			}
 
 			switch (player.Status.LatestTemperatureExposure) {
-				case TemperatureRange.A_DeadlyCold:
-					sb.AppendLine("Your surroundings are deadly cold");
-					break;
+			case TemperatureRange.A_DeadlyCold:
+				sb.AppendLine ("Your surroundings are deadly cold");
+				break;
 
-				case TemperatureRange.B_Cold:
-					sb.AppendLine("Your surroundings are uncomfortably cold");
-					break;
+			case TemperatureRange.B_Cold:
+				sb.AppendLine ("Your surroundings are uncomfortably cold");
+				break;
 
-				case TemperatureRange.C_Warm:
-					sb.AppendLine("Your surroundings are comfortably warm");
-					break;
+			case TemperatureRange.C_Warm:
+				sb.AppendLine ("Your surroundings are comfortably warm");
+				break;
 
-				case TemperatureRange.D_Hot:
-					sb.AppendLine("Your surroundings are uncomfortably hot");
-					break;
+			case TemperatureRange.D_Hot:
+				sb.AppendLine ("Your surroundings are uncomfortably hot");
+				break;
 
-				case TemperatureRange.E_DeadlyHot:
-					sb.AppendLine("Your surroundings are deadly hot");
-					break;
+			case TemperatureRange.E_DeadlyHot:
+				sb.AppendLine ("Your surroundings are deadly hot");
+				break;
 			}
 
-			mCurrentDescription = sb.ToString();
-			sb.Clear();
+			mCurrentDescription = sb.ToString ();
+			sb.Clear ();
 			sb = null;
 		}
 
@@ -362,18 +362,18 @@ namespace Frontiers
 
 		#region structures and locations
 
-		public void CheckCivilization()
+		public void CheckCivilization ()
 		{
 			bool isInCivilization = IsInCivilization;
 			if (!isInCivilization && mInCivilizationLastFrame) {
-				OnCivilizationExit();
+				OnCivilizationExit ();
 			} else if (isInCivilization && !mInCivilizationLastFrame) {
-				OnCivilizationEnter();
+				OnCivilizationEnter ();
 			}
 			mInCivilizationLastFrame = isInCivilization;
 		}
 
-		public void AddCivilizationBoost(float effectTime)
+		public void AddCivilizationBoost (float effectTime)
 		{
 			mCivilizationBoostEnd = WorldClock.AdjustedRealTime + effectTime;
 		}
@@ -391,12 +391,12 @@ namespace Frontiers
 		protected Structure mLastStructureEntered = null;
 		public Structure LastStructureExited = null;
 		public Location LastLocationRevealed = null;
-		public List <PilgrimStop> PilgrimStops = new List <PilgrimStop>();
-		public List <Location> VisitingLocations = new List <Location>();
+		public List <PilgrimStop> PilgrimStops = new List <PilgrimStop> ();
+		public List <Location> VisitingLocations = new List <Location> ();
 
-		public PilgrimStop CurrentPilgrimStop { get { return PilgrimStops[0]; } }
+		public PilgrimStop CurrentPilgrimStop { get { return PilgrimStops [0]; } }
 
-		public Location CurrentLocation { get { return VisitingLocations[0]; } }
+		public Location CurrentLocation { get { return VisitingLocations [0]; } }
 
 		public Structure CurrentStructure { get { return LastStructureEntered; } }
 
@@ -427,7 +427,7 @@ namespace Frontiers
 			}
 		}
 
-		public bool IsVisitingStructure(Structure structure)
+		public bool IsVisitingStructure (Structure structure)
 		{
 			if (IsInsideStructure) {
 				return structure == LastStructureEntered;
@@ -435,17 +435,17 @@ namespace Frontiers
 			return false;
 		}
 
-		public void PassThroughEntrance(Dynamic entrance, bool enter)
+		public void PassThroughEntrance (Dynamic entrance, bool enter)
 		{
 			if (entrance.ParentStructure.StructureShingle.PropertyIsDestroyed) {
 				return;
 			}
 
 			if (entrance.State.Type == WorldStructureObjectType.OuterEntrance) {
-				if (IsVisitingStructure(entrance.ParentStructure)) {
-					StructureExit(entrance.ParentStructure);
+				if (IsVisitingStructure (entrance.ParentStructure)) {
+					StructureExit (entrance.ParentStructure);
 				} else {
-					StructureEnter(entrance.ParentStructure);
+					StructureEnter (entrance.ParentStructure);
 				}
 			}
 		}
@@ -472,7 +472,7 @@ namespace Frontiers
 				}
 				if (IsVisitingLocation) {
 					for (int i = 0; i < VisitingLocations.Count; i++) {
-						if (VisitingLocations[i].IsCivilized) {
+						if (VisitingLocations [i].IsCivilized) {
 							return true;
 						}
 					}
@@ -510,57 +510,57 @@ namespace Frontiers
 
 		#endregion
 
-		public IEnumerator CheckSurroundings()
+		public IEnumerator CheckSurroundings ()
 		{
 			mCheckingSurroundings = true;
 			while (mCheckingSurroundings) {
-				while (!player.HasSpawned || player.IsHijacked || !GameManager.Is(FGameState.InGame)) {
+				while (!player.HasSpawned || player.IsHijacked || !GameManager.Is (FGameState.InGame)) {
 					//wait it out, we'll get bad data
 					yield return null;
 				}
 				//put a tick between each of these
 				//TODO may have to move RaycastFocus to separate coroutine
-				ClearSurroundings();
+				ClearSurroundings ();
 				try {
 					mPlayerHeadPosition = player.HeadPosition;
-					RaycastAllFocus();
+					RaycastAllFocus ();
 				} catch (Exception e) {
-					Debug.LogException(e);
+					Debug.LogException (e);
 				}
 				yield return null;
 				try {
-					RaycastAllUp();
+					RaycastAllUp ();
 				} catch (Exception e) {
-					Debug.LogException(e);
+					Debug.LogException (e);
 				}
 				//boy these checks every frame are annoying, TODO fix these please
 				yield return null;
-				if (player.HasSpawned && !player.IsHijacked && GameManager.Is(FGameState.InGame)) {
+				if (player.HasSpawned && !player.IsHijacked && GameManager.Is (FGameState.InGame)) {
 					mPlayerHeadPosition = player.HeadPosition;
-					CheckDirectSunlight();
+					CheckDirectSunlight ();
 				}
 				yield return null;
-				if (player.HasSpawned && !player.IsHijacked && GameManager.Is(FGameState.InGame)) {
+				if (player.HasSpawned && !player.IsHijacked && GameManager.Is (FGameState.InGame)) {
 					mPlayerHeadPosition = player.HeadPosition;
-					CheckTerrainType();
+					CheckTerrainType ();
 				}
 				yield return null;
-				if (player.HasSpawned && !player.IsHijacked && GameManager.Is(FGameState.InGame)) {
-					CheckDanger();
+				if (player.HasSpawned && !player.IsHijacked && GameManager.Is (FGameState.InGame)) {
+					CheckDanger ();
 				}
 				yield return null;
-				if (player.HasSpawned && !player.IsHijacked && GameManager.Is(FGameState.InGame)) {
-					CheckAnimalDens();
+				if (player.HasSpawned && !player.IsHijacked && GameManager.Is (FGameState.InGame)) {
+					CheckAnimalDens ();
 				}
 				yield return null;
-				if (player.HasSpawned && !player.IsHijacked && GameManager.Is(FGameState.InGame)) {
+				if (player.HasSpawned && !player.IsHijacked && GameManager.Is (FGameState.InGame)) {
 					//TODO this is kind of a kludge... put this somewhere else
 					YDistanceFromCoast = player.Position.y - Biomes.Get.TideWaterElevation;
 					yield return null;
-					CheckExposure();
+					CheckExposure ();
 
 					State.LastChunkID = GameWorld.Get.PrimaryChunkID;
-					State.LastPosition.CopyFrom(player.tr);
+					State.LastPosition.CopyFrom (player.tr);
 				}
 				yield return null;
 			}
@@ -572,47 +572,47 @@ namespace Frontiers
 
 		#region audio
 
-		public bool IsSoundAudible(Vector3 origin, float audibleRadius)
+		public bool IsSoundAudible (Vector3 origin, float audibleRadius)
 		{	//leaving room for audibility skills here
-			return (Vector3.Distance(player.Position, origin) <= audibleRadius * 2.0f);//TEMP
+			return (Vector3.Distance (player.Position, origin) <= audibleRadius * 2.0f);//TEMP
 		}
 
 		#endregion
 
 		#region enter / exit
 
-		public void EnterUnderground()
+		public void EnterUnderground ()
 		{
 			State.IsUnderground = true;
 			State.EnterUndergroundTime = WorldClock.AdjustedRealTime;
-			Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationUndergroundEnter), WorldClock.AdjustedRealTime);
-			GUIManager.PostInfo("You are under ground.");
+			Player.Get.AvatarActions.ReceiveAction ((AvatarAction.LocationUndergroundEnter), WorldClock.AdjustedRealTime);
+			GUIManager.PostInfo ("You are under ground.");
 			//player.SaveState ();
 		}
 
-		public void ExitUnderground()
+		public void ExitUnderground ()
 		{
 			State.IsUnderground = false;
 			State.ExitUndergroundTime = WorldClock.AdjustedRealTime;
-			Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationUndergroundExit), WorldClock.AdjustedRealTime);
-			GUIManager.PostInfo("You are above ground.");
+			Player.Get.AvatarActions.ReceiveAction ((AvatarAction.LocationUndergroundExit), WorldClock.AdjustedRealTime);
+			GUIManager.PostInfo ("You are above ground.");
 			//player.SaveState ();
 		}
 
-		public bool MoveEnterWater(double timeStamp)
+		public bool MoveEnterWater (double timeStamp)
 		{
-			player.Status.AddCondition("Wet");//do this here so it's immediate
+			player.Status.AddCondition ("Wet");//do this here so it's immediate
 			State.IsInWater = true;
 			return true;
 		}
 
-		public bool MoveExitWater(double timeStamp)
+		public bool MoveExitWater (double timeStamp)
 		{
 			State.IsInWater = false;
 			return true;
 		}
 
-		public void StructureEnter(Structure structure)
+		public void StructureEnter (Structure structure)
 		{
 			if (structure.IsDestroyed) {
 				return;
@@ -621,53 +621,53 @@ namespace Frontiers
 				return;
 			}
 
-			structure.OnPlayerEnter.SafeInvoke();
+			structure.OnPlayerEnter.SafeInvoke ();
 			LastStructureEntered = structure;
 			State.LastStructureEntered = structure.worlditem.StaticReference;
 			State.EnterStructureTime = WorldClock.AdjustedRealTime;
-			structure.worlditem.Get <Revealable>().State.UnknownUntilVisited = false;
-			Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationStructureEnter), WorldClock.AdjustedRealTime);
+			structure.worlditem.Get <Revealable> ().State.UnknownUntilVisited = false;
+			Player.Get.AvatarActions.ReceiveAction ((AvatarAction.LocationStructureEnter), WorldClock.AdjustedRealTime);
 
 			if (structure.State.IsRespawnStructure) {
-				State.VisitedRespawnStructures.SafeAdd(structure.worlditem.StaticReference);
+				State.VisitedRespawnStructures.SafeAdd (structure.worlditem.StaticReference);
 			}
 			//player.SaveState ();
 		}
 
-		public void StructureExit(Structure structure)
+		public void StructureExit (Structure structure)
 		{
-			structure.OnPlayerExit.SafeInvoke();
+			structure.OnPlayerExit.SafeInvoke ();
 			LastStructureEntered = null;
 			State.LastStructureExited = structure.worlditem.StaticReference;
 			State.ExitStructureTime = WorldClock.AdjustedRealTime;
-			Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationStructureExit), WorldClock.AdjustedRealTime);
+			Player.Get.AvatarActions.ReceiveAction ((AvatarAction.LocationStructureExit), WorldClock.AdjustedRealTime);
 			//player.SaveState ();
 		}
 
-		public bool IsVisiting(MobileReference location)
+		public bool IsVisiting (MobileReference location)
 		{
-			return State.VisitingLocations.Contains(location);
+			return State.VisitingLocations.Contains (location);
 		}
 
-		public bool IsVisiting(Location location)
+		public bool IsVisiting (Location location)
 		{
-			return State.VisitingLocations.Contains(location.worlditem.StaticReference);
+			return State.VisitingLocations.Contains (location.worlditem.StaticReference);
 		}
 
-		public void PilgrimStopVisit(PilgrimStop pilgrimStop)
+		public void PilgrimStopVisit (PilgrimStop pilgrimStop)
 		{
-			CleanPilgrimStops();
-			if (!PilgrimStops.Contains(pilgrimStop)) {
-				PilgrimStops.Add(pilgrimStop);
+			CleanPilgrimStops ();
+			if (!PilgrimStops.Contains (pilgrimStop)) {
+				PilgrimStops.Add (pilgrimStop);
 			}
 		}
 
-		public void CleanPilgrimStops()
+		public void CleanPilgrimStops ()
 		{
 			//clean existing
 			for (int i = PilgrimStops.Count - 1; i >= 0; i--) {
 				Location location = null;
-				if (PilgrimStops[i] != null && PilgrimStops[i].worlditem.Is <Location>(out location)) {
+				if (PilgrimStops [i] != null && PilgrimStops [i].worlditem.Is <Location> (out location)) {
 					//if (!WorldItems.IsInActiveRange (location.worlditem, player.Position, 1.0f)) {
 					//	PilgrimStops.RemoveAt (i);
 					//}
@@ -675,116 +675,116 @@ namespace Frontiers
 			}
 		}
 
-		public void LeaveAllLocations()
+		public void LeaveAllLocations ()
 		{
 			for (int i = 0; i < VisitingLocations.Count; i++) {
 				Visitable visitable = null;
-				if (VisitingLocations[i] != null && VisitingLocations[i].worlditem.Is<Visitable>(out visitable)) {
-					Leave(visitable);
+				if (VisitingLocations [i] != null && VisitingLocations [i].worlditem.Is<Visitable> (out visitable)) {
+					Leave (visitable);
 				}
 			}
-			State.VisitingLocations.Clear();
-			VisitingLocations.Clear();
+			State.VisitingLocations.Clear ();
+			VisitingLocations.Clear ();
 		}
 
-		public bool Reveal(MobileReference mr)
+		public bool Reveal (MobileReference mr)
 		{
-			if (Profile.Get.CurrentGame.RevealedLocations.SafeAdd(mr)) {
-				Profile.Get.CurrentGame.NewLocations.SafeAdd(mr);
-				Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationReveal), WorldClock.AdjustedRealTime);
+			if (Profile.Get.CurrentGame.RevealedLocations.SafeAdd (mr)) {
+				Profile.Get.CurrentGame.NewLocations.SafeAdd (mr);
+				Player.Get.AvatarActions.ReceiveAction ((AvatarAction.LocationReveal), WorldClock.AdjustedRealTime);
 				return true;
 			} else {
 				return false;
 			}
 		}
 
-		public void Reveal(Revealable revealable)
+		public void Reveal (Revealable revealable)
 		{
-			Reveal(revealable.worlditem.StaticReference);
+			Reveal (revealable.worlditem.StaticReference);
 		}
 
-		public void Visit(Visitable visitable)
+		public void Visit (Visitable visitable)
 		{
 			Location location = null;
-			if (visitable.worlditem.Is <Location>(out location)) {
-				if (VisitingLocations.SafeAdd(location)) {
-					VisitingLocations.Sort();
-					State.VisitingLocations.SafeAdd(location.worlditem.StaticReference);
+			if (visitable.worlditem.Is <Location> (out location)) {
+				if (VisitingLocations.SafeAdd (location)) {
+					VisitingLocations.Sort ();
+					State.VisitingLocations.SafeAdd (location.worlditem.StaticReference);
 					State.LastLocationVisited = location.worlditem.StaticReference;
-					Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationVisit), WorldClock.AdjustedRealTime);
+					Player.Get.AvatarActions.ReceiveAction ((AvatarAction.LocationVisit), WorldClock.AdjustedRealTime);
 				}
 				//player.SaveState ();
 			}
 		}
 
-		public void Leave(Visitable visitable)
+		public void Leave (Visitable visitable)
 		{
 			Location location = null;
-			if (visitable.worlditem.Is<Location>(out location)) {
-				State.VisitingLocations.Remove(location.worlditem.StaticReference);
+			if (visitable.worlditem.Is<Location> (out location)) {
+				State.VisitingLocations.Remove (location.worlditem.StaticReference);
 				State.LastLocationExited = location.worlditem.StaticReference;
-				VisitingLocations.Sort();
-				VisitingLocations.Remove(location);
-				Player.Get.AvatarActions.ReceiveAction((AvatarAction.LocationLeave), WorldClock.AdjustedRealTime);
+				VisitingLocations.Sort ();
+				VisitingLocations.Remove (location);
+				Player.Get.AvatarActions.ReceiveAction ((AvatarAction.LocationLeave), WorldClock.AdjustedRealTime);
 				//player.SaveState ();
 			}
 		}
 
-		public void OnCivilizationExit()
+		public void OnCivilizationExit ()
 		{
 			//these notifcations are no longer necessary thanks to our active state check
 			//GUIManager.PostWarning ("You have entered the wilderness.");
 			//player.SaveState ();
 		}
 
-		public void OnCivilizationEnter()
+		public void OnCivilizationEnter ()
 		{
 			//these notifcations are no longer necessary thanks to our active state check
 			//GUIManager.PostInfo ("You have returned to civilization.");
 			//player.SaveState ();
 		}
 
-		public void OnDangerEnter()
+		public void OnDangerEnter ()
 		{
 			//these notifcations are no longer necessary thanks to our active state check
 			//player.SaveState ();
 		}
 
-		public void OnDangerExit()
+		public void OnDangerExit ()
 		{
 			//these notifcations are no longer necessary thanks to our active state check
 			//player.SaveState ();
 		}
 
-		public void AddMapMarker(Vector3 mapMarkerLocation)
+		public void AddMapMarker (Vector3 mapMarkerLocation)
 		{
 			WorldChunk chunk = null;
-			if (!GameWorld.Get.ChunkAtPosition(mapMarkerLocation, out chunk)) {
-				Debug.Log("Couldn't find chunk at " + mapMarkerLocation.ToString());
+			if (!GameWorld.Get.ChunkAtPosition (mapMarkerLocation, out chunk)) {
+				Debug.Log ("Couldn't find chunk at " + mapMarkerLocation.ToString ());
 			}
 			//TEMP for now, only one at a time
 			if (State.ActiveMapMarkers.Count > 0) {
 				//move the existing marker
-				State.ActiveMapMarkers[0].ChunkPosition = WorldChunk.WorldPositionToChunkPosition(chunk.ChunkBounds, mapMarkerLocation - chunk.ChunkOffset);
-				State.ActiveMapMarkers[0].ChunkID = chunk.State.ID;
-				State.ActiveMapMarkers[0].ChunkOffset = chunk.ChunkOffset;
+				State.ActiveMapMarkers [0].ChunkPosition = WorldChunk.WorldPositionToChunkPosition (chunk.ChunkBounds, mapMarkerLocation - chunk.ChunkOffset);
+				State.ActiveMapMarkers [0].ChunkID = chunk.State.ID;
+				State.ActiveMapMarkers [0].ChunkOffset = chunk.ChunkOffset;
 			} else {
-				MapMarker mm = new MapMarker();
-				mm.ChunkPosition = WorldChunk.WorldPositionToChunkPosition(chunk.ChunkBounds, mapMarkerLocation - chunk.ChunkOffset);
+				MapMarker mm = new MapMarker ();
+				mm.ChunkPosition = WorldChunk.WorldPositionToChunkPosition (chunk.ChunkBounds, mapMarkerLocation - chunk.ChunkOffset);
 				;
 				mm.ChunkID = chunk.State.ID;
 				mm.ChunkOffset = chunk.ChunkOffset;
-				State.ActiveMapMarkers.Add(mm);
+				State.ActiveMapMarkers.Add (mm);
 			}
-			FXManager.Get.SpawnMapMarkers(State.ActiveMapMarkers);
+			FXManager.Get.SpawnMapMarkers (State.ActiveMapMarkers);
 		}
 
 		#endregion
 
-		public void Update()
+		public void Update ()
 		{
 			//check to see if we have field of view overrides
-			if (!GameManager.Is(FGameState.Cutscene)) {
+			if (!GameManager.Is (FGameState.Cutscene)) {
 				if (IsVisitingLocation && CurrentLocation.State.RenderDistanceOverride > 0f) {
 					GameManager.Get.GameCamera.farClipPlane = Globals.ClippingDistanceFar * CurrentLocation.State.RenderDistanceOverride;
 				} else {
@@ -792,13 +792,13 @@ namespace Frontiers
 				}
 			}
 
-			if (GameManager.Is(FGameState.InGame) && player.HasSpawned) {
+			if (GameManager.Is (FGameState.InGame) && player.HasSpawned) {
 				//we have to do this every frame to identify moving platforms etc
-				RaycastAllDown();
+				RaycastAllDown ();
 				mSanityCheck++;
 				if (mSanityCheck > 20) {
 					mSanityCheck = 0;
-					GroundSanityCheck();
+					GroundSanityCheck ();
 				}
 			}
 		}
@@ -808,26 +808,26 @@ namespace Frontiers
 		protected int mCheckHostiles = 0;
 		protected int mSanityCheck = 0;
 		protected IItemOfInterest mLastEncounteredScenery;
-		public List <IHostile> Hostiles = new List <IHostile>();
+		public List <IHostile> Hostiles = new List <IHostile> ();
 		public int HostilesTargetingPlayer = 0;
-		public List <CreatureDen> CreatureDens = new List<CreatureDen>();
+		public List <CreatureDen> CreatureDens = new List<CreatureDen> ();
 
-		public void FixedUpdate()
+		public void FixedUpdate ()
 		{
-			if (!GameManager.Is(FGameState.InGame)) {
+			if (!GameManager.Is (FGameState.InGame)) {
 				return;
 			}
 
-			LightManager.RefreshExposure(this);
+			LightManager.RefreshExposure (this);
 
 			mCheckHostiles++;
 			if (mCheckHostiles > 5) {//TODO maybe put this in a coroutine
 				mCheckHostiles = 0;
 				HostilesTargetingPlayer = 0;
-				for (int i = Hostiles.LastIndex(); i >= 0; i--) {
-					IHostile hostile = Hostiles[i];
+				for (int i = Hostiles.LastIndex (); i >= 0; i--) {
+					IHostile hostile = Hostiles [i];
 					if (hostile == null || !hostile.HasPrimaryTarget || hostile.Mode == HostileMode.CoolingOff) {
-						Hostiles.RemoveAt(i);
+						Hostiles.RemoveAt (i);
 					} else if (hostile.PrimaryTarget == player) {
 						//Debug.Log ("Hostile primary target is player, we're still in danger");
 						HostilesTargetingPlayer++;
@@ -839,7 +839,7 @@ namespace Frontiers
 			try {
 				if (IsTerrainInPlayerFocus && TerrainFocus != mLastEncounteredScenery) {
 					mLastEncounteredScenery = TerrainFocus;
-					mLastEncounteredScenery.gameObject.collider.attachedRigidbody.SendMessage("OnPlayerEncounter", SendMessageOptions.DontRequireReceiver);
+					mLastEncounteredScenery.gameObject.collider.attachedRigidbody.SendMessage ("OnPlayerEncounter", SendMessageOptions.DontRequireReceiver);
 				}
 			} catch (Exception e) {
 				//no big deal
@@ -859,66 +859,66 @@ namespace Frontiers
 			}
 		}
 
-		public void CheckDanger()
+		public void CheckDanger ()
 		{
 			//check existing hostiles for duds
 			bool isInDanger = IsInDanger;
 			if (mInDangerLastFrame) {
 				if (!isInDanger) {
-					Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalDangerExit, WorldClock.AdjustedRealTime);
+					Player.Get.AvatarActions.ReceiveAction (AvatarAction.SurvivalDangerExit, WorldClock.AdjustedRealTime);
 				}
 			} else if (isInDanger) {
-				Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalDangerEnter, WorldClock.AdjustedRealTime);
+				Player.Get.AvatarActions.ReceiveAction (AvatarAction.SurvivalDangerEnter, WorldClock.AdjustedRealTime);
 			}
 			mInDangerLastFrame = isInDanger;
 		}
 
-		public void CheckAnimalDens()
+		public void CheckAnimalDens ()
 		{
 			for (int i = CreatureDens.Count - 1; i >= 0; i--) {
-				if (CreatureDens[i] == null) {
-					CreatureDens.RemoveAt(i);
+				if (CreatureDens [i] == null) {
+					CreatureDens.RemoveAt (i);
 				}
 			}
 
 			bool isInCreatureDen = IsInCreatureDen;
 			if (mInCreatureDenLastFrame) {
 				if (!isInCreatureDen) {
-					Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalCreatureDenExit, WorldClock.AdjustedRealTime);
+					Player.Get.AvatarActions.ReceiveAction (AvatarAction.SurvivalCreatureDenExit, WorldClock.AdjustedRealTime);
 				}
 			} else if (isInCreatureDen) {
-				Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalCreatureDenEnter, WorldClock.AdjustedRealTime);
+				Player.Get.AvatarActions.ReceiveAction (AvatarAction.SurvivalCreatureDenEnter, WorldClock.AdjustedRealTime);
 			}
 			mInCreatureDenLastFrame = isInCreatureDen;
 		}
 
-		public void RemoveHostile(Hostile hostile)
+		public void RemoveHostile (Hostile hostile)
 		{
-			if (Hostiles.Remove(hostile)) {
-				Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalHostileDeaggro, WorldClock.AdjustedRealTime);
+			if (Hostiles.Remove (hostile)) {
+				Player.Get.AvatarActions.ReceiveAction (AvatarAction.SurvivalHostileDeaggro, WorldClock.AdjustedRealTime);
 			}
 		}
 
-		public void AddHostile(IHostile hostile)
+		public void AddHostile (IHostile hostile)
 		{
-			if (Hostiles.SafeAdd(hostile)) {
+			if (Hostiles.SafeAdd (hostile)) {
 				if (hostile.PrimaryTarget == player) {
 					HostilesTargetingPlayer++;
 				}
-				Player.Get.AvatarActions.ReceiveAction(AvatarAction.SurvivalHostileAggro, WorldClock.AdjustedRealTime);
+				Player.Get.AvatarActions.ReceiveAction (AvatarAction.SurvivalHostileAggro, WorldClock.AdjustedRealTime);
 			}
 		}
 
-		public void CreatureDenEnter(CreatureDen creatureDen)
+		public void CreatureDenEnter (CreatureDen creatureDen)
 		{
-			if (!CreatureDens.Contains(creatureDen)) {
-				CreatureDens.Add(creatureDen);
+			if (!CreatureDens.Contains (creatureDen)) {
+				CreatureDens.Add (creatureDen);
 			}
 		}
 
-		public void CreatureDenExit(CreatureDen creatureDen)
+		public void CreatureDenExit (CreatureDen creatureDen)
 		{
-			CreatureDens.Remove(creatureDen);
+			CreatureDens.Remove (creatureDen);
 		}
 
 		protected bool mInDangerLastFrame = false;
@@ -930,11 +930,11 @@ namespace Frontiers
 
 		//these functions aren't used any more
 		//i'm keeping them around in case i want to bring them back
-		public void CheckDirectSunlight()
+		public void CheckDirectSunlight ()
 		{
-			if (WorldClock.Is(TimeOfDay.ba_LightSunLight)) {
+			if (WorldClock.Is (TimeOfDay.ba_LightSunLight)) {
 				RaycastHit sunlightHit;
-				if (Physics.Raycast(mPlayerHeadPosition, Biomes.Get.SunLightPosition, out sunlightHit, Vector3.Distance(mPlayerHeadPosition, Biomes.Get.SunLightPosition), Globals.LayersActive)) {
+				if (Physics.Raycast (mPlayerHeadPosition, Biomes.Get.SunLightPosition, out sunlightHit, Vector3.Distance (mPlayerHeadPosition, Biomes.Get.SunLightPosition), Globals.LayersActive)) {
 					State.InDirectSunlight = false;
 				} else {
 					State.InDirectSunlight = true;
@@ -944,37 +944,37 @@ namespace Frontiers
 			}
 		}
 
-		public void CheckExposure()
+		public void CheckExposure ()
 		{
 			if (State.ExposedToRain) {
 				if (!mExposedToRainLastFrame) {
-					Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsExposeToRain), WorldClock.AdjustedRealTime);
+					Player.Get.AvatarActions.ReceiveAction ((AvatarAction.SurroundingsExposeToRain), WorldClock.AdjustedRealTime);
 				}
 			} else {
 				if (mExposedToRainLastFrame) {
-					Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsShieldFromRain), WorldClock.AdjustedRealTime);
+					Player.Get.AvatarActions.ReceiveAction ((AvatarAction.SurroundingsShieldFromRain), WorldClock.AdjustedRealTime);
 				}
 			}
 			mExposedToRainLastFrame = State.ExposedToRain;
 
 			if (State.ExposedToSun) {
 				if (!mExposedToSunLastFrame) {
-					Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsExposeToSun), WorldClock.AdjustedRealTime);
+					Player.Get.AvatarActions.ReceiveAction ((AvatarAction.SurroundingsExposeToSun), WorldClock.AdjustedRealTime);
 				}
 			} else {
 				if (mExposedToSunLastFrame) {
-					Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsShieldFromSun), WorldClock.AdjustedRealTime);
+					Player.Get.AvatarActions.ReceiveAction ((AvatarAction.SurroundingsShieldFromSun), WorldClock.AdjustedRealTime);
 				}
 			}
 			mExposedToSunLastFrame = State.InDirectSunlight;
 
 			if (State.ExposedToSky) {
 				if (!mExposedToSkyLastFrame) {
-					Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsExposeToSky), WorldClock.AdjustedRealTime);
+					Player.Get.AvatarActions.ReceiveAction ((AvatarAction.SurroundingsExposeToSky), WorldClock.AdjustedRealTime);
 				}
 			} else {
 				if (mExposedToSkyLastFrame) {
-					Player.Get.AvatarActions.ReceiveAction((AvatarAction.SurroundingsShieldFromSky), WorldClock.AdjustedRealTime);
+					Player.Get.AvatarActions.ReceiveAction ((AvatarAction.SurroundingsShieldFromSky), WorldClock.AdjustedRealTime);
 				}
 			}
 			mExposedToSkyLastFrame = State.ExposedToSky;
@@ -988,7 +988,7 @@ namespace Frontiers
 
 		#region raycasts
 
-		public void ClearSurroundings()
+		public void ClearSurroundings ()
 		{
 			ClosestObjectBelow = null;
 			ClosestObjectAbove = null;
@@ -1015,23 +1015,23 @@ namespace Frontiers
 			ReceptacleUnderGrabber = null;
 		}
 
-		public void GroundSanityCheck()
+		public void GroundSanityCheck ()
 		{
-			if (!IsUnderground && !player.Status.IsStateActive("Traveling")) {
+			if (!IsUnderground && !player.Status.IsStateActive ("Traveling")) {
 				Terrain t = null;
 				Vector3 playerPosition = player.Position;
 				float height = playerPosition.y;
-				if (IsSomethingBelowPlayer && ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundTerrain)) {
-					t = TerrainBelow.gameObject.GetComponent <Terrain>();
+				if (IsSomethingBelowPlayer && ClosestObjectBelow.gameObject.CompareTag (Globals.TagGroundTerrain)) {
+					t = TerrainBelow.gameObject.GetComponent <Terrain> ();
 				} else {
 					downRaycastStart = playerPosition + Vector3.up * 100;
-					if (Physics.Raycast(downRaycastStart, player.DownVector, out downHit, 150f, Globals.LayersSolidTerrain)) {
-						t = downHit.collider.gameObject.GetComponent <Terrain>();
+					if (Physics.Raycast (downRaycastStart, player.DownVector, out downHit, 150f, Globals.LayersSolidTerrain)) {
+						t = downHit.collider.gameObject.GetComponent <Terrain> ();
 					}
 				}
 
 				if (t != null) {
-					height = t.SampleHeight(playerPosition) + t.transform.position.y;
+					height = t.SampleHeight (playerPosition) + t.transform.position.y;
 					if (playerPosition.y < height) {
 						playerPosition.y = height + 0.25f;
 						player.Position = playerPosition;
@@ -1040,7 +1040,7 @@ namespace Frontiers
 			}
 		}
 
-		public void RaycastAllDown()
+		public void RaycastAllDown ()
 		{
 			//if we're on a moving platform take the platform's velocity into account when doing raycasts
 			//we don't want to lose the platform
@@ -1050,64 +1050,68 @@ namespace Frontiers
 				downRaycastStart.y = MovingPlatformUnderPlayer.tr.position.y + 0.15f;
 				distance += 0.15f;
 			}
+			downItemOfInterest = null;
 			MovingPlatform mp = null;
-			if (Physics.Raycast(downRaycastStart, player.DownVector, out downHit, distance, Globals.LayersActive)) {
+			RaycastHit[] hits = Physics.RaycastAll (downRaycastStart, player.DownVector, distance, Globals.LayersActive);
+			for (int i = 0; i < hits.Length; i++) {
+				downHit = hits [i];
 				//check for moving platforms directly
-				if (downHit.collider.attachedRigidbody != null) {
-					mp = downHit.collider.attachedRigidbody.GetComponent <MovingPlatform>();
+				if (mp == null && downHit.collider.attachedRigidbody != null) {
+					mp = downHit.collider.attachedRigidbody.GetComponent <MovingPlatform> ();
 				}
-				downItemOfInterest = null;
-				if (WorldItems.GetIOIFromCollider(downHit.collider, out downItemOfInterest)) {
+				if (WorldItems.GetIOIFromCollider (downHit.collider, true, out downItemOfInterest)) {
 					switch (downItemOfInterest.IOIType) {
-						case ItemOfInterestType.WorldItem:
-							WorldItemBelowHitInfo = downHit;
-							WorldItemBelow = downItemOfInterest;
-							CheckForClosest(ref ClosestObjectBelow, ref ClosestObjectBelowHitInfo, WorldItemBelow, downHit, false);
-							break;
+					case ItemOfInterestType.WorldItem:
+						WorldItemBelowHitInfo = downHit;
+						WorldItemBelow = downItemOfInterest;
+						CheckForClosest (ref ClosestObjectBelow, ref ClosestObjectBelowHitInfo, WorldItemBelow, downHit, false);
+						break;
 
-						case ItemOfInterestType.Scenery:
-							TerrainBelowHitInfo = downHit;
-							TerrainBelow = downItemOfInterest;
-							CheckForClosest(ref ClosestObjectBelow, ref ClosestObjectBelowHitInfo, TerrainBelow, downHit, false);
-							break;
+					case ItemOfInterestType.Scenery:
+						TerrainBelowHitInfo = downHit;
+						TerrainBelow = downItemOfInterest;
+						CheckForClosest (ref ClosestObjectBelow, ref ClosestObjectBelowHitInfo, TerrainBelow, downHit, false);
+						break;
 
-						default:
-							break;
+					default:
+						break;
 					}
 				}
+			}
+			Array.Clear (hits, 0, hits.Length);
+			hits = null;
 
-				CheckGroundType++;
-				if (CheckGroundType > 4) {
-					CheckGroundType = 0;
-					if (State.IsInWater) {
-						State.GroundBeneathPlayer = GroundType.Water;
-					} else {
-						LastPositionOnland = player.Position;
-						State.GroundBeneathPlayer = GroundType.Dirt;
-						if (IsSomethingBelowPlayer) {
-							//using if/else instead of a switch so we can use CompareTag
-							//saves us a bunch of allocations -_-
-							if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundDirt)) {
-								State.GroundBeneathPlayer = GroundType.Dirt;
-							} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundLeaves)) {
-								State.GroundBeneathPlayer = GroundType.Leaves;
-							} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundMetal)) {
-								State.GroundBeneathPlayer = GroundType.Metal;
-							} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundMud)) {
-								State.GroundBeneathPlayer = GroundType.Mud;
-							} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundSnow)) {
-								State.GroundBeneathPlayer = GroundType.Snow;
-							} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundStone)) {
-								State.GroundBeneathPlayer = GroundType.Stone;
-							} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundWater)) {
-								State.GroundBeneathPlayer = GroundType.Water;
-							} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundWood)) {
-								State.GroundBeneathPlayer = GroundType.Wood;
-							} else if (ClosestObjectBelow.gameObject.CompareTag(Globals.TagGroundTerrain)) {
-								State.GroundBeneathPlayer = GameWorld.Get.GroundTypeAtInGamePosition(player.Position, IsUnderground);
-							} else {
-								State.GroundBeneathPlayer = GroundType.Dirt;
-							}
+			CheckGroundType++;
+			if (CheckGroundType > 4) {
+				CheckGroundType = 0;
+				if (State.IsInWater) {
+					State.GroundBeneathPlayer = GroundType.Water;
+				} else {
+					LastPositionOnland = player.Position;
+					State.GroundBeneathPlayer = GroundType.Dirt;
+					if (IsSomethingBelowPlayer) {
+						//using if/else instead of a switch so we can use CompareTag
+						//saves us a bunch of allocations -_-
+						if (ClosestObjectBelow.gameObject.CompareTag (Globals.TagGroundDirt)) {
+							State.GroundBeneathPlayer = GroundType.Dirt;
+						} else if (ClosestObjectBelow.gameObject.CompareTag (Globals.TagGroundLeaves)) {
+							State.GroundBeneathPlayer = GroundType.Leaves;
+						} else if (ClosestObjectBelow.gameObject.CompareTag (Globals.TagGroundMetal)) {
+							State.GroundBeneathPlayer = GroundType.Metal;
+						} else if (ClosestObjectBelow.gameObject.CompareTag (Globals.TagGroundMud)) {
+							State.GroundBeneathPlayer = GroundType.Mud;
+						} else if (ClosestObjectBelow.gameObject.CompareTag (Globals.TagGroundSnow)) {
+							State.GroundBeneathPlayer = GroundType.Snow;
+						} else if (ClosestObjectBelow.gameObject.CompareTag (Globals.TagGroundStone)) {
+							State.GroundBeneathPlayer = GroundType.Stone;
+						} else if (ClosestObjectBelow.gameObject.CompareTag (Globals.TagGroundWater)) {
+							State.GroundBeneathPlayer = GroundType.Water;
+						} else if (ClosestObjectBelow.gameObject.CompareTag (Globals.TagGroundWood)) {
+							State.GroundBeneathPlayer = GroundType.Wood;
+						} else if (ClosestObjectBelow.gameObject.CompareTag (Globals.TagGroundTerrain)) {
+							State.GroundBeneathPlayer = GameWorld.Get.GroundTypeAtInGamePosition (player.Position, IsUnderground);
+						} else {
+							State.GroundBeneathPlayer = GroundType.Dirt;
 						}
 					}
 				}
@@ -1133,53 +1137,53 @@ namespace Frontiers
 			MovingPlatformUnderPlayer = mp;
 		}
 
-		public void RaycastAllFocus()
+		public void RaycastAllFocus ()
 		{
 			focusItemOfInterest = null;
 			//check for terrain in front of us - used mostly for placement of stuff
-			if (Physics.Raycast(mPlayerHeadPosition, player.FocusVector, out terrainHit, Globals.RaycastAllFocusDistance, Globals.LayersTerrain)) {
+			if (Physics.Raycast (mPlayerHeadPosition, player.FocusVector, out terrainHit, Globals.RaycastAllFocusDistance, Globals.LayersTerrain)) {
 				//check for structure terrain layer first - it will be the parent of the collider
-				bool foundTerrainLayer = WorldItems.GetIOIFromCollider(terrainHit.collider, false, out focusItemOfInterest);
+				bool foundTerrainLayer = WorldItems.GetIOIFromCollider (terrainHit.collider, false, out focusItemOfInterest);
 				if (!foundTerrainLayer && terrainHit.collider.transform.parent != null) {
 					//check for structure terrain layer - it will be the parent of the collider
-					focusItemOfInterest = (IItemOfInterest)terrainHit.collider.transform.parent.GetComponent(typeof(IItemOfInterest));
+					focusItemOfInterest = (IItemOfInterest)terrainHit.collider.transform.parent.GetComponent (typeof(IItemOfInterest));
 					foundTerrainLayer = focusItemOfInterest != null;
 				}
 				if (foundTerrainLayer) {
 					TerrainFocus = focusItemOfInterest;
 					TerrainFocusHitInfo = terrainHit;
-					CheckForClosest(ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, focusItemOfInterest, terrainHit, true);
+					CheckForClosest (ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, focusItemOfInterest, terrainHit, true);
 				}
 			}
 
 			//we can't do spherecasts for triggers, unfortunately
 			//and we need to check for water triggers
 			//so do that here, then do the rest as spherecast
-			if (Physics.Raycast(mPlayerHeadPosition, player.FocusVector, out worldItemHit, Globals.RaycastAllFocusDistance, Globals.LayerWorldItemActive)) {
+			if (Physics.Raycast (mPlayerHeadPosition, player.FocusVector, out worldItemHit, Globals.RaycastAllFocusDistance, Globals.LayerWorldItemActive)) {
 				//if (!worldItemHit.collider.isTrigger) {
-				if (WorldItems.GetIOIFromCollider(worldItemHit.collider, out focusItemOfInterest, out bodyPartHit)) {
-					focusItemOfInterest = CheckForCarried(focusItemOfInterest);
-					focusItemOfInterest = CheckForEquipped(focusItemOfInterest);
+				if (WorldItems.GetIOIFromCollider (worldItemHit.collider, out focusItemOfInterest, out bodyPartHit)) {
+					focusItemOfInterest = CheckForCarried (focusItemOfInterest);
+					focusItemOfInterest = CheckForEquipped (focusItemOfInterest);
 					if (focusItemOfInterest != null) {
-						CheckForClosest(ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, ref ClosestBodyPartInRange, focusItemOfInterest, worldItemHit, bodyPartHit, true);
-						CheckForClosest(ref WorldItemFocus, ref WorldItemFocusHitInfo, ref BodyPartFocus, focusItemOfInterest, worldItemHit, bodyPartHit, true);
+						CheckForClosest (ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, ref ClosestBodyPartInRange, focusItemOfInterest, worldItemHit, bodyPartHit, true);
+						CheckForClosest (ref WorldItemFocus, ref WorldItemFocusHitInfo, ref BodyPartFocus, focusItemOfInterest, worldItemHit, bodyPartHit, true);
 					}
 				}
 				//}
 			}
 			//this result will override any fluid hit results
 			//this is desired behavior because we want to be able to pick up objects through triggers
-			sphereCastHits = Physics.SphereCastAll(mPlayerHeadPosition, 0.1f, player.FocusVector, Globals.RaycastAllFocusDistance, Globals.LayerWorldItemActive | Globals.LayerBodyPart);
+			sphereCastHits = Physics.SphereCastAll (mPlayerHeadPosition, 0.1f, player.FocusVector, Globals.RaycastAllFocusDistance, Globals.LayerWorldItemActive | Globals.LayerBodyPart);
 			bool checkObstruction = false;
 			if (sphereCastHits.Length > 0) {
 				for (int i = 0; i < sphereCastHits.Length; i++) {
-					worldItemHit = sphereCastHits[i];
+					worldItemHit = sphereCastHits [i];
 					//we have to check for non-interactive colliders that can block our line of sight
-					if (worldItemHit.collider.CompareTag(Globals.TagNonInteractive)) {
+					if (worldItemHit.collider.CompareTag (Globals.TagNonInteractive)) {
 						//see if this obstruction is closer than the last one we've hit
 						if (checkObstruction) {
-							float existingObstructionDistance = Vector3.Distance(mPlayerHeadPosition, mObstructionHit.point);
-							float contenderObstructionDistance = Vector3.Dot(mPlayerHeadPosition, worldItemHit.point);
+							float existingObstructionDistance = Vector3.Distance (mPlayerHeadPosition, mObstructionHit.point);
+							float contenderObstructionDistance = Vector3.Dot (mPlayerHeadPosition, worldItemHit.point);
 							if (contenderObstructionDistance < existingObstructionDistance) {
 								mObstructionHit = worldItemHit;
 							}
@@ -1187,115 +1191,115 @@ namespace Frontiers
 							mObstructionHit = worldItemHit;
 							checkObstruction = true;
 						}
-					} else if (WorldItems.GetIOIFromCollider(worldItemHit.collider, out focusItemOfInterest, out bodyPartHit)) {
+					} else if (WorldItems.GetIOIFromCollider (worldItemHit.collider, out focusItemOfInterest, out bodyPartHit)) {
 						//make sure we're not carrying or equipping this item
 						//(we no longer have to check for body parts, get ioi from collider does that for us)
-						focusItemOfInterest = CheckForCarried(focusItemOfInterest);
-						focusItemOfInterest = CheckForEquipped(focusItemOfInterest);
+						focusItemOfInterest = CheckForCarried (focusItemOfInterest);
+						focusItemOfInterest = CheckForEquipped (focusItemOfInterest);
 						if (focusItemOfInterest != null) {
-							CheckForClosest(ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, ref ClosestBodyPartInRange, focusItemOfInterest, worldItemHit, bodyPartHit, true);
-							CheckForClosest(ref WorldItemFocus, ref WorldItemFocusHitInfo, ref BodyPartFocus, focusItemOfInterest, worldItemHit, bodyPartHit, true);
+							CheckForClosest (ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, ref ClosestBodyPartInRange, focusItemOfInterest, worldItemHit, bodyPartHit, true);
+							CheckForClosest (ref WorldItemFocus, ref WorldItemFocusHitInfo, ref BodyPartFocus, focusItemOfInterest, worldItemHit, bodyPartHit, true);
 						}
 					}
 				}
-				Array.Clear(sphereCastHits, 0, sphereCastHits.Length);
+				Array.Clear (sphereCastHits, 0, sphereCastHits.Length);
 			}
 
 			if (checkObstruction) {
 				//see if the closest focus item is closer than our closest obstruction
-				float obstructionDistance = Vector3.Distance(mPlayerHeadPosition, mObstructionHit.point);
+				float obstructionDistance = Vector3.Distance (mPlayerHeadPosition, mObstructionHit.point);
 				if (ClosestObjectFocus != null) {
-					float closestObjectDistance = Vector3.Distance(mPlayerHeadPosition, ClosestObjectFocusHitInfo.point);
+					float closestObjectDistance = Vector3.Distance (mPlayerHeadPosition, ClosestObjectFocusHitInfo.point);
 					if (closestObjectDistance > obstructionDistance) {
-						Debug.Log("Obstruction was closer than closest object, setting to null");
+						Debug.Log ("Obstruction was closer than closest object, setting to null");
 						ClosestObjectFocus = null;
 					}
 				}
 				if (WorldItemFocus != null) {
-					float closestWorldItemDistance = Vector3.Distance(mPlayerHeadPosition, WorldItemFocusHitInfo.point);
+					float closestWorldItemDistance = Vector3.Distance (mPlayerHeadPosition, WorldItemFocusHitInfo.point);
 					if (closestWorldItemDistance > obstructionDistance) {
-						Debug.Log("Obstruction was closer than closest worlditem, setting to null");
+						Debug.Log ("Obstruction was closer than closest worlditem, setting to null");
 						WorldItemFocus = null;
 					}
 				}
 			}
 
 			if (IsWorldItemInPlayerFocus && WorldItemFocus.IOIType == ItemOfInterestType.WorldItem) {
-				ReceptacleInPlayerFocus = WorldItemFocus.worlditem.Get <Receptacle>();
+				ReceptacleInPlayerFocus = WorldItemFocus.worlditem.Get <Receptacle> ();
 			}
 		}
 
 		protected RaycastHit mObstructionHit;
 		protected Vector3 mPlayerHeadPosition;
 
-		public void RaycastAllForward()
+		public void RaycastAllForward ()
 		{
-			hitsForward = Physics.RaycastAll(mPlayerHeadPosition, player.ForwardVector, Globals.RaycastAllForwardDistance, Globals.LayersActive);
+			hitsForward = Physics.RaycastAll (mPlayerHeadPosition, player.ForwardVector, Globals.RaycastAllForwardDistance, Globals.LayersActive);
 
 			if (hitsForward.Length > 0) {
 				for (int i = 0; i < hitsForward.Length; i++) {
-					hitForward = hitsForward[i];
+					hitForward = hitsForward [i];
 					IItemOfInterest itemOfInterest = null;
-					if (WorldItems.GetIOIFromCollider(hitForward.collider, out itemOfInterest)) {
+					if (WorldItems.GetIOIFromCollider (hitForward.collider, out itemOfInterest)) {
 						switch (itemOfInterest.IOIType) {
-							case ItemOfInterestType.WorldItem:
-								WorldItemForward = itemOfInterest.worlditem;
-								WorldItemForwardHitInfo = hitForward;
-								CheckForClosest(ref ClosestObjectForward, ref ClosestObjectForwardHitInfo, WorldItemForward, hitForward, false);
-								break;
-
-							case ItemOfInterestType.Scenery:
-								TerrainForwardHitInfo = hitForward;
-								TerrainForward = itemOfInterest;
-								CheckForClosest(ref ClosestObjectForward, ref ClosestObjectForwardHitInfo, TerrainForward, hitForward, false);
-								break;
-
-							default:
-								break;
-						}
-					}
-				}
-				Array.Clear(hitsForward, 0, hitsForward.Length);
-			}
-		}
-
-		public void RaycastAllUp()
-		{
-			if (Physics.Raycast(player.Position, player.UpVector, out hitUp, Globals.RaycastAllUpDistance, Globals.LayersActive)) {
-				upItemOfInterest = null;
-				if (WorldItems.GetIOIFromCollider(hitUp.collider, out upItemOfInterest)) {
-					switch (upItemOfInterest.IOIType) {
 						case ItemOfInterestType.WorldItem:
-							WorldItemAbove = upItemOfInterest;
-							WorldItemAboveHitInfo = hitUp;
-							CheckForClosest(ref ClosestObjectAbove, ref ClosestObjectAboveHitInfo, WorldItemAbove, hitUp, false);
+							WorldItemForward = itemOfInterest.worlditem;
+							WorldItemForwardHitInfo = hitForward;
+							CheckForClosest (ref ClosestObjectForward, ref ClosestObjectForwardHitInfo, WorldItemForward, hitForward, false);
 							break;
 
 						case ItemOfInterestType.Scenery:
-							TerrainAboveHitInfo = hitUp;
-							TerrainAbove = upItemOfInterest;
-							CheckForClosest(ref ClosestObjectAbove, ref ClosestObjectAboveHitInfo, TerrainAbove, hitUp, false);
+							TerrainForwardHitInfo = hitForward;
+							TerrainForward = itemOfInterest;
+							CheckForClosest (ref ClosestObjectForward, ref ClosestObjectForwardHitInfo, TerrainForward, hitForward, false);
 							break;
 
 						default:
 							break;
+						}
+					}
+				}
+				Array.Clear (hitsForward, 0, hitsForward.Length);
+			}
+		}
+
+		public void RaycastAllUp ()
+		{
+			if (Physics.Raycast (player.Position, player.UpVector, out hitUp, Globals.RaycastAllUpDistance, Globals.LayersActive)) {
+				upItemOfInterest = null;
+				if (WorldItems.GetIOIFromCollider (hitUp.collider, out upItemOfInterest)) {
+					switch (upItemOfInterest.IOIType) {
+					case ItemOfInterestType.WorldItem:
+						WorldItemAbove = upItemOfInterest;
+						WorldItemAboveHitInfo = hitUp;
+						CheckForClosest (ref ClosestObjectAbove, ref ClosestObjectAboveHitInfo, WorldItemAbove, hitUp, false);
+						break;
+
+					case ItemOfInterestType.Scenery:
+						TerrainAboveHitInfo = hitUp;
+						TerrainAbove = upItemOfInterest;
+						CheckForClosest (ref ClosestObjectAbove, ref ClosestObjectAboveHitInfo, TerrainAbove, hitUp, false);
+						break;
+
+					default:
+						break;
 					}
 				}
 			}
 		}
 
-		protected void CheckForClosest(ref IItemOfInterest currentClosest, ref RaycastHit currentHit, IItemOfInterest contender, RaycastHit hit, bool checkForRange)
+		protected void CheckForClosest (ref IItemOfInterest currentClosest, ref RaycastHit currentHit, IItemOfInterest contender, RaycastHit hit, bool checkForRange)
 		{
-			CheckForClosest(ref currentClosest, ref currentHit, ref bodyPartCheck, contender, hit, null, checkForRange);
+			CheckForClosest (ref currentClosest, ref currentHit, ref bodyPartCheck, contender, hit, null, checkForRange);
 		}
 
-		protected void CheckForClosest(ref IItemOfInterest currentClosest, ref RaycastHit currentHit, ref BodyPart currentBodyPart, IItemOfInterest contender, RaycastHit hit, BodyPart contenderBodyPart, bool checkForRange)
+		protected void CheckForClosest (ref IItemOfInterest currentClosest, ref RaycastHit currentHit, ref BodyPart currentBodyPart, IItemOfInterest contender, RaycastHit hit, BodyPart contenderBodyPart, bool checkForRange)
 		{
 			if (contender == null)
 				return;
 
-			float currentDistance = Vector3.Distance(mPlayerHeadPosition, currentHit.point);
-			float contenderDistance = Vector3.Distance(mPlayerHeadPosition, hit.point);
+			float currentDistance = Vector3.Distance (mPlayerHeadPosition, currentHit.point);
+			float contenderDistance = Vector3.Distance (mPlayerHeadPosition, hit.point);
 
 			if (currentClosest == null) {
 				currentClosest = contender;
@@ -1317,7 +1321,7 @@ namespace Frontiers
 					ClosestObjectInRange = currentClosest;
 					ClosestObjectInRangeHitInfo = currentHit;
 					ClosestBodyPartInRange = currentBodyPart;
-				} else if (Vector3.Distance(ClosestObjectInRange.Position, mPlayerHeadPosition) < currentDistance) {
+				} else if (Vector3.Distance (ClosestObjectInRange.Position, mPlayerHeadPosition) < currentDistance) {
 					ClosestObjectInRange = currentClosest;
 					ClosestObjectInRangeHitInfo = currentHit;
 					ClosestBodyPartInRange = currentBodyPart;
@@ -1327,21 +1331,21 @@ namespace Frontiers
 
 		protected IItemOfInterest finalHitObject;
 
-		protected IItemOfInterest CheckForBodyParts(IItemOfInterest hitObject)
+		protected IItemOfInterest CheckForBodyParts (IItemOfInterest hitObject)
 		{
 			finalHitObject = hitObject;
-			if (hitObject.gameObject.CompareTag(Globals.TagBodyArm)
-			       || hitObject.gameObject.CompareTag(Globals.TagBodyLeg)
-			       || hitObject.gameObject.CompareTag(Globals.TagBodyHead)
-			       || hitObject.gameObject.CompareTag(Globals.TagBodyTorso)
-			       || hitObject.gameObject.CompareTag(Globals.TagBodyGeneral)) {
-				BodyPart bodyPart = hitObject.gameObject.GetComponent <BodyPart>();
+			if (hitObject.gameObject.CompareTag (Globals.TagBodyArm)
+			    || hitObject.gameObject.CompareTag (Globals.TagBodyLeg)
+			    || hitObject.gameObject.CompareTag (Globals.TagBodyHead)
+			    || hitObject.gameObject.CompareTag (Globals.TagBodyTorso)
+			    || hitObject.gameObject.CompareTag (Globals.TagBodyGeneral)) {
+				BodyPart bodyPart = hitObject.gameObject.GetComponent <BodyPart> ();
 				finalHitObject = bodyPart.Owner;
 			}
 			return finalHitObject;
 		}
 
-		protected IItemOfInterest CheckForEquipped(IItemOfInterest hitObject)
+		protected IItemOfInterest CheckForEquipped (IItemOfInterest hitObject)
 		{
 			if (player.Tool.HasWorldItem && player.Tool.worlditem == hitObject) {
 				//Debug.Log ("This item is equipped");
@@ -1350,7 +1354,7 @@ namespace Frontiers
 			return hitObject;
 		}
 
-		protected IItemOfInterest CheckForCarried(IItemOfInterest hitObject)
+		protected IItemOfInterest CheckForCarried (IItemOfInterest hitObject)
 		{
 			if (player.ItemPlacement.IsCarryingSomething && player.ItemPlacement.CarryObject == hitObject.worlditem) {
 				//Debug.Log ("We're carring this item");
@@ -1359,7 +1363,7 @@ namespace Frontiers
 			return hitObject;
 		}
 
-		protected void CheckTerrainType()
+		protected void CheckTerrainType ()
 		{
 			mTerrainTypeCheck++;
 			//only do this once in a while TODO maybe a coroutine would be better
@@ -1369,7 +1373,7 @@ namespace Frontiers
 					mTerrainType = mEmptyTerrainType;
 					return;
 				}
-				mTerrainType = GameWorld.Get.TerrainTypeAtInGamePosition(player.Position, State.IsUnderground);
+				mTerrainType = GameWorld.Get.TerrainTypeAtInGamePosition (player.Position, State.IsUnderground);
 				//Color color = mTerrainType;
 				//Debug.Log ("Got terrain type rgba " + color.r.ToString() + ", " + color.g.ToString() + ", " + color.b.ToString() + ", " + color.a.ToString());
 				//this reduces the 'coastal' terrain type based on distance from water
@@ -1409,14 +1413,14 @@ namespace Frontiers
 			get {
 				WorldLight nearestLight = null;
 				float nearestDistance = Mathf.Infinity;
-				for (int i = LightSources.LastIndex(); i >= 0; i--) {
-					if (LightSources[i] == null) {
-						LightSources.RemoveAt(i);
+				for (int i = LightSources.LastIndex (); i >= 0; i--) {
+					if (LightSources [i] == null) {
+						LightSources.RemoveAt (i);
 					} else {
-						float distance = Vector3.Distance(transform.position, LightSources[i].transform.position);
+						float distance = Vector3.Distance (transform.position, LightSources [i].transform.position);
 						if (distance < nearestDistance) {
 							nearestDistance = distance;
-							nearestLight = LightSources[i];
+							nearestLight = LightSources [i];
 						}
 					}
 				}
@@ -1428,14 +1432,14 @@ namespace Frontiers
 			get {
 				Fire fire = null;
 				float nearestDistance = Mathf.Infinity;
-				for (int i = FireSources.LastIndex(); i >= 0; i--) {
-					if (FireSources[i] == null) {
-						FireSources.RemoveAt(i);
+				for (int i = FireSources.LastIndex (); i >= 0; i--) {
+					if (FireSources [i] == null) {
+						FireSources.RemoveAt (i);
 					} else {
-						float distance = Vector3.Distance(transform.position, FireSources[i].transform.position);
+						float distance = Vector3.Distance (transform.position, FireSources [i].transform.position);
 						if (distance < nearestDistance) {
 							nearestDistance = distance;
-							fire = FireSources[i];
+							fire = FireSources [i];
 						}
 					}
 				}
@@ -1466,7 +1470,7 @@ namespace Frontiers
 		public List <WorldLight> LightSources {
 			get {
 				if (mLightSources == null) {
-					mLightSources = new List <WorldLight>();
+					mLightSources = new List <WorldLight> ();
 				}
 				return mLightSources;
 			}
@@ -1480,7 +1484,7 @@ namespace Frontiers
 		public List <Fire> FireSources {
 			get {
 				if (mFireSources == null) {
-					mFireSources = new List <Fire>();
+					mFireSources = new List <Fire> ();
 				}
 				return mFireSources;
 			}
@@ -1503,8 +1507,8 @@ namespace Frontiers
 
 		#endregion
 
-		protected Color mTerrainType = Colors.Alpha(Color.black, 0f);
-		protected Color mEmptyTerrainType = Colors.Alpha(Color.black, 0f);
+		protected Color mTerrainType = Colors.Alpha (Color.black, 0f);
+		protected Color mEmptyTerrainType = Colors.Alpha (Color.black, 0f);
 	}
 
 	[Serializable]
@@ -1512,7 +1516,7 @@ namespace Frontiers
 	{
 		public TerrainType TerrainAroundPlayer = TerrainType.Civilization;
 		public int LastChunkID = 0;
-		public STransform LastPosition = new STransform();
+		public STransform LastPosition = new STransform ();
 		public GroundType GroundBeneathPlayer = GroundType.Dirt;
 		public MobileReference LastStructureEntered = MobileReference.Empty;
 		public MobileReference LastStructureExited = MobileReference.Empty;
@@ -1522,10 +1526,10 @@ namespace Frontiers
 		public MobileReference LastLocationExited = MobileReference.Empty;
 		public MobileReference LastLocationRevealed = MobileReference.Empty;
 		public MobileReference StructureBelowFeet = MobileReference.Empty;
-		public List <MobileReference> Hostiles = new List <MobileReference>();
-		public List <MobileReference> VisitedRespawnStructures = new List <MobileReference>();
-		public List <MobileReference> VisitingLocations = new List <MobileReference>();
-		public List <MapMarker> ActiveMapMarkers = new List <MapMarker>();
+		public List <MobileReference> Hostiles = new List <MobileReference> ();
+		public List <MobileReference> VisitedRespawnStructures = new List <MobileReference> ();
+		public List <MobileReference> VisitingLocations = new List <MobileReference> ();
+		public List <MapMarker> ActiveMapMarkers = new List <MapMarker> ();
 
 		public bool ExposedToSun {
 			get {

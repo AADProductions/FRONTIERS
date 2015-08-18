@@ -292,9 +292,28 @@ namespace Frontiers.World.WIScripts
 							} else {
 								itemsSoFar.Add (gMinInstanceItems [i].PrefabName, 1);
 							}
+
+							StackItem item = gMinInstanceItems [i].ToStackItem ();
+
+							if (item != null) {
+								if (State.AddCurrencyToBank && bank != null && item.Is ("Currency")) {
+									bank.Add (Mathf.FloorToInt (item.BaseCurrencyValue), item.CurrencyType);
+									item.Clear ();
+								} else {
+									//add the generic item to the container as a stack item
+									if (!Stacks.Add.Items (item, container, ref error)) {
+										continueFilling = false;
+									} else {
+										numAdded++;
+									}
+								}
+							}
 						}
 						gMinInstanceItems.Clear ();
 					}
+
+					yield return null;
+
 					while (continueFilling && category.GetItem (State.Flags, hashCode, ref lastItemIndex, out genericItem)) {
 						//make sure we don't have a duplicate
 						if (itemsSoFar.TryGetValue (genericItem.PrefabName, out numDuplicates)) {
@@ -319,7 +338,7 @@ namespace Frontiers.World.WIScripts
 								item.Clear ();
 							} else {
 								//add the generic item to the container as a stack item
-								if (!Stacks.Add.Items (genericItem.ToStackItem (), container, ref error)) {
+								if (!Stacks.Add.Items (item, container, ref error)) {
 									continueFilling = false;
 								} else {
 									numAdded++;

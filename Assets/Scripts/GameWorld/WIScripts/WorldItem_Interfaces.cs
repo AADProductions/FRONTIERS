@@ -361,6 +361,7 @@ namespace Frontiers.World
 		public Action OnUnloading;
 		public Action OnUnloaded;
 		public Action OnRemovedFromGame;
+		public Action OnCollisionsEnabledChange;
 		//state and mode actions
 		public Action OnStateChange;
 		public Action OnModeChange;

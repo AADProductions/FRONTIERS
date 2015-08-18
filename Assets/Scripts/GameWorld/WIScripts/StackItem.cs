@@ -412,9 +412,9 @@ namespace Frontiers.World
 			mGroup = null;
 			OnRemoveFromGroup = null;
 			#if UNITY_EDITOR
-			if (OnRemoveFromStack == null) {
+			/*if (OnRemoveFromStack == null) {
 				Debug.Log ("OnRemoveFromStack was null");
-			}
+			}*/
 			#endif
 			OnRemoveFromStack.SafeInvoke ();
 			OnRemoveFromStack = null;

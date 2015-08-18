@@ -29,6 +29,9 @@ namespace Frontiers.World.WIScripts
 		public void OnPlayerUse ()
 		{
 			if (character.IsDead || character.IsStunned || character.IsSleeping) {
+				#if UNITY_EDITOR
+				Debug.Log ("Character is dead, stunned or sleeping");
+				#endif
 				return;
 			}
 
@@ -36,6 +39,11 @@ namespace Frontiers.World.WIScripts
 				mInitiatingConversation = true;
 				StartCoroutine (InitiateConversation (null));
 			}
+			#if UNITY_EDITOR
+			else {
+				Debug.Log ("was already initiating conversation, returning");
+			}
+			#endif
 		}
 
 		public void SpeakThroughIntermediary (IConversationIntermediary intermediary)
@@ -140,7 +148,9 @@ namespace Frontiers.World.WIScripts
 		{
 			mInitiatingConversation = true;
 			if (intermediary == null && !worlditem.HasPlayerAttention) {
-				//Debug.Log("We don't have player's attention");
+				#if UNITY_EDITOR
+				Debug.Log("We don't have player's attention");
+				#endif
 				mInitiatingConversation = false;
 				yield break;
 			}
@@ -153,7 +163,13 @@ namespace Frontiers.World.WIScripts
 					mTalkMotileAction = character.LookAtPlayer ();
 				}
 
-				yield return StartCoroutine (mTalkMotileAction.WaitForActionToStart (0f));
+				var waitToStart = mTalkMotileAction.WaitForActionToStart (0.01f);
+				while (waitToStart.MoveNext ()) {
+					#if UNITY_EDITOR
+					Debug.Log("Waiting for motile action to start");
+					#endif
+					yield return waitToStart.Current;
+				}
 
 				if (mTalkMotileAction.IsFinished) {
 					Debug.Log ("Talk motile action got finished for some reason, quitting");
@@ -168,7 +184,9 @@ namespace Frontiers.World.WIScripts
 				if (Mods.Get.Runtime.LoadMod (ref speech, "Speech", State.DTSSpeechName)) {
 					SayDTS (speech);
 				}
+				#if UNITY_EDITOR
 				Debug.Log("Defaulting to DTS");
+				#endif
 				mInitiatingConversation = false;
 				yield break;
 			}

@@ -393,6 +393,9 @@ namespace Frontiers.World
 				//and that there's no problem with assigning this group as
 				//the child item's group at this point
 				childItem.Group = this;
+				if (IsStructureGroup) {
+					childItem.CollisionsEnabled = Props.Interior ? ParentStructure.InteriorCollidersEnabled : ParentStructure.ExteriorCollidersEnabled;
+				}
 				childItem.SendToGroupPosition();
 				//now we have to make sure that the child item's name isn't a duplicate
 				//many child items (eg locations) are required to have a unique name
@@ -812,7 +815,7 @@ namespace Frontiers.World
 		protected IEnumerator UnloadOverTime()
 		{
 			#if UNITY_EDITOR
-			Debug.Log("Unloading over time in " + Props.FileName);
+			//Debug.Log("Unloading over time in " + Props.FileName);
 			#endif
 			//start by telling the worlditems to begin unloading
 			var childItemEnum = ChildItems.GetEnumerator();
@@ -985,7 +988,22 @@ namespace Frontiers.World
 				yield return null;
 			}
 			LoadState = WIGroupLoadState.Loaded;
+			//call this to activate any objects
+			RefreshCollisions ( );
 			yield break;
+		}
+
+		public void RefreshCollisions ( ) {
+			bool structureCollisionsEnabled = IsStructureGroup ?
+			                                  (Props.Interior ? ParentStructure.InteriorCollidersEnabled : ParentStructure.ExteriorCollidersEnabled)
+			                                  : Is (WIGroupLoadState.Loaded);
+
+			var childItemsEnum = ChildItems.GetEnumerator ();
+			while (childItemsEnum.MoveNext ()) {
+				if (childItemsEnum.Current != null) {
+					childItemsEnum.Current.CollisionsEnabled = structureCollisionsEnabled;
+				}
+			}
 		}
 
 		protected void RefreshChildItems()

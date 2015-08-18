@@ -42,7 +42,8 @@ namespace Frontiers.World.WIScripts
 			if (StructureOwner != null) {
 				StructureOwner.worlditem.Get<Motile> ().enabled = false;
 			}
-			RefreshColliders (false);
+			ExteriorCollidersEnabled = false;
+			InteriorCollidersEnabled = false;
 			//structures will figure out if this is a good idea or not
 			Structures.AddInteriorToUnload (this);
 			Structures.AddExteriorToUnload (this);
@@ -62,7 +63,43 @@ namespace Frontiers.World.WIScripts
 				return State.ForceBuildInterior || StructureShingle.PropertyIsDestroyed;
 			}
 		}
-		//public int InUseAsTemplate = 0;
+
+		public bool ExteriorCollidersEnabled {
+			get {
+				return mExteriorCollidersEnabled;
+			} set {
+				#if UNITY_EDITOR
+				//Debug.Log ("STRUCTURE: Setting exterior colliders enabled to " + value.ToString () + " in " + name);
+				#endif
+				mExteriorCollidersEnabled = value;
+				if (StructureGroup != null) {
+					StructureGroup.RefreshCollisions ( );
+				}
+			}
+		}
+
+		public bool InteriorCollidersEnabled {
+			get {
+				return mInteriorCollidersEnabled;
+			} set {
+				#if UNITY_EDITOR
+				//Debug.Log ("STRUCTURE: Setting interior colliders enabled to " + value.ToString () + " in " + name);
+				#endif
+				mInteriorCollidersEnabled = value;
+				if (StructureGroupInteriors != null && StructureGroupInteriors.Count > 0) {
+					var interiorGroup = StructureGroupInteriors.GetEnumerator ();
+					while (interiorGroup.MoveNext ()) {
+						if (interiorGroup.Current.Value != null) {
+							interiorGroup.Current.Value.RefreshCollisions ( );
+						}
+					}
+				}
+			}
+		}
+
+		protected bool mExteriorCollidersEnabled = false;
+		protected bool mInteriorCollidersEnabled = false;
+
 		//structure-specific stuff
 		public Character StructureOwner = null;
 		public DeedOfOwnership Deed = new DeedOfOwnership ();
@@ -328,9 +365,15 @@ namespace Frontiers.World.WIScripts
 				LoadPriority = StructureLoadPriority.Adjascent;
 			}
 			RefreshColliders (false);
-			if (Is (StructureLoadState.InteriorLoaded) && !ForceBuildInterior) {
+			/*if (Is (StructureLoadState.InteriorLoaded) && !ForceBuildInterior) {
+				#if UNITY_EDITOR
+				Debug.Log ("STRUCTURE: Adding interior to unload in " + name);
+				foreach (KeyValuePair <int,WIGroup> g in StructureGroupInteriors) {
+					Debug.Log ("STRUCTURE: Group " + g.Key.ToString () + " null? " + (g.Value == null).ToString () + ", save? " + ((g.Value != null) ? g.Value.SaveOnUnload : false).ToString ());
+				}
+				#endif
 				Structures.AddInteriorToUnload (this);
-			}
+			}*/
 		}
 
 		public void OnInvisible ()
@@ -344,6 +387,7 @@ namespace Frontiers.World.WIScripts
 
 		public void CleanUpError ()
 		{
+			Debug.Log ("STRUCTURE: CLEANING UP ERROR IN " + name);
 			if (StructureGroup != null) {
 				StructureGroup.SaveOnUnload = false;
 				State.ExteriorLoadedOnce = false;
@@ -419,6 +463,12 @@ namespace Frontiers.World.WIScripts
 					}
 				}
 			}
+			#if UNITY_EDITOR
+			/*if (OwnerCharacterSpawned && StructureOwner.Body.DebugMovement) {
+				Debug.Log ("STRUCTURE: Refresh colliders (exterior enabled: " + enableColliders.ToString ());
+			}*/
+			#endif
+			ExteriorCollidersEnabled = enableColliders;
 			//normal exterior colliders
 			for (int i = ExteriorBoxColliders.LastIndex (); i >= 0; i--) {
 				if (ExteriorBoxColliders [i] != null) {
@@ -467,6 +517,12 @@ namespace Frontiers.World.WIScripts
 					InteriorMeshColliders.RemoveAt (i);
 				}
 			}
+			#if UNITY_EDITOR
+			/*if (OwnerCharacterSpawned && StructureOwner.Body.DebugMovement) {
+				Debug.Log ("STRUCTURE: Refresh colliders (interior enabled: " + enableColliders.ToString ());
+			}*/
+			#endif
+			InteriorCollidersEnabled = enableColliders;
 			//destroyed interior colliders
 			enableColliders &= !StructureShingle.PropertyIsDestroyed;
 			for (int i = InteriorBoxCollidersDestroyed.LastIndex (); i >= 0; i--) {
@@ -626,13 +682,16 @@ namespace Frontiers.World.WIScripts
 			}
 		}
 
-		public void OnLoadFinish (StructureLoadState finalState)
+		public void OnLoadFinish (StructureLoadState finalState, List <int> interiorVariants)
 		{
+			//reset these so they'll force a change
+			mExteriorCollidersEnabled = !mExteriorCollidersEnabled;
+			mInteriorCollidersEnabled = !mInteriorCollidersEnabled;
 			WorldChunk chunk = worlditem.Group.GetParentChunk ();
 			WIGroup group = StructureGroup;
 			MovementNode mn = MovementNode.Empty;
 			#if UNITY_EDITOR
-			Debug.Log("LOAD FINISH: Structure " + name + " load finish: " + finalState.ToString());
+			//Debug.Log("LOAD FINISH: Structure " + name + " load finish: " + finalState.ToString());
 			#endif
 			switch (finalState) {
 			case StructureLoadState.ExteriorLoaded:
@@ -669,9 +728,6 @@ namespace Frontiers.World.WIScripts
 				//if it hasn't been loaded once, add any action nodes that were just sent by the structure builder to the chunk
 				//then use those action nodes to spawn characters
 				List <ActionNodeState> actionNodes = null;
-				List <int> interiorVariants = new List<int> ();
-				interiorVariants.Add (State.BaseInteriorVariant);
-				interiorVariants.AddRange (State.AdditionalInteriorVariants);
 				State.ExteriorLoadedOnce = true;//just in fucking case
 				//this will refresh colliders and renderers
 				SetDestroyed (StructureShingle.PropertyIsDestroyed);
@@ -695,14 +751,9 @@ namespace Frontiers.World.WIScripts
 
 				#if UNITY_EDITOR
 				Debug.Log ("Total of " + interiorVariants.ToString () + " found: ");
-				foreach (int variant in interiorVariants) {
-					Debug.Log (variant);
-				}
 				#endif
 				for (int i = 0; i < interiorVariants.Count; i++) {
-					int interiorVariant = interiorVariants [i];
-					State.InteriorsLoadedOnce.SafeAdd (interiorVariant);
-					SpawnInteriorCharacters (interiorVariant);
+					SpawnInteriorCharacters (interiorVariants [i]);
 				}
 				//we've finished loading
 				//reset this to eliminate any 'spawn point' loading priorities
@@ -711,7 +762,12 @@ namespace Frontiers.World.WIScripts
 
 				foreach (KeyValuePair <int, WIGroup> interiorGroup in StructureGroupInteriors) {
 					if (interiorGroup.Value != null) {
-						interiorGroup.Value.SaveOnUnload = true;
+						if (interiorVariants.Contains (interiorGroup.Key) && !interiorGroup.Value.Is (WIGroupLoadState.Unloaded | WIGroupLoadState.Unloading | WIGroupLoadState.PreparingToUnload)) {
+							if (State.InteriorsLoadedOnce.SafeAdd (interiorGroup.Key)) {
+								Debug.Log ("Adding " + interiorGroup.Key.ToString () + " to interiors loaded once");
+							}
+							interiorGroup.Value.SaveOnUnload = true;
+						}
 					}
 				}
 				break;
@@ -945,6 +1001,9 @@ namespace Frontiers.World.WIScripts
 
 		public IEnumerator OnDoorOpen (Door door)
 		{
+			if (door.State.Ornamental)
+				yield break;
+
 			if (Is (StructureLoadState.InteriorLoaded)) {
 				if (door.State.OuterEntrance) {
 					RefreshColliders (true);
@@ -1015,9 +1074,6 @@ namespace Frontiers.World.WIScripts
 
 		public void SpawnExteriorCharacters ()
 		{
-			if (GameManager.Get.TestingEnvironment)
-				return;
-
 			StructureGroup.Load ();
 			SpawnCharacters (StructureGroup.GetActionNodes (), State.ExteriorCharacters, StructureGroup, State.ExtResidentFlags);
 			State.ExteriorCharactersSpawned = true;
@@ -1026,7 +1082,7 @@ namespace Frontiers.World.WIScripts
 		public void SpawnInteriorCharacters (int interiorVariant)
 		{
 			#if UNITY_EDITOR
-			Debug.Log ("Spawning interior characters in structure for variant " + interiorVariant.ToString ());
+			//Debug.Log ("Spawning interior characters in structure for variant " + interiorVariant.ToString ());
 			#endif
 			WIGroup interiorGroup = null;
 			if (StructureGroupInteriors.TryGetValue (interiorVariant, out interiorGroup)) {
@@ -1046,22 +1102,31 @@ namespace Frontiers.World.WIScripts
 				//spawn a character for every node
 				//if the spawn has a custom conversation setting use that now
 				spawnedCharacter |= SpawnCharacter (nodes, spawns [i], group, flags, out character);
+				if (character != null) {
+					SpawnedCharacters.Add (character);
+				}
 			}
 
 			if (!OwnerCharacterSpawned) {
 				#if UNITY_EDITOR
-				Debug.Log ("Owner character not spawned, checking now");
+				//Debug.Log ("Owner character not spawned, checking now");
 				#endif
 				if (!State.OwnerSpawn.IsEmpty && State.OwnerSpawn.Interior == group.Props.Interior) {
 					//spawn a character for the owner node
 					spawnedCharacter |= SpawnCharacter (nodes, State.OwnerSpawn, group, flags, out StructureOwner);
 					if (OwnerCharacterSpawned) {
 						//set the owner of the structure group
+						#if UNITY_EDITOR
+						if (StructureOwner.name.Contains ("Timmorn") || StructureOwner.name.Contains ("Indress") || name.Contains ("Hall")) {
+							StructureOwner.Body.DebugMovement = true;
+						}
+						#endif
 						StructureGroup.Owner = StructureOwner.worlditem;
 						OnOwnerCharacterSpawned.SafeInvoke ();
+						SpawnedCharacters.Add (StructureOwner);
 					}
 				} else {
-					Debug.Log ("Owner spawn was empty or owner spawn interior setting " + State.OwnerSpawn.Interior.ToString () + " didn't match group setting " + group.Props.Interior.ToString ());
+					//Debug.Log ("Owner spawn was empty or owner spawn interior setting " + State.OwnerSpawn.Interior.ToString () + " didn't match group setting " + group.Props.Interior.ToString ());
 				}
 			}
 			//let everyone know what just happened
@@ -1072,14 +1137,12 @@ namespace Frontiers.World.WIScripts
 
 		protected bool SpawnCharacter (List <ActionNodeState> nodes, StructureSpawn spawn, WIGroup group, WIFlags flags, out Character character)
 		{
-			Debug.Log ("Spawning character " + spawn.TemplateName + " in " + name + " at node " + spawn.ActionNodeName + " out of " + nodes.Count.ToString () + " nodes");
+			//Debug.Log ("Spawning character " + spawn.TemplateName + " in " + name + " at node " + spawn.ActionNodeName + " out of " + nodes.Count.ToString () + " nodes");
 			bool spawnedCharacter = false;
 			character = null;
 			for (int j = 0; j < nodes.Count; j++) {
-				Debug.Log ("Checking node " + nodes [j].Name);
 				//if we've found the node we're supposed to be using
 				if (string.Equals (nodes [j].Name, spawn.ActionNodeName)) {
-					Debug.Log ("Found node " + spawn.ActionNodeName);
 					ActionNodeState node = nodes [j];
 					//do we use a custom speech or conversation?
 					if (!string.IsNullOrEmpty (spawn.CustomConversation)) {
@@ -1099,8 +1162,6 @@ namespace Frontiers.World.WIScripts
 				if (character.worlditem.Is <DailyRoutine> (out r)) {
 					r.ParentSite = this;
 				}
-			} else {
-				Debug.Log ("Didn't spawn character");
 			}
 			return spawnedCharacter;
 		}

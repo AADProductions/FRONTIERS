@@ -52,6 +52,17 @@ namespace Frontiers.World.WIScripts
 			}
 		}
 
+		public void TryToOpen () {
+			if (State.CurrentState == EntranceState.Open || State.CurrentState == EntranceState.Opening) {
+				return;
+			}
+
+			Trigger t = null;
+			if (worlditem.Is <Trigger> (out t)) {
+				t.TryToTrigger ();
+			}
+		}
+
 		public void OnTakeDamage ( ) {
 			//add the structure's interior to load in case we break through
 			if (dynamic.ParentStructure != null) {
@@ -61,9 +72,11 @@ namespace Frontiers.World.WIScripts
 
 		public void OnDie ( ) {
 			//force the interior to load since we're now missing a door
-			if (dynamic.ParentStructure != null) {
-				dynamic.ParentStructure.State.ForceBuildInterior = true;
-				Structures.AddInteriorToLoad (dynamic.ParentStructure);
+			if (State.OuterEntrance && !State.Ornamental) {
+				if (dynamic.ParentStructure != null) {
+					dynamic.ParentStructure.State.ForceBuildInterior = true;
+					Structures.AddInteriorToLoad (dynamic.ParentStructure);
+				}
 			}
 		}
 
@@ -285,6 +298,7 @@ namespace Frontiers.World.WIScripts
 		public EntranceState TargetState = EntranceState.Closed;
 		public EntranceState CurrentState = EntranceState.Closed;
 		public bool OuterEntrance = true;
+		public bool Ornamental = false;
 		public MasterAudio.SoundType SoundType = MasterAudio.SoundType.DoorsAndWindows;
 		public string SoundOnClose = string.Empty;
 		public string SoundOnOpen = string.Empty;

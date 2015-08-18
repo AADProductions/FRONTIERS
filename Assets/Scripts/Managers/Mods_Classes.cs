@@ -499,6 +499,7 @@ namespace Frontiers
 		public int NumChunkTilesZ;
 		public bool NeverUnloadChunks = false;
 		public bool GRTVisible = true;
+		public int MaxRandomPilgrims = 0;
 		[NonSerialized]
 		public List <DifficultySetting> BaseDifficultySettings = new List <DifficultySetting> ();
 		//these are used the first time you enter the game

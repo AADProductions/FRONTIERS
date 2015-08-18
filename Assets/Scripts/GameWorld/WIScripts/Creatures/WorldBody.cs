@@ -26,6 +26,9 @@ namespace Frontiers.World
 		public int OverrideMovementMode;
 		public float VerticalAxisVelocityMultiplier = 0.5f;
 		public float JumpForceMultiplier = 5f;
+		#if UNITY_EDITOR
+		public bool DebugMovement = false;
+		#endif
 
 		public bool IsInitialized {
 			get {
@@ -280,10 +283,12 @@ namespace Frontiers.World
 					}
 				}
 			} catch (Exception e) {
-				Debug.LogError ("Warning: Renderer null in " + name);
+				Debug.LogError ("Warning: Renderer null in " + name + ", disabling");
+				IsVisible = false;
+				enabled = false;
 			}
 			//Animator.animator.enabled = !visible;
-			IsVisible = visible;
+			//IsVisible = visible;
 		}
 
 		public bool LockVisible = false;
@@ -357,12 +362,26 @@ namespace Frontiers.World
 				return;
 
 			if (!mInitialized || !HasOwner || !Owner.Initialized || Owner.IsImmobilized) {
+				#if UNITY_EDITOR
+				if (DebugMovement) {
+					Debug.Log ("WORLD BODY Returning: initialized " 
+						+ mInitialized.ToString () 
+						+ ", Has Owner: " 
+						+ HasOwner.ToString () 
+						+ ", Owner initialized: "  
+						+ Owner.Initialized.ToString ()
+						+ ", Owner immobilized: "
+						+ Owner.IsImmobilized.ToString ());
+				}
+				#endif
 				return;
 			}
 
 			if (Owner.IsDead) {
 				Animator.Dead = true;
+				#if UNITY_EDITOR
 				Debug.Log ("Body is dead");
+				#endif
 				return;
 			}
 
@@ -476,8 +495,18 @@ namespace Frontiers.World
 
 				if (IsVisible) {
 					rb.isKinematic = Owner.IsKinematic;
+					#if UNITY_EDITOR
+					if (DebugMovement) {
+						Debug.Log ("WORLDBODY: Is visible and setting kinematic " + Owner.IsKinematic.ToString () + " in " + name);
+					}
+					#endif
 				} else {
 					rb.isKinematic = rb.detectCollisions && Owner.UseGravity;
+					#if UNITY_EDITOR
+					if (DebugMovement) {
+						Debug.Log ("WORLDBODY: Is NOT visible, detect collisions? " + rb.detectCollisions.ToString () + ", Owner use gravity? " + Owner.UseGravity.ToString () + " in " + name);
+					}
+					#endif
 				}
 
 				if (rb.isKinematic) {

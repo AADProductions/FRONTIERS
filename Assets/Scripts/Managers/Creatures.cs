@@ -159,6 +159,7 @@ namespace Frontiers.World
 					//so before we send it back we're going to set its template name
 					newCreature = newCreatureWorldItem.gameObject.GetOrAdd <Creature> ();
 					newCreature.State.TemplateName = template.Name;
+					newCreature.Template = template;
 					if (isDead) {
 						Debug.Log ("Spawning dead creature");
 						newCreature.State.IsDead = true;

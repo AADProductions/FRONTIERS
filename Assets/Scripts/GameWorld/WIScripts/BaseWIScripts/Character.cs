@@ -1069,6 +1069,7 @@ namespace Frontiers.World.WIScripts
 		public bool KnowsPlayer = false;
 		public int GlobalReputation = 50;
 		public int AgeInYears = 25;
+		public bool RelatedToPlayer = false;
 		public EmotionalState Emotion = EmotionalState.Neutral;
 		public bool IsDead = false;
 		public bool OwnsParentStructure = false;

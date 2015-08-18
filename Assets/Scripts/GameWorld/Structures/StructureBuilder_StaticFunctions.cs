@@ -879,7 +879,7 @@ namespace Frontiers.World
 
 			WorldChunk chunk = group.GetParentChunk ();
 			#if UNITY_EDITOR
-			Debug.Log ("Adding " + structureGroup.ActionNodes.Count.ToString ( ) + " exterior action nodes to " + group.Path);
+			//Debug.Log ("Adding " + structureGroup.ActionNodes.Count.ToString ( ) + " exterior action nodes to " + group.Path);
 			#endif
 			chunk.AddNodesToGroup (structureGroup.ActionNodes, group, structurePiece);
 			yield break;
@@ -942,7 +942,7 @@ namespace Frontiers.World
 
 			List <ActionNodeState> interiorActionNodes = null;
 			#if UNITY_EDITOR
-			Debug.Log ("Adding " + structureGroup.ActionNodes.Count.ToString ( ) + " interior action nodes for variant " + interiorVariant.ToString () + " to group " + group.Path);
+			//Debug.Log ("Adding " + structureGroup.ActionNodes.Count.ToString ( ) + " interior action nodes for variant " + interiorVariant.ToString () + " to group " + group.Path);
 			#endif
 			WorldChunk chunk = group.GetParentChunk ();
 			chunk.AddNodesToGroup (structureGroup.ActionNodes, group, structurePiece);

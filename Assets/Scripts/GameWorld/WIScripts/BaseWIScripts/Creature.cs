@@ -263,6 +263,7 @@ namespace Frontiers.World.WIScripts
 					return;
 				}
 			}
+			State.TemplateName = mTemplate.Name;
 			State.AggressiveTOD = mTemplate.StateTemplate.AggressiveTOD;
 			State.Domestication = mTemplate.StateTemplate.Domestication;
 			State.FightOrFlightThreshold = mTemplate.StateTemplate.FightOrFlightThreshold;

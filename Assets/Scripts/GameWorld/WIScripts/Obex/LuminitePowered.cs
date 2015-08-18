@@ -18,7 +18,9 @@ namespace Frontiers.World.WIScripts
 		public GameObject PowerSourceDoppleganger;
 		public GenericWorldItem PowerSourceDopplegangerProps = new GenericWorldItem ();
 		public bool CanRemoveSource = true;
+		public bool CanReplaceSource = false;
 		public bool DispersesForever = false;
+		public bool ObexPowerSource = false;
 
 		public override void OnInitialized ()
 		{
@@ -93,11 +95,29 @@ namespace Frontiers.World.WIScripts
 
 		public override void PopulateOptionsList (List <WIListOption> options, List <string> message)
 		{
+			if (gAddPowerSource == null) {
+				gAddPowerSource = new WIListOption ("Add Power", "AddPowerSource");
+				gRemovePowerSource = new WIListOption ("Remove Power", "RemovePowerSource");
+			}
+
+			gAddPowerSource.ObexFont = ObexPowerSource;
+			gRemovePowerSource.ObexFont = ObexPowerSource;
+			//gAddPowerSource.Disabled = true;
+			//gRemovePowerSource.Disabled = true;
+
 			if (CanRemoveSource) {
+				gRemovePowerSource.OptionText = "Take " + PowerSourceDopplegangerProps.DisplayName;
 				if (State.HasPowerSource) {
-					options.Add (new WIListOption ("Remove " + PowerSourceDopplegangerProps.DisplayName, "RemovePowerSource"));
-				} else if (Player.Local.Tool.IsEquipped && Stacks.Can.Stack (Player.Local.Tool.worlditem, PowerSourceDopplegangerProps)) {
-					options.Add (new WIListOption ("Add " + PowerSourceDopplegangerProps.DisplayName, "AddPowerSource"));
+					gRemovePowerSource.Disabled = false;
+				}
+				options.Add (gRemovePowerSource);
+
+				if (CanReplaceSource) {
+					gAddPowerSource.OptionText = "Add " + PowerSourceDopplegangerProps.DisplayName;
+					if (Player.Local.Tool.IsEquipped && Stacks.Can.Stack (Player.Local.Tool.worlditem, PowerSourceDopplegangerProps)) {
+						gAddPowerSource.Disabled = false;
+					}
+					options.Add (gAddPowerSource);
 				}
 			}
 		}
@@ -117,9 +137,10 @@ namespace Frontiers.World.WIScripts
 
 			case "AddPowerSource":
 				if (Player.Local.Tool.IsEquipped && Stacks.Can.Stack (Player.Local.Tool.worlditem, PowerSourceDopplegangerProps)) {
-					PowerSourceDopplegangerProps.CopyFrom (Player.Local.Tool.worlditem);
+					//PowerSourceDopplegangerProps.CopyFrom (Player.Local.Tool.worlditem);
 					Player.Local.Tool.worlditem.RemoveFromGame ();
 					HasPowerSource = true;
+					Refresh ();
 				}
 				break;
 
@@ -180,6 +201,9 @@ namespace Frontiers.World.WIScripts
 
 		protected double mDispersedStartTime = 0f;
 		protected bool mDispersingOverTime = false;
+
+		public static WIListOption gAddPowerSource;
+		public static WIListOption gRemovePowerSource;
 	}
 
 	[Serializable]

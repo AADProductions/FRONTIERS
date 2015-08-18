@@ -415,9 +415,12 @@ namespace Frontiers
 
 			public static bool Stack(IWIBase item1, GenericWorldItem item2)
 			{
-				return item1.StackName.Equals(item2.StackName) &&
-				((string.IsNullOrEmpty(item1.State) || string.IsNullOrEmpty(item2.State) || (item1.State.Equals(item2.State)))
-				&& (((string.IsNullOrEmpty(item1.Subcategory) || string.IsNullOrEmpty(item2.Subcategory)) || item1.Subcategory.Equals(item2.Subcategory))));
+				if (item1.StackName.Equals(item2.StackName)) {
+					bool statesMatch = ((string.IsNullOrEmpty(item1.State) || string.IsNullOrEmpty(item2.State)) || (item1.State.Equals("Default") || item2.State.Equals("Default")) || item1.State.Equals(item2.State));
+					bool subcatsMatch = ((string.IsNullOrEmpty(item1.Subcategory) || string.IsNullOrEmpty(item2.Subcategory)) || item1.Subcategory.Equals(item2.Subcategory));
+					return statesMatch && subcatsMatch;
+				}
+				return false;
 			}
 
 			public static bool Stack(WIStack stack1, WIStack stack2)
@@ -625,11 +628,11 @@ namespace Frontiers
 					if (mClearTopItem == null) {
 						stack.Items.RemoveAt(i);
 					} else if (mClearTopItem.Is(WIMode.RemovedFromGame)) {
-						Debug.Log("Item was removed from game, removing");
+						//Debug.Log("Item was removed from game, removing");
 						mClearTopItem.Clear();
 						stack.Items.RemoveAt(i);
 					} else if (mClearTopItem.Group != stack.Group) {
-						Debug.Log("Item group wasn't the same as stack group, removing");
+						//Debug.Log("Item group wasn't the same as stack group, removing");
 						if (mClearTopItem.Group != null && stack.Group != null) {
 							Debug.Log("Group " + mClearTopItem.Group.name + " vs " + stack.Group.name);
 						}
@@ -698,6 +701,10 @@ namespace Frontiers
 			{
 				item = null;
 				inStack = null;
+				if (stack == null) {
+					Debug.Log ("Stack was null in FirstItemByPrefabName " + prefabName);
+					return false;
+				}
 				for (int i = 0; i < stack.Items.Count; i++) {
 					if (stack.Items[i] != null) {
 						if (stack.Items[i].PrefabName.Equals(prefabName)) {
@@ -716,6 +723,10 @@ namespace Frontiers
 			{
 				item = null;
 				inStack = null;
+				if (stackContainer == null) {
+					Debug.Log ("Stack container was null in FirstItemByPrefabName " + prefabName);
+					return false;
+				}
 				for (int i = 0; i < stackContainer.StackList.Count; i++) {
 					if (stackContainer.StackList[i] != null) {
 						if (FirstItemByPrefabName(stackContainer.StackList[i], prefabName, searchStackContainers, out item, out inStack)) {
@@ -728,6 +739,9 @@ namespace Frontiers
 
 			public static void ItemsOfType(WIStack stack, string scriptName, bool searchStackContainers, List <IWIBase> itemsOfType)
 			{
+				if (stack == null) {
+					return;
+				}
 				for (int i = 0; i < stack.Items.Count; i++) {
 					gItemsOfTypeCheck = stack.Items[i];
 					if (gItemsOfTypeCheck != null)
@@ -742,6 +756,9 @@ namespace Frontiers
 
 			public static void ItemsOfType(WIStackContainer stackContainer, string scriptName, bool searchStackContainers, List <IWIBase> itemsOfType)
 			{
+				if (stackContainer == null) {
+					return;
+				}
 				for (int i = 0; i < stackContainer.StackList.Count; i++) {
 					ItemsOfType(stackContainer.StackList[i], scriptName, searchStackContainers, itemsOfType);
 				}

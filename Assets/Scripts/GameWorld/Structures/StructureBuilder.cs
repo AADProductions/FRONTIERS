@@ -461,9 +461,12 @@ namespace Frontiers.World
 							ParentStructure.InteriorMovementNodes = new List <MovementNode> ();
 						}
 						ParentStructure.InteriorMovementNodes.AddRange (mCurrentTemplateGroup.MovementNodes);
-						//Debug.Log ("Done generating interior variant " + interiorVariant.ToString () + ", state is " + State.ToString ());
+						Debug.Log ("Done generating interior variant " + interiorVariant.ToString () + ", state is " + State.ToString ());
 					} else {
-						Debug.Log ("Interior variant " + i.ToString () + " is out of range");
+						Debug.Log ("Didn't generate items for interior variant "
+							+ interiorVariant.ToString ()
+							+ " because it has either been loaded once (" + ParentStructure.State.InteriorsLoadedOnce.Contains (interiorVariant).ToString()
+							+ ") or it's out of range (" + (interiorVariant >= Template.InteriorVariants.Count).ToString () + ")");
 					}
 				}
 										//Debug.Log ("Finished generating states");

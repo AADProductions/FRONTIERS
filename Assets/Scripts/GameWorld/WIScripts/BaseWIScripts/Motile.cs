@@ -84,7 +84,7 @@ namespace Frontiers.World.WIScripts
 
 		public bool IsImmobilized {
 			get {
-				return mIsImmobilized;
+				return mIsImmobilized || !worlditem.CollisionsEnabled;
 			}
 			set {
 				if (!mInitialized || !HasBody)
@@ -151,6 +151,7 @@ namespace Frontiers.World.WIScripts
 			}
 		}
 		protected double mAvoidObstaclesUntil;
+		protected bool mGroundedLastFrame = false;
 		public double TargetMovementSpeed = 0.0f;
 		public Transform GoalObject = null;
 		public Vector3 GoalDirection;
@@ -223,6 +224,7 @@ namespace Frontiers.World.WIScripts
 		public override void OnInitialized ()
 		{
 			worlditem.OnAddedToGroup += OnAddedToGroup;
+			worlditem.OnCollisionsEnabledChange += OnCollisionsEnabledChange;
 			//don't subscribe to on visible / active in here
 			//because we don't want those messages until we have a body
 			//and that won't happen until we've been added to a group
@@ -275,6 +277,8 @@ namespace Frontiers.World.WIScripts
 				//TODO figure out a way to send MotileActions across the network
 			}
 
+			mGroundedLastFrame = true;
+
 			if (!Body.HasSpawned) {
 				bool spawnBodyNow = true;
 				if (worlditem.Group.IsStructureGroup) {
@@ -299,6 +303,14 @@ namespace Frontiers.World.WIScripts
 					Body.Initialize (worlditem);
 				}
 			}
+		}
+
+		public void OnCollisionsEnabledChange () {
+			#if UNITY_EDITOR
+			if (Body.DebugMovement) {
+				Debug.Log ("MOTILE: On collisions enabled change, immobilized is now: " + IsImmobilized.ToString () + " and collisions enabled is " + worlditem.CollisionsEnabled.ToString ());
+			}
+			#endif
 		}
 
 		public override void BeginUnload ()
@@ -386,7 +398,9 @@ namespace Frontiers.World.WIScripts
 					MotileActionPriority priority = mNextNewAction.Key;
 					MotileAction action = mNextNewAction.Value;
 					if (action != null) {
-						//Debug.Log("Got new action " + action.Name + " with num actions: " + State.Actions.Count.ToString());
+						#if UNITY_EDITOR
+						Debug.Log("Got new action " + action.Name + " with num actions: " + State.Actions.Count.ToString());
+						#endif
 						//check the priority of the top action
 						if (!topAction.BaseAction) {
 							//if we have actions that AREN'T the base action
@@ -505,9 +519,9 @@ namespace Frontiers.World.WIScripts
 					case MotileActionState.Waiting:
 						//removing a finished top action may have opened up a waiting action
 						//wait for the top action to start before moving on
-						while (!IsGrounded) {
+						/*while (!IsGrounded) {
 							yield return null;
-						}
+						}*/
 						//Debug.Log ("Top action not started, starting now");
 						Characters.StartAction (this, topAction);
 						break;
@@ -911,6 +925,12 @@ namespace Frontiers.World.WIScripts
 				mLastGroundedHeight = mPosition.y;
 				//setting this to false isn't overkill just do it every frame
 				//rvoController.SetEnabled (false);
+				#if UNITY_EDITOR
+				if (Body.DebugMovement) {
+					Debug.Log ("MOTILE: is immobilized, is grounded? " + IsGrounded.ToString () + ", worlditem colliders enabled? " + worlditem.CollisionsEnabled.ToString () + ", returning");
+				}
+				#endif
+				mGroundedLastFrame = IsGrounded;
 				return;
 			} else if (IsRagdoll) {
 				//ragdoll prohibits rvo controller from working
@@ -921,35 +941,47 @@ namespace Frontiers.World.WIScripts
 				//and this is the ONLY place where we take our position from the body & not the other way around
 				mTr.position = Body.SmoothPosition;
 				//don't bother with rotation
+				mGroundedLastFrame = IsGrounded;
 				return;
-			} else if (IsGrounded) {
-				//setting this to false isn't overkill just do it every frame
-				//rvoController.SetEnabled (isKinematic);
-			} else {
-				//don't use our controller if we're falling
-				//rvoController.SetEnabled (false);
 			}
 
 			if (Player.Local.Surroundings.IsUnderground) {
+				#if UNITY_EDITOR
+				if (Body.DebugMovement) {
+					Debug.Log ("MOTILE: Player is underground");
+				}
+				#endif
+				mGroundedLastFrame = IsGrounded;
 				return;
 			}
 
 			//if we're not immobilized
 			//figure out our world elevation
 			//if we're moving quickly check more often
-			mCheckTerrainHeight++;
-			if (mCheckTerrainHeight > 4 || mCurrentMovementSpeed > 0.1f) {
-				terrainHit.ignoreWater = false;
-				mCheckTerrainHeight = 0;
-				float newAdjustedYPosition = AdjustedYPosition;
-				if (worlditem.Group.Props.Interior || worlditem.Group.Props.TerrainType == LocationTerrainType.BelowGround) {
-					newAdjustedYPosition = GameWorld.Get.InteriorHeightAtInGamePosition (ref terrainHit);
-				} else {
-					newAdjustedYPosition = GameWorld.Get.TerrainHeightAtInGamePosition (ref terrainHit);
-				}
+			if (!isKinematic) {
+				mCheckTerrainHeight++;
+				if (mCheckTerrainHeight > 4 || mCurrentMovementSpeed > 0.1f) {
+					terrainHit.ignoreWater = false;
+					mCheckTerrainHeight = 0;
+					float newAdjustedYPosition = AdjustedYPosition;
+					if (worlditem.Group.Props.Interior || worlditem.Group.Props.TerrainType == LocationTerrainType.BelowGround) {
+						#if UNITY_EDITOR
+						if (Body.DebugMovement) {
+							Debug.Log ("Motile: checking terrain height INTERIOR");
+						}
+						#endif
+						newAdjustedYPosition = GameWorld.Get.InteriorHeightAtInGamePosition (ref terrainHit);
+					} else {
+						#if UNITY_EDITOR
+						if (Body.DebugMovement) {
+							Debug.Log ("Motile: checking terrain height EXTERIOR");
+						}
+						#endif
+						newAdjustedYPosition = GameWorld.Get.TerrainHeightAtInGamePosition (ref terrainHit);
+					}
 
-				AdjustedYPosition = newAdjustedYPosition;
-				/*
+					AdjustedYPosition = newAdjustedYPosition;
+					/*
 				if (State.MotileProps.Hovers) {
 					//update our adjusted y position over time to ease into our hover height
 					//use max to ensure that you'll never be UNDER the terrain height
@@ -964,6 +996,7 @@ namespace Frontiers.World.WIScripts
 					//in either case adjust the new y position
 					AdjustedYPosition = newAdjustedYPosition;
 				}*/
+				}
 			}
 
 			MotileAction topAction = TopAction;
@@ -1011,23 +1044,26 @@ namespace Frontiers.World.WIScripts
 			} else {
 				//if we weren't grounded before
 				//and we are grounded now
-				if (!IsGrounded) {
+				if (!mGroundedLastFrame) {
 					if (terrainHit.isGrounded) {
 						//yay, we weren't grounded but now we are, hit the ground
-						StopFalling (isKinematic);
+						//StopFalling (isKinematic);
 						//don't bother to update again this frame
+						mGroundedLastFrame = IsGrounded;
 						return;
 					} else {
 						//we're still not grounded, keep falling
-						UpdateFalling (isKinematic);
+						//UpdateFalling (isKinematic);
 						//don't bother to update direction
+						mGroundedLastFrame = IsGrounded;
 						return;
 					}
 					//if were grounded before
 					//and we're not grounded now
 				} else if (!terrainHit.isGrounded) {
-					StartFalling (isKinematic);
+					//StartFalling (isKinematic);
 					//don't bother to update direction
+					mGroundedLastFrame = IsGrounded;
 					return;
 				}
 			}
@@ -1078,6 +1114,12 @@ namespace Frontiers.World.WIScripts
 			mLastGroundedHeight = AdjustedYPosition;
 			mLastGroundedTime = WorldClock.AdjustedRealTime;
 
+			#if UNITY_EDITOR
+			if (Body.DebugMovement) {
+				Debug.Log ("Is kinematic: " + isKinematic.ToString ());
+			}
+			#endif
+
 			//if force is greater than zero
 			//we have to go in that direction
 			CurrentRotationSpeed = State.MotileProps.RotationChangeSpeed;
@@ -1110,12 +1152,19 @@ namespace Frontiers.World.WIScripts
 					Body.UpdateForces (mPosition, mDesiredDirection, terrainHit.normal, IsGrounded, JumpForce, (float)TargetMovementSpeed);
 				}
 			}
+
+			mGroundedLastFrame = IsGrounded;
 		}
 
 		protected int mUpdateBodyPosition = 0;
 
 		public void UpdateFalling (bool isKinematic)
 		{
+			#if UNITY_EDITOR
+			if (Body.DebugMovement) {
+				Debug.Log ("Motile: Update falling in motile, kinematic? " + isKinematic.ToString ());
+			}
+			#endif
 			mFallAcceleration += Globals.DefaultCharacterFallAcceleration * (float)(WorldClock.AdjustedRealTime - mLastFallUpdate);
 			mFallAcceleration = Mathf.Min (mFallAcceleration, Globals.MaxCharacterFallAcceleration);
 			mPosition.y -= mFallAcceleration;
@@ -1128,6 +1177,11 @@ namespace Frontiers.World.WIScripts
 
 		public void StartFalling (bool isKinematic)
 		{
+			#if UNITY_EDITOR
+			if (Body.DebugMovement) {
+				Debug.Log ("Motile: START falling in motile, kinematic? " + isKinematic.ToString ());
+			}
+			#endif
 			//we won't be needing our rvo sim while we fall
 			//so deactivate it here
 			//rvoController.SetEnabled (false);
@@ -1140,6 +1194,11 @@ namespace Frontiers.World.WIScripts
 
 		public void StopFalling (bool isKinematic)
 		{
+			#if UNITY_EDITOR
+			if (Body.DebugMovement) {
+				Debug.Log ("Motile: STOP falling in motile, kinematic? " + isKinematic.ToString ());
+			}
+			#endif
 			//TODO use last grounded height to apply damage, if applicable
 			IsGrounded = true;
 			mLastGroundedHeight = AdjustedYPosition;

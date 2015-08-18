@@ -1053,6 +1053,7 @@ namespace Frontiers.World.WIScripts
 					gOrbGemGenericWorldItem.PackName = "Crystals";
 					gOrbGemGenericWorldItem.PrefabName = "Cut Luminite 1";
 					gOrbGemGenericWorldItem.State = "Light";
+					gOrbGemGenericWorldItem.StackName = "Cut Luminite";
 					gOrbGemGenericWorldItem.DisplayName = "Cut Luminite";
 				}
 				return gOrbGemGenericWorldItem;

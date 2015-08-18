@@ -231,6 +231,7 @@ namespace Frontiers.World
 				public string IconName = string.Empty;
 				public string CredentialsIconName	= string.Empty;
 				public string OptionText = string.Empty;
+				public bool ObexFont = false;
 				public Color TextColor = Colors.Get.MenuButtonTextColorDefault;
 				public Color BackgroundColor = Colors.Get.MenuButtonBackgroundColorDefault;
 				public Color OverlayColor = Colors.Get.MenuButtonOverlayColorDefault;

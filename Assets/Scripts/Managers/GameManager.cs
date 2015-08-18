@@ -19,7 +19,7 @@ namespace Frontiers
 		public GameObject StartupScenePrefab;
 		public static int BuildNumber;
 		//TODO get this from steam somehow
-	public static readonly System.Version Version = new Version(0, 4, 5);
+	public static readonly System.Version Version = new Version(0, 4, 6);
 		//since we're using this everywhere we don't want to call ToString on Version
 		//believe it or not this actually has an effect on allocations / garbage
 		public static readonly string VersionString = Version.ToString();

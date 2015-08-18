@@ -45,7 +45,9 @@ public class WaterSubmergeObjects : MonoBehaviour
 					if (ioi.worlditem.Is <Buoyant> (out b)) {
 						b.Water = Water;
 					}
-					ioi.worlditem.SetMode (WIMode.World);
+					if (ioi.worlditem.CanBeCarried) {
+						ioi.worlditem.SetMode (WIMode.World);
+					}
 					ioi.worlditem.OnEnterBodyOfWater.SafeInvoke ();
 				}
 				OnItemOfInterestEnterWater.SafeInvoke ();

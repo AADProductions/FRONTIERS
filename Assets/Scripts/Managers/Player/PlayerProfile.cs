@@ -430,6 +430,7 @@ namespace Frontiers
 			public bool ShowControllerPrompts = false;
 			public bool ShowCPromptsWhenControllerIsPresent = true;
 			public bool VREnableRotation = false;
+			public bool VRInstaRotation = false;
 			public float DeadZoneLStickLower = -1f;
 			public float DeadZoneLStickUpper = -1f;
 			public float SensitivityLStick = -1f;

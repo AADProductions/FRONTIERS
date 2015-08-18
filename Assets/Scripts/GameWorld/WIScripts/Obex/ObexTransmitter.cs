@@ -63,6 +63,8 @@ namespace Frontiers.World.WIScripts
 			PowerSource.FXOnPowerSourceRemoved = "ShieldEffectSubtleGold";
 			PowerSource.PowerSourceDopplegangerParent = LuminiteGemPivot;
 			PowerSource.PowerAudio = gameObject.GetComponent <AudioSource> ();
+			PowerSource.CanRemoveSource = true;
+			PowerSource.CanReplaceSource = true;
 			PowerSource.Refresh ();
 
 			mCameraTarget = worlditem.tr.FindChild ("ConversationCameraTarget");

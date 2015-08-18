@@ -107,6 +107,24 @@ namespace Frontiers.World
 			}
 		}
 
+		public bool CollisionsEnabled {
+			get {
+				return mCollisionsEnabled;
+			} set {
+				if (mCollisionsEnabled != value) {
+					mCollisionsEnabled = value;
+					//refresh the world mode
+					//this is the only mode where collisions matter
+					if (Is (WIMode.World)) {
+						OnSetWorldMode (false);
+					}
+					OnCollisionsEnabledChange.SafeInvoke ();
+				}
+			}
+		}
+
+		protected bool mCollisionsEnabled = true;
+
 		public string GenerateFileName (int increment)
 		{
 			Props.Name.AutoIncrementFileName = true;
@@ -222,9 +240,11 @@ namespace Frontiers.World
 			}
 
 			ActiveState = WIActiveState.Active;
-			rb.isKinematic = false;
-			rb.useGravity = true;
-			rb.AddForce (force, ForceMode.Impulse);
+			if (CollisionsEnabled) {
+				rb.isKinematic = false;
+				rb.useGravity = true;
+				rb.AddForce (force, ForceMode.Impulse);
+			}
 		}
 
 		public bool HasPlayerAttention = false;
@@ -597,7 +617,7 @@ namespace Frontiers.World
 					rb.useGravity = true;
 				}
 			} else {
-				if (rb != null) {
+				if (rb != null && CollisionsEnabled) {
 					rb.isKinematic = false;
 					rb.useGravity = true;
 				}
