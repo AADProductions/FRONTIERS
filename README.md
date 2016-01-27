@@ -22,17 +22,17 @@ massive open world.
 > </cite>
 
 * Third party assets:
-
-* NGUI 2.0.5
-* TNet 1.7.2c
-* SuperSplines 3.0
-* InControl 1.3.9
-* ProMouse 1.4.0
-* SSAO Pro 1.4
-* TOD 2.0.5
-* SE Natural Bloom 1.011
-* Advanced Foliage Shader v.4 3.02
-* Painterly v.5
+* NGUI 2.0.5 (Included in project w/ permission)* 
+* NCalc - https://github.com/mouhong/NCalc
+* TNet 1.7.2c (n/a)
+* SuperSplines 3.0 (n/a)
+* InControl 1.3.9 - https://github.com/pbhogan/InControl
+* ProMouse 1.4.0 (n/a)
+* SSAO Pro 1.4 (n/a)
+* TOD 2.0.5 (n/a)
+* SE Natural Bloom 1.011 (n/a)
+* Advanced Foliage Shader v.4 3.02 (n/a)
+* Painterly v.5 (n/a)
 
 
 # Links
