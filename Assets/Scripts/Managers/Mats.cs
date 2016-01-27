@@ -314,11 +314,15 @@ namespace Frontiers
 					return;
 				}
 				Material diffuseMaterial = new Material (DefaultDiffuseMaterial);
-				diffuseMaterial.mainTexture = material.GetTexture ("_MainDiffMap");
-				diffuseMaterial.mainTextureScale = material.GetTextureScale ("_MainDiffMap");
-				diffuseMaterial.mainTextureOffset = material.GetTextureOffset ("_MainDiffMap");
-				Color c = Color.Lerp (material.GetColor ("_MainTintColor"), material.GetColor ("_DetailTintColor"), 0.5f);
-				diffuseMaterial.color = c;
+				if (material.HasProperty ("_MainDiffMap")) {
+					diffuseMaterial.mainTexture = material.GetTexture ("_MainDiffMap");
+					diffuseMaterial.mainTextureScale = material.GetTextureScale ("_MainDiffMap");
+					diffuseMaterial.mainTextureOffset = material.GetTextureOffset ("_MainDiffMap");
+				}
+				if (material.HasProperty ("_DetailTintColor")) {
+					Color c = Color.Lerp (material.GetColor ("_MainTintColor"), material.GetColor ("_DetailTintColor"), 0.5f);
+					diffuseMaterial.color = c;
+				}
 				mLODMaterialLookup.Add (material, diffuseMaterial);
 			}
 		}

@@ -763,6 +763,7 @@ namespace Frontiers.Story.Conversations
 		public string ConversationName = string.Empty;
 		public string ExchangeName = string.Empty;
 		public int NumTimes = 1;
+		public bool RequireConversationInitiated = true;
 		public VariableCheckType CheckType = VariableCheckType.GreaterThanOrEqualTo;
 
 		protected override bool CheckRequirementsMet ()
@@ -777,7 +778,7 @@ namespace Frontiers.Story.Conversations
 			Debug.Log ("Require exchange " + ExchangeName + " concluded in " + ConversationName);
 
 			int numTimes = 0;
-			if (Frontiers.Conversations.Get.HasCompletedExchange (ConversationName, ExchangeName, out numTimes)) {
+			if (Frontiers.Conversations.Get.HasCompletedExchange (ConversationName, ExchangeName, RequireConversationInitiated, out numTimes)) {
 				bool result = GameData.CheckVariable (CheckType, NumTimes, numTimes);
 				Debug.Log ("Result: " + result.ToString ());
 				return result;
@@ -791,18 +792,16 @@ namespace Frontiers.Story.Conversations
 	{
 		public List <string> Exchanges = new List <string> ();
 		public bool RequireAllExchanges = true;
+		public bool RequireConversationInitiated = true;
 		public bool RequireConcluded = true;
 		public string ConversationName;
 
 		protected override bool CheckRequirementsMet ()
 		{
-			if (string.IsNullOrEmpty (ConversationName) || String.Equals (ConversationName, "*")) {
-				//* on its own is a shortcut for 'this convo name'
+			if (string.IsNullOrEmpty (ConversationName)) {
 				ConversationName = exchange.ParentConversation.Props.Name;
 			}
 			if (ConversationName.Contains ("*")) {
-				//if it still contains a * then it's a *_[x] substitution
-				//so get that now
 				ConversationName = SubstituteConversation.Substitution (conversation.Props.Name, ConversationName);
 			}
 			string conversationName = ConversationName;
@@ -820,7 +819,7 @@ namespace Frontiers.Story.Conversations
 					//it must be an integer
 					finalExchangeName = Frontiers.Conversations.Get.ExchangeNameFromIndex (conversationName, exchangeIndex);
 				}
-				bool completedThis = Frontiers.Conversations.Get.HasCompletedExchange (conversationName, finalExchangeName);
+				bool completedThis = Frontiers.Conversations.Get.HasCompletedExchange (conversationName, finalExchangeName, RequireConversationInitiated);
 				//do we want them completed or not completed?
 				if (RequireConcluded) {
 					results.Add (completedThis);
@@ -830,11 +829,14 @@ namespace Frontiers.Story.Conversations
 				}
 			}
 			bool result = true;
-			if (RequireAll) {
+			if (RequireAllExchanges) {
 				result = true;//clarity
 				foreach (bool r in results) {
 					if (!r) {
 						result = false;
+						#if DEBUG_CONVOS
+						Debug.Log ("---- Require all exchanges and one was not met in " + exchange.Name);
+						#endif
 						break;
 					}
 				}
@@ -842,6 +844,9 @@ namespace Frontiers.Story.Conversations
 				result = false;
 				foreach (bool r in results) {
 					if (r) {
+						#if DEBUG_CONVOS
+						Debug.Log ("---- Require one exchanges and one was met in " + exchange.Name);
+						#endif
 						result = true;
 						break;
 					}
@@ -919,7 +924,9 @@ namespace Frontiers.Story.Conversations
 		{		
 			int currentValue = 0;
 			if (Missions.Get.MissionVariable (MissionName, VariableName, ref currentValue)) {
+				#if DEBUG_CONVOS
 				Debug.Log ("Found mission variable " + VariableName);
+				#endif
 				return GameData.CheckVariable (CheckType, VariableValue, currentValue);
 			}
 			return false;
@@ -958,14 +965,27 @@ namespace Frontiers.Story.Conversations
 
 		protected override bool CheckRequirementsMet ()
 		{
+			#if DEBUG_CONVOS
+			Debug.Log ("RequireObjectiveStatus: Mission: " + MissionName + ", Objective: " + ObjectiveName + ", Status: " + Status + ", RequireHasStatus: " + RequireHasStatus.ToString ());
+			#endif
 			MissionStatus status = MissionStatus.Dormant;
 			if (Missions.Get.ObjectiveStatusByName (MissionName, ObjectiveName, ref status)) {
 				bool hasStatus = Flags.Check ((uint)status, (uint)Status, Flags.CheckType.MatchAny);
 				if (RequireHasStatus) {
+					#if DEBUG_CONVOS
+					Debug.Log ("Result: " + hasStatus.ToString ());
+					#endif
 					return hasStatus;
 				} else {
+					#if DEBUG_CONVOS
+					Debug.Log ("Result: " + (!hasStatus).ToString ());
+					#endif
 					return !hasStatus;
 				}
+			} else {
+				#if DEBUG_CONVOS
+				Debug.Log ("Couldn't get objective status");
+				#endif
 			}
 			return false;
 		}
@@ -1492,8 +1512,6 @@ namespace Frontiers.Story.Conversations
 				CharacterName = conversation.SpeakingCharacter.worlditem.FileName;
 			}
 			if (NewConversationName.Contains ("*")) {
-				//do a special substitution
-				//CONVERSATIONNAME-01
 				NewConversationName = Substitution (OldConversationName, NewConversationName);
 			}
 
@@ -1506,10 +1524,36 @@ namespace Frontiers.Story.Conversations
 
 		public static string Substitution (string oldConversationName, string newConversationName)
 		{
-			string[] splitConversationName = oldConversationName.Split (new String [] { "-" }, StringSplitOptions.RemoveEmptyEntries);
-			splitConversationName [splitConversationName.Length - 1] = newConversationName.Replace ("*", "");
-			newConversationName = string.Join ("-", splitConversationName);//merge back into the new name
-			newConversationName = DataImporter.GetNameFromDialogName (newConversationName);
+			#if DEBUG_CONVOS
+			Debug.Log ("Substituting old " + oldConversationName + " with new " + newConversationName);
+			#endif
+			//oldConversationName - the original - conversation name format is CharName-Enc-Act-##-Mission-##
+			//newConversationName - the new - this uses the format of * or *_#
+			if (newConversationName.Equals("*")) {
+				//in the case of * we just have to replace the thing outright
+				newConversationName = oldConversationName;
+				#if DEBUG_CONVOS
+				Debug.Log ("Straight replacement");
+				#endif
+			} else {
+				//in the case of *_# we're trying to swap out the last number
+				//we have to split the string and replace the number at the end
+				string[] splitConversationName = oldConversationName.Split (new String [] { "-" }, StringSplitOptions.RemoveEmptyEntries);
+				//this will give us [blah][blah][blah][etc][#]
+				//replace the [#] with [*_#], minus the *
+				string newNumber = newConversationName.Replace ("*", "");
+				splitConversationName [splitConversationName.Length - 1] = newNumber;
+				#if DEBUG_CONVOS
+				Debug.Log ("Replacing old number with new number " + newNumber);
+				#endif
+				//the re-join everything so we get the new conversation name with the new number
+				newConversationName = string.Join ("-", splitConversationName);
+				//finally clean the file name so we get rid of all "_" characters
+				newConversationName = DataImporter.GetNameFromDialogName (newConversationName);
+			}
+			#if DEBUG_CONVOS
+			Debug.Log ("Got " + newConversationName + " from " + oldConversationName);
+			#endif
 			return newConversationName;
 		}
 	}

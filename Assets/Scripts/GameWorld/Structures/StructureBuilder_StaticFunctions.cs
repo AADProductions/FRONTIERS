@@ -119,8 +119,6 @@ namespace Frontiers.World
 									meshColliders.Add (meshCollider);
 								}
 							}
-						} else {
-							//Debug.Log("Couldn't get mesh collider " + colliderLayer.PrefabName);
 						}
 						break;
 
@@ -216,6 +214,7 @@ namespace Frontiers.World
 			List <Renderer> lodRenderers,
 			List <Renderer> lodRenderersDestroyed,
 			bool interior,
+			bool useLOD,
 			Builder builder)
 		{
 			while (!cachedMesh.Finished) {
@@ -294,6 +293,7 @@ namespace Frontiers.World
 			List <Renderer> lodRenderers,
 			List <Renderer> lodRenderersDestroyed,
 			bool interior,
+			bool useLOD,
 			Builder builder,
 			string templateName)
 		{
@@ -376,6 +376,7 @@ namespace Frontiers.World
 						                     lodRenderers,
 						                     lodRenderersDestroyed,
 						                     interior,
+											 useLOD,
 						                     builder);
 					while (cachedMeshEnum.MoveNext ()) {
 						yield return cachedMeshEnum.Current;
@@ -395,6 +396,7 @@ namespace Frontiers.World
 							                     lodRenderers,
 							                     lodRenderersDestroyed,
 							                     interior,
+												 useLOD,
 							                     builder);
 						while (cachedMeshEnum.MoveNext ()) {
 							yield return cachedMeshEnum.Current;
@@ -415,6 +417,7 @@ namespace Frontiers.World
 							                     lodRenderers,
 							                     lodRenderersDestroyed,
 							                     interior,
+												 useLOD,
 							                     builder);
 						while (cachedMeshEnum.MoveNext ()) {
 							yield return cachedMeshEnum.Current;
@@ -433,6 +436,7 @@ namespace Frontiers.World
 								                     lodRenderers,
 								                     lodRenderersDestroyed,
 								                     interior,
+													 useLOD,
 								                     builder);
 							while (cachedMeshEnum.MoveNext ()) {
 								yield return cachedMeshEnum.Current;
@@ -566,7 +570,7 @@ namespace Frontiers.World
 						//Debug.Log ("Meshes finished, moving on");
 						builder.State = Builder.BuilderState.HandlingMeshes;
 					}
-					yield return null;//TODO add some sort of timeout?
+					yield return null;
 					if (WorldClock.AdjustedRealTime > timeout) {
 						builder.State = BuilderState.Error;
 						Debug.LogError ("Timed out when building minor structure, returning now " + templateName);
@@ -616,7 +620,7 @@ namespace Frontiers.World
 						normalCachedMesh.materials.Add (materials);
 						normalCachedMesh.lodMaterials.Add (lodMaterials);
 
-						if (!interior) {
+						if (!interior && useLOD) {
 							GameObject subMeshLOD = subMeshGo.CreateChild ("LOD").gameObject;
 							subMeshLOD.layer = subMeshGo.layer;
 							Renderer lodRenderer = subMeshLOD.AddComponent <MeshRenderer> ();
@@ -672,7 +676,7 @@ namespace Frontiers.World
 							destroyedCachedMesh.materials.Add (materials);
 							destroyedCachedMesh.lodMaterials.Add (lodMaterials);
 
-							if (!interior) {
+							if (!interior && useLOD) {
 								GameObject subMeshLOD = subMeshGo.CreateChild ("LOD").gameObject;
 								subMeshLOD.layer = subMeshGo.layer;
 								Renderer lodRenderer = subMeshLOD.AddComponent <MeshRenderer> ();
@@ -1126,7 +1130,7 @@ namespace Frontiers.World
 					worlditem.Group = group;
 					Door door = null;
 					if (worlditem.gameObject.HasComponent <Door> (out door)) {
-						door.State.OuterEntrance = exterior;
+						door.State.TriggerStructureLoad = exterior;
 						door.IsGeneric = true;//this will help it set up its locks correctly the first time
 					}
 					worlditem.Initialize ();

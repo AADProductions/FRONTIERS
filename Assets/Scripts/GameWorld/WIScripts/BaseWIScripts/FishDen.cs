@@ -190,7 +190,7 @@ namespace Frontiers.World.WIScripts
 			mPlayerPosition = Player.Local.Position;
 			mCritterPosition.y = WaterLevel;
 			mUpdatePositions++;
-			if (mUpdatePositions > 3) {
+			if (mUpdatePositions > 10) {
 				mUpdatePositions = 0;
 				for (int i = SpawnedFish.LastIndex (); i >= 0; i--) {
 					//make sure the fish are staying in the den

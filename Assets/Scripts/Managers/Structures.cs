@@ -40,12 +40,10 @@ namespace Frontiers
 		//super-awesome combiners for combining meshes
 		public MeshCombiner ExteriorCombiner;
 		public MeshCombiner ExteriorCombinerDestroyed;
-
 		public MeshCombiner ExteriorDistantCombiner;
 		public MeshCombiner ExteriorDistantCombinerDestroyed;
 		public MeshCombiner ExteriorDistantLODCombiner;
 		public MeshCombiner ExteriorDistantLODCombinerDestroyed;
-
 		public MeshCombiner InteriorCombiner;
 		public MeshCombiner InteriorCombinerDestroyed;
 		public MeshCombiner MinorCombiner;
@@ -285,7 +283,7 @@ namespace Frontiers
 		public override void WakeUp ()
 		{
 			if (mIsAwake)//the editor will call this sometimes
-							return;
+				return;
 
 			base.WakeUp ();
 
@@ -336,49 +334,64 @@ namespace Frontiers
 				}
 			}
 
-			for (int i = 0; i < ColliderMeshPrefabs.Count; i++) {
+			for (int i = ColliderMeshPrefabs.Count - 1; i >= 0; i--) {
 				//name_COL
 				GameObject colliderMeshPrefab = ColliderMeshPrefabs [i];
-				MeshFilter mf = colliderMeshPrefab.GetComponent <MeshFilter> ();
-
-				if (mf == null) {
-					Debug.Log ("MESH FILTER WAS NULL ON COLLIDER " + colliderMeshPrefab.name);
+				if (colliderMeshPrefab == null) {
+					ColliderMeshPrefabs.RemoveAt (i);
 				} else {
-					Mesh colliderMesh = mf.sharedMesh;
-					string lookupName = colliderMeshPrefab.name.Replace ("_COL", "");
-					//Debug.Log ("Adding collider lookup " + lookupName);
-					mColliderMeshes.Add (lookupName, colliderMesh);
+					MeshFilter mf = colliderMeshPrefab.GetComponent <MeshFilter> ();
+
+					if (mf == null) {
+						Debug.Log ("MESH FILTER WAS NULL ON COLLIDER " + colliderMeshPrefab.name);
+					} else {
+						Mesh colliderMesh = mf.sharedMesh;
+						string lookupName = colliderMeshPrefab.name.Replace ("_COL", "");
+						if (mColliderMeshes.ContainsKey (lookupName)) {
+							Debug.Log ("Conflict! " + lookupName + " already exists");
+						} else {
+							mColliderMeshes.Add (lookupName, colliderMesh);
+						}
+					}
 				}
 			}
 
-			for (int i = 0; i < LodMeshPrefabs.Count; i++) {
+			for (int i = LodMeshPrefabs.Count - 1; i >= 0; i--) {
 				//name_LOD
 				GameObject lodMeshPrefab = LodMeshPrefabs [i];
-				MeshFilter mf = lodMeshPrefab.GetComponent <MeshFilter> ();
-
-				if (mf == null) {
-					Debug.Log ("MESH FILTER WAS NULL ON LOD " + lodMeshPrefab.name);
+				if (lodMeshPrefab == null) {
+					LodMeshPrefabs.RemoveAt (i);
 				} else {
-					Mesh lodMesh = mf.sharedMesh;
-					string lookupName = lodMeshPrefab.name;
-					int lodNumber = 0;
-					if (lookupName.Contains ("_LOD1")) {
-						lodNumber = 1;
-					} else if (lookupName.Contains ("_LOD2")) {
-						lodNumber = 2;
-					} else if (lookupName.Contains ("_LOD3")) {
-						lodNumber = 3;
-					}
-
-					lookupName = lookupName.Replace ("_LOD1", "");
-					lookupName = lookupName.Replace ("_LOD2", "");
-					lookupName = lookupName.Replace ("_LOD3", "");
-
-					Mesh existingLodMesh = null;
-					if (mLodMeshes.ContainsKey (lookupName)) {
-						//Debug.Log ("FOUND DUPLICATE LOD: " + lodMeshPrefab.name);
+					MeshFilter mf = lodMeshPrefab.GetComponent <MeshFilter> ();
+					if (mf == null) {
+						Debug.Log ("MESH FILTER WAS NULL ON LOD " + lodMeshPrefab.name);
 					} else {
-						mLodMeshes.Add (lookupName, lodMesh);
+						Mesh lodMesh = mf.sharedMesh;
+						string lookupName = lodMeshPrefab.name;
+						lookupName = lookupName.Replace ("_LOD1", "");
+						lookupName = lookupName.Replace ("_LOD2", "");
+						lookupName = lookupName.Replace ("_LOD3", "");
+
+						Mesh existingLodMesh = null;
+						if (mLodMeshes.ContainsKey (lookupName)) {
+							Debug.Log ("FOUND DUPLICATE LOD: " + lodMeshPrefab.name);
+						} else {
+							mLodMeshes.Add (lookupName, lodMesh);
+						}
+					}
+				}
+			}
+
+			//add the regular colliders to the lookup too
+			foreach (StructurePack pack in StructurePacks) {
+				foreach (GameObject prefab in pack.StaticPrefabs) {
+					if (!mColliderMeshes.ContainsKey (prefab.name) && pack.MeshColliderPrefabs.Contains (prefab)) {
+						Debug.Log ("Missing a collider mesh for " + prefab.name + ", improvising");
+						MeshFilter mf = prefab.GetComponent <MeshFilter> ();
+						if (mf != null) {
+							Debug.Log ("--- Adding " + mf.sharedMesh.ToString () + " as mesh collider for " + prefab.name);
+							mColliderMeshes.Add (prefab.name, mf.sharedMesh);
+						}
 					}
 				}
 			}
@@ -389,26 +402,6 @@ namespace Frontiers
 				if (!mLodMeshes.ContainsKey (colliderMesh.Key)) {
 					//Debug.Log ("SUBSTITUTING " + colliderMesh.Key + " FOR LOD MESH");
 					mLodMeshes.Add (colliderMesh.Key, colliderMesh.Value);
-				}
-			}
-
-			//add the regular colliders to the lookup too
-			foreach (StructurePack pack in StructurePacks) {
-				foreach (GameObject prefab in pack.StaticPrefabs) {
-					if (!mColliderMeshes.ContainsKey (prefab.name)) {
-						/*Mesh lodMesh = null;
-												if (mLodMeshes.TryGetValue(prefab.name, out lodMesh)) {
-														//use the LOD mesh as a collider substitute
-														mColliderMeshes.Add(prefab.name, lodMesh);
-														} else {*/
-						//otherwise use our mesh filter's mesh
-						//this is inefficient but it's better than broken colliders
-						MeshFilter mf = prefab.GetComponent <MeshFilter> ();
-						if (mf != null) {
-							mColliderMeshes.Add (mf.name, mf.sharedMesh);
-						}
-						//}
-					}
 				}
 			}
 
@@ -602,12 +595,14 @@ namespace Frontiers
 			mc.enabled = false;
 			foreach (Mesh collisionMesh in mColliderMeshes.Values) {
 				try {
+					//Debug.Log ("Adding mesh to " + collisionMesh.name);
 					mc.sharedMesh = collisionMesh;
 					mc.enabled = true;
 					//this should trigger collision data creation
 					mc.enabled = false;
 				} catch (Exception e) {
 					e = null;
+					Debug.Log ("Error adding mesh to " + collisionMesh.name);
 				}
 			}
 			GameObject.Destroy (meshCacheObject);
@@ -856,8 +851,8 @@ namespace Frontiers
 			}
 
 			if (ExteriorBuilder.State == StructureBuilder.BuilderState.Dormant ||
-			    ExteriorBuilder.State == StructureBuilder.BuilderState.Error ||
-			    ExteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
+				ExteriorBuilder.State == StructureBuilder.BuilderState.Error ||
+				ExteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
 				//Debug.Log ("Exterior builder is finished, starting new load structure");
 				StartCoroutine (LoadStructures (
 					ExteriorsWaitingToLoad,
@@ -890,8 +885,8 @@ namespace Frontiers
 			}
 
 			if (InteriorBuilder.State == StructureBuilder.BuilderState.Dormant ||
-			    InteriorBuilder.State == StructureBuilder.BuilderState.Error ||
-			    InteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
+				InteriorBuilder.State == StructureBuilder.BuilderState.Error ||
+				InteriorBuilder.State == StructureBuilder.BuilderState.Finished) {
 				//Debug.Log ("Interior builder is finished, starting new load structure");
 				StartCoroutine (LoadStructures (
 					InteriorsWaitingToLoad,
@@ -935,9 +930,9 @@ namespace Frontiers
 
 			mloadMinors++;
 			if (mloadMinors > 3 && MinorsWaitingToLoad.Count > 0 &&
-			    (MinorBuilder.State == StructureBuilder.BuilderState.Dormant ||
-			    MinorBuilder.State == StructureBuilder.BuilderState.Error ||
-			    MinorBuilder.State == StructureBuilder.BuilderState.Finished)) {
+				(MinorBuilder.State == StructureBuilder.BuilderState.Dormant ||
+				MinorBuilder.State == StructureBuilder.BuilderState.Error ||
+				MinorBuilder.State == StructureBuilder.BuilderState.Finished)) {
 				mloadMinors = 0;
 				using (var minorEnum = MinorsWaitingToLoad.GetEnumerator ()) {
 					while (minorEnum.MoveNext ()) {
@@ -1006,7 +1001,7 @@ namespace Frontiers
 						yield break;
 					}
 					if (structure.worlditem.Is (WILoadState.Unloading | WILoadState.Unloaded) ||
-					    structure.StructureGroup.Is (WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
+						structure.StructureGroup.Is (WIGroupLoadState.Unloading | WIGroupLoadState.Unloaded)) {
 						Debug.LogError ("Structure was unloading / unloaded or structure group was unloading / unloaded - " + structure.worlditem.LoadState.ToString () + " / " + structure.StructureGroup.LoadState.ToString ());
 					}
 					//this will run in parallel with the exterior building
@@ -1086,8 +1081,8 @@ namespace Frontiers
 					PreloaderCamera.rect = EditorPreloadCameraDepth;
 					PreloaderCamera.depth = 100f;
 					#else
-										PreloaderCamera.rect = PreloadCameraDepth;
-										PreloaderCamera.depth = -100f;
+					PreloaderCamera.rect = PreloadCameraDepth;
+					PreloaderCamera.depth = -100f;
 					#endif
 					PreloaderCamera.enabled = false;
 					PreloaderRenderer.enabled = false;
@@ -1274,7 +1269,7 @@ namespace Frontiers
 			foreach (StructurePack pack in StructurePacks) {
 				foreach (GameObject prefab in pack.DynamicPrefabs) {
 					if (prefab.name == prefabName) {
-						newTemplate	= new DynamicStructureTemplatePiece ();
+						newTemplate = new DynamicStructureTemplatePiece ();
 						newTemplate.Props.Name.PrefabName = prefab.name;
 						newTemplate.Props.Name.PackName = pack.Name;
 						newTemplate.Props.Local.Mode = WIMode.Frozen;
@@ -1344,7 +1339,15 @@ namespace Frontiers
 
 		public bool ColliderMesh (string prefabName, out Mesh colliderMesh)
 		{
+			#if UNITY_EDITOR
+			if (!mColliderMeshes.TryGetValue (prefabName, out colliderMesh)) {
+				Debug.Log ("Couldn't find collider mesh for " + prefabName);
+				return false;
+			}
+			return true;
+			#else
 			return mColliderMeshes.TryGetValue (prefabName, out colliderMesh);
+			#endif
 		}
 
 		public bool PackStaticPrefab (string structurePackName, string prefabName, out StructurePackPrefab prefab)
@@ -1430,6 +1433,7 @@ namespace Frontiers
 			//get a chunk prefab from the pool
 			cfo = Get.SceneryObjectPool.Pop ();
 			//move / scale everything first
+			cfo.PrimaryCollider.enabled = false;
 			cfo.tr.position = chunk.ChunkOffset + chunkPrefab.Transform.Position;
 			cfo.tr.rotation = Quaternion.Euler (chunkPrefab.Transform.Rotation);
 			cfo.tr.localScale = chunkPrefab.Transform.Scale.x * Vector3.one; //non-uniform scales NOT ALLOWED!

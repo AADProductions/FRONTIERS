@@ -19,6 +19,7 @@ namespace Frontiers.World
 		public StructureTemplateGroup Exterior = new StructureTemplateGroup ();
 		public List <StructureTemplateGroup> InteriorVariants = new List <StructureTemplateGroup> ();
 		public List <STransform> Footprint = new List <STransform> ();
+		public bool UseLOD = true;
 
 		public int NumInteriorVariants {
 			get {
@@ -172,6 +173,7 @@ namespace Frontiers.World
 
 						List <Collider> childColliders = new List <Collider> ();
 						if (child.collider != null) {
+							Debug.Log ("Adding collider " + child.collider.GetType ().ToString () + " from prefab " + child.name);
 							childColliders.Add (child.collider);
 						} else {
 							//Debug.Log ("Child collider was null, looking for sub colliders");
@@ -236,7 +238,8 @@ namespace Frontiers.World
 		public static void AddCustomCollidersToStructureTemplate (Transform start, List <StructureLayer> colliderLayers)
 		{
 			foreach (Transform child in start) {
-				string packName = child.collider.GetType ().Name;
+				Collider c = child.GetComponent <Collider> ();
+				string packName = c.GetType ().Name;
 				string prefabName = child.name;
 				string tag = child.tag;
 				int layer = child.gameObject.layer;

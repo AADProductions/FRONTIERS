@@ -24,10 +24,14 @@ namespace Frontiers.World.WIScripts
 			State.TargetState = EntranceState.Closed;
 
 			dynamic = worlditem.Get <Dynamic> ();
-			if (worlditem.Group.Props.Interior) {
-				dynamic.State.Type = WorldStructureObjectType.InnerEntrance;
+			if (State.TriggerStructureLoad && State.TriggerPassThrough) {
+				if (worlditem.Group.Props.Interior) {
+					dynamic.State.Type = WorldStructureObjectType.InnerEntrance;
+				} else {
+					dynamic.State.Type = WorldStructureObjectType.OuterEntrance;
+				}
 			} else {
-				dynamic.State.Type = WorldStructureObjectType.OuterEntrance;
+				dynamic.State.Type = WorldStructureObjectType.Machine;
 			}
 
 			dynamic.OnTriggersLoaded += OnTriggersLoaded;
@@ -54,6 +58,13 @@ namespace Frontiers.World.WIScripts
 
 		public void TryToOpen () {
 			if (State.CurrentState == EntranceState.Open || State.CurrentState == EntranceState.Opening) {
+				if (State.RequireActivePlatform && !Player.Local.Surroundings.IsOnMovingPlatform) {
+					StartCoroutine (ForceClose ());
+				}
+				return;
+			}
+
+			if (State.RequireActivePlatform && !Player.Local.Surroundings.IsOnMovingPlatform) {
 				return;
 			}
 
@@ -72,7 +83,7 @@ namespace Frontiers.World.WIScripts
 
 		public void OnDie ( ) {
 			//force the interior to load since we're now missing a door
-			if (State.OuterEntrance && !State.Ornamental) {
+			if (State.TriggerStructureLoad) {
 				if (dynamic.ParentStructure != null) {
 					dynamic.ParentStructure.State.ForceBuildInterior = true;
 					Structures.AddInteriorToLoad (dynamic.ParentStructure);
@@ -161,7 +172,7 @@ namespace Frontiers.World.WIScripts
 
 			if (State.CurrentState == EntranceState.Closed) {
 				if (worlditem.Is <Trigger> ()) {
-					if (State.OuterEntrance) {
+					if (State.TriggerStructureLoad) {
 						//if the structure is a residence
 						//we can knock on it
 						if (dynamic.ParentStructure.worlditem.Is <Residence> (out gCheckResidence)) {
@@ -297,8 +308,9 @@ namespace Frontiers.World.WIScripts
 
 		public EntranceState TargetState = EntranceState.Closed;
 		public EntranceState CurrentState = EntranceState.Closed;
-		public bool OuterEntrance = true;
-		public bool Ornamental = false;
+		public bool TriggerStructureLoad = true;
+		public bool TriggerPassThrough = true;
+		public bool RequireActivePlatform = false;
 		public MasterAudio.SoundType SoundType = MasterAudio.SoundType.DoorsAndWindows;
 		public string SoundOnClose = string.Empty;
 		public string SoundOnOpen = string.Empty;

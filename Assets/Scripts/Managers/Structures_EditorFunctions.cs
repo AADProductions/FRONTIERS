@@ -222,6 +222,24 @@ namespace Frontiers
 				Debug.Log ("Path " + colliderMeshesPath + " does not exist");
 			}
 
+			LODMeshPaths.Clear ();
+			string lodMeshesPath = LocalLODMeshesPath;
+			lodMeshesPath = System.IO.Path.Combine (Application.dataPath, lodMeshesPath);
+			if (Directory.Exists (lodMeshesPath)) {
+				string[] assetPaths = Directory.GetFiles (lodMeshesPath);
+				foreach (string assetPath in assetPaths) {
+					string extension = System.IO.Path.GetExtension (assetPath);
+					//Debug.Log ("Extension: " + extension);
+					if (extension != ".meta" && extension != string.Empty) {
+						//string prefabAssetPath = assetPath.Replace (".prefab", string.Empty);
+						string prefabAssetPath = assetPath.Replace (Application.dataPath, string.Empty);
+						LODMeshPaths.SafeAdd (prefabAssetPath);
+					}
+				}
+			} else {
+				Debug.Log ("Path " + lodMeshesPath + " does not exist");
+			}
+
 			//get LOD prefab paths
 			LODPrefabPaths.Clear ();
 			string lodPrefabsPath = LocalLODPrefabsPath;
@@ -348,8 +366,144 @@ namespace Frontiers
 			}
 		}
 
+		#if UNITY_EDITOR
+		public List <string> ColliderReports = new List <string> ();
+		#endif
+
 		public void DrawEditor ()
 		{
+			foreach (string s in ColliderReports) {
+				if (s.StartsWith ("3")) {
+					UnityEngine.GUI.color = Color.red;
+				} else if (s.StartsWith ("2")) {
+					UnityEngine.GUI.color = Color.yellow;
+				} else if (s.StartsWith ("3")) {
+					UnityEngine.GUI.color = Color.green;
+				} else {
+					UnityEngine.GUI.color = Color.white;
+				}
+				GUILayout.Label (s);
+			}
+
+			int numPrefabsInstantiated = 0;
+			if (GUILayout.Button ("Create LOD Prefabs")) {
+				RefreshPaths ();
+				//check to see if there's an LOD prefab for each LOD mesh available
+				foreach (string lodMeshPath in LODMeshPaths) {
+					Debug.Log ("Checking " + lodMeshPath);
+					bool foundPrefab = false;
+					string cleanLodMeshPath = lodMeshPath.Replace (".obj", "");
+					cleanLodMeshPath = lodMeshPath.Replace (".fbx", "");
+					foreach (string lodPrefabPath in LODPrefabPaths) {
+						string cleanLodPrefabPath = lodPrefabPath.Replace (".prefab", "");
+						if (cleanLodMeshPath.Equals (cleanLodPrefabPath)) {
+							Debug.Log (lodMeshPath + " already exists as " + lodPrefabPath);
+							foundPrefab = true;
+							break;
+						}
+					}
+
+					if (!foundPrefab) {
+						numPrefabsInstantiated++;
+						//create a prefab from the path
+						string finalPath = ("Assets" + lodMeshPath);
+						Debug.Log ("NEED TO CREATE PREFAB FOR " + lodMeshPath);
+						UnityEngine.Object prefab = AssetDatabase.LoadAssetAtPath (finalPath, typeof(UnityEngine.Object)) as UnityEngine.Object;
+						GameObject prefabAsGameObject = prefab as GameObject;
+						GameObject tempInstantiated = GameObject.Instantiate (prefabAsGameObject) as GameObject;
+						MeshFilter prefabMf = tempInstantiated.GetComponent <MeshFilter> ();
+						if (prefabMf == null) {
+							prefabMf = tempInstantiated.GetComponentInChildren <MeshFilter> ();
+						}
+						Mesh mesh = prefabMf.sharedMesh;
+						GameObject.DestroyImmediate (tempInstantiated);
+						GameObject prefabInstantiated = new GameObject (prefabAsGameObject.name);
+						prefabInstantiated.AddComponent <MeshFilter> ().sharedMesh = mesh;
+						string prefabPath = lodMeshPath.Replace (LocalLODMeshesPath, LocalLODPrefabsPath);
+						prefabPath = prefabPath.Replace (".obj", ".prefab");
+						prefabPath = prefabPath.Replace (".fbx", ".prefab");
+						finalPath = "Assets" + prefabPath;
+						finalPath = finalPath.Trim ();
+						finalPath = finalPath.Replace ("\\", "/");
+						Debug.Log ("Creating asset at: " + finalPath);
+						EditorUtility.SetDirty (prefabInstantiated);
+						PrefabUtility.CreatePrefab (finalPath, prefabInstantiated, ReplacePrefabOptions.ReplaceNameBased);
+						GameObject.DestroyImmediate (prefabInstantiated);
+					}
+				}
+			}
+
+			if (GUILayout.Button ("Report colliders")) {
+				ColliderReports.Clear ();
+				WakeUp ();
+				RefreshPaths ();
+				foreach (StructurePack pack in StructurePacks) {
+					//check to see if there are any colliders associated with this object
+					foreach (GameObject obj in pack.StaticPrefabs) {
+						MeshCollider mc = obj.GetComponent <MeshCollider> ();
+						Mesh colliderMesh = null;
+						if (mc != null) {
+							if (!mColliderMeshes.TryGetValue (mc.name, out colliderMesh) && !mLodMeshes.TryGetValue (mc.name, out colliderMesh)) {
+								ColliderReports.Add ("3: Prefab " + mc.name + " had a mesh collider but NO associated collider mesh");
+							} else if (colliderMesh.vertexCount > (3 * 1024)) {
+								if (mc.sharedMesh != colliderMesh) {
+									//mc.sharedMesh = colliderMesh;
+									ColliderReports.Add ("2: Prefab " + mc.name + " had an associated collider mesh, but it is not the mesh on the prefab");
+								} else {
+									ColliderReports.Add ("1: Prefab " + mc.name + " had an associated collider mesh, but vertex count was " + (colliderMesh.vertexCount / 3).ToString ());
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if (GUILayout.Button ("Refresh prefab colliders")) {
+				foreach (StructurePack pack in StructurePacks) {
+					//pack.MeshColliderPrefabs.Clear ();
+					foreach (GameObject prefab in pack.StaticPrefabs) {
+						//see if a collider exists in the COL array already
+						MeshCollider mc = prefab.GetComponent <MeshCollider> ();
+						string mcName = prefab.name.ToLower ();
+						if (mc != null && (
+							mcName.Contains ("cliff") || 
+							mcName.Contains ("rock") || 
+							mcName.Contains ("mud") || 
+							mcName.Contains ("statue") ||
+							mcName.Contains ("bridge") ||
+							mcName.Contains ("wall") ||
+							mcName.Contains ("path") ||
+							mcName.Contains ("wood") ||
+							mcName.Contains ("module") ||
+							mcName.Contains ("pipe") ||
+							mcName.Contains ("crystal") ||
+							mcName.Contains ("base") ||
+							mcName.Contains ("roof") ||
+							mcName.Contains ("castle") ||
+							mcName.Contains ("dungeon")
+							)) { 
+							pack.MeshColliderPrefabs.SafeAdd (prefab);
+						}
+
+						bool colliderExists = false;
+						foreach (GameObject colMeshPrefab in ColliderMeshPrefabs) {
+							if (colMeshPrefab.name.Contains (prefab.name)) {
+								colliderExists = true;
+								Debug.Log ("Not adding " + prefab.name + ", already exists as " + colMeshPrefab.name);
+								break;
+							}
+						}
+
+						if (!colliderExists) {
+							//see if this prefab should be added
+							if (mc != null) {
+								Debug.Log ("Adding " + mc.name + " to mesh collider");
+								ColliderMeshPrefabs.Add (prefab);
+							}
+						}
+					}
+				}
+			}
 
 			if (GUILayout.Button ("Disable object colliders")) {
 				foreach (StructurePack pack in StructurePacks) {

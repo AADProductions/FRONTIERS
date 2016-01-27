@@ -8,10 +8,11 @@ using Frontiers.World.Gameplay;
 
 namespace Frontiers.World.WIScripts
 {
-		public class Spyglass : WIScript
+		public class SpyGlass : WIScript
 		{
 				public static bool IsInUse = false;
 				protected float mFieldOfView = 15f;
+				protected float mFieldOfViewCollapsed = 30f;
 				public float ExtendedCameraSensitivity = 0.25f;
 				public Skill SpyglassSkill;
 				public Transform LookerRoot;
@@ -69,9 +70,9 @@ namespace Frontiers.World.WIScripts
 						CameraFX.Get.SetSpyglass(true);
 						//from now on we'll control where the player looks
 						if (worlditem.State == "Extended") {
-								Player.Local.ZoomCamera(mFieldOfView, ExtendedCameraSensitivity);
+								Player.Local.ZoomCamera (mFieldOfView, ExtendedCameraSensitivity);
 						} else {
-								Player.Local.UnzoomCamera();
+								Player.Local.ZoomCamera (mFieldOfViewCollapsed, ExtendedCameraSensitivity);
 						}
 
 						CanPlaceMarker = false;

@@ -27,7 +27,7 @@ namespace Frontiers.World
 				public float TargetSize = 1f;
 				public float GrowSpeed = 0.25f;
 
-				public void Start()
+				public void OnEnable()
 				{
 						TimeStarted = WorldClock.AdjustedRealTime;
 						rb = gameObject.rigidbody;

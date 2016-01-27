@@ -237,8 +237,6 @@ namespace Frontiers
 		{
 			MouseXAxis = InputControlType.RightStickX;
 			MouseYAxis = InputControlType.RightStickY;
-			MovementXAxis = InputControlType.DPadX;
-			MovementYAxis = InputControlType.DPadY;
 			ScrollWheelAxis = InputControlType.DPadX;
 
 			List <ActionSetting> actionSettings = new List<ActionSetting> ();
@@ -259,20 +257,6 @@ namespace Frontiers
 			actionSettings.Add (aSetting);
 
 			aSetting = ActionSetting.Analog;
-			aSetting.ActionDescription = "Interface Movement Y";
-			aSetting.Controller = MovementXAxis;
-			aSetting.AvailableControllerButtons = DefaultAvailableAxis;
-			aSetting.Axis = ActionSetting.InputAxis.MovementY;
-			actionSettings.Add (aSetting);
-
-			aSetting = ActionSetting.Analog;
-			aSetting.ActionDescription = "Interface Movement X";
-			aSetting.Controller = MovementYAxis;
-			aSetting.AvailableControllerButtons = DefaultAvailableAxis;
-			aSetting.Axis = ActionSetting.InputAxis.MovementX;
-			actionSettings.Add (aSetting);
-
-			aSetting = ActionSetting.Analog;
 			aSetting.ActionDescription = "Selection L / R";
 			aSetting.ActionOnX = (int)InterfaceActionType.SelectionNext;
 			aSetting.ActionOnY = (int)InterfaceActionType.SelectionPrev;
@@ -286,27 +270,63 @@ namespace Frontiers
 			actionSettings.Add (aSetting);
 
 			aSetting = ActionSetting.Analog;
-			aSetting.ActionDescription = "Button L / R";
-			aSetting.ActionOnX = (int)InterfaceActionType.SelectionLeft;
-			aSetting.ActionOnY = (int)InterfaceActionType.SelectionRight;
-			aSetting.Controller = InputControlType.LeftStickX;
-			aSetting.KeyX = KeyCode.LeftArrow;
-			aSetting.KeyY = KeyCode.RightArrow;
-			aSetting.AvailableControllerButtons = DefaultAvailableAxis;
+			aSetting.ActionDescription = "Button Left";
+			aSetting.Action = (int)InterfaceActionType.SelectionLeft;
+			aSetting.Controller = InputControlType.LeftStickLeft;
+			aSetting.Key = KeyCode.LeftArrow;
+			aSetting.Axis = ActionSetting.InputAxis.InterfaceLeft;
+			aSetting.AvailableControllerButtons = DefaultAvailableActions;
 			aSetting.AvailableKeys = DefaultAvailableKeys;
-			aSetting.Axis = ActionSetting.InputAxis.InterfaceX;
+			aSetting.OpposingActions = new int [] {
+				(int)InterfaceActionType.SelectionDown,
+				(int)InterfaceActionType.SelectionUp,
+				(int)InterfaceActionType.SelectionRight,
+			};
 			actionSettings.Add (aSetting);
 
 			aSetting = ActionSetting.Analog;
-			aSetting.ActionDescription = "Button U / D";
-			aSetting.ActionOnX = (int)InterfaceActionType.SelectionDown;
-			aSetting.ActionOnY = (int)InterfaceActionType.SelectionUp;
-			aSetting.Controller = InputControlType.LeftStickY;
-			aSetting.KeyX = KeyCode.DownArrow;
-			aSetting.KeyY = KeyCode.UpArrow;
-			aSetting.AvailableControllerButtons = DefaultAvailableAxis;
+			aSetting.ActionDescription = "Button Right";
+			aSetting.Action = (int)InterfaceActionType.SelectionRight;
+			aSetting.Controller = InputControlType.LeftStickRight;
+			aSetting.Key = KeyCode.RightArrow;
+			aSetting.Axis = ActionSetting.InputAxis.InterfaceRight;
+			aSetting.AvailableControllerButtons = DefaultAvailableActions;
 			aSetting.AvailableKeys = DefaultAvailableKeys;
-			aSetting.Axis = ActionSetting.InputAxis.InterfaceY;
+			aSetting.OpposingActions = new int [] {
+				(int)InterfaceActionType.SelectionDown,
+				(int)InterfaceActionType.SelectionLeft,
+				(int)InterfaceActionType.SelectionUp,
+			};
+			actionSettings.Add (aSetting);
+
+			aSetting = ActionSetting.Analog;
+			aSetting.ActionDescription = "Button Up";
+			aSetting.Action = (int)InterfaceActionType.SelectionUp;
+			aSetting.Controller = InputControlType.LeftStickUp;
+			aSetting.Key = KeyCode.UpArrow;
+			aSetting.Axis = ActionSetting.InputAxis.InterfaceUp;
+			aSetting.AvailableControllerButtons = DefaultAvailableActions;
+			aSetting.AvailableKeys = DefaultAvailableKeys;
+			aSetting.OpposingActions = new int [] {
+				(int)InterfaceActionType.SelectionDown,
+				(int)InterfaceActionType.SelectionLeft,
+				(int)InterfaceActionType.SelectionRight,
+			};
+			actionSettings.Add (aSetting);
+
+			aSetting = ActionSetting.Analog;
+			aSetting.ActionDescription = "Button Down";
+			aSetting.Action = (int)InterfaceActionType.SelectionDown;
+			aSetting.Controller = InputControlType.LeftStickDown;
+			aSetting.Key = KeyCode.DownArrow;
+			aSetting.Axis = ActionSetting.InputAxis.InterfaceDown;
+			aSetting.AvailableControllerButtons = DefaultAvailableActions;
+			aSetting.AvailableKeys = DefaultAvailableKeys;
+			aSetting.OpposingActions = new int [] {
+				(int)InterfaceActionType.SelectionUp,
+				(int)InterfaceActionType.SelectionLeft,
+				(int)InterfaceActionType.SelectionRight,
+			};
 			actionSettings.Add (aSetting);
 
 			aSetting = ActionSetting.Button;

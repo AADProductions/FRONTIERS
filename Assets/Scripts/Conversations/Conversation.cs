@@ -161,7 +161,7 @@ namespace Frontiers.Story.Conversations
 
 		public void Initiate (Character speakingCharacter, Talkative talkative, IConversationIntermediary intermediary)
 		{
-			Debug.Log ("Initiating conversation with " + speakingCharacter.FullName);
+			Debug.Log ("Initiating conversation " + ConversationName + " with " + speakingCharacter.FullName);
 			if (speakingCharacter.Template.TemplateType != CharacterTemplateType.Generic) {
 				Profile.Get.CurrentGame.Character.CharactersSpokenTo.SafeAdd (speakingCharacter.Template.Name);
 			}
@@ -447,6 +447,10 @@ namespace Frontiers.Story.Conversations
 
 		public void MakeOutgoingChoice (Exchange nextExchange, bool gotoOnly, out string dtsOnFailure)
 		{
+			#if DEBUG_CONVOS
+			Debug.Log ("============ MakeOutgoingChoice ============");
+			#endif
+			
 			dtsOnFailure = string.Empty;
 			string latestExchangeName = string.Empty;
 			if (LatestExchange != null) {
@@ -479,17 +483,25 @@ namespace Frontiers.Story.Conversations
 				break;
 
 			case ExchangeOutgoingStyle.SiblingsOff:
+				#if DEBUG_CONVOS
+				Debug.Log ("MakeOutgoingChoice: SIBLINGS OFF in conversation");
+				#endif
 				clearSiblngs = true;
 				break;
 
 			case ExchangeOutgoingStyle.ManualOnly:
-				Debug.Log ("All off in conversation");
-										//all existing options are cleared and only manual #on options are added
+				#if DEBUG_CONVOS
+				Debug.Log ("MakeOutgoingChoice: MANUAL ONLY in conversation");
+				#endif
+				//all existing options are cleared and only manual #on options are added
 				mRunningOutgoingChoices.Clear ();
 				clearSiblngs = true;
 				break;
 
 			case ExchangeOutgoingStyle.Stop:
+				#if DEBUG_CONVOS
+				Debug.Log ("MakeOutgoingChoice: STOP in conversation");
+				#endif
 				addOutgoing = false;
 				break;
 			}
@@ -503,25 +515,50 @@ namespace Frontiers.Story.Conversations
 				foreach (Exchange runningOutgoingChoice in mRunningOutgoingChoices) {
 					//if we haven't picked an option from earlier, let it tag along
 					if (runningOutgoingChoice.NumTimesChosen < 1) {
+						#if DEBUG_CONVOS
+						Debug.Log (" -- Adding " + runningOutgoingChoice.Name + " " + runningOutgoingChoice.PlayerDialog + " to outgoing choices: not chosen yet");
+						#endif
 						runningOutgoingChoices.Add (runningOutgoingChoice);
 					}
 				}
 
 				foreach (Exchange alwaysInclude in mAlwaysInclude) {
+					#if DEBUG_CONVOS
+					Debug.Log (" -- Adding " + alwaysInclude.Name + " " + alwaysInclude.PlayerDialog + " to outgoing choices: always include");
+					#endif
 					runningOutgoingChoices.Add (alwaysInclude);
 				}
 
 				foreach (Exchange outgoingChoice in runningOutgoingChoices) {
 					if (!outgoingChoice.IsAvailable) {
+						#if DEBUG_CONVOS
+						Debug.Log (" -- Skipping " + outgoingChoice.Name + " " + outgoingChoice.PlayerDialog + " in outgoing choices: not available");
+						#endif
 					} else if (outgoingChoice == LastChosenExchange
 					                || (clearSiblngs && AreSiblings (outgoingChoice, nextExchange))
 					                || !outgoingChoice.RequirementsAreMet
 					                || nextExchange.DisabledIncomingChoices.Contains (outgoingChoice.Name)) {
+						#if DEBUG_CONVOS
+						Debug.Log (" -- Skipping " + outgoingChoice.Name + " " + outgoingChoice.PlayerDialog + " in outgoing choices: last chosen exchange (" 
+						           + (outgoingChoice == LastChosenExchange).ToString ()
+						           + "), cleared sibling ("
+						           + (clearSiblngs && AreSiblings (outgoingChoice, nextExchange)).ToString ()
+						           + "), requirements not met ("
+						           + (!outgoingChoice.RequirementsAreMet).ToString ()
+						           + "), or disabled on incoming ("
+						           + (nextExchange.DisabledIncomingChoices.Contains (outgoingChoice.Name)).ToString ()
+						           + ")");
+						#endif
 						if (!string.IsNullOrEmpty (outgoingChoice.DtsOnFailure)) {
-							Debug.Log ("Outgoing choice requirements are not met - dts on failure is " + outgoingChoice.DtsOnFailure);
+							#if DEBUG_CONVOS
+							Debug.Log (" -- (Outgoing choice requirements are not met - dts on failure is " + outgoingChoice.DtsOnFailure + ")");
+							#endif
 							dtsOnFailure = outgoingChoice.DtsOnFailure;
 						}
 					} else {
+						#if DEBUG_CONVOS
+						Debug.Log (" -- Adding " + outgoingChoice.Name + " " + outgoingChoice.PlayerDialog + " to outgoing choices: ");
+						#endif
 						finalOutgoingChoices.Add (outgoingChoice);
 					}
 				}
@@ -530,7 +567,20 @@ namespace Frontiers.Story.Conversations
 				//only 'off' can disable them
 				foreach (Exchange playerOutgoingChoice in LastChosenExchange.PlayerOutgoingChoices) {
 					if (playerOutgoingChoice.IsAvailable && !nextExchange.DisabledIncomingChoices.Contains (playerOutgoingChoice.Name)) {
+						#if DEBUG_CONVOS
+						Debug.Log (" -- Adding " + playerOutgoingChoice.Name + " " + playerOutgoingChoice.PlayerDialog + " to outgoing choices: player outgoing choice");
+						#endif
 						finalOutgoingChoices.Add (playerOutgoingChoice);
+					} else {
+						#if DEBUG_CONVOS
+						Debug.Log (" -- Skipping " + playerOutgoingChoice.Name + " "
+						           + playerOutgoingChoice.PlayerDialog + " to outgoing choices: not available (Available:"
+						           + playerOutgoingChoice.IsAvailable.ToString () 
+						           + ", Disabled:" + playerOutgoingChoice.Disable.ToString () + ", RequirementsMet:" + (playerOutgoingChoice.RequirementsAreMet).ToString ()
+						           + ") or disabled incoming choices includes it ("
+						           + (nextExchange.DisabledIncomingChoices.Contains (playerOutgoingChoice.Name).ToString ())
+						           + ")");
+						#endif
 					}
 				}
 			}

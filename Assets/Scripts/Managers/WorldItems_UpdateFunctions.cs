@@ -330,6 +330,7 @@ namespace Frontiers.World
 				} else if (IsDirty (b)) {
 					return -1;
 				}
+
 				int result = a.DistanceToPlayer.CompareTo (b.DistanceToPlayer);
 				if (result == 0) {
 					//invert the active radius sizes - small is more important than large

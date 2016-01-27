@@ -42,8 +42,11 @@ namespace Frontiers.World
 
 		public override bool OnPlayerEnter ()
 		{
-			if (mMovingPlayerToOtherSide)
+			if (mMovingPlayerToOtherSide) {
+				//we wait for the first intersection then cancel
+				mMovingPlayerToOtherSide = false;
 				return false;
+			}
 
 			bool successfullyPassedTrigger = false;
 
@@ -60,7 +63,7 @@ namespace Frontiers.World
 					//Debug.Log ("Getting exchange index in RequireExchangesConcluded - " + finalConversationName + ", " + finalExchangeName);
 					finalExchangeName = Frontiers.Conversations.Get.ExchangeNameFromIndex (finalConversationName, exchangeIndex);
 				}
-				successfullyPassedTrigger = Conversations.Get.HasCompletedExchange (finalConversationName, finalExchangeName);
+				successfullyPassedTrigger = Conversations.Get.HasCompletedExchange (finalConversationName, finalExchangeName, false);
 			}
 
 			if (State.RequireMissionObjectiveComplated) {
@@ -222,8 +225,10 @@ namespace Frontiers.World
 
 			bool isOnBarrierSide = false;
 			//use the node + barrier to determine direction
-			Vector3 barrierDirection = (GuardNode.Position - BarrierCollider.bounds.center).normalized;
-			Vector3 playerDirection = (Player.Local.Position - BarrierCollider.bounds.center).normalized;
+			Vector3 barrierPosition = BarrierCollider.bounds.center;
+			barrierPosition.y = Player.Local.Position.y;
+			Vector3 barrierDirection = (GuardNode.Position - barrierPosition).normalized;
+			Vector3 playerDirection = (Player.Local.Position - barrierPosition).normalized;
 			float dot = Vector3.Dot (barrierDirection, playerDirection);
 			Debug.Log ("Dot: " + dot.ToString ());
 			if (dot < 0f) {
@@ -261,7 +266,6 @@ namespace Frontiers.World
 			while (mWaitingForStaticFade) {
 				yield return null;
 			}
-			mMovingPlayerToOtherSide = false;
 			yield break;
 		}
 

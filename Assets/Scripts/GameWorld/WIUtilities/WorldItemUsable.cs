@@ -98,6 +98,9 @@ namespace Frontiers.World
 
 						mLastAssociatedSkillList = Skills.Get.SkillsAssociatedWith(Item);
 						for (int i = 0; i < mLastAssociatedSkillList.Count; i++) {
+								#if DEBUG_SKILLS
+								Debug.Log ("Adding list option " + mLastAssociatedSkillList [i].name + " to list");
+					           #endif
 								Skill skill = mLastAssociatedSkillList[i];
 								mOptions.Add(skill.GetListOption(Item));
 						}

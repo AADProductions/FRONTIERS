@@ -27,6 +27,11 @@ namespace Frontiers
 		public List <GameObject> TreePrototypes = new List<GameObject> ();
 		public Material AtsBarkMaterial;
 		public Material AtsLeavesMaterial;
+		protected List <TreeColliderTemplate> colliderTemplatesList = new List<TreeColliderTemplate> ();
+		protected List <GameObject> treePrefabsList = new List<GameObject> ();
+		protected List <TreePrototype> treePrototypesList = new List<TreePrototype> ();
+		protected List <TerrainPrototypeTemplate> newTreeTemplates = new List<TerrainPrototypeTemplate> ();
+		protected Dictionary <int,int> replacementLookup = new Dictionary<int, int> ();
 
 		public string[] AvailablePlantNames {
 			get {
@@ -85,72 +90,123 @@ namespace Frontiers
 
 		public bool GetTerrainPlantPrototypes (List<TerrainPrototypeTemplate> treeTemplates, TreeInstanceTemplate[] treeInstances, ref TreePrototype[] treePrototypes, ref TreeColliderTemplate[] colliderTemplates)
 		{
+			//Debug.Log ("++++++++++++++++++ GetTerrainPlantPrototypes ++++++++++++++++++++++");
 			bool useSubstitutes = Profile.Get.CurrentPreferences.Video.TerrainReduceTreeVariation;
 			GameObject prefab = null;
 			TreeColliderTemplate colliderTemplate = null;
-			List <TreeColliderTemplate> colliderTemplatesList = new List<TreeColliderTemplate> ();
-			List <TreePrototype> treePrototypesList = new List<TreePrototype> ();
-			for (int i = 0; i < treeTemplates.Count; i++) {
-				if (!treeTemplates [i].AssetName.Equals ("PlantInstancePrefab")) {
-					if (GetTerrainPlantPrototype (treeTemplates [i].AssetName, out prefab)) {
-						colliderTemplate = prefab.GetComponent <TreeColliderTemplate> ();
-						if (colliderTemplate == null) {
-							Debug.LogError ("No collider template for " + prefab.name);
-						} else if (useSubstitutes && colliderTemplate.HasLowQualitySubstitute) {
-							//only one level of substitution
-							if (GetTerrainPlantPrototype (colliderTemplate.SubstituteOnLowQuality, out prefab)) {
-								colliderTemplate = prefab.GetComponent <TreeColliderTemplate> ();
-								if (colliderTemplate == null) {
-									Debug.LogError ("No collider template for " + prefab.name);
-								}
-							}
-						}
-					}
 
-					if (colliderTemplate != null) {
-						if (useSubstitutes) {
-							//if we're using substitutes, make sure we don't already have this one in our list
-							int existingPrototypeIndex = -1;
-							for (int j = 0; j < treePrototypesList.Count; j++) {
-								if (treePrototypesList [j].prefab == prefab) {
-									existingPrototypeIndex = j;
-									break;
-								}
+			//if we're using substitutes we have to rebuild the tree templates list
+			if (useSubstitutes) {
+				//then go through and flatten down the templates
+				for (int i = 0; i < treeTemplates.Count; i++) {
+					//Debug.Log ("- Checking template " + i.ToString ());
+					int originalIndex = i;
+					int substituteIndex = -1;
+					GetTerrainPlantPrototype (treeTemplates [i].AssetName, out prefab);
+					colliderTemplate = prefab.GetComponent <TreeColliderTemplate> ();
+					//if this template needs to be replaced
+					if (colliderTemplate == null) {
+						//Debug.Log ("Prefab " + prefab.name + " has no collider template");
+					} else if (colliderTemplate.HasLowQualitySubstitute) {
+						//Debug.Log ("Prefab " + prefab.name + " has low-quality substitute " + colliderTemplate.SubstituteOnLowQuality);
+						//get the replacement prefab
+						GetTerrainPlantPrototype (colliderTemplate.SubstituteOnLowQuality, out prefab);
+						colliderTemplate = prefab.GetComponent <TreeColliderTemplate> ();
+						//see if this replacement already exists
+						for (int j = 0; j < newTreeTemplates.Count; j++) {
+							if (newTreeTemplates [j].AssetName.Equals (prefab.name)) {
+								//already exists! use this replacement index
+								substituteIndex = j;
+								break;
 							}
-							if (existingPrototypeIndex >= 0) {
-								//Debug.Log("Using existing prototype " + existingPrototypeIndex.ToString() + " (" + prefab.name + ")");
-								//if it already exists, make sure the substitutions are updated in the instances
-								//int numReplaced = 0;
-								for (int j = 0; j < treeInstances.Length; j++) {
-									if (treeInstances [j].PrototypeIndex == i) {
-										//this will make it use the right index when converted to an instance
-										TreeInstanceTemplate t = treeInstances [j];
-										t.UsePrototypeSubstitute = true;
-										t.PrototypeSubstituteIndex = existingPrototypeIndex;
-										treeInstances [j] = t;
-										//numReplaced++;
-									}
-								}
-								//Debug.Log("Set " + numReplaced.ToString() + " tree instances to substitute " + existingPrototypeIndex.ToString());
-							} else {
-								//if it doesn't exist yet, just create a new prototype
-								TreePrototype t = new TreePrototype ();
-								t.prefab = prefab;
-								treePrototypesList.Add (t);
-								colliderTemplatesList.Add (colliderTemplate);
-							}
-						} else {
-							//otherwise just add it
-							TreePrototype t = new TreePrototype ();
-							t.prefab = prefab;
-							treePrototypesList.Add (t);
-							colliderTemplatesList.Add (colliderTemplate);
 						}
+					}/* else {
+						Debug.Log ("Prefab " + prefab.name + " has NO low-quality substitute, adding directly");
+						//if we're not using a substitute just add the prefab directly
+						newTreeTemplates.Add (treeTemplates [i]);
+						treePrefabsList.Add (prefab);
+						colliderTemplatesList.Add (colliderTemplate);
+					}*/
+					//if we're using a replacement, add it to the lookup so we can update our instances
+					if (substituteIndex >= 0) {
+						replacementLookup.Add (originalIndex, substituteIndex);
+						//don't add the collider template, it's already attached to the original
+						//Debug.Log ("This substitute (" + colliderTemplate.SubstituteOnLowQuality + ") has been added already at index " + substituteIndex.ToString());
+					} else {
+						//otherwise add the template to the new templates list
+						replacementLookup.Add (originalIndex, newTreeTemplates.Count);
+						newTreeTemplates.Add (treeTemplates [i]);
+						treePrefabsList.Add (prefab);
+						colliderTemplatesList.Add (colliderTemplate);
+						//Debug.Log ("This tree hasn't been added yet, adding now");
 					}
 				}
+
+				/*Debug.Log ("=====PREVIOUS LIST:" + treeTemplates.Count.ToString () + "=====");
+				for (int i = 0; i < treeTemplates.Count; i++) {
+					Debug.Log (treeTemplates [i].AssetName);
+				}
+				Debug.Log ("=====NEW LIST:" + newTreeTemplates.Count.ToString () + "=====");
+				for (int i = 0; i < newTreeTemplates.Count; i++) {
+					Debug.Log (newTreeTemplates [i].AssetName);
+				}
+				Debug.Log ("==========");
+				foreach (KeyValuePair <int,int> replacement in replacementLookup) {
+					Debug.Log (replacement.Key.ToString () + " : " + replacement.Value.ToString ());
+				}*/
+				//now that we're done, clear the old list and add the new list
+				treeTemplates.Clear ();
+				treeTemplates.AddRange (newTreeTemplates);
+				//newTreeTemplates will get cleared below
+
+				//set the use substitutes flag right away
+				//substitute index will be set to -1
+				int numReplaced = -1;
+				TreeInstanceTemplate t;
+				for (int i = 0; i < treeInstances.Length; i++) {
+					t = treeInstances [i];
+					//see if there's a substitution
+					int substituteIndex = -1;
+					if (replacementLookup.TryGetValue (t.PrototypeIndex, out substituteIndex)) {
+						t.UsePrototypeSubstitute = true;
+						t.PrototypeSubstituteIndex = substituteIndex;
+						numReplaced++;
+					}
+					treeInstances [i] = t;
+				}
+				replacementLookup.Clear ();
+				//Debug.Log ("Num replaced: " + numReplaced.ToString ());
+			} else {
+				//if we're not using substitutes this is a lot easier
+				//just go down the line and get all the prefabs
+				for (int i = 0; i < treeTemplates.Count; i++) {
+					GetTerrainPlantPrototype (treeTemplates [i].AssetName, out prefab);
+					colliderTemplate = prefab.GetComponent <TreeColliderTemplate> ();
+					treePrefabsList.Add (prefab);
+					colliderTemplatesList.Add (colliderTemplate);
+				}
+			}
+			//now that we've got a final tree templates list
+			//create all the actual prototypes
+			for (int i = 0; i < treeTemplates.Count; i++) {
+				/*if (treeTemplates [i].AssetName.Equals ("PlantInstancePrefab")) {
+					//skip all plant instance prefabs
+					continue;
+				}*/
+				TreePrototype tree = new TreePrototype ();
+				tree.prefab = treePrefabsList [i];
+				treePrototypesList.Add (tree);
 			}
 			treePrototypes = treePrototypesList.ToArray ();
 			colliderTemplates = colliderTemplatesList.ToArray ();
+
+			//clear everything
+			treePrefabsList.Clear ();
+			colliderTemplatesList.Clear ();
+			treePrototypesList.Clear ();
+			newTreeTemplates.Clear ();
+			replacementLookup.Clear ();
+			//Debug.Log ("++++++++++++++++++ DONE ++++++++++++++++++++++");
 			return true;
 		}
 

@@ -169,6 +169,11 @@ namespace Frontiers.World.WIScripts
 
 		public void TryToFillContainer (bool immediately)
 		{
+			if (mDestroyed) {
+				Debug.Log ("Stack container is destroyed, not filling");
+				return;
+			}
+
 			Purse purse = null;
 			if (worlditem.Is <Purse> (out purse)) {
 				//purses are simple

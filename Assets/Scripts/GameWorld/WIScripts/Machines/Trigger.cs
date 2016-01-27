@@ -24,6 +24,7 @@ namespace Frontiers.World.WIScripts
 		public List <Dynamic> TriggerFailureSources = new List <Dynamic>();
 		public List <string> TriggerFailureMessages = new List <string>();
 		public Animation AnimationTarget;
+		bool mTryingToStart = false;
 
 		public override bool CanBeCarried {
 			get {
@@ -95,7 +96,7 @@ namespace Frontiers.World.WIScripts
 
 		public void TryToTrigger()
 		{
-			if (mWaitingForConfirmation) {
+			if (mWaitingForConfirmation || mTryingToStart) {
 				return;
 			}
 
@@ -130,6 +131,7 @@ namespace Frontiers.World.WIScripts
 
 		protected void TryToStartTrigger()
 		{
+			mTryingToStart = true;
 			OnTriggerTryToStart.SaveInvoke(this);
 			//any dynamics that want to fail the trigger will do so now
 			if (LastTriggerFailed) {
@@ -138,7 +140,7 @@ namespace Frontiers.World.WIScripts
 					string reason = TriggerFailureMessages[i];
 					if (!string.IsNullOrEmpty(reason)) {
 						reason = CleanTriggerMessage(reason, TriggerFailureSources[i].worlditem.DisplayName);
-						GUIManager.PostWarning(TriggerFailureMessages[i]);
+						GUIManager.PostWarning(reason);
 					}
 				}
 			} else {
@@ -151,6 +153,7 @@ namespace Frontiers.World.WIScripts
 					MasterAudio.PlaySound(State.SoundType, worlditem.tr, State.SoundOnTriggerPressed);
 				}
 			}
+			mTryingToStart = false;
 		}
 
 		public void TriggerFail()

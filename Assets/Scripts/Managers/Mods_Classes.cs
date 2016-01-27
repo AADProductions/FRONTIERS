@@ -1756,6 +1756,8 @@ namespace Frontiers
 			CZ = 0f;
 			OriginalTerrain = true;
 			PrototypeIndex = -1;
+			PrototypeSubstituteIndex = -1;
+			UsePrototypeSubstitute = false;
 			R = 0f;
 			G = 0f;
 			B = 0f;
@@ -1799,7 +1801,7 @@ namespace Frontiers
 
 		public int FinalPrototypeIndex {
 			get {
-				if (UsePrototypeSubstitute) {
+				if (UsePrototypeSubstitute && PrototypeSubstituteIndex >= 0) {
 					return PrototypeSubstituteIndex;
 				} else {
 					return PrototypeIndex;

@@ -179,31 +179,58 @@ namespace Frontiers
 			return numTimesInitiated;
 		}
 
-		public bool HasCompletedExchange (string conversationName, string exchangeName)
+		public bool HasCompletedExchange (string conversationName, string exchangeName, bool requireConversationInitiated)
 		{
 			bool result = false;
 			
 			ConversationState state = null;
 			if (GetConversationState (conversationName, ref state)) {
-				int numTimes = 0;
-				if (state.CompletedExchanges.TryGetValue (exchangeName, out numTimes)) {
+				if (requireConversationInitiated && state.NumTimesInitiated <= 0) {
+					#if DEBUG_CONVOS
+					Debug.Log ("---- Hasn't initiated conversation " + conversationName + " so returning true for " + exchangeName);
+					#endif
 					result = true;
-				}			
+				} else {
+					int numTimes = 0;
+					if (state.CompletedExchanges.TryGetValue (exchangeName, out numTimes)) {
+						#if DEBUG_CONVOS
+						Debug.Log ("---- HAS completed exchange " + conversationName + " " + exchangeName);
+						#endif
+						result = true;
+					}
+					#if DEBUG_CONVOS
+					else { Debug.Log ("---- HAS NOT completed exchange " + conversationName + " " + exchangeName); }
+					#endif
+				}
 			}
+			#if DEBUG_CONVOS
+			else { Debug.Log ("---- Couldn't get conversation state " + conversationName); }
+			#endif
 			
 			return result;
 		}
 
-		public bool HasCompletedExchange (string conversationName, string exchangeName, out int numTimes)
+		public bool HasCompletedExchange (string conversationName, string exchangeName, bool requireConversationInitiated, out int numTimes)
 		{
 			bool result = false;
 			numTimes = 0;
 			ConversationState state = null;
 			if (GetConversationState (conversationName, ref state)) {
-				if (state.CompletedExchanges.TryGetValue (exchangeName, out numTimes)) {
+				if (requireConversationInitiated && state.NumTimesInitiated <= 0) {
+					#if DEBUG_CONVOS
+					Debug.Log ("---- Hasn't initiated conversation " + conversationName + " so returning true for " + exchangeName);
+					#endif
+					result = true;
+				} else if (state.CompletedExchanges.TryGetValue (exchangeName, out numTimes)) {
+					#if DEBUG_CONVOS
+					Debug.Log ("---- HAS completed exchange " + conversationName + " " + exchangeName);
+					#endif
 					result = true;
 				}			
 			}
+			#if DEBUG_CONVOS
+			else { Debug.Log ("---- Couldn't get conversation state " + conversationName); }
+			#endif
 
 			return result;
 		}

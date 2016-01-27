@@ -1001,11 +1001,8 @@ namespace Frontiers.World.WIScripts
 
 		public IEnumerator OnDoorOpen (Door door)
 		{
-			if (door.State.Ornamental)
-				yield break;
-
 			if (Is (StructureLoadState.InteriorLoaded)) {
-				if (door.State.OuterEntrance) {
+				if (door.State.TriggerStructureLoad) {
 					RefreshColliders (true);
 				}
 				yield break;

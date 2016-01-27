@@ -89,6 +89,7 @@ namespace Frontiers
 			if (!mCheckingSurroundings) {
 				mCheckingSurroundings = true;
 				StartCoroutine (CheckSurroundings ());
+				StartCoroutine (CheckRaycasts ());
 			}
 
 			mTerrainType = Colors.Alpha (Color.black, 0f);
@@ -178,6 +179,12 @@ namespace Frontiers
 			get {
 				return ((WorldItemBelow != null && !WorldItemBelow.Destroyed)
 				|| (TerrainBelow != null && !TerrainBelow.Destroyed));
+			}
+		}
+
+		public bool IsColliderBelowPlayer {
+			get {
+				return (ColliderBelow != null);
 			}
 		}
 
@@ -338,6 +345,8 @@ namespace Frontiers
 		public IItemOfInterest TerrainFocus;
 		public RaycastHit WorldItemFocusHitInfo;
 		public RaycastHit TerrainFocusHitInfo;
+		public RaycastHit ColliderBelowHitInfo;
+		public Collider ColliderBelow;
 		public IItemOfInterest WorldItemBelow;
 		public IItemOfInterest TerrainBelow;
 		public RaycastHit WorldItemBelowHitInfo;
@@ -510,38 +519,84 @@ namespace Frontiers
 
 		#endregion
 
-		public IEnumerator CheckSurroundings ()
-		{
-			mCheckingSurroundings = true;
+		void ClearSurroundingsFocus () {
+			ClosestObjectForward = null;
+			ClosestObjectFocus = null;
+			ClosestObjectInRange = null;
+			
+			WorldItemFocus = null;
+			TerrainFocus = null;
+			WorldItemForward = null;
+			TerrainForward = null;
+			WorldItemUnderGrabber = null;
+			TerrainUnderGrabber = null;
+			
+			ReceptacleInPlayerFocus	= null;
+			ReceptacleUnderGrabber = null;
+		}
+
+		void ClearSurroundingsUp () {
+			ClosestObjectAbove = null;
+			WorldItemAbove = null;
+			TerrainAbove = null;
+		}
+
+		void ClearSurroundingsDown () {
+			ClosestObjectBelow = null;			
+			WorldItemBelow = null;
+			TerrainBelow = null;
+			ColliderBelow = null;
+		}
+
+		public IEnumerator CheckRaycasts () {
 			while (mCheckingSurroundings) {
 				while (!player.HasSpawned || player.IsHijacked || !GameManager.Is (FGameState.InGame)) {
 					//wait it out, we'll get bad data
 					yield return null;
 				}
 				//put a tick between each of these
-				//TODO may have to move RaycastFocus to separate coroutine
-				ClearSurroundings ();
+				ClearSurroundingsFocus ();
 				try {
-					mPlayerHeadPosition = player.HeadPosition;
 					RaycastAllFocus ();
 				} catch (Exception e) {
 					Debug.LogException (e);
 				}
 				yield return null;
+				ClearSurroundingsUp ();
 				try {
 					RaycastAllUp ();
 				} catch (Exception e) {
 					Debug.LogException (e);
 				}
+				yield return null;
+				ClearSurroundingsDown ();
+				try {
+					RaycastAllDown ();
+				} catch (Exception e) {
+					Debug.LogException (e);
+				}
+				mSanityCheck++;
+				if (mSanityCheck > 20) {
+					mSanityCheck = 0;
+					GroundSanityCheck ();
+				}
+			}
+		}
+
+		public IEnumerator CheckSurroundings ()
+		{
+			while (mCheckingSurroundings) {
+				while (!player.HasSpawned || player.IsHijacked || !GameManager.Is (FGameState.InGame)) {
+					//wait it out, we'll get bad data
+					yield return null;
+				}
 				//boy these checks every frame are annoying, TODO fix these please
 				yield return null;
 				if (player.HasSpawned && !player.IsHijacked && GameManager.Is (FGameState.InGame)) {
-					mPlayerHeadPosition = player.HeadPosition;
 					CheckDirectSunlight ();
 				}
 				yield return null;
 				if (player.HasSpawned && !player.IsHijacked && GameManager.Is (FGameState.InGame)) {
-					mPlayerHeadPosition = player.HeadPosition;
 					CheckTerrainType ();
 				}
 				yield return null;
@@ -792,7 +847,9 @@ namespace Frontiers
 				}
 			}
 
-			if (GameManager.Is (FGameState.InGame) && player.HasSpawned) {
+			mPlayerHeadPosition = player.HeadPosition;
+			
+			/*if (GameManager.Is (FGameState.InGame) && player.HasSpawned) {
 				//we have to do this every frame to identify moving platforms etc
 				RaycastAllDown ();
 				mSanityCheck++;
@@ -800,7 +857,7 @@ namespace Frontiers
 					mSanityCheck = 0;
 					GroundSanityCheck ();
 				}
-			}
+			}*/
 		}
 
 		#region hostiles and danger
@@ -1013,6 +1070,8 @@ namespace Frontiers
 
 			ReceptacleInPlayerFocus	= null;
 			ReceptacleUnderGrabber = null;
+
+			ColliderBelow = null;
 		}
 
 		public void GroundSanityCheck ()
@@ -1044,21 +1103,39 @@ namespace Frontiers
 		{
 			//if we're on a moving platform take the platform's velocity into account when doing raycasts
 			//we don't want to lose the platform
-			downRaycastStart = player.Position + Vector3.up * 0.01f;
-			float distance = Globals.RaycastAllDownDistance + 0.01f;
+			downRaycastStart = player.Position;// + Vector3.up * 0.5f;
+			float distance = Globals.RaycastAllDownDistance;// + 0.5f;
 			if (IsOnMovingPlatform) {
-				downRaycastStart.y = MovingPlatformUnderPlayer.tr.position.y + 0.15f;
-				distance += 0.15f;
+				downRaycastStart.y = Mathf.Max (downRaycastStart.y, MovingPlatformUnderPlayer.tr.position.y + Mathf.Abs (MovingPlatformUnderPlayer.CurrentVelocity.y) + 0.15f);
+				distance += Mathf.Abs (MovingPlatformUnderPlayer.CurrentVelocity.y);
 			}
 			downItemOfInterest = null;
 			MovingPlatform mp = null;
+			float highestPoint = Mathf.NegativeInfinity;
+			float movingPlatformPoint = Mathf.NegativeInfinity;
+
 			RaycastHit[] hits = Physics.RaycastAll (downRaycastStart, player.DownVector, distance, Globals.LayersActive);
+			//Debug.Log ("Hit " + hits.Length.ToString () + " things raycast down");
 			for (int i = 0; i < hits.Length; i++) {
 				downHit = hits [i];
+				//Debug.Log ("Hit thing: " + downHit.collider.name);
+				bool hitMovingPlatform = false;
 				//check for moving platforms directly
-				if (mp == null && downHit.collider.attachedRigidbody != null) {
+				if (mp == null && !downHit.collider.isTrigger && downHit.collider.attachedRigidbody != null) {
 					mp = downHit.collider.attachedRigidbody.GetComponent <MovingPlatform> ();
+					if (mp != null) {
+						movingPlatformPoint = downHit.point.y;
+						hitMovingPlatform = true;
+					}
 				}
+
+				if (!hitMovingPlatform) {
+					highestPoint = Mathf.Max (highestPoint, downHit.point.y);
+				}
+
+				//check for the closest collider regardless of what kind of thing it is
+				CheckForClosest (ref ColliderBelowHitInfo, ref ColliderBelow, downHit);
+				
 				if (WorldItems.GetIOIFromCollider (downHit.collider, true, out downItemOfInterest)) {
 					switch (downItemOfInterest.IOIType) {
 					case ItemOfInterestType.WorldItem:
@@ -1078,6 +1155,12 @@ namespace Frontiers
 					}
 				}
 			}
+
+			if (mp != null && ClosestObjectBelow != null && ClosestObjectBelow.gameObject != mp.gameObject) {
+				Debug.Log ("Found platform, but closest object " + ClosestObjectBelow.gameObject.name + " was not " + mp.name + ", mp dist " + movingPlatformPoint.ToString () + " obj dist " + highestPoint.ToString());
+				mp = null;
+			}
+
 			Array.Clear (hits, 0, hits.Length);
 			hits = null;
 
@@ -1288,6 +1371,16 @@ namespace Frontiers
 			}
 		}
 
+		protected void CheckForClosest (ref RaycastHit currentHit, ref Collider collider, RaycastHit hit)
+		{
+			float currentDistance = Vector3.Distance (mPlayerHeadPosition, currentHit.point);
+			float contenderDistance = Vector3.Distance (mPlayerHeadPosition, hit.point);
+			if (contenderDistance < currentDistance) {
+				currentHit = hit;
+				collider = hit.collider;
+			}
+		}
+		
 		protected void CheckForClosest (ref IItemOfInterest currentClosest, ref RaycastHit currentHit, IItemOfInterest contender, RaycastHit hit, bool checkForRange)
 		{
 			CheckForClosest (ref currentClosest, ref currentHit, ref bodyPartCheck, contender, hit, null, checkForRange);

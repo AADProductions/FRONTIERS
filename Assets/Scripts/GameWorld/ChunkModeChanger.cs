@@ -414,6 +414,7 @@ public class ChunkModeChanger : MonoBehaviour
 	protected void Finish ()
 	{
 		Chunk.CurrentMode = Chunk.TargetMode;
+		Chunk.ShowAboveGround (!Player.Local.Surroundings.IsUnderground);
 		mFinished = true;
 		GameObject.Destroy (this);
 		GameWorld.Get.RefreshTerrainDetailSettings ();

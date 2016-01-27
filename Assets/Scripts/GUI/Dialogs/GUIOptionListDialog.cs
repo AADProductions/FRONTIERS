@@ -1,3 +1,4 @@
+//#define DEBUG_SKILLS
 using UnityEngine;
 using System;
 using System.Runtime.Serialization;
@@ -108,7 +109,9 @@ namespace Frontiers.GUI
 		{
 			int numButtonsCreated = 0;
 			foreach (WIListOption option in options) {
-				////Debug.Log ("Creating buttons");
+				#if DEBUG_SKILLS
+				Debug.Log ("Creating button for " + option.OptionText);
+				#endif
 				if (option.HasFlavors) {
 					for (int flavorIndex = 0; flavorIndex < option.Flavors.Count; flavorIndex++) {
 						if (CreateButton (option, flavorIndex, buttonPosition, functionName)) {
@@ -126,150 +129,154 @@ namespace Frontiers.GUI
 
 		protected bool CreateButton (WIListOption option, int flavorIndex, float buttonPosition, string functionName)
 		{
-			if (option.IsValid) {
-				UIButton randomPrototype = ButtonPrototypes [UnityEngine.Random.Range (0, ButtonPrototypes.Count)];
-				UIButton newButton = NGUITools.AddChild (ScreenEdgeOffset.gameObject, randomPrototype.gameObject).GetComponent <UIButton> ();
-
-				UISprite newButtonBackground = newButton.transform.FindChild ("Background").GetComponent <UISprite> ();
-				UISprite newButtonSelection = newButton.transform.FindChild ("Selection").GetComponent <UISprite> ();
-				UILabel newButtonLabel = newButton.transform.FindChild ("Label").GetComponent <UILabel> ();
-				UISprite overlaySprite = newButton.transform.FindChild ("Overlay").GetComponent <UISprite> ();
-
-				newButton.hover = Colors.Get.GeneralHighlightColor;
-				newButton.defaultColor = Colors.Darken (Colors.Get.GeneralHighlightColor, 0f);
-				newButtonSelection.color = Colors.Darken (Colors.Get.GeneralHighlightColor, 0f);
-				newButtonLabel.effectColor = Colors.Get.MenuButtonTextOutlineColor;
-				newButtonLabel.effectStyle = UILabel.Effect.Shadow;//UILabel.Effect.Outline;
-
-				newButtonLabel.text = option.OptionText;
-				newButton.name = option.Result;
-				newButtonLabel.color = option.TextColor;
-				if (option.ObexFont) {
-					newButtonLabel.useDefaultLabelFont = false;
-					newButtonLabel.multiLine = false;
-					newButtonLabel.transform.localScale = Vector3.one * 15f;
-					newButtonLabel.font = Mats.Get.ObexFont;
-				}
-				
-				if (flavorIndex >= 0) {
-					if (flavorIndex < option.Flavors.Count) {
-						if (string.IsNullOrEmpty (option.Flavors [flavorIndex])) {
-							return false;
-						} else {
-							newButtonLabel.text = option.Flavors [flavorIndex];
-							newButton.name += "_" + flavorIndex.ToString ();
-						}
-					} else {
-						newButton.name = option.Result + "_" + flavorIndex.ToString ();
-					}
-				}
-
-				Transform currencyTransform = newButton.transform.FindChild ("Currency");
-				if (option.RequiresCurrency) {
-					Transform currencyLabelTransform = currencyTransform.Find ("CurrencyLabel");
-					Transform currencyDopplegangerParent = currencyTransform.Find ("CurrencyDopplegangerParent");
-					UILabel currencyLabel = currencyLabelTransform.gameObject.GetComponent <UILabel> ();
-					string inventoryItemName = string.Empty;
-					GenericWorldItem currencyDopplegangerProps = null;
-					switch (option.RequiredCurrencyType) {
-					case WICurrencyType.A_Bronze:
-					default:
-						currencyDopplegangerProps = Currency.BronzeGenericWorldItem;
-						inventoryItemName = Currency.BronzeCurrencyNamePlural;
-						break;
-
-					case WICurrencyType.B_Silver:
-						currencyDopplegangerProps = Currency.SilverGenericWorldItem;
-						inventoryItemName = Currency.SilverCurrencyNamePlural;
-						break;
-
-					case WICurrencyType.C_Gold:
-						currencyDopplegangerProps = Currency.GoldIGenericWorldItem;
-						inventoryItemName = Currency.GoldCurrencyNamePlural;
-						break;
-
-					case WICurrencyType.D_Luminite:
-						currencyDopplegangerProps = Currency.LumenGenericWorldItem;
-						inventoryItemName = Currency.LumenCurrencyNamePlural;
-						break;
-
-					case WICurrencyType.E_Warlock:
-						currencyDopplegangerProps = Currency.WarlockGenericWorldItem;
-						inventoryItemName = Currency.WarlockCurrencyNamePlural;
-						break;
-					}
-					currencyLabel.text = option.CurrencyValue.ToString () + " " + inventoryItemName;
-					GameObject currencyDoppleganger = WorldItems.GetDoppleganger (currencyDopplegangerProps, currencyDopplegangerParent, null, WIMode.Stacked, 1f);
-				} else {
-					currencyTransform.gameObject.SetActive (false);
-				}
-
-				if (option.Disabled) {
-					newButton.SendMessage ("SetDisabled");
-					newButton.enabled = false;
-					newButtonBackground.color = Colors.Disabled (option.BackgroundColor);
-					newButtonLabel.color = Colors.Disabled (option.TextColor);
-					newButton.hover = Colors.Disabled (newButton.hover);
-					overlaySprite.color = option.OverlayColor;
-									
-					UIButtonScale newButtonScale = newButton.GetComponent <UIButtonScale> ();
-					newButtonScale.enabled = false;
-				} else {
-					newButton.SendMessage ("SetEnabled");
-					newButtonBackground.color = option.BackgroundColor;
-					newButtonLabel.color = option.TextColor;
-					overlaySprite.color = option.OverlayColor;
-					
-					UIButtonMessage newButtonMessage = newButton.GetComponent <UIButtonMessage> ();
-					newButtonMessage.target = this.gameObject;
-					newButtonMessage.functionName = functionName;
-				}
-				
-				newButton.transform.localPosition	= new Vector3 (0.0f, buttonPosition, 0.0f);
-
-				Transform credentialsTransform = newButton.transform.FindChild ("Credentials");
-				if (string.IsNullOrEmpty (option.CredentialsIconName)) {
-					credentialsTransform.gameObject.SetActive (false);
-				} else {
-					Transform spriteTransform = credentialsTransform.FindChild ("CredentialsSprite");
-					Transform spriteBackgroundTransform	= credentialsTransform.transform.FindChild ("CredentialsBackground");
-					UISprite sprite = spriteTransform.gameObject.GetComponent <UISprite> ();
-					UISprite backgroundSprite = spriteBackgroundTransform.gameObject.GetComponent <UISprite> ();
-					sprite.spriteName = option.CredentialsIconName;
-					sprite.color = newButtonBackground.color;
-					backgroundSprite.enabled = true;
-					backgroundSprite.color = option.IconColor;
-				}
-
-
-				Transform iconTransform = newButton.transform.FindChild ("Icon");
-				if (string.IsNullOrEmpty (option.IconName)) {
-					iconTransform.gameObject.SetActive (false);
-				} else {
-					Transform spriteTransform = iconTransform.FindChild ("IconSprite");
-					Transform spriteBackgroundTransform	= iconTransform.transform.FindChild ("IconBackground");
-					Transform negateIconTransform = iconTransform.transform.FindChild ("NegateIcon");
-					UISprite negateIconSprite = negateIconTransform.gameObject.GetComponent <UISprite> ();
-					UISprite sprite = spriteTransform.gameObject.GetComponent <UISprite> ();
-					UISprite backgroundSprite = spriteBackgroundTransform.gameObject.GetComponent <UISprite> ();
-					sprite.spriteName = option.IconName;
-					sprite.color = option.IconColor;
-					backgroundSprite.enabled = true;
-					backgroundSprite.color = option.BackgroundColor;
-					if (option.Disabled) {
-						sprite.color = Colors.Blacken (sprite.color);
-					}
-					if (option.NegateIcon) {
-						negateIconSprite.enabled = true;
-					} else {
-						negateIconSprite.enabled = false;
-					}
-					backgroundSprite.color = option.BackgroundColor;
-				}
-
-				return true;
+			if (!option.IsValid) {
+				#if DEBUG_SKILLS
+				Debug.Log ("Invalid option " + option.OptionText + " - not creating button");
+				#endif
+				return false;
 			}
-			return false;
+
+			UIButton randomPrototype = ButtonPrototypes [UnityEngine.Random.Range (0, ButtonPrototypes.Count)];
+			UIButton newButton = NGUITools.AddChild (ScreenEdgeOffset.gameObject, randomPrototype.gameObject).GetComponent <UIButton> ();
+			
+			UISprite newButtonBackground = newButton.transform.FindChild ("Background").GetComponent <UISprite> ();
+			UISprite newButtonSelection = newButton.transform.FindChild ("Selection").GetComponent <UISprite> ();
+			UILabel newButtonLabel = newButton.transform.FindChild ("Label").GetComponent <UILabel> ();
+			UISprite overlaySprite = newButton.transform.FindChild ("Overlay").GetComponent <UISprite> ();
+			
+			newButton.hover = Colors.Get.GeneralHighlightColor;
+			newButton.defaultColor = Colors.Darken (Colors.Get.GeneralHighlightColor, 0f);
+			newButtonSelection.color = Colors.Darken (Colors.Get.GeneralHighlightColor, 0f);
+			newButtonLabel.effectColor = Colors.Get.MenuButtonTextOutlineColor;
+			newButtonLabel.effectStyle = UILabel.Effect.Shadow;//UILabel.Effect.Outline;
+			
+			newButtonLabel.text = option.OptionText;
+			newButton.name = option.Result;
+			newButtonLabel.color = option.TextColor;
+			if (option.ObexFont) {
+				newButtonLabel.useDefaultLabelFont = false;
+				newButtonLabel.multiLine = false;
+				newButtonLabel.transform.localScale = Vector3.one * 15f;
+				newButtonLabel.font = Mats.Get.ObexFont;
+			}
+			
+			if (flavorIndex >= 0) {
+				if (flavorIndex < option.Flavors.Count) {
+					if (string.IsNullOrEmpty (option.Flavors [flavorIndex])) {
+						return false;
+					} else {
+						newButtonLabel.text = option.Flavors [flavorIndex];
+						newButton.name += "_" + flavorIndex.ToString ();
+					}
+				} else {
+					newButton.name = option.Result + "_" + flavorIndex.ToString ();
+				}
+			}
+			
+			Transform currencyTransform = newButton.transform.FindChild ("Currency");
+			if (option.RequiresCurrency) {
+				Transform currencyLabelTransform = currencyTransform.Find ("CurrencyLabel");
+				Transform currencyDopplegangerParent = currencyTransform.Find ("CurrencyDopplegangerParent");
+				UILabel currencyLabel = currencyLabelTransform.gameObject.GetComponent <UILabel> ();
+				string inventoryItemName = string.Empty;
+				GenericWorldItem currencyDopplegangerProps = null;
+				switch (option.RequiredCurrencyType) {
+				case WICurrencyType.A_Bronze:
+				default:
+					currencyDopplegangerProps = Currency.BronzeGenericWorldItem;
+					inventoryItemName = Currency.BronzeCurrencyNamePlural;
+					break;
+					
+				case WICurrencyType.B_Silver:
+					currencyDopplegangerProps = Currency.SilverGenericWorldItem;
+					inventoryItemName = Currency.SilverCurrencyNamePlural;
+					break;
+					
+				case WICurrencyType.C_Gold:
+					currencyDopplegangerProps = Currency.GoldIGenericWorldItem;
+					inventoryItemName = Currency.GoldCurrencyNamePlural;
+					break;
+					
+				case WICurrencyType.D_Luminite:
+					currencyDopplegangerProps = Currency.LumenGenericWorldItem;
+					inventoryItemName = Currency.LumenCurrencyNamePlural;
+					break;
+					
+				case WICurrencyType.E_Warlock:
+					currencyDopplegangerProps = Currency.WarlockGenericWorldItem;
+					inventoryItemName = Currency.WarlockCurrencyNamePlural;
+					break;
+				}
+				currencyLabel.text = option.CurrencyValue.ToString () + " " + inventoryItemName;
+				GameObject currencyDoppleganger = WorldItems.GetDoppleganger (currencyDopplegangerProps, currencyDopplegangerParent, null, WIMode.Stacked, 1f);
+			} else {
+				currencyTransform.gameObject.SetActive (false);
+			}
+			
+			if (option.Disabled) {
+				newButton.SendMessage ("SetDisabled");
+				newButton.enabled = false;
+				newButtonBackground.color = Colors.Disabled (option.BackgroundColor);
+				newButtonLabel.color = Colors.Disabled (option.TextColor);
+				newButton.hover = Colors.Disabled (newButton.hover);
+				overlaySprite.color = option.OverlayColor;
+				
+				UIButtonScale newButtonScale = newButton.GetComponent <UIButtonScale> ();
+				newButtonScale.enabled = false;
+			} else {
+				newButton.SendMessage ("SetEnabled");
+				newButtonBackground.color = option.BackgroundColor;
+				newButtonLabel.color = option.TextColor;
+				overlaySprite.color = option.OverlayColor;
+				
+				UIButtonMessage newButtonMessage = newButton.GetComponent <UIButtonMessage> ();
+				newButtonMessage.target = this.gameObject;
+				newButtonMessage.functionName = functionName;
+			}
+			
+			newButton.transform.localPosition	= new Vector3 (0.0f, buttonPosition, 0.0f);
+			
+			Transform credentialsTransform = newButton.transform.FindChild ("Credentials");
+			if (string.IsNullOrEmpty (option.CredentialsIconName)) {
+				credentialsTransform.gameObject.SetActive (false);
+			} else {
+				Transform spriteTransform = credentialsTransform.FindChild ("CredentialsSprite");
+				Transform spriteBackgroundTransform	= credentialsTransform.transform.FindChild ("CredentialsBackground");
+				UISprite sprite = spriteTransform.gameObject.GetComponent <UISprite> ();
+				UISprite backgroundSprite = spriteBackgroundTransform.gameObject.GetComponent <UISprite> ();
+				sprite.spriteName = option.CredentialsIconName;
+				sprite.color = newButtonBackground.color;
+				backgroundSprite.enabled = true;
+				backgroundSprite.color = option.IconColor;
+			}
+			
+			
+			Transform iconTransform = newButton.transform.FindChild ("Icon");
+			if (string.IsNullOrEmpty (option.IconName)) {
+				iconTransform.gameObject.SetActive (false);
+			} else {
+				Transform spriteTransform = iconTransform.FindChild ("IconSprite");
+				Transform spriteBackgroundTransform	= iconTransform.transform.FindChild ("IconBackground");
+				Transform negateIconTransform = iconTransform.transform.FindChild ("NegateIcon");
+				UISprite negateIconSprite = negateIconTransform.gameObject.GetComponent <UISprite> ();
+				UISprite sprite = spriteTransform.gameObject.GetComponent <UISprite> ();
+				UISprite backgroundSprite = spriteBackgroundTransform.gameObject.GetComponent <UISprite> ();
+				sprite.spriteName = option.IconName;
+				sprite.color = option.IconColor;
+				backgroundSprite.enabled = true;
+				backgroundSprite.color = option.BackgroundColor;
+				if (option.Disabled) {
+					sprite.color = Colors.Blacken (sprite.color);
+				}
+				if (option.NegateIcon) {
+					negateIconSprite.enabled = true;
+				} else {
+					negateIconSprite.enabled = false;
+				}
+				backgroundSprite.color = option.BackgroundColor;
+			}
+			
+			return true;
 		}
 
 		public virtual void OnClickOptionButton (GameObject sender)

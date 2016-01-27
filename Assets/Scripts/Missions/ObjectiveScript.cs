@@ -521,6 +521,7 @@ namespace Frontiers.World.Gameplay
 				public string ConversationName = "Conversation";
 				public string ExchangeName = string.Empty;
 				public int ExchangeIndex = 0;
+				public bool RequireConversationInitiated = true;
 
 				public override List <AvatarAction>	Subscriptions {
 						get {
@@ -533,7 +534,7 @@ namespace Frontiers.World.Gameplay
 						if (string.IsNullOrEmpty(ExchangeName)) {
 								ExchangeName = Conversations.Get.ExchangeNameFromIndex(DataImporter.GetNameFromDialogName(ConversationName), ExchangeIndex);
 						}
-						if (Conversations.Get.HasCompletedExchange(DataImporter.GetNameFromDialogName(ConversationName), ExchangeName)) {
+						if (Conversations.Get.HasCompletedExchange(DataImporter.GetNameFromDialogName(ConversationName), ExchangeName, RequireConversationInitiated)) {
 								HasCompleted = true;
 								Status |= MissionStatus.Completed;
 						}

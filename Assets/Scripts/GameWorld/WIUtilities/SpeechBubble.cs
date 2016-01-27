@@ -20,7 +20,7 @@ namespace Frontiers.World
 
 		public void Start ()
 		{
-			Debug.Log ("Creating speech bubble...");
+			//Debug.Log ("Creating speech bubble...");
 			gameObject.layer = Globals.LayerNumAwarenessBroadcaster;
 			SphereCollider sc = gameObject.AddComponent <SphereCollider> ();
 			sc.isTrigger = true;
@@ -78,14 +78,14 @@ namespace Frontiers.World
 
 		protected void DestroyInAMoment ()
 		{
-			if (!mStartedDestroying) {
+			if (!mStartedDestroying && !mDestroyed) {
 				StartCoroutine (DestroyOverTime ());
 			}
 		}
 
 		public void OnTriggerEnter (Collider other)
 		{
-			if (mStartedDestroying) {
+			if (mStartedDestroying || mDestroyed) {
 				return;
 			}
 
@@ -123,6 +123,11 @@ namespace Frontiers.World
 			yield break;
 		}
 
+		void OnDestroy () {
+			mDestroyed = true;
+		}
+
 		protected bool mStartedDestroying = false;
+		protected bool mDestroyed = false;
 	}
 }

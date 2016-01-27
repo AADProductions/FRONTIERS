@@ -1,3 +1,4 @@
+//#define DEBUG_SKILLS
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;

@@ -342,6 +342,10 @@ namespace Frontiers
 
 		public IEnumerator PlayMusic (MusicType music, MusicVolume volume)
 		{
+			//TEMP
+			yield break;
+			//TEMP
+
 			while (!Manager.IsAwake <Mods> ()) {
 				yield return null;
 			}

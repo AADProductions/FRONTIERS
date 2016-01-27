@@ -77,11 +77,13 @@ namespace Frontiers
 			}
 		}
 
-		public bool HasKey (string keyType, string keyTag)
+		public bool HasKey (string keyType, string keyTag, out string keyName)
 		{
+			keyName = string.Empty;
 			for (int i = 0; i < State.PlayerKeyChain.Keys.Count; i++) {
 				KeyState keyState = State.PlayerKeyChain.Keys [i];
 				if (keyState.KeyType == keyType && keyState.KeyTag == keyTag) {
+					keyName = keyState.KeyName;
 					return true;
 				}
 			}
@@ -506,11 +508,13 @@ namespace Frontiers
 					StackItem keyItem = item.GetStackItem (WIMode.Unloaded);
 					keyItem.GetStateData <KeyState> (out keyState);
 				}
-				item.RemoveFromGame ();
 				if (State.PlayerKeyChain.AddKey (keyState)) {
 					GUIManager.PostSuccess ("Added key to log");
 				}
-				return true;
+				if (keyState.DisappearFromInventory) {
+					item.RemoveFromGame ();
+					return true;
+				}
 			}
 
 			if (item.Is <BookAvatar> ()) {

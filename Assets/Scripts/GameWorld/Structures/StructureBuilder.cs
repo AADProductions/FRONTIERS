@@ -148,6 +148,9 @@ namespace Frontiers.World
 			if (GUILayout.Button ("\nToggle Destroyed\n")) {
 				StructureBuilder.ToggleDestroyedPrefabs ();
 			}
+			if (Template != null) {
+				Template.UseLOD = GUILayout.Toggle (Template.UseLOD, "Use LOD");
+			}
 
 			UnityEngine.GUI.color = Color.yellow;
 			GUILayout.Label ("FILE SAVE AND LOAD OPTIONS:");
@@ -329,6 +332,7 @@ namespace Frontiers.World
 						                     ParentStructure.ExteriorLodRenderers,
 						                     ParentStructure.ExteriorLodRenderersDestroyed,
 						                     false,
+											 Template.UseLOD,
 						                     this,
 						                     Template.Name);
 					while (generateMeshes.MoveNext ()) {
@@ -418,6 +422,7 @@ namespace Frontiers.World
 							                     null,
 							                     null,
 							                     true,
+							 					 Template.UseLOD,
 							                     this,
 							                     Template.Name);
 						while (generateMeshes.MoveNext ()) {
@@ -461,13 +466,13 @@ namespace Frontiers.World
 							ParentStructure.InteriorMovementNodes = new List <MovementNode> ();
 						}
 						ParentStructure.InteriorMovementNodes.AddRange (mCurrentTemplateGroup.MovementNodes);
-						Debug.Log ("Done generating interior variant " + interiorVariant.ToString () + ", state is " + State.ToString ());
-					} else {
+						//Debug.Log ("Done generating interior variant " + interiorVariant.ToString () + ", state is " + State.ToString ());
+					} /*else {
 						Debug.Log ("Didn't generate items for interior variant "
 							+ interiorVariant.ToString ()
 							+ " because it has either been loaded once (" + ParentStructure.State.InteriorsLoadedOnce.Contains (interiorVariant).ToString()
 							+ ") or it's out of range (" + (interiorVariant >= Template.InteriorVariants.Count).ToString () + ")");
-					}
+					}*/
 				}
 										//Debug.Log ("Finished generating states");
 				mCurrentTemplateGroup = null;
@@ -490,6 +495,7 @@ namespace Frontiers.World
 						                     MinorParent.ExteriorLODRenderers,
 						                     MinorParent.ExteriorLODRenderersDestroyed,
 						                     false,
+											 Template.UseLOD,
 						                     this,
 						                     Template.Name);
 					while (generateMeshes.MoveNext ()) {
@@ -567,7 +573,7 @@ namespace Frontiers.World
 					                       Template.Exterior,
 					                       group,
 					                       structureItems);
-				while (generateExtItems.MoveNext ()) { 
+				while (generateExtItems.MoveNext ()) {
 					/*if (chunk.TargetMode == ChunkMode.Unloaded) {
 							Debug.Log("Cancelling build, chunk is unloading");
 							yield break;
@@ -580,7 +586,7 @@ namespace Frontiers.World
 				for (int i = 0; i < InteriorVariants.Count; i++) {
 					int interiorVariant = InteriorVariants [i];
 					if (!ParentStructure.StructureGroupInteriors.ContainsKey (interiorVariant)) {
-						Debug.Log ("Didn't find interior variant " + interiorVariant.ToString () + " in " + ParentStructure.name + " - waiting for a bit...");
+						//Debug.Log ("Didn't find interior variant " + interiorVariant.ToString () + " in " + ParentStructure.name + " - waiting for a bit...");
 						double timeOut = WorldClock.RealTime + 10f;
 						while (ParentStructure != null && !ParentStructure.worlditem.Is (WIActiveState.Invisible) && !ParentStructure.StructureGroupInteriors.ContainsKey (interiorVariant)) {
 							//waiting for interior groups to spawn
@@ -590,7 +596,7 @@ namespace Frontiers.World
 								}*/
 							yield return null;
 							if (WorldClock.RealTime > timeOut) {
-								Debug.Log ("Timed out waiting for interior group " + interiorVariant.ToString () + " in " + ParentStructure.name);
+								//Debug.Log ("Timed out waiting for interior group " + interiorVariant.ToString () + " in " + ParentStructure.name);
 								break;
 							}
 						}
@@ -605,16 +611,16 @@ namespace Frontiers.World
 					}
 
 					if (!ParentStructure.State.InteriorsLoadedOnce.Contains (interiorVariant) && interiorVariant < Template.InteriorVariants.Count) {
-						#if UNITY_EDITOR
+						/*#if UNITY_EDITOR
 						Debug.Log ("Generating items for interior variant " + interiorVariant.ToString ());
-						#endif
+						#endif*/
 						var generateIntItems = StructureBuilder.GenerateInteriorItems (
 							                       ParentStructure,
 							                       interiorVariant,
 							                       Template.InteriorVariants [interiorVariant],
 							                       group,
 							                       structureItems);
-						while (generateIntItems.MoveNext ()) { 
+						while (generateIntItems.MoveNext ()) {
 							/*if (chunk.TargetMode == ChunkMode.Unloaded) {
 									Debug.Log("Cancelling build, unloading");
 									yield break;
@@ -622,14 +628,14 @@ namespace Frontiers.World
 							yield return generateIntItems.Current;
 						}
 					}
-					#if UNITY_EDITOR
+					/*#if UNITY_EDITOR
 					else {
 						Debug.Log ("Didn't generate items for interior variant "
 							+ interiorVariant.ToString ()
 							+ " because it has either been loaded once (" + ParentStructure.State.InteriorsLoadedOnce.Contains (interiorVariant).ToString()
 							+ ") or it's out of range (" + (interiorVariant >= Template.InteriorVariants.Count).ToString () + ")");
 					}
-					#endif
+					#endif*/
 
 					yield return null;
 				}

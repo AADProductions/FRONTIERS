@@ -75,7 +75,7 @@ namespace Frontiers.World.WIScripts
 						if (Random.value > RandomDropout) {
 							if (WorldItems.CloneRandomFromCategory (categoryName, WIGroups.Get.World, out gDropItem)) {	////Debug.Log ("Cloning item!");
 								gDropItem.Props.Local.Transform.Position = worlditem.tr.TransformPoint (mSpawnPoint);
-								Debug.Log ("Worlditem at position " + worlditem.tr.position + " dropping item " + gDropItem.Props.Local.Transform.Position.ToString () + " from spawn point " + mSpawnPoint.ToString());
+								//Debug.Log ("Worlditem at position " + worlditem.tr.position + " dropping item " + gDropItem.Props.Local.Transform.Position.ToString () + " from spawn point " + mSpawnPoint.ToString());
 								gDropItem.Props.Local.Transform.Rotation.x = Random.Range (0f, 360f);
 								gDropItem.Props.Local.Transform.Rotation.y = Random.Range (0f, 360f);
 								gDropItem.Props.Local.Transform.Rotation.z = Random.Range (0f, 360f);
@@ -103,11 +103,11 @@ namespace Frontiers.World.WIScripts
 					//TODO make this more safe?
 					Mesh sharedMesh = r.GetComponent <MeshFilter> ().sharedMesh;
 					Vector3[] vertices = sharedMesh.vertices;
-					Debug.Log ("Spawning from " + vertices.Length.ToString () + " vertices");
+					//Debug.Log ("Spawning from " + vertices.Length.ToString () + " vertices");
 					for (int i = 0; i < numToSpawn; i++) {
 						if (WorldItems.CloneRandomFromCategory (categoryName, WIGroups.Get.World, out gDropItem)) {
 							gDropItem.Props.Local.Transform.Position = worlditem.tr.TransformPoint (vertices [UnityEngine.Random.Range (0, vertices.Length)]);
-							Debug.Log ("Worlditem at position " + worlditem.tr.position + " dropping item " + gDropItem.Props.Local.Transform.Position.ToString () + " from mesh spawn point " + mSpawnPoint.ToString ());
+							//Debug.Log ("Worlditem at position " + worlditem.tr.position + " dropping item " + gDropItem.Props.Local.Transform.Position.ToString () + " from mesh spawn point " + mSpawnPoint.ToString ());
 							gDropItem.Props.Local.Transform.Rotation.x = Random.Range (0f, 360f);
 							gDropItem.Props.Local.Transform.Rotation.y = Random.Range (0f, 360f);
 							gDropItem.Props.Local.Transform.Rotation.z = Random.Range (0f, 360f);

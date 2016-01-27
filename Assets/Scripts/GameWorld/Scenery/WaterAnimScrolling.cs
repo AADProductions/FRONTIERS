@@ -23,6 +23,7 @@ namespace Frontiers.World
 		protected Vector2 foamTexOffset;
 		protected Renderer r;
 		protected int updateColor;
+		public bool updateColorAutomatically = true;
 
 		public void Start ()
 		{
@@ -84,7 +85,7 @@ namespace Frontiers.World
 
 			updateColor++;
 
-			if (updateColor > 15) {
+			if (updateColorAutomatically && updateColor > 15) {
 				updateColor = 0;
 				WaterMaterial.SetColor ("_FogColor", TOD_Sky.GlobalFogColor);
 				WaterMaterial.SetColor ("_FoamColor", Colors.Alpha (Color.Lerp (Color.white, RenderSettings.fogColor, 0.25f), 0.25f));

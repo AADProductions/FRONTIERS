@@ -498,7 +498,7 @@ public static class Globals
 	[WorldSetting]
 	public static int GroundTextureResolution = 1024;
 	[WorldSetting]
-	public static int GrassTextureResolution = 128;
+	public static int GrassTextureResolution = 256;
 	[WorldSetting]
 	public static float TimeScaleTravelMax = 1.5f;
 	[WorldSetting]

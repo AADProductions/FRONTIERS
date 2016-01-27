@@ -79,19 +79,19 @@ namespace Frontiers.World.WIScripts
 				gElevatorUpOption.Disabled = !(PowerSource.HasPower && TargetElevator.PlayerIsOnElevator && MissionCondition.CheckCondition (State.UpperFloorCondition));
 				options.Add (gElevatorUpOption);
 				if (gElevatorUpOption.Disabled) {
-					Debug.Log ("upper disabled. has power? " + PowerSource.HasPower.ToString () + " player on elevator? " + TargetElevator.PlayerIsOnElevator.ToString () + " condition? " + MissionCondition.CheckCondition (State.UpperFloorCondition).ToString ());
+					Debug.Log ("upper disabled. has power? " + PowerSource.HasPower.ToString () + " player on elevator? " + TargetElevator.PlayerIsOnElevator.ToString () + " condition? " + MissionCondition.CheckCondition (State.UpperFloorCondition).ToString () + " " + State.StopIndex.ToString ());
 				}
 			}
 			if (HasLowerFloor) {
 				gElevatorDownOption.Disabled = !(PowerSource.HasPower && !TargetElevator.PlayerIsOnElevator && !MissionCondition.CheckCondition (State.LowerFloorCondition));
 				options.Add (gElevatorDownOption);
 				if (gElevatorDownOption.Disabled) {
-					Debug.Log ("lower disabled. has power? " + PowerSource.HasPower.ToString () + " player on elevator? " + TargetElevator.PlayerIsOnElevator.ToString () + " condition? " + MissionCondition.CheckCondition (State.LowerFloorCondition).ToString ());
+					Debug.Log ("lower disabled. has power? " + PowerSource.HasPower.ToString () + " player on elevator? " + TargetElevator.PlayerIsOnElevator.ToString () + " condition? " + MissionCondition.CheckCondition (State.LowerFloorCondition).ToString () + " " + State.StopIndex.ToString ());
 				}
 			}
-			gElevatorCallOption.Disabled = !(PowerSource.HasPower && TargetElevator.CurrentStopIndex == State.StopIndex && MissionCondition.CheckCondition (State.CallElevatorCondition) && !TargetElevator.PlayerIsOnElevator);
+			gElevatorCallOption.Disabled = !(PowerSource.HasPower && TargetElevator.CurrentStopIndex != State.StopIndex && MissionCondition.CheckCondition (State.CallElevatorCondition) && !TargetElevator.PlayerIsOnElevator);
 			if (gElevatorCallOption.Disabled) {
-				Debug.Log ("call disabled. has power? " + PowerSource.HasPower.ToString () + " already on floor? " + (TargetElevator.CurrentStopIndex == State.StopIndex).ToString () + " condition? " + MissionCondition.CheckCondition (State.CallElevatorCondition).ToString ());
+				Debug.Log ("call disabled. has power? " + PowerSource.HasPower.ToString () + " already on floor? " + (TargetElevator.CurrentStopIndex == State.StopIndex).ToString () + " condition? " + MissionCondition.CheckCondition (State.CallElevatorCondition).ToString () + " " + State.StopIndex.ToString ());
 			}
 			options.Add (gElevatorCallOption);
 
