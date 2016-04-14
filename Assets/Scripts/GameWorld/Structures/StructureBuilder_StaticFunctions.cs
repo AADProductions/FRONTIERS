@@ -114,9 +114,9 @@ namespace Frontiers.World
 								customColliderTr.localScale = childPiece.Scale;
 
 								meshCollider.sharedMesh = sharedMesh;
-
-								if (meshColliders != null) {
-									meshColliders.Add (meshCollider);
+								//AHA!!!
+								if (mcList != null) {
+									mcList.Add (meshCollider);
 								}
 							}
 						}
@@ -137,8 +137,8 @@ namespace Frontiers.World
 							customColliderTr.localRotation = Quaternion.Euler (childPiece.Rotation);
 							customColliderTr.localScale = childPiece.Scale;
 
-							if (boxColliders != null) {
-								boxColliders.Add (boxCollider);
+							if (bcList != null) {
+								bcList.Add (boxCollider);
 							}
 						}
 						break;

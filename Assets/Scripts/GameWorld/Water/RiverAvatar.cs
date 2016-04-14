@@ -43,6 +43,9 @@ namespace Frontiers.World
 			mSubmergedUpdate = UnityEngine.Random.Range (0, 30);
 			mColorUpdate = UnityEngine.Random.Range (0, 60);
 			mColliderPositionUpdate = UnityEngine.Random.Range (0, 10);
+			if (MasterSplineMesh != null) {
+				MasterSplineMesh.updateMode = SplineMesh.UpdateMode.WhenSplineChanged;
+			}
 		}
 
 		public void RefreshProps ()
@@ -162,10 +165,16 @@ namespace Frontiers.World
 		public void Update ()
 		{
 			if (!Props.DynamicMode) {
+				if (name == "Blacklake River") {
+					Debug.Log ("Not in dynamic mode");
+				}
 				return;
 			}
 
-			if (!ParentChunk.Is (ChunkMode.Primary | ChunkMode.Adjascent | ChunkMode.Immediate) || !WaterRenderer.isVisible) {
+			if (!ParentChunk.Is (ChunkMode.Primary | ChunkMode.Adjascent | ChunkMode.Immediate)) {
+				if (name == "Blacklake River") {
+					Debug.Log ("River Avatar: Chunk was not primary / adjascent / immediate, returning");
+				}
 				return;
 			}
 
@@ -288,6 +297,8 @@ namespace Frontiers.World
 			MasterSplineMesh.enabled = false;
 			RefreshSpline ();
 			RefreshFlowColliderDynamic ();
+			MasterSplineMesh.enabled = true;
+			MasterSpline.UpdateSpline ();
 		}
 
 		public void UpdateColliderPositionDynamic ()

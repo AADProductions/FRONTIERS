@@ -446,22 +446,26 @@ namespace Frontiers
 		{
 			if (item == null) {
 				error = WIStackError.InvalidOperation;
+				Debug.Log ("Item was null on add to inventory");
 				return false;
 			}
 
 			if (!mInitialized) {
 				mItemsToAddOnInitialization.Add (item);
+				Debug.Log ("Not initialized so not adding item " + item.DisplayName);
 				return true;
 			}
 
 			if (player.LockQuickslots) {
 				//we'll add this once our quickslots aren't locked any more
 				mItemsToAddOnQuickslotsUnlocked.SafeEnqueue (item);
+				Debug.Log ("Quickslots are locked so adding item to temporary queue " + item.DisplayName);
 				return true;
 			}
 
 			if (!item.Is <Stackable> ()) {
 				//can't add non-stackable items, dummy
+				Debug.Log ("Not stackable");
 				return false;
 			}
 
@@ -550,7 +554,7 @@ namespace Frontiers
 				addResult = Stacks.Push.Item (mLastRelevantStack, item, true, StackPushMode.Manual, ref error);
 				#if UNITY_EDITOR
 				if (!addResult) {
-					//Debug.Log ("Found most relevant stack but couldn't push item");
+					Debug.Log ("Found most relevant stack but couldn't push item");
 				}
 				#endif
 			}

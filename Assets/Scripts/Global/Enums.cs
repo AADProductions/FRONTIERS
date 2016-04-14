@@ -995,7 +995,7 @@ namespace Frontiers
 		StrongBeard = 16,
 		SkinnyBeard = 32,
 		LongBeard = 64,
-		TextureBeard	= 128,
+		TextureBeard = 128,
 	}
 
 	[Flags]
@@ -1029,13 +1029,15 @@ namespace Frontiers
 		LongSeparate	= 2,
 	}
 
+	[Flags]
+	[Serializable]
 	public enum ChunkMode
 	{
-		Primary,
-		Immediate,
-		Adjascent,
-		Distant,
-		Unloaded,
+		Primary = 1,
+		Immediate = 2,
+		Adjascent = 4,
+		Distant = 8,
+		Unloaded = 16,
 	}
 
 	[Serializable]

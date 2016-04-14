@@ -207,7 +207,7 @@ namespace Frontiers.World.WIScripts
 			spawnPoint = new SpawnPoint ();
 			switch (setting.Method) {
 			case SpawnerPlacementMethod.SherePoint:
-										//cast a ray from the center of the location outwards
+				//cast a ray from the center of the location outwards
 				Vector3 starget = (UnityEngine.Random.onUnitSphere * spawnLocation.worlditem.ActiveRadius) + spawnLocation.worlditem.tr.position;
 				Vector3 sscale = Vector3.one;
 				RaycastHit hit;
@@ -244,11 +244,11 @@ namespace Frontiers.World.WIScripts
 
 			case SpawnerPlacementMethod.TopDown:
 			default:
-										//get a random point in sphere scaled to the location's radius
+				//get a random point in sphere scaled to the location's radius
 				mTerrainHit.groundedHeight = spawnLocation.worlditem.ActiveRadius;
 				mTerrainHit.feetPosition = (UnityEngine.Random.insideUnitSphere * mTerrainHit.groundedHeight) + spawnLocation.worlditem.tr.position;
 				mTerrainHit.feetPosition.y = GameWorld.Get.TerrainHeightAtInGamePosition (ref mTerrainHit);
-				if (mTerrainHit.hitTerrain || mTerrainHit.hitTerrainMesh && !mTerrainHit.hitStructureMesh) {
+				if (mTerrainHit.hitTerrain || mTerrainHit.hitTerrainMesh || (setting.SpawnOnStructureMeshes && mTerrainHit.hitStructureMesh)) {
 					spawnPoint.Transform.Position = spawnLocation.worlditem.tr.InverseTransformPoint (mTerrainHit.feetPosition);
 					spawnPoint.Transform.Rotation = Quaternion.LookRotation (SVector3.Random (-1f, 1f), mTerrainHit.normal).eulerAngles;
 					spawnPoint.Transform.Scale = Vector3.one;
@@ -256,6 +256,9 @@ namespace Frontiers.World.WIScripts
 					spawnPoint.HitTerrainMesh = mTerrainHit.hitTerrainMesh;
 					succeeded = true;
 				} else {
+					Debug.Log ("SPAWNER " + spawnLocation.name + ": Failed because either didn't hit terrain (" + mTerrainHit.hitTerrain.ToString()
+					           + ") or didn't hit terrain mesh (" + mTerrainHit.hitTerrainMesh.ToString ()
+					           + ") or can't spawn on structures (" + mTerrainHit.hitStructureMesh.ToString ());
 					succeeded = false;
 				}
 				break;
@@ -485,6 +488,7 @@ namespace Frontiers.World.WIScripts
 		public int NumFailedAttempts = 0;
 		public int MaxFailedAttempts = 10;
 		public int NumAttempts = 0;
+		public bool SpawnOnStructureMeshes = false;
 		public float MaxDistanceFromUnityTerrain = 5.0f;
 		public float MinDistanceBetweenSpawns = 10.0f;
 		public float MinDistanceFromPlayer = 10.0f;

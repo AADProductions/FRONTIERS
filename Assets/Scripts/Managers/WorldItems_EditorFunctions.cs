@@ -683,15 +683,17 @@ namespace Frontiers.World
 				if (Structures.Get == null) {
 					Debug.Log("STRUCTURES GET WAS NULL");
 				}
-				foreach (WorldItemPack pack in Structures.Get.DynamicWorldItemPacks) {
-					foreach (GameObject prefab in pack.Prefabs) {
-						WorldItem wi = prefab.GetComponent <WorldItem>();
-						WITemplate template = new WITemplate(wi);
-						Debug.Log("Saving template " + wi.name);
-						Mods.Get.Editor.SaveMod <WITemplate>(
-							template,
-							System.IO.Path.Combine("WorldItem", wi.Props.Name.PackName),
-							template.Name);
+				if (Structures.Get != null) {
+					foreach (WorldItemPack pack in Structures.Get.DynamicWorldItemPacks) {
+						foreach (GameObject prefab in pack.Prefabs) {
+							WorldItem wi = prefab.GetComponent <WorldItem>();
+							WITemplate template = new WITemplate(wi);
+							Debug.Log("Saving template " + wi.name);
+							Mods.Get.Editor.SaveMod <WITemplate>(
+								template,
+								System.IO.Path.Combine("WorldItem", wi.Props.Name.PackName),
+								template.Name);
+						}
 					}
 				}
 			}

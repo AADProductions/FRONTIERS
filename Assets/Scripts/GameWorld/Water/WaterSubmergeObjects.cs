@@ -35,6 +35,7 @@ public class WaterSubmergeObjects : MonoBehaviour
 			if (ioi != LastSubmergedItemOfInterest) {
 				LastSubmergedItemOfInterest = ioi;
 				if (ioi.IOIType == ItemOfInterestType.Player) {
+					Debug.Log ("Submerging player in 'WaterSubmergeObjects'");
 					Player.Get.AvatarActions.ReceiveAction (AvatarAction.MoveEnterWater, WorldClock.AdjustedRealTime);
 					FXManager.Get.SpawnFX (ioi.Position, "Water Splash 1");
 					AudioManager.MakeWorldSound (ioi, MasterAudio.SoundType.JumpLandWater, "Land");
@@ -68,6 +69,7 @@ public class WaterSubmergeObjects : MonoBehaviour
 			if (LastExitedItemOfInterest != ioi) {
 				LastExitedItemOfInterest = ioi;
 				if (ioi.IOIType == ItemOfInterestType.Player) {
+					Debug.Log ("Player exited water in 'WaterSubmergeObjects'");
 					Player.Get.AvatarActions.ReceiveAction (AvatarAction.MoveExitWater, WorldClock.AdjustedRealTime);
 				} else if (ioi.IOIType == ItemOfInterestType.WorldItem && ioi.worlditem.Is (WILoadState.Initialized)) {
 					ioi.worlditem.OnExitBodyOfWater.SafeInvoke ();

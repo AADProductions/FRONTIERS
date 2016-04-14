@@ -173,7 +173,7 @@ namespace Frontiers.World
 
 						List <Collider> childColliders = new List <Collider> ();
 						if (child.collider != null) {
-							Debug.Log ("Adding collider " + child.collider.GetType ().ToString () + " from prefab " + child.name);
+							//Debug.Log ("Adding collider " + child.collider.GetType ().ToString () + " from prefab " + child.name);
 							childColliders.Add (child.collider);
 						} else {
 							//Debug.Log ("Child collider was null, looking for sub colliders");
@@ -212,6 +212,8 @@ namespace Frontiers.World
 								//add it to the template
 								templateLayers.Add (structureLayer);
 							}
+
+							Debug.Log ("--- Adding custom collider to layer " + structureLayer.PackName + ":" + structureLayer.PrefabName + " based on destroyed behavior " + behavior.ToString());
 							//colliders may have odd dimensions and offsets
 							//to prevent us from getting a '1,1,1' collider
 							//use the helper transform to get the actual dimensions
@@ -248,6 +250,10 @@ namespace Frontiers.World
 				if (child.gameObject.HasComponent <StructureDestroyResult> (out str)) {
 					behavior = str.Behavior;
 				}
+
+				//check the destroyed behavior of the custom collider before adding it
+				//then make sure it gets added to the correct structure layer
+				//TODO
 
 				//look for an existing layer that matches our own
 				StructureLayer colliderLayer = null;

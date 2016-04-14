@@ -107,12 +107,12 @@ namespace Frontiers.World.Gameplay
 	{
 		public string ConversationName	= string.Empty;
 		public string ExchangeName = string.Empty;
-		public bool RequireConversationInitiated = true;
+		public bool RequirementsMetIfNotInitiated = false;
 
 		protected override bool CheckSubstitutionRule ()
 		{
 			//Debug.Log ("Checking if we've had exchange " + ConversationName + ", " + ExchangeName);
-			return Conversations.Get.HasCompletedExchange (ConversationName, ExchangeName, RequireConversationInitiated);
+			return Conversations.Get.HasCompletedExchange (ConversationName, ExchangeName, RequirementsMetIfNotInitiated);
 		}
 	}
 }

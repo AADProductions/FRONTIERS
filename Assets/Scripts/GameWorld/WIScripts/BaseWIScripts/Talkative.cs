@@ -172,7 +172,9 @@ namespace Frontiers.World.WIScripts
 				}
 
 				if (mTalkMotileAction.IsFinished) {
+					#if UNITY_EDITOR
 					Debug.Log ("Talk motile action got finished for some reason, quitting");
+					#endif
 					mInitiatingConversation = false;
 					yield break;
 				}
@@ -204,12 +206,16 @@ namespace Frontiers.World.WIScripts
 				//this will load the conversation without hitches
 				//now we may just have a dts - in which case the conversation won't be in progress
 				if (!Conversation.ConversationInProgress) {
+					#if UNITY_EDITOR
 					Debug.Log("Conversation not in progress, must have defaulted to DTS");
+					#endif
 					mInitiatingConversation = false;
 					yield break;
 				}
 			} else if (!string.IsNullOrEmpty (DTSOverride)) {
+				#if UNITY_EDITOR
 				Debug.Log("We have a dts override: " + DTSOverride);
+				#endif
 				//whoa we have a DTS override
 				State.DTSSpeechName = DTSOverride;
 				mInitiatingConversation	= false;
@@ -220,7 +226,9 @@ namespace Frontiers.World.WIScripts
 				mInitiatingConversation = false;
 				yield break;
 			} else {
+				#if UNITY_EDITOR
 				Debug.Log("Couldn't get the conversation, canceling");
+				#endif
 				//aw shit we never got the conversation
 				mInitiatingConversation = false;
 				yield break;

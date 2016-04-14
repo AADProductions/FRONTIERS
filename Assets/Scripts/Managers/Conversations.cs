@@ -79,7 +79,7 @@ namespace Frontiers
 						Debug.Log ("Removed DTS override " + dtsConversation + " for " + characterName);
 						state.DTSOverrides.Remove (characterName);
 					} else {
-						Debug.Log ("Current DTS didn't match " + dtsConversation + ", not removing");
+						Debug.Log ("Current DTS " + state.DTSOverrides [characterName] + " didn't match " + dtsConversation + ", not removing");
 					}
 				} else {
 					Debug.Log ("No key found for character " + characterName);
@@ -87,6 +87,8 @@ namespace Frontiers
 				state.ListInAvailable = false;
 				state.Name = oldConversationName + "-State";
 				Mods.Get.Runtime.SaveMod <ConversationState> (state, "Conversation", state.Name);
+			} else {
+				Debug.Log ("Couldn't find conversation " + oldConversationName + " in remove dts override");
 			}
 		}
 
@@ -126,19 +128,27 @@ namespace Frontiers
 					if (state.DTSOverrides.ContainsKey (characterName)) {
 						DTSOverride = state.DTSOverrides [characterName];
 						//that's all we need - DTS overrides break all
+						#if UNITY_EDITOR
 						Debug.Log ("We have a DTS override in conversation state " + state.Name);
+						#endif
 						return false;
 					} else {
+						#if UNITY_EDITOR
 						Debug.Log ("Found no DTS override for " + characterName);
+						#endif
 					}
 
 					if (state.Substitutions.ContainsKey (characterName)) {	//if the conversation state contains a substitution for this character
 						//set the conversation name to that substitution
 						conversationName = state.Substitutions [characterName];
+						#if UNITY_EDITOR
 						Debug.Log ("We have a substitute in " + state.Name);
+						#endif
 						numSubstitutions++;
 					} else {//if it doesn't have a substitution then we're finished
+						#if UNITY_EDITOR
 						Debug.Log ("Found conversation");
+						#endif
 						finishedSubstituting = true;
 						foundConversation = true;
 						LocalConversation = ConversationObject.AddComponent <Conversation> ();
@@ -146,12 +156,16 @@ namespace Frontiers
 						conversation = LocalConversation;
 					}
 				} else {	//damn didn't find the substituted conversation
+					#if UNITY_EDITOR
 					Debug.Log ("Didn't find substituted conversation");
+					#endif
 					finishedSubstituting = true;
 				}
 
 				if (numSubstitutions > maxSubstitutions) {	//if we're over our limit, bail
+					#if UNITY_EDITOR
 					Debug.Log ("Max substitutions, bailing");
+					#endif
 					finishedSubstituting = true;
 				}
 			}
@@ -196,7 +210,7 @@ namespace Frontiers
 						#if DEBUG_CONVOS
 						Debug.Log ("---- HAS completed exchange " + conversationName + " " + exchangeName);
 						#endif
-						result = true;
+						result = numTimes > 0;
 					}
 					#if DEBUG_CONVOS
 					else { Debug.Log ("---- HAS NOT completed exchange " + conversationName + " " + exchangeName); }

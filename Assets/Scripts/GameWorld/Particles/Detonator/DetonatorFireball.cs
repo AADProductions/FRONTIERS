@@ -164,7 +164,7 @@ public class DetonatorFireball : DetonatorComponent
 		_fireShadow.transform.localPosition = Vector3.Scale(localPosition,(new Vector3(size, size, size)));
 		
 			//move slightly towards the main camera so it sorts properly
-		_fireShadow.transform.LookAt(Camera.main.transform);
+		_fireShadow.transform.LookAt(Frontiers.Player.Local.Position);
 		_fireShadow.transform.localPosition = -(Vector3.forward * 1f);
 		
 		_fireShadowEmitter.color = new Color(.1f, .1f, .1f, .6f);

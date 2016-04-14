@@ -85,7 +85,6 @@ namespace Frontiers.Story.Conversations
 
 		protected override void  Action ()
 		{
-
 			if (AddOverride) {
 				Debug.Log ("Adding DTS override");
 				Frontiers.Conversations.Get.AddDTSOverride (ConversationName, DTSConversationName, CharacterName);
@@ -763,7 +762,7 @@ namespace Frontiers.Story.Conversations
 		public string ConversationName = string.Empty;
 		public string ExchangeName = string.Empty;
 		public int NumTimes = 1;
-		public bool RequireConversationInitiated = true;
+		public bool RequirementsMetIfNotInitiated = false;
 		public VariableCheckType CheckType = VariableCheckType.GreaterThanOrEqualTo;
 
 		protected override bool CheckRequirementsMet ()
@@ -778,7 +777,7 @@ namespace Frontiers.Story.Conversations
 			Debug.Log ("Require exchange " + ExchangeName + " concluded in " + ConversationName);
 
 			int numTimes = 0;
-			if (Frontiers.Conversations.Get.HasCompletedExchange (ConversationName, ExchangeName, RequireConversationInitiated, out numTimes)) {
+			if (Frontiers.Conversations.Get.HasCompletedExchange (ConversationName, ExchangeName, RequirementsMetIfNotInitiated, out numTimes)) {
 				bool result = GameData.CheckVariable (CheckType, NumTimes, numTimes);
 				Debug.Log ("Result: " + result.ToString ());
 				return result;
@@ -792,7 +791,9 @@ namespace Frontiers.Story.Conversations
 	{
 		public List <string> Exchanges = new List <string> ();
 		public bool RequireAllExchanges = true;
-		public bool RequireConversationInitiated = true;
+		//if [x] is set to true, requirements are met if the conversation has not been initiated
+		//even if none of the exchanges have been completed
+		public bool RequirementsMetIfNotInitiated = false;
 		public bool RequireConcluded = true;
 		public string ConversationName;
 
@@ -819,7 +820,7 @@ namespace Frontiers.Story.Conversations
 					//it must be an integer
 					finalExchangeName = Frontiers.Conversations.Get.ExchangeNameFromIndex (conversationName, exchangeIndex);
 				}
-				bool completedThis = Frontiers.Conversations.Get.HasCompletedExchange (conversationName, finalExchangeName, RequireConversationInitiated);
+				bool completedThis = Frontiers.Conversations.Get.HasCompletedExchange (conversationName, finalExchangeName, RequirementsMetIfNotInitiated);
 				//do we want them completed or not completed?
 				if (RequireConcluded) {
 					results.Add (completedThis);

@@ -1723,7 +1723,7 @@ namespace Frontiers.Data
 			case "exchangeconcludedifinit":
 				rec.RequireAllExchanges = true;
 				rec.RequireConcluded = true;
-				rec.RequireConversationInitiated = false;
+				rec.RequirementsMetIfNotInitiated = true;
 				break;
 
 			case "exchangeanyconcluded":
@@ -1734,7 +1734,7 @@ namespace Frontiers.Data
 			case "exchangeanyconcludedifinit":
 				rec.RequireAllExchanges = false;
 				rec.RequireConcluded = true;
-				rec.RequireConversationInitiated = false;
+				rec.RequirementsMetIfNotInitiated = true;
 				break;
 
 			case "exchangenotconcluded":
@@ -1745,7 +1745,7 @@ namespace Frontiers.Data
 			case "exchangenotconcludedifinit":
 				rec.RequireAllExchanges = true;
 				rec.RequireConcluded = false;
-				rec.RequireConversationInitiated = false;
+				rec.RequirementsMetIfNotInitiated = true;
 				break;
 
 			case "exchangeanynotconcluded":
@@ -1756,7 +1756,7 @@ namespace Frontiers.Data
 			case "exchangeanynotconcludedifinit":
 				rec.RequireAllExchanges = false;
 				rec.RequireConcluded = false;
-				rec.RequireConversationInitiated = false;
+				rec.RequirementsMetIfNotInitiated = false;
 				break;
 
 			default:

@@ -343,7 +343,7 @@ namespace Frontiers
 		public IEnumerator PlayMusic (MusicType music, MusicVolume volume)
 		{
 			//TEMP
-			yield break;
+			//yield break;
 			//TEMP
 
 			while (!Manager.IsAwake <Mods> ()) {
@@ -444,7 +444,7 @@ namespace Frontiers
 				}
 			}
 			if (!FadingInAudio.isPlaying) {
-				//Debug.Log("AUDIO MANAGER: Playing audio clip " + FadingInAudio.clip.name);
+				Debug.Log("AUDIO MANAGER: Playing audio clip " + FadingInAudio.clip.name);
 				FadingInAudio.Play ();
 			}
 

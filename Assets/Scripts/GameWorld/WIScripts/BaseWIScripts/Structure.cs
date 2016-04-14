@@ -449,6 +449,7 @@ namespace Frontiers.World.WIScripts
 
 		public void RefreshColliders (bool forceOn)
 		{
+			//Debug.Log ("Calling REFRESH COLLIDERS in structure " + name + " force on? " + forceOn);
 			bool enableColliders = DisplayExterior && (forceOn || worlditem.Is (WIActiveState.Active) || (Player.Local.Surroundings.IsVisitingStructure (this)));
 			if (!enableColliders) {
 				for (int i = 0; i < SpawnedCharacters.Count; i++) {
@@ -578,6 +579,7 @@ namespace Frontiers.World.WIScripts
 		protected void SetDestroyed (bool destroyed)
 		{
 			if (destroyed) {
+				//Debug.Log ("Setting destroyed to true in structure " + name);
 				//we want to destroy the structure
 				//have we already been destroyed?
 				if (StructureShingle.PropertyIsDestroyed) {
@@ -1079,7 +1081,7 @@ namespace Frontiers.World.WIScripts
 		public void SpawnInteriorCharacters (int interiorVariant)
 		{
 			#if UNITY_EDITOR
-			//Debug.Log ("Spawning interior characters in structure for variant " + interiorVariant.ToString ());
+			Debug.Log ("Spawning interior characters in structure for variant " + interiorVariant.ToString ());
 			#endif
 			WIGroup interiorGroup = null;
 			if (StructureGroupInteriors.TryGetValue (interiorVariant, out interiorGroup)) {
@@ -1101,29 +1103,34 @@ namespace Frontiers.World.WIScripts
 				spawnedCharacter |= SpawnCharacter (nodes, spawns [i], group, flags, out character);
 				if (character != null) {
 					SpawnedCharacters.Add (character);
+				} else {
+					Debug.Log ("Couldn't spawn for structure spawn " + spawns [i].ActionNodeName);
 				}
 			}
 
 			if (!OwnerCharacterSpawned) {
 				#if UNITY_EDITOR
-				//Debug.Log ("Owner character not spawned, checking now");
+				Debug.Log ("Owner character not spawned, checking now");
 				#endif
-				if (!State.OwnerSpawn.IsEmpty && State.OwnerSpawn.Interior == group.Props.Interior) {
+				if (!State.OwnerSpawn.IsEmpty && (State.ForceBuildInterior || State.OwnerSpawn.Interior == group.Props.Interior)) {
 					//spawn a character for the owner node
 					spawnedCharacter |= SpawnCharacter (nodes, State.OwnerSpawn, group, flags, out StructureOwner);
 					if (OwnerCharacterSpawned) {
 						//set the owner of the structure group
 						#if UNITY_EDITOR
-						if (StructureOwner.name.Contains ("Timmorn") || StructureOwner.name.Contains ("Indress") || name.Contains ("Hall")) {
+						/*if (StructureOwner.name.Contains ("Timmorn") || StructureOwner.name.Contains ("Indress") || name.Contains ("Hall")) {
 							StructureOwner.Body.DebugMovement = true;
-						}
+						}*/
 						#endif
 						StructureGroup.Owner = StructureOwner.worlditem;
 						OnOwnerCharacterSpawned.SafeInvoke ();
 						SpawnedCharacters.Add (StructureOwner);
+						Debug.Log ("Owner was successfully spawned in structure " + name);
+					} else {
+						Debug.Log ("Failed to spawn owner in structure " + name);
 					}
 				} else {
-					//Debug.Log ("Owner spawn was empty or owner spawn interior setting " + State.OwnerSpawn.Interior.ToString () + " didn't match group setting " + group.Props.Interior.ToString ());
+					Debug.Log ("Owner spawn was empty or owner spawn interior setting " + State.OwnerSpawn.Interior.ToString () + " didn't match group setting " + group.Props.Interior.ToString ());
 				}
 			}
 			//let everyone know what just happened
@@ -1134,7 +1141,7 @@ namespace Frontiers.World.WIScripts
 
 		protected bool SpawnCharacter (List <ActionNodeState> nodes, StructureSpawn spawn, WIGroup group, WIFlags flags, out Character character)
 		{
-			//Debug.Log ("Spawning character " + spawn.TemplateName + " in " + name + " at node " + spawn.ActionNodeName + " out of " + nodes.Count.ToString () + " nodes");
+			Debug.Log ("Spawning character " + spawn.TemplateName + " in " + name + " at node " + spawn.ActionNodeName + " out of " + nodes.Count.ToString () + " nodes");
 			bool spawnedCharacter = false;
 			character = null;
 			for (int j = 0; j < nodes.Count; j++) {

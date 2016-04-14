@@ -243,7 +243,6 @@ namespace Frontiers.World
 			WorldItemPack pack = null;
 			if (mWorldItemPackLookup.TryGetValue(packName, out pack)) {
 				WorldItem worlditem = null;
-				//TEMP
 				if (pack.GetWorldItemPrefab(prefabName, out worlditem)) {
 					stackItem = worlditem.GetTemplate();
 					return true;

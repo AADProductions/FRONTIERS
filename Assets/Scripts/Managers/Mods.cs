@@ -688,10 +688,12 @@ namespace Frontiers
 
 				string errorMessage = string.Empty;
 				#if UNITY_EDITOR
-								//for convenience
-								EditorCurrentWorldName = mods.EditorCurrentWorldName;
+				//for convenience
+				EditorCurrentWorldName = mods.EditorCurrentWorldName;
+				if (Application.isPlaying) {
+					Debug.Log ("Setting global world path to " + EditorCurrentWorldName);
+				}
 				#endif
-				Debug.Log ("Setting global world path to " + EditorCurrentWorldName);
 				GameData.IO.SetWorldName (EditorCurrentWorldName);
 				GameData.IO.InitializeSystemPaths (out errorMessage);
 				Data.GameData.IO.SetDefaultLocalDataPaths ();

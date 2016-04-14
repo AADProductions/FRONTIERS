@@ -58,6 +58,7 @@ namespace Frontiers.World.WIScripts
 			StartCoroutine (SetFlooded (flooded));
 
 			if (flooded) {
+				Debug.Log ("Subscribing to mission variable change in behemoth dam");
 				Player.Get.AvatarActions.Subscribe (AvatarAction.MissionVariableChange, new ActionListener (MissionVariableChange));
 			}
 		}
@@ -65,17 +66,19 @@ namespace Frontiers.World.WIScripts
 		protected IEnumerator SetFlooded (bool flooded)
 		{
 			while (worlditem.Group == null) {
+				Debug.Log ("Group was null, waiting...");
 				yield return null;
 			}
 
 			while (river == null) {
 				worlditem.Group.GetParentChunk ().GetRiver (RiverName, out river);
 				worlditem.Group.GetParentChunk ().GetRiver (RiverEndName, out riverEnd);
+				Debug.Log ("Waiting for river...");
 				yield return null;
 			}
 
 			if (flooded) {
-				//	Debug.Log ("SETTING FLOODED");
+				Debug.Log ("SETTING FLOODED");
 				//the dam still isn't blown, make everything chaos
 				bodyofwater.TargetWaterLevel = State.LakeWaterLevelHigh;
 				river.TargetWaterLevel = State.RiverWaterLevelHigh;
@@ -99,11 +102,13 @@ namespace Frontiers.World.WIScripts
 
 				enabled = true;
 			} else {
-				//Debug.Log ("SETTING NORMAL");
+				Debug.Log ("SETTING NORMAL");
 				//we've blown up the dam and everything's fine, set the bodies of water to normal
 				bodyofwater.TargetWaterLevel = State.LakeWaterLevelNormal;
 				river.TargetWaterLevel = State.RiverWaterLevelNormal;
 				riverEnd.TargetWaterLevel = State.RiverEndWaterLevelNormal;
+
+				Debug.Log ("Setting river target level to " + river.TargetWaterLevel.ToString ());
 
 				if (HasActiveLeviathan != null) {
 					GameObject.Destroy (ActiveLeviathan.gameObject);
@@ -114,8 +119,10 @@ namespace Frontiers.World.WIScripts
 
 		public bool MissionVariableChange (double timeStamp)
 		{
-			if (Missions.Get.GetVariableValue (MissionName, VariableName) > 0) {
-				SetFlooded (false);
+			int variableValue = Missions.Get.GetVariableValue (MissionName, VariableName);
+			Debug.Log ("Mission variable value was " + variableValue.ToString ());
+			if (variableValue > 0) {
+				StartCoroutine (SetFlooded (false));
 			}
 			return true;
 		}
@@ -137,6 +144,12 @@ namespace Frontiers.World.WIScripts
 		public void Update ()
 		{
 			if (HasActiveLeviathan) {
+				if (mLastSplineIndex < 0) {
+					mLastSplineIndex = 0;
+				}
+				if (State.WanderPatternNodes.Count == 0) {
+					return;
+				}
 				bodyofwater.Leviathan = ActiveLeviathan;
 				ActiveLeviathan.TargetSource = bodyofwater;
 				ActiveLeviathan.TargetPosition = FollowSplineTransform;
@@ -160,11 +173,11 @@ namespace Frontiers.World.WIScripts
 		#if UNITY_EDITOR
 		public override void OnEditorRefresh ()
 		{
-			State.WanderPatternNodes.Clear ();
+			/*State.WanderPatternNodes.Clear ();
 			Transform t = transform.FindChild ("BehemothLeviathanDormant");
 			foreach (Transform node in t) { 
 				State.WanderPatternNodes.Add (new SVector3 (t.localPosition));
-			}
+			}*/
 		}
 
 		public void OnDrawGizmos ()

@@ -292,11 +292,13 @@ namespace Frontiers
 										}
 
 										#if UNITY_STANDALONE
-										Debug.Log(gGlobalWorldsPath);
-										Debug.Log(gGlobalProfilesPath);
-										Debug.Log(gBaseWorldPath);
-										Debug.Log(gBaseWorldModsPath);
-										Debug.Log(gCurrentWorldModsPath);
+										if (Application.isPlaying) {
+											Debug.Log(gGlobalWorldsPath);
+											Debug.Log(gGlobalProfilesPath);
+											Debug.Log(gBaseWorldPath);
+											Debug.Log(gBaseWorldModsPath);
+											Debug.Log(gCurrentWorldModsPath);
+										}										
 										#endif
 
 										return result;

@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System;
 using System.Collections.Generic;
+using Frontiers.Data;
 
 namespace Frontiers.World.WIScripts
 {
@@ -48,7 +49,7 @@ namespace Frontiers.World.WIScripts
 			for (int i = 0; i < DemolitionWeakPoints.Count; i++) {
 				Demolishable weakPoint = DemolitionWeakPoints [i];
 				if (weakPoint != null) {
-					if (!weakPoint.worlditem.Get <Damageable> ().IsDestroyed) {
+					if (!weakPoint.worlditem.Get <Damageable> ().IsDead) {
 						allWeakPointsDestroyed = false;
 						break;
 					}
@@ -71,6 +72,14 @@ namespace Frontiers.World.WIScripts
 
 		protected virtual void OnSuccess ( ) {
 			if (!string.IsNullOrEmpty (State.MissionName) && !string.IsNullOrEmpty (State.VariableNameOnSuccess)) {
+				WorldItem itemToDestroy = null;
+				for (int i = 0; i < State.WorldItemsToDestroy.Count; i++) {
+					if (WIGroups.FindChildItem (State.WorldItemsToDestroy [i].FullPath, out itemToDestroy)) {
+						itemToDestroy.RemoveFromGame ();
+					} else {
+						Debug.Log ("Couldn't find child item " + State.WorldItemsToDestroy [i].FullPath);
+					}
+				}
 				Missions.Get.ChangeVariableValue (State.MissionName, State.VariableNameOnSuccess, State.VariableValueOnSuccess, State.ChangeTypeOnSuccess);
 			}
 		}
@@ -83,6 +92,7 @@ namespace Frontiers.World.WIScripts
 
 		protected IEnumerator DemolishStructureOverTime ( ) {
 
+			Debug.Log ("Calling destroy structure on " + structure.name + " from demolition controller");
 			structure.DestroyStructure ();
 
 			Transform explosionSource = gameObject.FindOrCreateChild ("ExplosionSource").transform;
@@ -175,5 +185,7 @@ namespace Frontiers.World.WIScripts
 		public string VariableNameOnSuccess;
 		public int VariableValueOnSuccess = 1;
 		public ChangeVariableType ChangeTypeOnSuccess;
+
+		public List <MobileReference> WorldItemsToDestroy = new List<MobileReference>();
 	}
 }
