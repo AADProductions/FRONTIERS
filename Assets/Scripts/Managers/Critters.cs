@@ -1,3 +1,4 @@
+#define TESTING_CRITTERS
 using UnityEngine;
 using System;
 using System.Collections;
@@ -13,6 +14,7 @@ namespace Frontiers.World
 		public static Critters Get;
 		public List <Critter> CritterTemplates = new List<Critter> ();
 		public List <Critter> ActiveCritters = new List<Critter> ();
+		public List <Critter> FriendlyCritters = new List<Critter> ();
 		public List <string> CurrentCritterTypes = new List<string> ();
 		public float CritterSpawnRange = 2.5f;
 		public float MaxCritterRange = 5f;
@@ -23,6 +25,30 @@ namespace Frontiers.World
 			base.WakeUp ();
 
 			Get = this;
+		}
+
+		public void SpawnFriendlyFromSaveState (CritterSaveState state) {
+			Critter friendly = null;
+			if (SpawnCritter (state.Type, Player.Local.Position, out friendly)) {
+				friendly.Friendly = true;
+				friendly.Coloration = state.Coloration;
+				friendly.Name = state.Name;
+				friendly.name = friendly.Name;
+				friendly.enabled = true;
+				FriendlyCritters.Add (friendly);
+			} else {
+				Debug.LogError ("Couldn't spawn special critter from state " + state.Type);
+			}
+		}
+
+		public override void OnLocalPlayerDespawn ()
+		{
+			for (int i = 0; i < FriendlyCritters.Count; i++) {
+				if (FriendlyCritters [i] != null) {
+					GameObject.Destroy (FriendlyCritters [i].gameObject);
+				}
+			}
+			FriendlyCritters.Clear ();
 		}
 
 		public override void OnGameStart ()
@@ -42,6 +68,9 @@ namespace Frontiers.World
 			for (int i = 0; i < ActiveCritters.Count; i++) {
 				ActiveCritters [i].UpdateMovement (mPlayerPosition);
 			}
+			for (int i = 0; i < FriendlyCritters.Count; i++) {
+				FriendlyCritters [i].UpdateMovement (mPlayerPosition);
+			}
 
 			mPruneCritters++;
 			if (mPruneCritters > 30) {
@@ -57,18 +86,26 @@ namespace Frontiers.World
 						ActiveCritters.RemoveAt (i);
 					}
 				}
+
+				for (int i = FriendlyCritters.LastIndex (); i >= 0; i--) {
+					if (FriendlyCritters [i] == null) {
+						FriendlyCritters.RemoveAt (i);
+					}
+				}
 			}
 
 			mSpawnCritters++;
 			if (mSpawnCritters > 40) {
 				mSpawnCritters = 0;
 				if (Player.Local.Surroundings.IsOutside && !Player.Local.Surroundings.IsOnMovingPlatform && !GameWorld.Get.CurrentBiome.OuterSpace) {
+					#if !TESTING_CRITTERS
 					CurrentCritterTypes.Clear ();
 					if (WorldClock.IsDay) {
 						CurrentCritterTypes.AddRange (GameWorld.Get.CurrentBiome.DayCritterTypes);
 					} else {
 						CurrentCritterTypes.AddRange (GameWorld.Get.CurrentBiome.NightCritterTypes);
 					}
+					#endif
 					mPlayerVelocity = Player.Local.FPSController.Velocity;
 					if (CurrentCritterTypes.Count > 0) {
 						int numTries = 0;
@@ -96,9 +133,6 @@ namespace Frontiers.World
 									if (newCritter.BodyCollider.enabled && Player.Local.Controller.enabled) {
 										Physics.IgnoreCollision (Player.Local.Controller, newCritter.BodyCollider);
 									}
-									#if UNITY_EDITOR
-									newCritter.Friendly = UnityEngine.Random.value < 0.1f ? true : false;
-									#endif
 									ActiveCritters.Add (newCritter);
 								}
 							}

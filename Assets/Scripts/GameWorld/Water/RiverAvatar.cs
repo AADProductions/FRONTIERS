@@ -25,6 +25,7 @@ namespace Frontiers.World
 		public Vector3 FlowForce;
 		public List <IItemOfInterest> SubmergedItems = new List <IItemOfInterest> ();
 		public Transform tr;
+		GameObject flowColliderObject;
 
 		public float TargetWaterLevel {
 			get {
@@ -38,6 +39,7 @@ namespace Frontiers.World
 		public void Start ()
 		{
 			tr = transform;
+			flowColliderObject = tr.FindChild ("FlowCollider").gameObject;
 			WaterSubmerge.OnItemOfInterestEnterWater += OnItemOfInterestEnterWater;
 			WaterSubmerge.OnItemOfInterestExitWater += OnItemOfInterestExitWater;
 			mSubmergedUpdate = UnityEngine.Random.Range (0, 30);
@@ -68,10 +70,15 @@ namespace Frontiers.World
 				return;
 			}
 
-			if (Props.DynamicMode) {
-				FixedUpdateDynamic ();
+			if (Player.Local != null && Player.Local.Surroundings.IsUnderground) {
+				flowColliderObject.SetActive (false);
 			} else {
-				FixedUpdateStatic ();
+				flowColliderObject.SetActive (true);
+				if (Props.DynamicMode) {
+					FixedUpdateDynamic ();
+				} else {
+					FixedUpdateStatic ();
+				}
 			}
 		}
 

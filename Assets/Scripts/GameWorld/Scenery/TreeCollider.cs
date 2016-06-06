@@ -307,6 +307,11 @@ namespace Frontiers.World
 						set { transform.position = value; }
 				}
 
+				public Vector3 FocusPosition {
+					get { return transform.position; }
+					set { transform.position = value; }
+				}
+
 				#region IAudible implementation
 
 				public ItemOfInterestType IOIType { get { return ItemOfInterestType.Scenery; } }

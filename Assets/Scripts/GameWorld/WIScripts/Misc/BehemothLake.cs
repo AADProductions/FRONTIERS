@@ -29,6 +29,8 @@ namespace Frontiers.World.WIScripts
 		public string MissionName = "Behemoth";
 		public string VariableName = "SuccessfullyBlewUpDam";
 		public BehemothLakeState State = new BehemothLakeState ();
+		public float TargetWaterLevel;
+		float mCurrentWaterLevel;
 
 		public override void OnInitialized ()
 		{
@@ -50,9 +52,14 @@ namespace Frontiers.World.WIScripts
 				}
 			}
 
+			mCurrentWaterLevel = 0f;
+
 			if (flooded) {
 				worlditem.OnVisible += OnVisible;
 				worlditem.OnInvisible += OnInvisible;
+				TargetWaterLevel = State.LakeWaterLevelHigh;
+			} else {
+				TargetWaterLevel = State.LakeWaterLevelNormal;
 			}
 
 			StartCoroutine (SetFlooded (flooded));
@@ -143,6 +150,13 @@ namespace Frontiers.World.WIScripts
 
 		public void Update ()
 		{
+			if (!Mathf.Approximately (TargetWaterLevel, mCurrentWaterLevel)) {
+				mCurrentWaterLevel = Mathf.Lerp (mCurrentWaterLevel, TargetWaterLevel, Time.deltaTime);
+				Vector3 adjustedPosition = worlditem.tr.localPosition;
+				adjustedPosition.y = mCurrentWaterLevel;
+				worlditem.tr.position = adjustedPosition;
+			}
+
 			if (HasActiveLeviathan) {
 				if (mLastSplineIndex < 0) {
 					mLastSplineIndex = 0;

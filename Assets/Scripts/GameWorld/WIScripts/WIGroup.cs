@@ -14,6 +14,7 @@ namespace Frontiers.World
 		public WIGroupProps Props;
 		public WIGroup ParentGroup;
 		public Structure ParentStructure;
+		public Location ParentLocation;
 		public WorldChunk Chunk;
 		public List <WIGroup> ChildGroups;
 		public HashSet <WorldItem> ChildItems;
@@ -189,6 +190,12 @@ namespace Frontiers.World
 			}
 		}
 
+		public bool IsLocationGroup {
+			get {
+				return ParentLocation != null;
+			}
+		}
+
 		public bool IsStructureGroup {
 			get {
 				return ParentStructure != null;
@@ -314,6 +321,8 @@ namespace Frontiers.World
 			}
 			LoadState = WIGroupLoadState.Initialized;
 			mInstantiatePosition = tr.position;
+
+			ParentLocation = gameObject.GetComponent <Location> ();
 		}
 
 		protected void RefreshRequest()
@@ -620,7 +629,7 @@ namespace Frontiers.World
 				WorldItem childItem = childItemEnum.Current;
 				if (childItem == null || childItem.Mode == WIMode.RemovedFromGame) {
 					childrenToRemove.Add(childItem);
-				} else if (childItem.HasAtLeastOne(wiScriptTypes)) {	//if the child item is within the search radius and
+				} else if (childItem.HasAtLeastOne(wiScriptTypes)) {
 					childrenOfType.Add(childItem);
 				}
 			}

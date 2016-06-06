@@ -116,6 +116,8 @@ namespace Frontiers.World
 
 				public Vector3 Position { get { return transform.position; } }
 
+				public Vector3 FocusPosition { get { return transform.position; } }
+
 				public bool Has(string scriptName)
 				{
 						return false;

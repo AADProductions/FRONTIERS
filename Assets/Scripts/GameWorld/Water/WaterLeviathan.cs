@@ -58,6 +58,8 @@ public class WaterLeviathan : MonoBehaviour, IItemOfInterest, IHostile
 
 	public Vector3 Position { get { return MouthObject.position; } }
 
+	public Vector3 FocusPosition { get { return Position; } }
+
 	public bool Has (string scriptName)
 	{
 		return false;

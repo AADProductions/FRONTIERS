@@ -18,6 +18,7 @@ namespace Frontiers.World
 		public AudioClip DeathClip;
 		public Light RoamLight;
 		public ICreatureDen Den;
+		public int Coloration = 0;
 		public float TargetHeight;
 		public bool UsePlayerTargetHeight = true;
 		public bool Friendly {
@@ -69,12 +70,22 @@ namespace Frontiers.World
 
 		protected string mName;
 		protected bool mFriendly = false;
+		protected bool mIsDead = false;
 
 		#region item of interest implementation
 
 		public ItemOfInterestType IOIType { get { return ItemOfInterestType.Scenery; } }
 
 		public Vector3 Position {
+			get {
+				if (!mDestroyed) {
+					return rb.position;
+				}
+				return Vector3.zero;
+			}
+		}
+
+		public Vector3 FocusPosition {
 			get {
 				if (!mDestroyed) {
 					return rb.position;
@@ -135,7 +146,17 @@ namespace Frontiers.World
 
 		public IItemOfInterest LastDamageSource { get; set; }
 
-		public bool IsDead { get; set; }
+		public bool IsDead {
+			get {
+				if (mFriendly) {
+					return false;
+				}
+				return mIsDead;
+			}
+			set {
+				mIsDead = value;
+			}
+		}
 
 		public float NormalizedDamage { get { return 0f; } }
 

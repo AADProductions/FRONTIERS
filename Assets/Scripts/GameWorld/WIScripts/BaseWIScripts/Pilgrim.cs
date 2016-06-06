@@ -569,6 +569,12 @@ namespace Frontiers.World.WIScripts
 						}
 				}
 
+				public Vector3 FocusPosition {
+					get {
+						return Position;
+					}
+				}
+
 				public bool Has(string scriptName)
 				{
 						return false;

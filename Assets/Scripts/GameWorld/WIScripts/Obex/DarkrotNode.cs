@@ -190,6 +190,8 @@ namespace Frontiers.World.WIScripts
 
 		public Vector3 Position { get { return mTr.position + Collider.center; } }
 
+		public Vector3 FocusPosition { get { return Position; } }
+
 		public float LightExposure { get; set; }
 
 		public float HeatExposure { get; set; }

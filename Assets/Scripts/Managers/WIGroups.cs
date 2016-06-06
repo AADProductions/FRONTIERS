@@ -589,7 +589,6 @@ namespace Frontiers
 
 		public IEnumerator SaveGroupsOverTime()
 		{
-
 			WIGroup group = null;
 
 			for (int i = Groups.LastIndex(); i >= 0; i--) {
@@ -631,6 +630,51 @@ namespace Frontiers
 			}
 			//Debug.Log("Final result: " + currentGroup.Path);
 			return currentGroup;
+		}
+
+		public static IEnumerator GetAllChildrenByTypeInLocation (string startGroup, List <string> wiScriptTypes, List <WorldItem> childrenOfType, Vector3 searchOrigin, float searchRadius, bool searchInteriors, int maxItems) {
+			//get all the live groups immediately below us
+			WIGroup nextGroup = null;
+			//if (debugButterflies) { Debug.Log ("Searching for world items in " + startGroup); }
+			if (FindGroup (startGroup, out nextGroup)) {
+				List <WorldItem> children = nextGroup.GetChildrenOfType(wiScriptTypes);
+				for (int i = 0; i < children.Count; i++) {
+					if (Vector3.Distance (children [i].transform.position, searchOrigin) < searchRadius) {
+						//if it's in range then add it to the list
+						childrenOfType.Add (children [i]);
+					}
+					if (childrenOfType.Count >= maxItems) {
+						//are we over our max item count?
+						//if so we're done here
+						yield break;
+					}
+				}
+				for (int i = 0; i < nextGroup.ChildGroups.Count; i++) {
+					if (nextGroup.ChildGroups [i].IsLocationGroup) {
+						float distance = Vector3.Distance (searchOrigin, nextGroup.ChildGroups [i].ParentLocation.worlditem.Position);
+						if (distance < (nextGroup.ChildGroups [i].ParentLocation.worlditem.ActiveRadius - searchRadius)) {
+							//if (debugButterflies) { Debug.Log ("child group " + nextGroup.ChildGroups [i].Path + " was in range, searching for items"); }
+							var searchNextGroup = GetAllChildrenByTypeInLocation (nextGroup.ChildGroups [i].Path, wiScriptTypes, childrenOfType, searchOrigin, searchRadius, searchInteriors, maxItems);
+							while (searchNextGroup.MoveNext ()) {
+								yield return null;
+							}
+						}
+					} else if (nextGroup.ChildGroups [i].IsStructureGroup && (searchInteriors || !nextGroup.ChildGroups [i].Props.Interior)) {
+						float distance = Vector3.Distance (searchOrigin, nextGroup.ChildGroups [i].ParentStructure.worlditem.Position);
+						if (distance < (nextGroup.ChildGroups [i].ParentStructure.worlditem.ActiveRadius - searchRadius)) {
+							//if (debugButterflies) { Debug.Log ("child group " + nextGroup.ChildGroups [i].Path + " was in range, searching for items"); }
+							var searchNextGroup = GetAllChildrenByTypeInLocation (nextGroup.ChildGroups [i].Path, wiScriptTypes, childrenOfType, searchOrigin, searchRadius, searchInteriors, maxItems);
+							while (searchNextGroup.MoveNext ()) {
+								yield return null;
+							}
+						}
+					}
+					if (childrenOfType.Count >= maxItems) {
+						yield break;
+					}
+					yield return null;
+				}
+			}
 		}
 
 		public static IEnumerator GetAllChildrenByType(string startGroup, List <string> wiScriptTypes, List <WorldItem> childrenOfType, Vector3 searchOrigin, float searchRadius, int maxItems)

@@ -26,6 +26,8 @@ namespace Frontiers.World
 
 		public Vector3 Position { get { return tr.position; } }
 
+		public Vector3 FocusPosition { get { return tr.position; } }
+
 		public bool Has (string scriptName)
 		{
 			return false;

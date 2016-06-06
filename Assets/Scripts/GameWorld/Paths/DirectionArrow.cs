@@ -1,4 +1,4 @@
-﻿﻿using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using Frontiers;
 using Frontiers.World;
@@ -11,7 +11,9 @@ public class DirectionArrow : MonoBehaviour, IItemOfInterest
 {
 		public ItemOfInterestType IOIType { get { return ItemOfInterestType.Scenery; } }
 
-		public Vector3 Position { get { return mTr.position; } }
+		public Vector3 Position { get { return tr.position; } }
+
+		public Vector3 FocusPosition { get { return tr.position; } }
 
 		public bool Has(string scriptName)
 		{
@@ -69,8 +71,8 @@ public class DirectionArrow : MonoBehaviour, IItemOfInterest
 
 		public void Awake()
 		{
-				mTr = transform;
-				mRb = gameObject.GetOrAdd <Rigidbody>();
+				tr = transform;
+				rb = gameObject.GetOrAdd <Rigidbody>();
 
 				Collider = gameObject.GetComponent <BoxCollider>();
 				Collider.isTrigger = true;
@@ -106,11 +108,11 @@ public class DirectionArrow : MonoBehaviour, IItemOfInterest
 		{
 				//Debug.Log("Rotating to look at: " + position.ToString());
 				//only rotate on Y axis
-				mTr.LookAt(position);
-				Vector3 eulerAngles = mTr.rotation.eulerAngles;
+				tr.LookAt(position);
+				Vector3 eulerAngles = tr.rotation.eulerAngles;
 				eulerAngles.x = 0f;
 				eulerAngles.z = 0f;
-				mTr.rotation = Quaternion.Euler(eulerAngles);
+				tr.rotation = Quaternion.Euler(eulerAngles);
 		}
 
 		public void OnGainPlayerFocus()
@@ -184,6 +186,6 @@ public class DirectionArrow : MonoBehaviour, IItemOfInterest
 	#endif
 
 		protected bool mDestroyed = false;
-		protected Rigidbody mRb;
-		protected Transform mTr;
+		protected Rigidbody rb;
+		protected Transform tr;
 }

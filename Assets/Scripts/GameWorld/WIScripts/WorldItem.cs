@@ -20,6 +20,7 @@ namespace Frontiers.World
 		public Vector3 BasePivotOffset;
 		public TNObject NObject;
 		public ReceptaclePivot ParentPivot;
+		public Transform FocusPositionTransform;
 
 		public bool IsNObject {
 			get {

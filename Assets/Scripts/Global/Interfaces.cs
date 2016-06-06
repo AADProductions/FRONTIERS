@@ -229,6 +229,8 @@ namespace Frontiers
 
 			Vector3 Position { get; }
 
+			Vector3 FocusPosition { get; }
+
 			bool Has (string scriptName);
 
 			bool HasAtLeastOne (List <string> scriptNames);

@@ -523,6 +523,15 @@ namespace Frontiers.World
 						}
 				}
 
+				public Vector3 FocusPosition {
+					get {
+						if (mTransform == null) {
+							mTransform = transform;
+						}
+						return mTransform.position;
+					}
+				}
+
 				public WorldItem worlditem { get { return null; } }
 
 				public PlayerBase player { get { return null; } }

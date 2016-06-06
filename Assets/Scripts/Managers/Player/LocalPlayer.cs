@@ -72,6 +72,7 @@ namespace Frontiers
 		public PlayerProjections Projections;
 		public PlayerCharacterSpawner CharacterSpawner;
 		public PlayerIllumination Illumination;
+		public PlayerCritters Critters;
 		public double LastSpawnTime;
 
 		public float HijackLookSpeed = 1f;
@@ -765,6 +766,7 @@ namespace Frontiers
 			Projections = gameObject.GetOrAdd <PlayerProjections>();
 			CharacterSpawner = gameObject.GetOrAdd <PlayerCharacterSpawner>();
 			Illumination = gameObject.GetOrAdd <PlayerIllumination>();
+			Critters = gameObject.GetOrAdd <PlayerCritters> ();
 
 			Audio.OnLocalPlayerCreated();
 			WeatherEffects.OnLocalPlayerCreated();
@@ -779,6 +781,7 @@ namespace Frontiers
 			Carrier.OnLocalPlayerCreated();
 			Wearables.OnLocalPlayerCreated();
 			Illumination.OnLocalPlayerCreated();
+			Critters.OnLocalPlayerCreated ();
 		}
 
 		protected void FindFPSScripts()
