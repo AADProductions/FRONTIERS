@@ -227,6 +227,12 @@ namespace Frontiers
 			}
 		}
 
+		public bool IsCritterInPlayerFocus {
+			get {
+				return (CritterFocus != null && !CritterFocus.Destroyed);
+			}
+		}
+
 		public bool IsWorldItemInRange {
 			get {
 				return (IsWorldItemInPlayerFocus
@@ -335,6 +341,7 @@ namespace Frontiers
 		public IItemOfInterest ClosestObjectFocus;
 		public IItemOfInterest ClosestObjectInRange;
 		public BodyPart ClosestBodyPartInRange;
+		public Critter ClosestCritterInRange;
 		public RaycastHit ClosestObjectBelowHitInfo;
 		public RaycastHit ClosestObjectAboveHitInfo;
 		public RaycastHit ClosestObjectForwardHitInfo;
@@ -366,6 +373,7 @@ namespace Frontiers
 		public Receptacle ReceptacleInPlayerFocus;
 		public Receptacle ReceptacleUnderGrabber;
 		public MovingPlatform MovingPlatformUnderPlayer;
+		public Critter CritterFocus;
 
 		#endregion
 
@@ -1244,12 +1252,30 @@ namespace Frontiers
 			//so do that here, then do the rest as spherecast
 			if (Physics.Raycast (mPlayerHeadPosition, player.FocusVector, out worldItemHit, Globals.RaycastAllFocusDistance, Globals.LayerWorldItemActive)) {
 				//if (!worldItemHit.collider.isTrigger) {
-				if (WorldItems.GetIOIFromCollider (worldItemHit.collider, out focusItemOfInterest, out bodyPartHit)) {
+				if (WorldItems.GetIOIFromCollider (worldItemHit.collider, out focusItemOfInterest, out bodyPartHit, out critterHit)) {
 					focusItemOfInterest = CheckForCarried (focusItemOfInterest);
 					focusItemOfInterest = CheckForEquipped (focusItemOfInterest);
 					if (focusItemOfInterest != null) {
-						CheckForClosest (ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, ref ClosestBodyPartInRange, focusItemOfInterest, worldItemHit, bodyPartHit, true);
-						CheckForClosest (ref WorldItemFocus, ref WorldItemFocusHitInfo, ref BodyPartFocus, focusItemOfInterest, worldItemHit, bodyPartHit, true);
+						CheckForClosest (
+							ref ClosestObjectFocus,
+							ref ClosestObjectFocusHitInfo,
+							ref ClosestBodyPartInRange,
+							ref CritterFocus,
+							focusItemOfInterest,
+							worldItemHit,
+							bodyPartHit,
+							critterHit,
+							true);
+						CheckForClosest (
+							ref WorldItemFocus,
+							ref WorldItemFocusHitInfo,
+							ref BodyPartFocus,
+							ref CritterFocus,
+							focusItemOfInterest,
+							worldItemHit,
+							bodyPartHit,
+							critterHit,
+							true);
 					}
 				}
 				//}
@@ -1274,14 +1300,32 @@ namespace Frontiers
 							mObstructionHit = worldItemHit;
 							checkObstruction = true;
 						}
-					} else if (WorldItems.GetIOIFromCollider (worldItemHit.collider, out focusItemOfInterest, out bodyPartHit)) {
+					} else if (WorldItems.GetIOIFromCollider (worldItemHit.collider, out focusItemOfInterest, out bodyPartHit, out critterHit)) {
 						//make sure we're not carrying or equipping this item
 						//(we no longer have to check for body parts, get ioi from collider does that for us)
 						focusItemOfInterest = CheckForCarried (focusItemOfInterest);
 						focusItemOfInterest = CheckForEquipped (focusItemOfInterest);
 						if (focusItemOfInterest != null) {
-							CheckForClosest (ref ClosestObjectFocus, ref ClosestObjectFocusHitInfo, ref ClosestBodyPartInRange, focusItemOfInterest, worldItemHit, bodyPartHit, true);
-							CheckForClosest (ref WorldItemFocus, ref WorldItemFocusHitInfo, ref BodyPartFocus, focusItemOfInterest, worldItemHit, bodyPartHit, true);
+							CheckForClosest (
+								ref ClosestObjectFocus,
+								ref ClosestObjectFocusHitInfo,
+								ref ClosestBodyPartInRange,
+								ref ClosestCritterInRange,
+								focusItemOfInterest,
+								worldItemHit,
+								bodyPartHit,
+								critterHit,
+								true);
+							CheckForClosest (
+								ref WorldItemFocus,
+								ref WorldItemFocusHitInfo,
+								ref BodyPartFocus,
+								ref CritterFocus,
+								focusItemOfInterest,
+								worldItemHit,
+								bodyPartHit,
+								critterHit,
+								true);
 						}
 					}
 				}
@@ -1381,12 +1425,35 @@ namespace Frontiers
 			}
 		}
 		
-		protected void CheckForClosest (ref IItemOfInterest currentClosest, ref RaycastHit currentHit, IItemOfInterest contender, RaycastHit hit, bool checkForRange)
+		protected void CheckForClosest (
+			ref IItemOfInterest currentClosest,
+			ref RaycastHit currentHit,
+			IItemOfInterest contender,
+			RaycastHit hit,
+			bool checkForRange)
 		{
-			CheckForClosest (ref currentClosest, ref currentHit, ref bodyPartCheck, contender, hit, null, checkForRange);
+			CheckForClosest (
+				ref currentClosest,
+				ref currentHit,
+				ref bodyPartCheck,
+				ref critterCheck,
+				contender,
+				hit,
+				null,
+				null,
+				checkForRange);
 		}
 
-		protected void CheckForClosest (ref IItemOfInterest currentClosest, ref RaycastHit currentHit, ref BodyPart currentBodyPart, IItemOfInterest contender, RaycastHit hit, BodyPart contenderBodyPart, bool checkForRange)
+		protected void CheckForClosest (
+			ref IItemOfInterest currentClosest,
+			ref RaycastHit currentHit,
+			ref BodyPart currentBodyPart,
+			ref Critter currentCritter,
+			IItemOfInterest contender,
+			RaycastHit hit,
+			BodyPart contenderBodyPart,
+			Critter contenderCritter,
+			bool checkForRange)
 		{
 			if (contender == null)
 				return;
@@ -1399,11 +1466,13 @@ namespace Frontiers
 				currentHit = hit;
 				currentDistance = contenderDistance;
 				currentBodyPart = contenderBodyPart;
+				currentCritter = contenderCritter;
 			} else if (currentDistance > contenderDistance) {
 				currentClosest = contender;
 				currentHit = hit;
 				currentDistance = contenderDistance;
 				currentBodyPart = contenderBodyPart;
+				currentCritter = contenderCritter;
 			}
 
 			//this gets weird in the case of bodies of water
@@ -1483,6 +1552,7 @@ namespace Frontiers
 		protected Vector3 downRaycastStart;
 		protected RaycastHit worldItemHit;
 		protected BodyPart bodyPartHit;
+		protected Critter critterHit;
 		protected RaycastHit terrainHit;
 		protected RaycastHit[] sphereCastHits;
 		protected IItemOfInterest focusItemOfInterest = null;
@@ -1491,6 +1561,7 @@ namespace Frontiers
 		protected RaycastHit[ ] hitsForward;
 		protected RaycastHit hitForward;
 		protected BodyPart bodyPartCheck;
+		protected Critter critterCheck;
 		protected int CheckGroundType = 0;
 		protected double mTerrainTypeCheckInterval = 0.5f;
 		protected int mTerrainTypeCheck = 0;

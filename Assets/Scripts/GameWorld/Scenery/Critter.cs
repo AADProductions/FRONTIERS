@@ -38,6 +38,7 @@ namespace Frontiers.World
 				}
 			}
 		}
+
 		public TrailRenderer FriendlyTrail;
 
 		public string Name {
@@ -52,7 +53,7 @@ namespace Frontiers.World
 
 		public virtual bool UseName {
 			get {
-				return false;
+				return !string.IsNullOrEmpty (mName);
 			}
 			set {
 				return;
@@ -74,7 +75,11 @@ namespace Frontiers.World
 
 		#region item of interest implementation
 
-		public ItemOfInterestType IOIType { get { return ItemOfInterestType.Scenery; } }
+		public ItemOfInterestType IOIType {
+			get {
+				return ItemOfInterestType.Scenery;
+			}
+		}
 
 		public Vector3 Position {
 			get {
@@ -129,11 +134,6 @@ namespace Frontiers.World
 				return mHasPlayerFocus;
 			}
 			set {
-				if (!mHasPlayerFocus) {
-					if (value) {
-						OnGainPlayerFocus ();
-					}
-				}
 				mHasPlayerFocus = value;
 			}
 		}
@@ -210,7 +210,9 @@ namespace Frontiers.World
 
 		public virtual void Start ()
 		{
-			enabled = false;
+			if (!Friendly) {
+				enabled = false;
+			}
 		}
 
 		public virtual void UpdateMovement (Vector3 playerPosition)
@@ -253,11 +255,6 @@ namespace Frontiers.World
 				mRoomLightIntensity = Mathf.Lerp (mRoomLightIntensity, mTargetIntensity, 0.05f);
 				RoamLight.intensity = mRoomLightIntensity;
 			}
-		}
-
-		public void OnGainPlayerFocus ()
-		{
-
 		}
 
 		public void OnDie ()

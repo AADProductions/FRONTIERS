@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World.WIScripts;
+using Frontiers.GUI;
 
 namespace Frontiers.World
 {
@@ -33,7 +34,6 @@ namespace Frontiers.World
 		}
 		bool valuableIsHeldByPlayer = false;
 
-		#if UNITY_EDITOR
 		public override void Start ()
 		{
 			base.Start ();
@@ -41,8 +41,22 @@ namespace Frontiers.World
 			StartCoroutine (FindValuablesOverTime ());
 		}
 
-		public void Update () {
+		public virtual void Update()
+		{
+			if (Input.GetKeyDown (KeyCode.G)) {
+				if (string.IsNullOrEmpty (Name)) {
+					Name = "Custom Name";
+				} else {
+					Name = string.Empty;
+				}
+			}
 
+			if (Friendly) {
+				if (UseName) {
+					//if we've got a custom name, show that name regardless of whether we're in focus
+					GUIHud.Get.ShowAction (this, UserActionType.NoAction, Name, tr, GameManager.Get.GameCamera);
+				}
+			}
 		}
 
 		public override void UpdateMovement (Vector3 playerPosition)
@@ -130,7 +144,6 @@ namespace Frontiers.World
 				Gizmos.DrawLine (mCurrentPosition, mRandomValuablePosition);
 			}
 		}
-		#endif
 
 		protected Vector3 mCurrentValuablePosition;
 		protected Vector3 mRandomValuablePosition;

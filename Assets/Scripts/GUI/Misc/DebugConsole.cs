@@ -159,6 +159,15 @@ namespace Frontiers
 					posLabelList.Add (state);
 				}
 				if (GameManager.Is (FGameState.InGame)) {
+					posLabelList.Add ("-----------IOIs------------");
+					posLabelList.Add ("Something in range? " + Player.Local.Surroundings.IsSomethingInRange.ToString ());
+					posLabelList.Add ("Something in focus? " + Player.Local.Surroundings.IsSomethingInPlayerFocus.ToString ());
+					posLabelList.Add ("Worlditem in range? " + Player.Local.Surroundings.IsWorldItemInRange.ToString ());
+					posLabelList.Add ("Worlditem in focus? " + Player.Local.Surroundings.IsWorldItemInPlayerFocus.ToString ());
+					posLabelList.Add ("Critter in focus? " + Player.Local.Surroundings.IsCritterInPlayerFocus.ToString ());
+					if (Player.Local.Surroundings.IsSomethingInPlayerFocus) {
+						posLabelList.Add (" Closest object focus: -> " + Player.Local.Surroundings.ClosestObjectFocus.gameObject.name);
+					}
 					posLabelList.Add ("-----------QUEST ITEMS-------------");
 					foreach (string questItemName in Player.Local.Inventory.State.QuestItemsAcquired) {
 						posLabelList.Add (questItemName);

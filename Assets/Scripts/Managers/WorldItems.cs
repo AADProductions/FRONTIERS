@@ -1396,6 +1396,7 @@ namespace Frontiers.World
 		protected static Rigidbody mIoiRBCheck = null;
 		protected static WorldItem mWorlditemCheck = null;
 		protected static BodyPart mBodyPartCheck = null;
+		protected static Critter mCritterCheck = null;
 		protected static RaycastHit mLineOfSightHit;
 		protected static GameObject mGoIoiCheck;
 
@@ -1434,23 +1435,29 @@ namespace Frontiers.World
 
 		public static bool GetIOIFromCollider(Collider other, out IItemOfInterest ioi)
 		{
-			return GetIOIFromCollider(other, true, out ioi, out mBodyPartCheck);
+			return GetIOIFromCollider(other, true, out ioi, out mBodyPartCheck, out mCritterCheck);
 		}
 
 		public static bool GetIOIFromCollider(Collider other, out IItemOfInterest ioi, out BodyPart bodyPart)
 		{
-			return GetIOIFromCollider(other, true, out ioi, out bodyPart);
+			return GetIOIFromCollider(other, true, out ioi, out bodyPart, out mCritterCheck);
+		}
+
+		public static bool GetIOIFromCollider(Collider other, out IItemOfInterest ioi, out BodyPart bodyPart, out Critter critter)
+		{
+			return GetIOIFromCollider(other, true, out ioi, out bodyPart, out critter);
 		}
 
 		public static bool GetIOIFromCollider(Collider other, bool ignoreTrigger, out IItemOfInterest ioi)
 		{
-			return GetIOIFromCollider(other, ignoreTrigger, out ioi, out mBodyPartCheck);
+			return GetIOIFromCollider(other, ignoreTrigger, out ioi, out mBodyPartCheck, out mCritterCheck);
 		}
 
-		public static bool GetIOIFromCollider(Collider other, bool ignoreTrigger, out IItemOfInterest ioi, out BodyPart bodyPart)
+		public static bool GetIOIFromCollider(Collider other, bool ignoreTrigger, out IItemOfInterest ioi, out BodyPart bodyPart, out Critter critter)
 		{
 			ioi = null;
 			bodyPart = null;
+			critter = null;
 			if (other.isTrigger && ignoreTrigger) {
 				return false;
 			}
@@ -1465,21 +1472,29 @@ namespace Frontiers.World
 			if (mIoiRBCheck != null && !mIoiRBCheck.CompareTag(Globals.TagNonInteractive)) {
 				ioi = (IItemOfInterest)mIoiRBCheck.GetComponent(typeof(IItemOfInterest));
 				if (ioi != null && !ioi.Destroyed) {
+					//check for a critter before exiting
+					critter = ioi.gameObject.GetComponent <Critter> ();
 					return true;
 				}
 			}
-			return GetIOIFromGameObject(other.collider.gameObject, out ioi, out bodyPart);
+			return GetIOIFromGameObject(other.collider.gameObject, out ioi, out bodyPart, out critter);
 		}
 
 		public static bool GetIOIFromGameObject(GameObject go, out IItemOfInterest ioi)
 		{
-			return GetIOIFromGameObject(go, out ioi, out mBodyPartCheck);
+			return GetIOIFromGameObject(go, out ioi, out mBodyPartCheck, out mCritterCheck);
 		}
 
-		public static bool GetIOIFromGameObject(GameObject go, out IItemOfInterest ioi, out BodyPart bodyPart)
+		public static bool GetIOIFromGameObject(GameObject go, out IItemOfInterest ioi, out Critter critter)
+		{
+			return GetIOIFromGameObject(go, out ioi, out mBodyPartCheck, out critter);
+		}
+
+		public static bool GetIOIFromGameObject(GameObject go, out IItemOfInterest ioi, out BodyPart bodyPart, out Critter critter)
 		{
 			ioi = null;
 			bodyPart = null;
+			critter = null;
 			if (go.CompareTag(Globals.TagColliderFluid)) {
 				//collider fluid objects are immediately parented under worlidtem
 				ioi = (IItemOfInterest)go.transform.parent.GetComponent(typeof(IItemOfInterest));
@@ -1489,8 +1504,10 @@ namespace Frontiers.World
 			              || go.CompareTag(Globals.TagBodyTorso)
 			              || go.CompareTag(Globals.TagBodyGeneral)) {
 				//body parts are kept separate - they store a link to their worlditem
-				if (go.HasComponent <BodyPart>(out bodyPart)) {
+				if (go.HasComponent <BodyPart> (out bodyPart)) {
 					ioi = bodyPart.Owner;
+				} else if (go.HasComponent <Critter> (out critter)) {
+					ioi = critter;
 				}
 			} else if (go.CompareTag(Globals.TagStateChild)) {
 				//state child objects are immediately parented under worlditem

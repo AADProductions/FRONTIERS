@@ -1,4 +1,4 @@
-#define TESTING_CRITTERS
+//#define TESTING_CRITTERS
 using UnityEngine;
 using System;
 using System.Collections;
@@ -25,6 +25,10 @@ namespace Frontiers.World
 			base.WakeUp ();
 
 			Get = this;
+
+			for (int i = 0; i < CritterTemplates.Count; i++) {
+				mCritterLookup.Add (CritterTemplates [i].name, CritterTemplates [i]);
+			}
 		}
 
 		public void SpawnFriendlyFromSaveState (CritterSaveState state) {
@@ -49,13 +53,6 @@ namespace Frontiers.World
 				}
 			}
 			FriendlyCritters.Clear ();
-		}
-
-		public override void OnGameStart ()
-		{
-			for (int i = 0; i < CritterTemplates.Count; i++) {
-				mCritterLookup.Add (CritterTemplates [i].name, CritterTemplates [i]);
-			}
 		}
 
 		public void Update ()
@@ -154,6 +151,10 @@ namespace Frontiers.World
 				GameObject newCritterGameObject = GameObject.Instantiate (mTemplateLookup.gameObject, position, Quaternion.Euler (0f, UnityEngine.Random.value * 360f, 0f)) as GameObject;
 				critter = newCritterGameObject.GetComponent <Critter> ();
 				critter.enabled = true;
+			} else {
+				foreach (string key in mCritterLookup.Keys) {
+					Debug.Log (critterName + " equals " + key + " ?: " + (critterName == key).ToString ());
+				}
 			}
 			return critter != null;
 		}
