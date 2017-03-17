@@ -603,8 +603,8 @@ namespace Frontiers.World.WIScripts
 					Projector newProjector = newProjectorGameObject.AddComponent <Projector> ();
 					newProjectorGameObject.layer = Globals.LayerNumScenery;
 					newProjector.enabled = false;
-					newProjector.isOrthoGraphic = true;
-					newProjector.orthoGraphicSize = 0.15f;
+					newProjector.orthographic = true;
+					newProjector.orthographicSize = 0.15f;
 					newProjector.nearClipPlane = 0.1f;
 					newProjector.farClipPlane = 0.6f;
 					newProjector.material = Mats.Get.ReceptacleProjectorMaterial;

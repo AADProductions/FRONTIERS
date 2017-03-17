@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Frontiers.World.WIScripts;
 
-namespace Frontiers.World
+namespace Frontiers.World.Gameplay
 {
 		public class TrapObject : MonoBehaviour
 		{
@@ -30,7 +30,7 @@ namespace Frontiers.World
 				public void OnEnable()
 				{
 						TimeStarted = WorldClock.AdjustedRealTime;
-						rb = gameObject.rigidbody;
+						rb = gameObject.GetComponent<Rigidbody>();
 						tr = transform;
 						tr.localScale = Vector3.one * StartSize;
 				}

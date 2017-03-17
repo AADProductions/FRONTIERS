@@ -112,7 +112,7 @@ namespace Frontiers.World.WIScripts
 				Template.MeshIndex |= Books.Get.EditorMeshIndex (gameObject.GetComponent <MeshFilter> ().sharedMesh.name);
 			}
 			if (Template.TextureIndex == 0) {
-				Template.TextureIndex |= Books.Get.EditorTextureIndex (gameObject.renderer.sharedMaterial.mainTexture.name);
+				Template.TextureIndex |= Books.Get.EditorTextureIndex (gameObject.GetComponent<Renderer>().sharedMaterial.mainTexture.name);
 			}
 
 			bool foundExisting = false;

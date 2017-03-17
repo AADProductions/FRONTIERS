@@ -20,7 +20,7 @@ public class WorldItemHUDTargets : MonoBehaviour
 	
 	public void 		Update ( )
 	{
-		TopTarget.transform.position 	= transform.position + new Vector3 (0f, renderer.bounds.extents.y * Padding, 0f);
-		BotTarget.transform.position 	= transform.position + new Vector3 (0f, -renderer.bounds.extents.y * Padding, 0f);
+		TopTarget.transform.position 	= transform.position + new Vector3 (0f, GetComponent<Renderer>().bounds.extents.y * Padding, 0f);
+		BotTarget.transform.position 	= transform.position + new Vector3 (0f, -GetComponent<Renderer>().bounds.extents.y * Padding, 0f);
 	}
 }

@@ -9,7 +9,7 @@ namespace Frontiers.World.WIScripts
 	{
 		public virtual void OnCollisionEnter (Collision collision)
 		{			
-			float attemptedDamage = collision.relativeVelocity.magnitude * Globals.DamageSumForceMultiplier * rigidbody.mass;
+			float attemptedDamage = collision.relativeVelocity.magnitude * Globals.DamageSumForceMultiplier * GetComponent<Rigidbody>().mass;
 			float actualDamage;
 			bool isDead;
 			Vector3 damagePoint = collision.contacts [0].point;

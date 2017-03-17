@@ -48,160 +48,47 @@ public class ChunkModeChanger : MonoBehaviour
 		StartCoroutine (RunSequence ());
 	}
 
-	protected LoadStep GetNextStep ()
-	{
-		ChunkMode targetMode = Chunk.TargetMode;
-		ChunkMode currentMode = Chunk.CurrentMode;
-		StartTargetMode = targetMode;
-		LoadStep nextLoadStep = LoadStep.None;
-
-		switch (targetMode) {
-		case ChunkMode.Unloaded:
-		default:
-			switch (currentMode) {
-			case ChunkMode.Unloaded:
-			default:
-				//nothing to do here
-				break;
-
-			case ChunkMode.Distant:
-				nextLoadStep = LoadStep.UnloadDistant;
-				break;
-
-			case ChunkMode.Adjascent:
-				nextLoadStep = LoadStep.UnloadAdjascent;
-				break;
-
-			case ChunkMode.Immediate:
-			case ChunkMode.Primary:
-				nextLoadStep = LoadStep.UnloadImmediate;
-				break;
-			}
-			break;
-
-		case ChunkMode.Distant:
-			switch (currentMode) {
-			case ChunkMode.Unloaded:
-			default:
-				nextLoadStep = LoadStep.LoadDistant;
-				break;
-
-			case ChunkMode.Distant:
-												//nothing to do here
-				break;
-
-			case ChunkMode.Adjascent:
-				nextLoadStep = LoadStep.UnloadAdjascent;
-				break;
-
-			case ChunkMode.Immediate:
-			case ChunkMode.Primary:
-				nextLoadStep = LoadStep.UnloadImmediate;
-				break;
-			}
-			break;
-
-		case ChunkMode.Adjascent:
-			switch (currentMode) {
-			case ChunkMode.Unloaded:
-			default:
-				nextLoadStep = LoadStep.LoadDistant;
-				break;
-
-			case ChunkMode.Distant:
-				nextLoadStep = LoadStep.LoadAdjascent;
-				break;
-
-			case ChunkMode.Adjascent:
-												//nothing to do here
-				break;
-
-			case ChunkMode.Immediate:
-			case ChunkMode.Primary:
-				nextLoadStep = LoadStep.UnloadImmediate;
-				break;
-			}
-			break;
-
-		case ChunkMode.Immediate:
-		case ChunkMode.Primary:
-			switch (currentMode) {
-			case ChunkMode.Unloaded:
-			default:
-				nextLoadStep = LoadStep.LoadDistant;
-				break;
-
-			case ChunkMode.Distant:
-				nextLoadStep = LoadStep.LoadAdjascent;
-				break;
-
-			case ChunkMode.Adjascent:
-				nextLoadStep = LoadStep.LoadImmediate;
-				break;
-
-			case ChunkMode.Immediate:
-			case ChunkMode.Primary:
-												//nothing to do here
-				break;
-			}
-			break;
-		}
-		return nextLoadStep;
-	}
-
 	protected IEnumerator RunSequence ()
 	{
 		yield return null;
-		while (!Chunk.Initialized) {
-			yield return null;
-		}
+        while (!Chunk.Initialized) {
+            yield return null;
+        }
 
-		while (Chunk.CurrentMode != Chunk.TargetMode) {
-			while (!GameManager.Is (FGameState.InGame | FGameState.GameLoading | FGameState.GameStarting)) {
-				yield return null;
-			}
-			//run the sequence
-			IEnumerator preStep = null;
-			IEnumerator nextStep = null;
-			switch (GetNextStep ()) {
-			case LoadStep.LoadImmediate:
-				nextStep = LoadImmediate ();
-				break;
+        bool showAboveGround = !Player.Local.Surroundings.IsUnderground;
 
-			case LoadStep.LoadAdjascent:
-				nextStep = LoadAdjascent ();
-				break;
+        switch (Chunk.TargetMode) {
 
-			case LoadStep.LoadDistant:
-			default:
-				preStep = LoadChunk ();
-				nextStep = LoadDistant ();
-				break;
+            case ChunkMode.Immediate:
+            case ChunkMode.Primary:
+                Chunk.Transforms.AboveGroundStaticImmediate.gameObject.SetActive(true & showAboveGround);
+                Chunk.Transforms.AboveGroundStaticAdjascent.gameObject.SetActive(true & showAboveGround);
+                Chunk.Transforms.AboveGroundStaticDistant.gameObject.SetActive(true & showAboveGround);
+                Chunk.Transforms.BelowGroundStatic.gameObject.SetActive(!showAboveGround);
+                break;
 
-			case LoadStep.UnloadDistant:
-				preStep = UnloadDistant ();
-				nextStep = UnloadChunk ();
-				break;
+            case ChunkMode.Adjascent:
+                Chunk.Transforms.AboveGroundStaticImmediate.gameObject.SetActive(false);
+                Chunk.Transforms.AboveGroundStaticAdjascent.gameObject.SetActive(true & showAboveGround);
+                Chunk.Transforms.AboveGroundStaticDistant.gameObject.SetActive(true & showAboveGround);
+                Chunk.Transforms.BelowGroundStatic.gameObject.SetActive(!showAboveGround);
+                break;
 
-			case LoadStep.UnloadAdjascent:
-				nextStep = UnloadAdjascent ();
-				break;
+            case ChunkMode.Distant:
+                Chunk.Transforms.AboveGroundStaticImmediate.gameObject.SetActive(false);
+                Chunk.Transforms.AboveGroundStaticAdjascent.gameObject.SetActive(false);
+                Chunk.Transforms.AboveGroundStaticDistant.gameObject.SetActive(true & showAboveGround);
+                Chunk.Transforms.BelowGroundStatic.gameObject.SetActive(!showAboveGround);
+                break;
 
-			case LoadStep.UnloadImmediate:
-				nextStep = UnloadImmediate ();
-				break;
-			}
-			if (preStep != null) {
-				while (preStep.MoveNext ()) {
-					yield return preStep.Current;
-				}
-			}
-			while (nextStep.MoveNext ()) {
-				yield return nextStep.Current;
-			}
-			RefreshTerrainSettings (Chunk.CurrentMode);
-			yield return null;
-		}
+            case ChunkMode.Unloaded:
+                Chunk.Transforms.AboveGroundStaticImmediate.gameObject.SetActive(false);
+                Chunk.Transforms.AboveGroundStaticAdjascent.gameObject.SetActive(false);
+                Chunk.Transforms.AboveGroundStaticDistant.gameObject.SetActive (false);
+                Chunk.Transforms.BelowGroundStatic.gameObject.SetActive(false);
+                break;
+        }
+
 		Finish ();
 		yield break;
 	}
@@ -215,7 +102,7 @@ public class ChunkModeChanger : MonoBehaviour
 
 	protected IEnumerator LoadChunk ()
 	{
-		Terrain newTerrain = null;
+		/*Terrain newTerrain = null;
 		while (!GameWorld.Get.ClaimTerrain (out newTerrain)) {
 			if (Chunk.TargetMode == ChunkMode.Unloaded) {
 				yield break;
@@ -231,7 +118,7 @@ public class ChunkModeChanger : MonoBehaviour
 		var refreshTerrainTextures = Chunk.RefreshTerrainTextures ();
 		while (refreshTerrainTextures.MoveNext ()) {
 			yield return refreshTerrainTextures.Current;
-		}
+		}*/
 
 		if (Chunk.TargetMode == ChunkMode.Unloaded) {
 			yield break;
@@ -242,171 +129,12 @@ public class ChunkModeChanger : MonoBehaviour
 			yield return addRivers.Current;
 		}
 
-		if (Chunk.TargetMode == ChunkMode.Unloaded) {
-			yield break;
-		}
-
-		var refreshTerrainObjects = Chunk.RefreshTerrainObjects ();
-		while (refreshTerrainObjects.MoveNext ()) {
-			yield return refreshTerrainObjects.Current;
-		}
-
-		if (Chunk.TargetMode == ChunkMode.Unloaded) {
-			yield break;
-		}
-
-		var addTerrainTrees = Chunk.AddTerrainTrees ();
-		while (addTerrainTrees.MoveNext ()) {
-			yield return addTerrainTrees.Current;
-		}
-
-		if (Chunk.TargetMode == ChunkMode.Unloaded) {
-			yield break;
-		}
-
-		var addTerrainDetails = Chunk.AddTerrainDetails (StartTargetMode);
-		while (addTerrainDetails.MoveNext ()) {
-			yield return addTerrainDetails.Current;
-		}
-		yield break;
-	}
-
-	protected IEnumerator LoadImmediate ()
-	{
-		if (StartTargetMode != ChunkMode.Primary) {
-			while (GameManager.Is (FGameState.Cutscene) || Conversations.Get.LocalConversation.Initiating) {
-				yield return null;
-				if (Chunk.TargetMode == ChunkMode.Unloaded) {
-					yield break;
-				}
-			}
-		}
-
-		var nextTask = Chunk.AddTerainFX (ChunkMode.Immediate);
-		while (nextTask.MoveNext ()) {
-			yield return nextTask.Current;
-		}
-		yield return null;
-
-		for (int i = 0; i < Chunk.SceneryData.AboveGround.SolidTerrainPrefabs.Count; i++) {
-			nextTask = Structures.LoadChunkPrefab (Chunk.SceneryData.AboveGround.SolidTerrainPrefabs [i], Chunk, ChunkMode.Immediate);
-			while (nextTask.MoveNext ()) {
-				yield return nextTask.Current;
-			}
-			if (Chunk.TargetMode == ChunkMode.Unloaded) {
-				yield break;
-			}
-		}
-		for (int i = 0; i < Chunk.SceneryData.BelowGround.SolidTerrainPrefabs.Count; i++) {
-			nextTask = Structures.LoadChunkPrefab (Chunk.SceneryData.BelowGround.SolidTerrainPrefabs [i], Chunk, ChunkMode.Immediate);
-			while (nextTask.MoveNext ()) {
-				yield return nextTask.Current;
-			}
-			if (Chunk.TargetMode == ChunkMode.Unloaded) {
-				yield break;
-			}
-		}
-		if (Chunk.TargetMode == ChunkMode.Primary) {
-			Chunk.CurrentMode = ChunkMode.Primary;
-		} else {
-			Chunk.CurrentMode = ChunkMode.Immediate;
-		}
-		yield break;
-	}
-
-	protected IEnumerator LoadAdjascent ()
-	{
-		for (int i = 0; i < Chunk.SceneryData.AboveGround.SolidTerrainPrefabsAdjascent.Count; i++) {
-			var nextTask = Structures.LoadChunkPrefab (Chunk.SceneryData.AboveGround.SolidTerrainPrefabsAdjascent [i], Chunk, ChunkMode.Adjascent);
-			while (nextTask.MoveNext ()) {
-				yield return nextTask.Current;
-			}
-			switch (Chunk.TargetMode) {
-			case ChunkMode.Immediate:
-			case ChunkMode.Primary:
-				break;
-
-			case ChunkMode.Adjascent:
-				yield return null;
-				break;
-
-			default:
-				double start = WorldClock.RealTime;
-				while (WorldClock.RealTime < start + 0.1f) {
-					yield return null;
-				}
-				break;
-			}
-			if (Chunk.TargetMode == ChunkMode.Unloaded) {
-				yield break;
-			}
-		}
-		yield return null;
-		Chunk.CurrentMode = ChunkMode.Adjascent;
-		yield break;
-	}
-
-	protected IEnumerator LoadDistant ()
-	{
-		for (int i = 0; i < Chunk.SceneryData.AboveGround.SolidTerrainPrefabsDistant.Count; i++) {
-			var nextTask = Structures.LoadChunkPrefab (Chunk.SceneryData.AboveGround.SolidTerrainPrefabsDistant [i], Chunk, ChunkMode.Distant);
-			while (nextTask.MoveNext ()) {
-				yield return nextTask.Current;
-			}
-			switch (Chunk.TargetMode) {
-			case ChunkMode.Immediate:
-			case ChunkMode.Primary:
-				break;
-
-			case ChunkMode.Adjascent:
-				yield return null;
-				break;
-
-			default:
-				double start = WorldClock.RealTime;
-				while (WorldClock.RealTime < start + 0.1f) {
-					yield return null;
-				}
-				break;
-			}
-			if (Chunk.TargetMode == ChunkMode.Unloaded) {
-				yield break;
-			}
-		}
-		Chunk.CurrentMode = ChunkMode.Distant;
-		yield break;
-	}
-
-	protected IEnumerator UnloadImmediate ()
-	{
-		for (int i = 0; i < Chunk.SceneryData.AboveGround.SolidTerrainPrefabs.Count; i++) {
-			Structures.UnloadChunkPrefab (Chunk.SceneryData.AboveGround.SolidTerrainPrefabs [i]);//, Chunk, ChunkMode.Immediate);
-		}
-		Chunk.CurrentMode = ChunkMode.Adjascent;
-		yield break;
-	}
-
-	protected IEnumerator UnloadAdjascent ()
-	{
-		for (int i = 0; i < Chunk.SceneryData.AboveGround.SolidTerrainPrefabsAdjascent.Count; i++) {
-			Structures.UnloadChunkPrefab (Chunk.SceneryData.AboveGround.SolidTerrainPrefabsAdjascent [i]);//, Chunk, ChunkMode.Adjascent);
-		}
-		Chunk.CurrentMode = ChunkMode.Distant;
-		yield break;
-	}
-
-	protected IEnumerator UnloadDistant ()
-	{
-		for (int i = 0; i < Chunk.SceneryData.AboveGround.SolidTerrainPrefabsDistant.Count; i++) {
-			Structures.UnloadChunkPrefab (Chunk.SceneryData.AboveGround.SolidTerrainPrefabsDistant [i]);//, Chunk, ChunkMode.Distant);
-		}
-		Chunk.CurrentMode = ChunkMode.Unloaded;
 		yield break;
 	}
 
 	protected IEnumerator UnloadChunk ()
 	{
-		Chunk.UnloadTerrain ();
+		//Chunk.UnloadTerrain ();
 		Chunk.CurrentMode = ChunkMode.Unloaded;
 		yield break;
 	}
@@ -414,7 +142,7 @@ public class ChunkModeChanger : MonoBehaviour
 	protected void Finish ()
 	{
 		Chunk.CurrentMode = Chunk.TargetMode;
-		Chunk.ShowAboveGround (!Player.Local.Surroundings.IsUnderground);
+		//Chunk.ShowAboveGround (!Player.Local.Surroundings.IsUnderground);
 		mFinished = true;
 		GameObject.Destroy (this);
 		GameWorld.Get.RefreshTerrainDetailSettings ();

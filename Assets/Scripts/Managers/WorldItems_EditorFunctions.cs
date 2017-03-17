@@ -74,7 +74,7 @@ namespace Frontiers.World
 							worlditem.Props.Local.PreviousMode = WIMode.Frozen;
 							worlditem.Props.Local.Mode = WIMode.Frozen;
 						}
-						if (worlditem.rigidbody != null) {
+						if (worlditem.GetComponent<Rigidbody>() != null) {
 							worlditem.Props.Global.UseRigidBody = true;
 						} else {
 							worlditem.Props.Global.UseRigidBody = false;
@@ -86,8 +86,8 @@ namespace Frontiers.World
 						worlditem.Props.Global.ParentTag = worlditem.gameObject.tag;
 						worlditem.Props.Global.ParentLayer = worlditem.gameObject.layer;
 
-						if (worlditem.collider != null) {
-							Type type = worlditem.collider.GetType();
+						if (worlditem.GetComponent<Collider>() != null) {
+							Type type = worlditem.GetComponent<Collider>().GetType();
 							switch (type.ToString()) {
 								case "BoxCollider":
 									worlditem.Props.Global.ParentColliderType = WIColliderType.Box;
@@ -490,8 +490,8 @@ namespace Frontiers.World
 							RaycastHit floorInfo;
 							if (Physics.Raycast(mover.transform.position, Vector3.down, out floorInfo, 15.0f, Globals.LayerSolidTerrain)) {
 								Vector3 offset = Vector3.zero;
-								if (lastPlaced.collider != null) {
-									offset.y = lastPlaced.collider.bounds.extents.y;
+								if (lastPlaced.GetComponent<Collider>() != null) {
+									offset.y = lastPlaced.GetComponent<Collider>().bounds.extents.y;
 								}
 								mover.transform.position = floorInfo.point + offset;
 							} else {

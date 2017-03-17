@@ -25,15 +25,15 @@ namespace Frontiers.GUI
 								if (mNguiCamera == null) {
 										switch (Type) {
 												case InterfaceType.Base:
-														mNguiCamera = GUIManager.Get.NGUIBaseCamera.camera;
+														mNguiCamera = GUIManager.Get.NGUIBaseCamera.GetComponent<Camera>();
 														break;
 					
 												case InterfaceType.Primary:
-														mNguiCamera = GUIManager.Get.NGUIPrimaryCamera.camera;
+														mNguiCamera = GUIManager.Get.NGUIPrimaryCamera.GetComponent<Camera>();
 														break;
 					
 												case InterfaceType.Secondary:
-														mNguiCamera = GUIManager.Get.NGUISecondaryCamera.camera;
+														mNguiCamera = GUIManager.Get.NGUISecondaryCamera.GetComponent<Camera>();
 														break;
 					
 												default:

@@ -904,7 +904,7 @@ namespace Frontiers
 			try {
 				if (IsTerrainInPlayerFocus && TerrainFocus != mLastEncounteredScenery) {
 					mLastEncounteredScenery = TerrainFocus;
-					mLastEncounteredScenery.gameObject.collider.attachedRigidbody.SendMessage ("OnPlayerEncounter", SendMessageOptions.DontRequireReceiver);
+					mLastEncounteredScenery.gameObject.GetComponent<Collider>().attachedRigidbody.SendMessage ("OnPlayerEncounter", SendMessageOptions.DontRequireReceiver);
 				}
 			} catch (Exception e) {
 				//no big deal

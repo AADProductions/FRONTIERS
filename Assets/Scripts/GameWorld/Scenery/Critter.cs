@@ -187,13 +187,13 @@ namespace Frontiers.World
 		public void Awake ()
 		{
 			tr = gameObject.transform;
-			rb = gameObject.rigidbody;
+			rb = gameObject.GetComponent<Rigidbody>();
 			rb.useGravity = !Flies;
 			rb.constraints = RigidbodyConstraints.FreezeRotation;
-			BodyCollider = gameObject.collider;
+			BodyCollider = gameObject.GetComponent<Collider>();
 			BodyCollider.enabled = true;
-			Animation = gameObject.animation;
-			Audio = gameObject.audio;
+			Animation = gameObject.GetComponent<Animation>();
+			Audio = gameObject.GetComponent<AudioSource>();
 			if (RoamLight != null) {
 				mTargetIntensity = RoamLight.intensity;
 				RoamLight.intensity = 0f;

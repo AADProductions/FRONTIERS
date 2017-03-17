@@ -54,7 +54,7 @@ public class MeshCombinerExample : MonoBehaviour
 			
 			if (meshFilters [x].gameObject.activeSelf) {
 				_meshCombiner.AddMesh (meshFilters [x], 
-				                       meshFilters [x].renderer, 
+				                       meshFilters [x].GetComponent<Renderer>(), 
 				                       meshFilters [x].transform.localToWorldMatrix);
 			}
 			

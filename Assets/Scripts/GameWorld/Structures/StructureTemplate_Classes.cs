@@ -252,8 +252,8 @@ namespace Frontiers.World
 			PrefabName = piece.name;
 			PackName = packName;
 
-			if (piece.renderer != null) {
-				MaterialName = piece.renderer.sharedMaterial.name.Replace (" (Instance)", string.Empty);
+			if (piece.GetComponent<Renderer>() != null) {
+				MaterialName = piece.GetComponent<Renderer>().sharedMaterial.name.Replace (" (Instance)", string.Empty);
 			} else {
 				MaterialName = string.Empty;
 			}

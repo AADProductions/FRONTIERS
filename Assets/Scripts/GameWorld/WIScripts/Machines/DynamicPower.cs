@@ -37,7 +37,7 @@ namespace Frontiers.World.WIScripts
 								if (!HasPower) {
 										foreach (GameObject poweredObject in PoweredObjects) {
 												poweredObject.SendMessage("OnPowerSourceLosePower", SendMessageOptions.DontRequireReceiver);
-												worlditem.audio.PlayOneShot(PowerDownClip);
+												worlditem.GetComponent<AudioSource>().PlayOneShot(PowerDownClip);
 										}
 										mHadPowerLastFrame = false;
 								}
@@ -48,7 +48,7 @@ namespace Frontiers.World.WIScripts
 								if (HasPower) {
 										foreach (GameObject poweredObject in PoweredObjects) {
 												poweredObject.SendMessage("OnPowerSourceGainPower", SendMessageOptions.DontRequireReceiver);
-												worlditem.audio.PlayOneShot(PowerUpClip);
+												worlditem.GetComponent<AudioSource>().PlayOneShot(PowerUpClip);
 										}
 										mHadPowerLastFrame = true;
 								}

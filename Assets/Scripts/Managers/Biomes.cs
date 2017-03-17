@@ -32,7 +32,7 @@ namespace Frontiers
 			SunPositionObject.transform.parent = GameWorld.Get.Sky.Components.LightTransform;
 			SunPositionObject.transform.ResetLocal ();
 			CameraFX.Get.SetSunTransform (SunPositionObject.transform);
-			RenderSettings.ambientLight = Color.black;
+			RenderSettings.ambientSkyColor = Color.black;
 
 			mInitialized = true;
 		}
@@ -191,7 +191,7 @@ namespace Frontiers
 				//check if color correction is correct based on biome
 				if (CameraFX.Get.LUTName != GameWorld.Get.CurrentBiome.ColorSetting) {
 					Texture2D colorSetting = null;
-					if (Mods.Get.Runtime.CameraLUT (ref colorSetting, GameWorld.Get.CurrentBiome.ColorSetting)) {
+					if (Colors.Get.CameraLUT (ref colorSetting, GameWorld.Get.CurrentBiome.ColorSetting)) {
 						CameraFX.Get.SetLUT (colorSetting);
 					} else {
 						Debug.Log ("Couldn't load LUT setting");
@@ -264,7 +264,7 @@ namespace Frontiers
 					mAmbientLightIntensity += Profile.Get.CurrentPreferences.Video.NightAmbientLightBooster * Globals.MaxAmbientLightBoost;
 				}
 
-				//mAmbientLightIntensity = Mathf.Lerp (mAmbientLightIntensity, 1.0f * primaryChunk.BiomeData.AmbientLightMultiplier, terrainType.b);
+				//mAmbientLightIntensity = Mathf.Lerp (mAmbientLightIntensity, 1.0f * primaryChunk.BiomeData.ambientSkyColorMultiplier, terrainType.b);
 				mSmoothAmbientLightIntensity = Mathf.Lerp (mSmoothAmbientLightIntensity, mAmbientLightIntensity, (float)(WorldClock.RTDeltaTime * ambientIntensityLerpTime));
 				mSmoothSunlightIntensity = Mathf.Lerp (mSmoothSunlightIntensity, mSunlightIntensity, (float)(WorldClock.RTDeltaTime * lightIntensityLerpTime));
 				mSmoothShadowStrengthBooster = Mathf.Lerp (mSmoothShadowStrengthBooster, mShadowStrengthBooster, (float)WorldClock.RTDeltaTime);
@@ -280,23 +280,27 @@ namespace Frontiers
 			}
 			//do lightning flashes even if gameworld isn't loaded
 			if (mLightningFlash > 0f) {
-				RenderSettings.ambientLight = Color.Lerp (Colors.Get.LightningFlashColor, mAmbientColorSmooth, mLightningFlash);
+				RenderSettings.ambientSkyColor = Color.Lerp (Colors.Get.LightningFlashColor, mAmbientColorSmooth, mLightningFlash);
+				RenderSettings.ambientGroundColor = Color.Lerp (Colors.Get.LightningFlashColor, mAmbientColorSmooth, mLightningFlash);
 				GameWorld.Get.Sky.Atmosphere.Brightness = mDefaultBrightness + mLightningFlash;
 				mLightningFlash = Mathf.Lerp (mLightningFlash, 0f, 0.65f);
 				if (mLightningFlash < 0.001f) {
 					mLightningFlash = 0f;
 				}
 			} else {
-				RenderSettings.ambientLight = mAmbientColorSmooth;
+				RenderSettings.ambientSkyColor = mAmbientColorSmooth;
 			}
 
 			//finally, add the ambient light booster to ambient lighting
-			RenderSettings.ambientLight = Color.Lerp (RenderSettings.ambientLight, Color.white, Profile.Get.CurrentPreferences.Video.AmbientLightBooster * Globals.MaxAmbientLightBoost);
+			RenderSettings.ambientSkyColor = Color.Lerp (RenderSettings.ambientSkyColor, Color.white, Profile.Get.CurrentPreferences.Video.AmbientLightBooster * Globals.MaxAmbientLightBoost);
 
 			RenderSettings.fog = true;
 			RenderSettings.fogMode = FogMode.Linear;
 			RenderSettings.fogStartDistance	= 0f;
 			RenderSettings.fogEndDistance = mSmoothFogDistance;
+
+			RenderSettings.ambientEquatorColor = Color.Lerp (RenderSettings.ambientSkyColor, Colors.Get.AmbientEquatorColor, 0.5f);
+			RenderSettings.ambientGroundColor = Color.Lerp (RenderSettings.ambientSkyColor, Colors.Get.AmbientGroundColor, 0.5f);
 		}
 
 		public void FixedUpdate ()

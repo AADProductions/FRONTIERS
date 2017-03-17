@@ -41,24 +41,6 @@ namespace Frontiers.World
 			StartCoroutine (FindValuablesOverTime ());
 		}
 
-		public virtual void Update()
-		{
-			if (Input.GetKeyDown (KeyCode.G)) {
-				if (string.IsNullOrEmpty (Name)) {
-					Name = "Custom Name";
-				} else {
-					Name = string.Empty;
-				}
-			}
-
-			if (Friendly) {
-				if (UseName) {
-					//if we've got a custom name, show that name regardless of whether we're in focus
-					GUIHud.Get.ShowAction (this, UserActionType.NoAction, Name, tr, GameManager.Get.GameCamera);
-				}
-			}
-		}
-
 		public override void UpdateMovement (Vector3 playerPosition)
 		{
 			if (CurrentValuable != null) {
@@ -93,7 +75,7 @@ namespace Frontiers.World
 					yield return null;
 				}
 
-				while (GameWorld.Get.PrimaryChunk == null) {
+				while (GameWorld.Get.PrimaryChunk == null || GameWorld.Get.PrimaryChunk.AboveGroundGroup == null) {
 					yield return null;
 				}
 

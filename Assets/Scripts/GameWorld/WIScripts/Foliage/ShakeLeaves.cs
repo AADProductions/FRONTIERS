@@ -7,7 +7,7 @@ public class ShakeLeaves : MonoBehaviour
 	
 	public void 		OnTakeDamage (float damageAmount)
 	{
-		WindObject.animation ["WindZoneHit"].normalizedTime = 0.0f;
-		WindObject.animation.Play ("WindZoneHit", PlayMode.StopSameLayer);
+		WindObject.GetComponent<Animation>() ["WindZoneHit"].normalizedTime = 0.0f;
+		WindObject.GetComponent<Animation>().Play ("WindZoneHit", PlayMode.StopSameLayer);
 	}
 }

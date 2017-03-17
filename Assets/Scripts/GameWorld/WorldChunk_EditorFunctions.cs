@@ -10,21 +10,60 @@ using ExtensionMethods;
 
 namespace Frontiers.World
 {
-	public partial class WorldChunk
-	{
-		#if UNITY_EDITOR
-		public string CurrentWorldName = "FRONTIERS";
-		public bool LockTileOffset = true;
-		public bool SaveSceneryOnSave = true;
-		public bool SavePathsOnSave = true;
-		public bool SaveWorldItemsOnSave = true;
-		public bool SaveDetailsOnSave = true;
-		public bool SaveRiversOnSave = true;
-		public bool SaveTriggersOnSave = true;
+    public partial class WorldChunk {
+#if UNITY_EDITOR
+        public string CurrentWorldName = "FRONTIERS";
+        public bool LockTileOffset = true;
+        public bool SaveSceneryOnSave = true;
+        public bool SavePathsOnSave = true;
+        public bool SaveWorldItemsOnSave = true;
+        public bool SaveDetailsOnSave = true;
+        public bool SaveRiversOnSave = true;
+        public bool SaveTriggersOnSave = true;
+
+        public void EditorCreateStructureGroups(Transform start) {
+
+            Transforms.WorldItems.gameObject.SetActive(true);
+            start.gameObject.SetActive(true);
+
+            UnityEditor.EditorUtility.DisplayProgressBar("Creating structure groups", "Creating groups for " + start.name, 0f);
+            foreach (Transform child in start) {
+                Structure structure = child.GetComponent<Structure>();
+                if (structure != null) {
+                    WIGroup structureGroup = structure.gameObject.GetOrAdd<WIGroup>();
+                    structureGroup.RefreshEditor();
+                    structure.EditorCreateStructureGroups();
+                }
+                EditorCreateStructureGroups(child);
+            }
+        }
 
 		public void EditorLoadScenery(bool load)
 		{
-			if (load) {
+            if (load) {
+                //load the prototypes
+                TreePrototype[] treePrototypes = new TreePrototype[TerrainData.TreeTemplates.Count];
+                Manager.WakeUp<Plants>("Frontiers_ObjectManagers");
+                for (int i = 0; i < TerrainData.TreeTemplates.Count; i++) {
+                    if (TerrainData.TreeTemplates[i].AssetName.Equals("PlantInstancePrefab")) {
+                        TreePrototype t = new TreePrototype();
+                        t.prefab = Plants.Get.PlantInstancePrefab;
+                        treePrototypes[i] = t;
+                    } else {
+                        foreach (GameObject obj in Plants.Get.TreePrototypes) {
+                            if (obj.name.Equals(TerrainData.TreeTemplates[i].AssetName)) {
+                                TreePrototype t = new TreePrototype();
+                                t.prefab = obj;
+                                treePrototypes[i] = t;
+                                break;
+                            }
+                        }
+                    }
+                }
+                PrimaryTerrain.terrainData.treePrototypes = treePrototypes;
+            }
+
+			/*if (load) {
 				for (int i = 0; i < SceneryData.AboveGround.SolidTerrainPrefabs.Count; i++) {
 					ChunkPrefab chunkPrefab = SceneryData.AboveGround.SolidTerrainPrefabs[i];
 					Structures.Get.EditorInstantiateChunkPrefab(chunkPrefab, Transforms.AboveGroundStaticImmediate);
@@ -45,7 +84,7 @@ namespace Frontiers.World
 				DestroyChildren(Transforms.AboveGroundStaticImmediate);
 				DestroyChildren(Transforms.AboveGroundStaticAdjascent);
 				DestroyChildren(Transforms.AboveGroundStaticDistant);
-			}
+			}*/
 		}
 
 		public void EditorLoadChunk()
@@ -131,8 +170,10 @@ namespace Frontiers.World
 			UnityEngine.GUI.color = Color.yellow;
 			if (GUILayout.Button("\nSave Chunk\n")) {
 				SaveChunkEditor();
+                RemoveStoreInChunkGroups(ChunkGroup);
 			}
-			if (GUILayout.Button("\nSave Chunk Scenery\n")) {
+
+            if (GUILayout.Button("\nSave Chunk Scenery\n")) {
 				if (!Manager.IsAwake <Mods>()) {
 					Manager.WakeUp <Mods>("__MODS");
 				}
@@ -158,7 +199,16 @@ namespace Frontiers.World
 			}
 
 			UnityEngine.GUI.color = Color.red;
-			if (GUILayout.Button("\nLoad Chunk From Scratch\n")) {
+            if (GUILayout.Button("\nCreate Structure Groups\n")) {
+                bool suspendVisibilityUpdate = SuspendVisibilityUpdate;
+                SuspendVisibilityUpdate = false;
+                UnityEditor.EditorUtility.DisplayProgressBar("Creating structure groups", "", 0f);
+                EditorCreateStructureGroups(Transforms.WorldItems);
+                UnityEditor.EditorUtility.ClearProgressBar();
+                SuspendVisibilityUpdate = suspendVisibilityUpdate;
+            }
+
+            if (GUILayout.Button("\nLoad Chunk From Scratch\n")) {
 				EditorLoadChunk();
 			}
 			UnityEngine.GUI.color = Color.yellow;
@@ -168,7 +218,7 @@ namespace Frontiers.World
 			if (GUILayout.Button("\nUn-Load Chunk Scenery\n")) {
 				EditorLoadScenery(false);
 			}
-			if (GUILayout.Button("\nLoad Chunk Map\n")) {
+			/*if (GUILayout.Button("\nLoad Chunk Map\n")) {
 				if (PrimaryMaterial != null) {
 					if (!Manager.IsAwake <Mods>()) {
 						Manager.WakeUp <Mods>("__MODS");
@@ -179,7 +229,7 @@ namespace Frontiers.World
 						PrimaryMaterial.SetTexture("_CustomColorMap", overlay);
 					}
 				}
-			}
+			}*/
 
 			foreach (KeyValuePair <string,Texture2D> chunkMap in ChunkDataMaps) {
 				GUILayout.Label(chunkMap.Key);
@@ -256,7 +306,31 @@ namespace Frontiers.World
 						*/
 		}
 
-		public void SaveChunkEditor()
+        public void RemoveStoreInChunkGroups (WIGroup startGroup) {
+            if (Application.isPlaying) {
+                return;
+            }
+
+            if (startGroup == null)
+                return;
+
+            Debug.Log("Removing 'store in chunk' groups from " + startGroup.name);
+
+            List<WIGroup> groups = new List<WIGroup>(startGroup.GetComponentsInChildren<WIGroup>());
+
+            groups.Sort(delegate (WIGroup g1, WIGroup g2) { return g1.Depth.CompareTo(g2.Depth); });
+
+            foreach (WIGroup g in groups) {
+                if (!g.Props.IgnoreOnSave) {
+                    Debug.Log("Unloading group " + g.name + " at depth " + g.Depth);
+                    g.UnloadEditor();
+                    g.LoadEditor();
+                }
+            }
+        }
+
+
+        public void SaveChunkEditor()
 		{
 			//this should only be called in the editor
 			if (Application.isPlaying) {
@@ -393,7 +467,12 @@ namespace Frontiers.World
 				MeshRenderer prefabMr = prefabGo.GetComponent <MeshRenderer>();
 
 				if (prefabMr != null) {
-					ChunkPrefab chunkPrefab = new ChunkPrefab();
+                    prefabMf.gameObject.isStatic = true;
+
+                    //set up LOD
+                    Structures.Get.EditorSetUpChunkPrefab(prefabMf.gameObject);
+
+                    /*ChunkPrefab chunkPrefab = new ChunkPrefab();
 					chunkPrefab.Name = prefabGo.name;
 					chunkPrefab.Transform.Position = prefabGo.transform.localPosition;
 					chunkPrefab.Transform.Rotation = prefabGo.transform.rotation.eulerAngles;
@@ -450,7 +529,7 @@ namespace Frontiers.World
 						}
 					}
 
-					prefabs.Add(chunkPrefab);
+					prefabs.Add(chunkPrefab);*/
 				}
 			}
 
@@ -476,7 +555,7 @@ namespace Frontiers.World
 
 		protected void GetTerrainData(ChunkTerrainData terrainData, Terrain terrain)
 		{
-			terrainData.MaterialSettings.GetSettings(PrimaryMaterial);
+			//terrainData.MaterialSettings.GetSettings(PrimaryMaterial);
 
 			terrainData.GrassTint = terrain.terrainData.wavingGrassTint;
 			terrainData.WindBending = terrain.terrainData.wavingGrassAmount;
@@ -786,7 +865,7 @@ namespace Frontiers.World
 
 				if (trigger != null) {
 					trigger.OnEditorRefresh();
-					trigger.RefreshState(false);//chunk triggers are not saved locally
+					trigger.RefreshState(true);
 					string triggerName = trigger.name;
 					string triggerState = string.Empty;
 					string triggerScriptName = trigger.ScriptName;
@@ -929,8 +1008,12 @@ namespace Frontiers.World
 			}
 		}
 
-		private void OnDrawGizmos()
+		void OnDrawGizmos()
 		{
+			if (!Application.isPlaying) {
+				UpdateVisibility (Camera.current.transform.position);
+			}
+
 			Color gc = Color.white;
 			float alpha = 0.1f;
 			switch (mCurrentMode) {

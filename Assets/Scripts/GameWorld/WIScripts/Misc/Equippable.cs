@@ -145,7 +145,7 @@ namespace Frontiers.World.WIScripts
 								worlditem.ActiveStateLocked = false;
 								worlditem.ActiveState = WIActiveState.Visible;//we don't want our colliders to be enabled
 								worlditem.ActiveStateLocked = true;
-								worlditem.rigidbody.isKinematic	= true;
+								worlditem.GetComponent<Rigidbody>().isKinematic	= true;
 								//this will put us back in our group where we belong
 								worlditem.UnlockTransform();
 								//the tool will lock our transform on equip

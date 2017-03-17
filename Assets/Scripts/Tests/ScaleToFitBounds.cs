@@ -33,7 +33,7 @@ namespace Frontiers {
 			worlditem.transform.localPosition = Vector3.zero;
 			worlditem.transform.localScale = Vector3.one;
 
-			parentBounds = transform.parent.collider.bounds;
+			parentBounds = transform.parent.GetComponent<Collider>().bounds;
 			parentCenter = parentBounds.center;
 
 			objectBounds = new Bounds (worlditem.transform.position, Vector3.zero);

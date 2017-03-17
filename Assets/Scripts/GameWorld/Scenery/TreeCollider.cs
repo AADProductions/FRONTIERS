@@ -164,15 +164,15 @@ namespace Frontiers.World
 						windZone.transform.localScale = Vector3.one * SecondaryCollider.radius * 2;
 						windZone.transform.localPosition = SecondaryCollider.transform.localPosition;
 
-						windZone.animation.enabled = true;
-						windZone.animation["WindZoneRustle"].wrapMode = WrapMode.ClampForever;
-						windZone.animation.Rewind("WindZoneRustle");
-						windZone.animation.Play("WindZoneRustle");
+						windZone.GetComponent<Animation>().enabled = true;
+						windZone.GetComponent<Animation>()["WindZoneRustle"].wrapMode = WrapMode.ClampForever;
+						windZone.GetComponent<Animation>().Rewind("WindZoneRustle");
+						windZone.GetComponent<Animation>().Play("WindZoneRustle");
 
-						while (windZone.animation.IsPlaying("WindZoneRustle")) {
+						while (windZone.GetComponent<Animation>().IsPlaying("WindZoneRustle")) {
 								yield return null;
-								if (windZone.animation["WindZoneRustle"].normalizedTime > 1f) {
-										windZone.animation.enabled = false;
+								if (windZone.GetComponent<Animation>()["WindZoneRustle"].normalizedTime > 1f) {
+										windZone.GetComponent<Animation>().enabled = false;
 										yield break;
 								}
 						}

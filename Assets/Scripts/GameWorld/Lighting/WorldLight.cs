@@ -194,12 +194,21 @@ namespace Frontiers.World
 			mTargetSpotIntensity = -1f;
 			mMasterBrightness = -1f;
 
-			SpotlightTop.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Top, Flags.CheckType.MatchAny);
-			SpotlightBottom.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Bottom, Flags.CheckType.MatchAny);
-			SpotlightLeft.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Left, Flags.CheckType.MatchAny);
-			SpotlightRight.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Right, Flags.CheckType.MatchAny);
-			SpotlightFront.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Front, Flags.CheckType.MatchAny);
-			SpotlightBack.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Back, Flags.CheckType.MatchAny);
+			if (Globals.MissionDevelopmentMode) {
+				SpotlightTop.enabled = false;
+				SpotlightBottom.enabled = false;
+				SpotlightLeft.enabled = false;
+				SpotlightRight.enabled = false;
+				SpotlightFront.enabled = false;
+				SpotlightBack.enabled = false;
+			} else {
+				SpotlightTop.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Top, Flags.CheckType.MatchAny);
+				SpotlightBottom.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Bottom, Flags.CheckType.MatchAny);
+				SpotlightLeft.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Left, Flags.CheckType.MatchAny);
+				SpotlightRight.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Right, Flags.CheckType.MatchAny);
+				SpotlightFront.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Front, Flags.CheckType.MatchAny);
+				SpotlightBack.enabled = Flags.Check ((uint)Template.Spotlights, (uint)SpotlightDirection.Back, Flags.CheckType.MatchAny);
+			}
 
 			Color color = Colors.Get.ByName (Template.Color1);
 			Texture2D cookie = LightManager.Get.Cookie (Template.Cookie);
@@ -216,7 +225,11 @@ namespace Frontiers.World
 			TargetSpotIntensity = Template.SpotlightIntensity;
 			TargetSpotRange = Template.SpotlightRange;
 
-			BaseLight.enabled = Template.BaseLight;
+			if (Globals.MissionDevelopmentMode) {
+				BaseLight.enabled = false;
+			} else {
+				BaseLight.enabled = Template.BaseLight;
+			}
 			BaseLight.intensity = 0f;
 			BaseLight.color = color;
 			TargetBaseRange = Template.BaseRange;
@@ -411,6 +424,10 @@ namespace Frontiers.World
 
 		public void Enable (bool isEnabled)
 		{
+			if (Globals.MissionDevelopmentMode) {
+				isEnabled = false;
+			}
+
 			gameObject.layer = Globals.LayerNumAwarenessLight;
 
 			if (SpotlightTop != null) {

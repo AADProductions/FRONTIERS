@@ -5,12 +5,12 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.Data;
 using Frontiers.World.WIScripts;
+using System.Text;
 
 namespace Frontiers.World
 {
 	public partial class WorldItem
 	{
-
 		#region Script Management
 
 		public WIScript	GetOrAdd (string scriptName)
@@ -25,20 +25,36 @@ namespace Frontiers.World
 				}
 			}
 			if (wiScript == null) {
-				wiScript = gameObject.AddComponent (scriptName) as WIScript;
+				gStringBuilder.Clear ();
+				gStringBuilder.Append ("Frontiers.World.WIScripts.");
+				gStringBuilder.Append (scriptName);
+				wiScript = gameObject.AddComponent (Type.GetType (gStringBuilder.ToString())) as WIScript;
 			}
 			return wiScript;
 		}
 
 		public void Add (string scriptName)
 		{
-			gameObject.AddComponent (scriptName);
+			gStringBuilder.Clear ();
+			gStringBuilder.Append ("Frontiers.World.WIScripts.");
+			gStringBuilder.Append (scriptName);
+			if (gameObject.AddComponent (Type.GetType (gStringBuilder.ToString())) == null) {
+				Debug.LogError ("Couldn't add type " + scriptName);
+			}
+			//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent (gameObject, "Assets/Scripts/GameWorld/WIScripts/WorldItem_Scripts.cs (35,4)", scriptName);
 		}
 
 		public bool Add (string scriptName, out WIScript wiScript)
 		{
-			wiScript = gameObject.AddComponent (scriptName) as WIScript;
-			return true;
+			gStringBuilder.Clear ();
+			gStringBuilder.Append ("Frontiers.World.WIScripts.");
+			gStringBuilder.Append (scriptName);
+			wiScript = gameObject.AddComponent (Type.GetType (gStringBuilder.ToString())) as WIScript;
+			if (wiScript == null) {
+				Debug.LogError ("Couldn't add type " + scriptName);
+			}
+			//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent (gameObject, "Assets/Scripts/GameWorld/WIScripts/WorldItem_Scripts.cs (40,15)", scriptName) as WIScript;
+			return wiScript != null;
 		}
 
 		public bool Get (string scriptName, out WIScript wiScript)
@@ -390,7 +406,11 @@ namespace Frontiers.World
 					WIScript wiScript = gameObject.GetComponent (scriptState.Key) as WIScript;
 					if (wiScript == null) {
 						//if the world item doesn't have the script, add it
-						wiScript = gameObject.AddComponent (scriptState.Key) as WIScript;
+						gStringBuilder.Clear ();
+						gStringBuilder.Append ("Frontiers.World.WIScripts.");
+						gStringBuilder.Append (scriptState.Key);
+						wiScript = gameObject.AddComponent (Type.GetType (gStringBuilder.ToString())) as WIScript;
+						//wiScript = UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent (gameObject, "Assets/Scripts/GameWorld/WIScripts/WorldItem_Scripts.cs (393,18)", scriptState.Key) as WIScript;
 					}
 					if (wiScript != null) {
 						wiScript.CheckScriptProps ();
@@ -684,9 +704,9 @@ namespace Frontiers.World
 			}
 
 			if (rb == null) {
-				rb = tr.rigidbody;
+				rb = tr.GetComponent<Rigidbody>();
 				if (rb == null) {
-					rb = rigidbody;
+					rb = GetComponent<Rigidbody>();
 				}
 			}
 			//gameObject.name = Props.Name.PrefabName;
@@ -730,7 +750,7 @@ namespace Frontiers.World
 					Renderer[] renderers = tr.GetComponentsInChildren <Renderer> (true);
 					for (int i = 0; i < renderers.Length; i++) {
 						//particles aren't counted - scenery layers are considered 'custom'
-						if (renderers [i].particleSystem == null && renderers [i].gameObject.layer != Globals.LayerNumScenery) {
+						if (renderers [i].GetComponent<ParticleSystem>() == null && renderers [i].gameObject.layer != Globals.LayerNumScenery) {
 							worlditem.Renderers.Add (renderers [i]);
 						}
 					}
@@ -821,8 +841,14 @@ namespace Frontiers.World
 					var nameEnumerator = SaveState.Scripts.Keys.GetEnumerator ();
 					while (nameEnumerator.MoveNext ()) {
 						//foreach (string SaveStatecriptName in SaveState.Scripts.Keys) {
-						if (!currentScriptNames.Contains (nameEnumerator.Current)) {//SaveStatecriptName)) {
-							gameObject.AddComponent (nameEnumerator.Current);//SaveStatecriptName);
+						if (!currentScriptNames.Contains (nameEnumerator.Current)) {//SaveStatecriptName))
+							gStringBuilder.Clear();
+							gStringBuilder.Append ("Frontiers.World.WIScripts.");
+							gStringBuilder.Append(nameEnumerator.Current);
+							if (gameObject.AddComponent (Type.GetType (gStringBuilder.ToString())) == null) {
+								Debug.LogError ("Couldn't add for type " + nameEnumerator.Current);
+							}
+							//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent (gameObject, "Assets/Scripts/GameWorld/WIScripts/WorldItem_Scripts.cs (825,8)", nameEnumerator.Current);//SaveStatecriptName);
 						}
 					}
 				}
@@ -1272,7 +1298,7 @@ namespace Frontiers.World
 		#endif
 		protected bool mLockSaveState = false;
 		protected bool mAddedToGroupOnce = false;
-
+		static StringBuilder gStringBuilder = new StringBuilder ();
 		#endregion
 
 	}

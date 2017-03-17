@@ -15,7 +15,8 @@ namespace Frontiers.World.Gameplay
 				{
 						GameObject skillSphere = new GameObject(name);
 						skillSphere.transform.position = Player.Local.Position;
-						SkillSphere = skillSphere.AddComponent(Extensions.EffectSphereScriptName) as EffectSphere;
+						SkillSphere = skillSphere.AddComponent (Type.GetType ("Frontiers.World.Gameplay." + Extensions.EffectSphereScriptName))  as EffectSphere;
+						//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent(skillSphere, "Assets/Scripts/Skills/RangedSkill.cs (18,21)", Extensions.EffectSphereScriptName) as EffectSphere;
 
 						SkillSphere.TargetRadius = EffectRadius;
 						SkillSphere.StartTime = WorldClock.AdjustedRealTime;
@@ -49,7 +50,8 @@ namespace Frontiers.World.Gameplay
 				protected virtual void OnIntersectTarget(IItemOfInterest itemOfInterest)
 				{
 						if (!string.IsNullOrEmpty(Extensions.AddComponentOnUse)) {
-								ISkillEffect effect = (ISkillEffect)itemOfInterest.gameObject.AddComponent(Extensions.AddComponentOnUse);
+								ISkillEffect effect = (ISkillEffect)itemOfInterest.gameObject.AddComponent (Type.GetType ("Frontiers.World.Gameplay." + Extensions.AddComponentOnUse));
+								//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent(itemOfInterest.gameObject, "Assets/Scripts/Skills/RangedSkill.cs (52,45)", Extensions.AddComponentOnUse);
 								if (effect != null) {
 										effect.ParentSkill = this;
 										effect.RTEffectTime = EffectTime;

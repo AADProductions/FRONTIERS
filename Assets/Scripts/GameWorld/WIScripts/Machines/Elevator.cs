@@ -66,26 +66,26 @@ namespace Frontiers.World.WIScripts
 												}
 												if (State.TargetState == PlatformState.Up) {
 														State.CurrentState = PlatformState.GoingUp;
-														PivotObject.animation.Play(State.AnimationGoingUp);
+														PivotObject.GetComponent<Animation>().Play(State.AnimationGoingUp);
 														MasterAudio.PlaySound(State.SoundType, transform, State.SoundOnReachState);
 												}
 												break;
 
 										case PlatformState.Up:
 												if (State.TargetState == PlatformState.Down) {
-														PivotObject.animation.Play(State.AnimationGoingDown);
+														PivotObject.GetComponent<Animation>().Play(State.AnimationGoingDown);
 														State.CurrentState = PlatformState.GoingDown;
 												}
 												break;
 
 										case PlatformState.GoingUp:
-												if (PivotObject.animation[State.AnimationGoingUp].normalizedTime > 1f) {
+												if (PivotObject.GetComponent<Animation>()[State.AnimationGoingUp].normalizedTime > 1f) {
 														State.CurrentState = PlatformState.Up;
 												}
 												break;
 
 										case PlatformState.GoingDown:
-												if (PivotObject.animation[State.AnimationGoingDown].normalizedTime > 1f) {
+												if (PivotObject.GetComponent<Animation>()[State.AnimationGoingDown].normalizedTime > 1f) {
 														State.CurrentState = PlatformState.Down;
 												}
 												break;

@@ -365,7 +365,7 @@ namespace Frontiers.GUI
 				protected void UpdateSelectedStackDisplay()
 				{
 						if (Player.Local.Inventory.SelectedStack.HasTopItem) {
-								SelectedStackDisplayTransform.position = NGUICamera.camera.ScreenToWorldPoint(InterfaceActionManager.MousePosition);
+								SelectedStackDisplayTransform.position = NGUICamera.GetComponent<Camera>().ScreenToWorldPoint(InterfaceActionManager.MousePosition);
 								SelectedStackDoppleganger = WorldItems.GetDoppleganger(Player.Local.Inventory.SelectedStack.TopItem, SelectedStackDisplayOffsetTransform, SelectedStackDoppleganger, WIMode.Selected);
 								StackNumberLabel.enabled = true;
 						} else {

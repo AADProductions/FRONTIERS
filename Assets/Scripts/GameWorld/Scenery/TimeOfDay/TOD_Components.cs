@@ -152,7 +152,7 @@ public class TOD_Components : MonoBehaviour
 
         if (Space)
         {
-            SpaceRenderer   = Space.renderer;
+            SpaceRenderer   = Space.GetComponent<Renderer>();
             SpaceShader     = SpaceRenderer.sharedMaterial;
             SpaceMeshFilter = Space.GetComponent<MeshFilter>();
         }
@@ -165,7 +165,7 @@ public class TOD_Components : MonoBehaviour
 
         if (Atmosphere)
         {
-            AtmosphereRenderer   = Atmosphere.renderer;
+            AtmosphereRenderer   = Atmosphere.GetComponent<Renderer>();
             AtmosphereShader     = AtmosphereRenderer.sharedMaterial;
             AtmosphereMeshFilter = Atmosphere.GetComponent<MeshFilter>();
         }
@@ -178,7 +178,7 @@ public class TOD_Components : MonoBehaviour
 
         if (Clear)
         {
-            ClearRenderer   = Clear.renderer;
+            ClearRenderer   = Clear.GetComponent<Renderer>();
             ClearShader     = ClearRenderer.sharedMaterial;
             ClearMeshFilter = Clear.GetComponent<MeshFilter>();
         }
@@ -191,7 +191,7 @@ public class TOD_Components : MonoBehaviour
 
         if (Clouds)
         {
-            CloudRenderer   = Clouds.renderer;
+            CloudRenderer   = Clouds.GetComponent<Renderer>();
             CloudShader     = CloudRenderer.sharedMaterial;
             CloudMeshFilter = Clouds.GetComponent<MeshFilter>();
         }
@@ -217,7 +217,7 @@ public class TOD_Components : MonoBehaviour
         if (Light)
         {
 			//LightTransform = gameObject.FindOrCreateChild ("LightTransform");//Light.transform;
-			LightSource    = Light.light;
+			LightSource    = Light.GetComponent<Light>();
         }
         else
         {
@@ -229,7 +229,7 @@ public class TOD_Components : MonoBehaviour
         if (Sun)
         {
             SunTransform  = Sun.transform;
-            SunRenderer   = Sun.renderer;
+            SunRenderer   = Sun.GetComponent<Renderer>();
             SunShader     = SunRenderer.sharedMaterial;
             SunMeshFilter = Sun.GetComponent<MeshFilter>();
         }
@@ -243,7 +243,7 @@ public class TOD_Components : MonoBehaviour
         if (Moon)
         {
             MoonTransform  = Moon.transform;
-            MoonRenderer   = Moon.renderer;
+            MoonRenderer   = Moon.GetComponent<Renderer>();
             MoonShader     = MoonRenderer.sharedMaterial;
             MoonMeshFilter = Moon.GetComponent<MeshFilter>();
         }
@@ -254,8 +254,10 @@ public class TOD_Components : MonoBehaviour
             return;
         }
 
-		DontDestroyOnLoad (transform);
-		DontDestroyOnLoad (LightTransform);
-		DontDestroyOnLoad (LightSource);
+		if (Application.isPlaying) {
+			DontDestroyOnLoad (transform);
+			DontDestroyOnLoad (LightTransform);
+			DontDestroyOnLoad (LightSource);
+		}
     }
 }

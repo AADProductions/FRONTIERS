@@ -69,7 +69,7 @@ namespace Frontiers.GUI
 						UISlider slider = gameObject.GetComponent <UISlider>();
 						slider.enabled = false;
 						mStartupSet = true;
-						slider.collider.enabled	= false;
+						slider.GetComponent<Collider>().enabled	= false;
 				}
 
 				public void SetEnabled()
@@ -79,7 +79,7 @@ namespace Frontiers.GUI
 						UISlider slider = gameObject.GetComponent <UISlider>();
 						slider.enabled = true;
 						mStartupSet = true;
-						slider.collider.enabled	= true;
+						slider.GetComponent<Collider>().enabled	= true;
 				}
 
 				public void Start()

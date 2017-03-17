@@ -1,5 +1,6 @@
-﻿﻿using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
+using Frontiers.World.Gameplay;
 
 namespace Frontiers.World {
 	public class ObexCreature : MonoBehaviour {
@@ -9,7 +10,7 @@ namespace Frontiers.World {
 		public Collider TailCollider;
 		public Material TailMaterialBase;
 		public Material TailMaterialIllum;
-		public InteractiveCloth TailCloth;
+		//public InteractiveCloth TailCloth;
 		public Transform HeadPivot;
 		public AnimationCurve HeadBobCurve;
 		public Quaternion TargetRotation;
@@ -51,7 +52,7 @@ namespace Frontiers.World {
 			//w.Initialize ();
 			//w.OnGameStart ();
 
-			TailCloth = TailBase.gameObject.AddComponent <InteractiveCloth> ();
+			/*TailCloth = TailBase.gameObject.AddComponent <InteractiveCloth> ();
 			TailCloth.mesh = TailMesh;
 			ClothRenderer cr = TailBase.gameObject.AddComponent <ClothRenderer> ();
 			cr.sharedMaterials = new Material[] { TailMaterialBase, TailMaterialIllum };
@@ -68,7 +69,7 @@ namespace Frontiers.World {
 			TailCloth.attachmentResponse = 0.99f;
 			TailCloth.attachmentTearFactor = 1f;
 			TailCloth.tearFactor = 0f;
-			TailCloth.AttachToCollider (TailCollider, false);
+			TailCloth.AttachToCollider (TailCollider, false);*/
 		}
 		
 		// Update is called once per frame
@@ -112,10 +113,10 @@ namespace Frontiers.World {
 			}
 			transform.rotation = Quaternion.Slerp (transform.rotation, TargetRotation, Time.deltaTime * 0.1f);
 			if (Time.timeScale == 0f) {
-				TailCloth.enabled = false;
+				//TailCloth.enabled = false;
 			} else {
-				TailCloth.enabled = true;
-				TailCloth.externalAcceleration = -TailBase.forward + TailBase.up;
+				//TailCloth.enabled = true;
+				//TailCloth.externalAcceleration = -TailBase.forward + TailBase.up;
 			}
 			HeadPivot.localRotation = Quaternion.Euler (HeadBobCurve.Evaluate (HeadBobTime), 0f, 0f);
 

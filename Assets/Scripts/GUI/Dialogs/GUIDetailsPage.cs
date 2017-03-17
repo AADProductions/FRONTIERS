@@ -21,7 +21,7 @@ namespace Frontiers.GUI
 				public Camera NGUICamera {
 						get {
 								if (mNguiCamera == null) {
-										mNguiCamera = GUIManager.Get.NGUIPrimaryCamera.camera;
+										mNguiCamera = GUIManager.Get.NGUIPrimaryCamera.GetComponent<Camera>();
 								}
 								return mNguiCamera;
 						}

@@ -85,7 +85,7 @@ namespace Frontiers.World.WIScripts
 					rawLuminite.Props.Local.FreezeOnStartup = false;
 					rawLuminite.Initialize ();
 					rawLuminite.SetMode (WIMode.World);
-					rawLuminite.rigidbody.AddForce (worlditem.tr.up * 0.25f);
+					rawLuminite.GetComponent<Rigidbody>().AddForce (worlditem.tr.up * 0.25f);
 				}
 				State.TimeMined = WorldClock.AdjustedRealTime;
 				State.AbsorbedDarkRot = 0f;

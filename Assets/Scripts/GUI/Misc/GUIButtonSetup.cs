@@ -218,8 +218,8 @@ namespace Frontiers.GUI
 								button.hover = hover;
 								button.defaultColor = defaultColor;
 								button.duration = duration;
-								if (button.collider != null) {
-										button.collider.enabled = buttonEnabled;
+								if (button.GetComponent<Collider>() != null) {
+										button.GetComponent<Collider>().enabled = buttonEnabled;
 								}
 						}
 				}

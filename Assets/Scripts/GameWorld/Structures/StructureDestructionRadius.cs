@@ -9,7 +9,7 @@ namespace Frontiers.World
 		{
 			gameObject.layer = Globals.LayerNumTrigger;
 			gameObject.AddComponent <Rigidbody> ( );
-			rigidbody.isKinematic = true;
+			GetComponent<Rigidbody>().isKinematic = true;
 		}
 		
 		public void Start ( )

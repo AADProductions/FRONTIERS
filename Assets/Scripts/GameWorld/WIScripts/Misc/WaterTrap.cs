@@ -232,9 +232,9 @@ namespace Frontiers.World.WIScripts
 
 				protected void PlayAnimation(string clipName)
 				{
-						if (!animation.IsPlaying(clipName)) {
+						if (!GetComponent<Animation>().IsPlaying(clipName)) {
 								//Debug.Log("Playing animation: " + clipName);
-								animation.Play(clipName);
+								GetComponent<Animation>().Play(clipName);
 						}
 				}
 

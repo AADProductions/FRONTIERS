@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Frontiers.GUI;
-using Ovr;
+//using Ovr;
 using System.IO;
 
 namespace Frontiers
@@ -35,8 +35,8 @@ namespace Frontiers
 						}
 				}
 
-				public OVRManager OvrManager;
-				public OVRCameraRig OvrCameraRig;
+				//public OVRManager OvrManager;
+				public GameObject OvrCameraRig;
 				//used for gui bounds, doesn't actually render anything
 				public Camera OvrCenterCamera;
 				public Transform FocusTransform;
@@ -248,7 +248,8 @@ namespace Frontiers
 						DirectionTransform = new GameObject("DirectionTransform").transform;
 						CursorLock = true;
 
-						OvrManager.resetTrackerOnLoad = true;
+			//TODO UNITY 5
+						//OvrManager.resetTrackerOnLoad = true;
 						gOculusModeEnabled = false;
 
 						DetectDirectToRiftMode();
@@ -262,8 +263,9 @@ namespace Frontiers
 
 				public override void Initialize()
 				{
+			//TODO UNITY 5
 						VRMode = false;
-						DirectionTransform.parent = OvrCameraRig.centerEyeAnchor;
+						/*DirectionTransform.parent = OvrCameraRig.centerEyeAnchor;
 						DirectionTransform.localPosition = Vector3.zero;
 						DirectionTransform.localRotation = Quaternion.identity;
 
@@ -305,7 +307,9 @@ namespace Frontiers
 								RefreshSettings(true);
 						} else {
 								Debug.Log("NOT refreshing settings in vr manager");
-						}
+						}*/
+
+			base.Initialize();
 				}
 
 				public void OnClickResetCameraView()
@@ -364,9 +368,10 @@ namespace Frontiers
 
 				public static bool VRDeviceAvailable {
 						get {
-								if (OVRManager.display != null) {
+				//TODO UNITY 5
+								/*if (OVRManager.display != null) {
 										return OVRManager.display.isPresent;
-								}
+								}*/
 								return false;
 						}
 				}
@@ -414,13 +419,14 @@ namespace Frontiers
 										Debug.Log ("Error setting rift mode, proceeding normally: " + e.ToString());
 								}
 
-								if (!OvrManager.enabled) {
+				//TODO UNITY 5
+								/*if (!OvrManager.enabled) {
 										Debug.Log ("Setting ovr manager & ovr camera rig to enabled");
 										OvrManager.enabled = true;
 								}
 								if (!OvrCameraRig.enabled) {
 										OvrCameraRig.enabled = true;
-								}
+								}*/
 
 								InterfaceActionManager.SoftwareMouse = true;
 
@@ -482,14 +488,16 @@ namespace Frontiers
 										Debug.Log ("Error setting rift mode, proceeding normally: " + e.ToString());
 								}
 
+
+				//TODO UNITY 5
 								
-								if (OvrManager.enabled) {
+								/*if (OvrManager.enabled) {
 									Debug.Log ("Setting ovr manager & ovr camera rig to disabled");
 									OvrManager.enabled = false;
 								}
 								if (OvrCameraRig.enabled) {
 									OvrCameraRig.enabled = false;
-								}
+								}*/
 
 								InterfaceActionManager.SoftwareMouse = false;
 
@@ -700,12 +708,15 @@ namespace Frontiers
 
 				public void FixedUpdate()
 				{
+			//TODO UNITY 5
+			/*
 						if (mResetCameraForwardNextFrame && OVRManager.display != null) {
 								ResetCameraForward();
 								Debug.Log("refreshing camera settings with reset interface");
 								RefreshSettings(true);
 								mResetCameraForwardNextFrame = false;
 						}
+						*/
 
 						if (!mInitialized)
 								return;
@@ -724,7 +735,7 @@ namespace Frontiers
 						if (!mInitialized)
 								return;
 
-						OvrCenterCamera.fieldOfView = CameraFX.Get.OvrLeft.cam.fieldOfView;
+						//OvrCenterCamera.fieldOfView = CameraFX.Get.OvrLeft.cam.fieldOfView;
 
 						if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.LeftShift)) {
 								ResetCameraForward();
@@ -770,12 +781,15 @@ namespace Frontiers
 										Player.Local.FPSCameraSeat.localEulerAngles = fpsCameraSeatRotation;
 										YRotationOffset = fpsCameraSeatRotation.y;
 								}
+				//TODO UNITY 5
+				/*
 								if (OVRManager.display != null) {
 									Debug.Log("Resetting display center pose");
 									OVRManager.display.RecenterPose();
 								} else {
 									mResetCameraForwardNextFrame = true;
 								}
+								*/
 								mRecenteredPoseLastFrame = true;
 						}
 				}
@@ -834,8 +848,9 @@ namespace Frontiers
 
 						if (gDirectToRiftMode) {
 								Debug.Log("Direct to rift mode detected");
-								OvrManager.enabled = true;
-								OvrCameraRig.enabled = true;
+				//TODO UNITY 5
+								/*OvrManager.enabled = true;
+								OvrCameraRig.enabled = true;*/
 								RefreshSettings(false);
 								mResetCameraForwardNextFrame = true;
 						}

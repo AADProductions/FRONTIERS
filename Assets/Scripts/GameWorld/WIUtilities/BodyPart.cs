@@ -110,7 +110,7 @@ public class BodyPart : MonoBehaviour
 		enabled = false;
 		gameObject.layer = Globals.LayerNumWorldItemActive;
 		tr = transform;
-		PartCollider = collider;
+		PartCollider = GetComponent<Collider>();
 		PartCollider.enabled = false;
 	}
 

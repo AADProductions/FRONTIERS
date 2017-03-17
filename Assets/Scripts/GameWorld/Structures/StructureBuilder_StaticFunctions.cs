@@ -190,7 +190,7 @@ namespace Frontiers.World
 				builder.StructurePiece = builder.StructureBase.FindOrCreateChild (GetChildName (false, true));
 				for (int i = 0; i < cachedStructure.ExteriorRenderers.Count; i++) {
 					try {
-						Transform newRendererTransform = GameObject.Instantiate (cachedStructure.ExteriorRenderers [i].gameObject) as Transform;
+						Transform newRendererTransform = GameObject.Instantiate (cachedStructure.ExteriorRenderers [i].gameObject).transform;
 						newRendererTransform.parent = builder.StructurePiece;
 						newRendererTransform.localPosition = Vector3.zero;
 						newRendererTransform.localRotation = Quaternion.identity;
@@ -314,7 +314,7 @@ namespace Frontiers.World
 			bool meshesDestroyedFinished = false;
 			bool lodDestroyedMeshesFinished = false;
 
-			if (!createLodMeshes) {
+			if (!createLodMeshes || Globals.MissionDevelopmentMode) {
 				lodMeshesFinished = true;
 				lodDestroyedMeshesFinished = true;
 			}
@@ -385,6 +385,7 @@ namespace Frontiers.World
 					generateMesh = true;
 				}
 				//see if we've got our lod mesh cached
+				//don't create if we're doing missions testing
 				if (createLodMeshes) {
 					if (Structures.Get.GetCachedMesh (templateName, interior, false, false, staticLayer.LayerNum, staticLayer.Layer, staticLayer.Tag, out cachedMesh)) {
 						var cachedMeshEnum = GenerateCachedMesh (
@@ -981,40 +982,57 @@ namespace Frontiers.World
 			bool destroyed = staticLayer.DestroyedBehavior != StructureDestroyedBehavior.None;
 			if (staticLayer.InstancePieces != null) {
 				//send the child pieces to the mesh combiner and wait for it to finish
+
 				if (Structures.Get.PackStaticPrefab (staticLayer.PackName, staticLayer.PrefabName, out prefab)) {
-					MeshCombiner.BufferedMesh bufferedMesh = prefab.BufferedMesh;
-					MeshCombiner.BufferedMesh bufferedLodMesh = prefab.BufferedLodMesh;
+					MeshCombiner.BufferedMesh bufferedMesh = null;
+					MeshCombiner.BufferedMesh bufferedLodMesh = null;
+					if (Globals.MissionDevelopmentMode) {
+						//use LOD meshes by default in mission dev mode if available
+						bufferedMesh = prefab.BufferedLodMesh;
+						if (bufferedMesh == null) {
+							bufferedMesh = prefab.BufferedMesh;
+						}
+					} else {
+						bufferedMesh = prefab.BufferedMesh;
+						bufferedLodMesh = prefab.BufferedLodMesh;
+					}
 					if (bufferedLodMesh != null && lodCombiner != null) {
 						createLodMesh = true;
 					}
 					MeshRenderer pmr = prefab.MRenderer;
 					MeshFilter pmf = prefab.MFilter;
 					gMaterialsList.Clear ();
-					gMaterialsList.AddRange (pmr.sharedMaterials);
-					//copy the mesh data
-					//swap in substitutions
-					if (staticLayer.Substitutions != null && staticLayer.Substitutions.Count > 0) {
-						string newMaterialName = string.Empty;
-						for (int j = 0; j < gMaterialsList.Count; j++) {
-							if (staticLayer.Substitutions.TryGetValue (gMaterialsList [j].name, out newMaterialName)) {
-								Material sharedMaterial = null;
-								if (Structures.Get.SharedMaterial (newMaterialName, out sharedMaterial)) {
-									gMaterialsList [j] = sharedMaterial;
+
+					if (Globals.MissionDevelopmentMode) {
+						//just add basic material
+						gMaterialsList.Add(Mats.Get.DefaultDiffuseMaterial);
+					} else {
+						gMaterialsList.AddRange (pmr.sharedMaterials);
+						//copy the mesh data
+						//swap in substitutions
+						if (staticLayer.Substitutions != null && staticLayer.Substitutions.Count > 0) {
+							string newMaterialName = string.Empty;
+							for (int j = 0; j < gMaterialsList.Count; j++) {
+								if (staticLayer.Substitutions.TryGetValue (gMaterialsList [j].name, out newMaterialName)) {
+									Material sharedMaterial = null;
+									if (Structures.Get.SharedMaterial (newMaterialName, out sharedMaterial)) {
+										gMaterialsList [j] = sharedMaterial;
+									}
 								}
 							}
 						}
-					}
-					if (staticLayer.AdditionalMaterials != null && staticLayer.AdditionalMaterials.Count > 0) {
-						for (int i = 0; i < staticLayer.AdditionalMaterials.Count; i++) {
-							Material sharedMaterial = null;
-							if (Structures.Get.SharedMaterial (staticLayer.AdditionalMaterials [i], out sharedMaterial)) {
-								gMaterialsList.Add (sharedMaterial);
+						if (staticLayer.AdditionalMaterials != null && staticLayer.AdditionalMaterials.Count > 0) {
+							for (int i = 0; i < staticLayer.AdditionalMaterials.Count; i++) {
+								Material sharedMaterial = null;
+								if (Structures.Get.SharedMaterial (staticLayer.AdditionalMaterials [i], out sharedMaterial)) {
+									gMaterialsList.Add (sharedMaterial);
+								}
 							}
 						}
-					}
-					if (staticLayer.EnableSnow) {
-						//TODO this isn't working in-game find out why
-						gMaterialsList.Add (Mats.Get.SnowOverlayMaterial);
+						if (staticLayer.EnableSnow) {
+							//TODO this isn't working in-game find out why
+							gMaterialsList.Add (Mats.Get.SnowOverlayMaterial);
+						}
 					}
 					//add the materials to the material lookup
 					int[] matHashes = new int [gMaterialsList.Count];
@@ -1312,7 +1330,7 @@ namespace Frontiers.World
 				//foreach (KeyValuePair <string, KeyValuePair <string,string>> triggerStatePair in triggers) {
 				//this will add it to the chunk
 				//at which point it will be managed by the chunk and not the structure
-				chunk.AddTrigger (enumerator.Current, parentTransform, true);
+				chunk.AddTrigger (enumerator.Current, parentTransform, true, true);
 				if (exterior && Player.Local.HasSpawned) {
 					yield return null;
 				}

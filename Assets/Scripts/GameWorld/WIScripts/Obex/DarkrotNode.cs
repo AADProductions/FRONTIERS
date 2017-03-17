@@ -376,7 +376,7 @@ namespace Frontiers.World.WIScripts
 			while (Frontiers.WorldClock.AdjustedRealTime < waitUntil) {
 				yield return null;
 			}
-			GameObject.Destroy (CenterGlow.renderer.material);
+			GameObject.Destroy (CenterGlow.GetComponent<Renderer>().material);
 			GameObject.Destroy (gameObject);
 		}
 

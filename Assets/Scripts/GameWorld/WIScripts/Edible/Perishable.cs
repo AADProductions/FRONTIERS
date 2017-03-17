@@ -45,7 +45,7 @@ namespace Frontiers.World.WIScripts
 								transform.name = RottenPrefix + " " + transform.name;
 						}
 			
-						renderer.material = RottenMaterial;
+						GetComponent<Renderer>().material = RottenMaterial;
 				}
 
 				public void RotOverTime()

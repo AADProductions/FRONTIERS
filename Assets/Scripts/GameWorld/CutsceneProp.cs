@@ -44,7 +44,7 @@ namespace Frontiers.World
 						}
 						//Debug.Log ("OnCutsceneStart in " + name);
 						if (!string.IsNullOrEmpty(AnimationOnStart)) {
-								gameObject.animation.Play(AnimationOnStart);
+								gameObject.GetComponent<Animation>().Play(AnimationOnStart);
 						}
 				}
 
@@ -52,7 +52,7 @@ namespace Frontiers.World
 				{
 						//Debug.Log ("OnCutsceneIdleStart in " + name);
 						if (!string.IsNullOrEmpty(AnimationOnIdleStart)) {
-								gameObject.animation.Play(AnimationOnIdleStart);
+								gameObject.GetComponent<Animation>().Play(AnimationOnIdleStart);
 						}
 				}
 
@@ -60,7 +60,7 @@ namespace Frontiers.World
 				{
 						//Debug.Log ("OnCutsceneIdleEnd in " + name);
 						if (!string.IsNullOrEmpty(AnimationOnIdleEnd)) {
-								gameObject.animation.Play(AnimationOnIdleEnd);
+								gameObject.GetComponent<Animation>().Play(AnimationOnIdleEnd);
 						}
 				}
 		}

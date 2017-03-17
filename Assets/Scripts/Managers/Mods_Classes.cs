@@ -64,6 +64,8 @@ namespace Frontiers
 	{
 		public void GetSettings (Material atsMaterial)
 		{
+            return;
+
 			Vector4 terrainCombinedFloats = atsMaterial.GetVector ("_terrainCombinedFloats");
 			MultiUV = terrainCombinedFloats.x;
 			Desaturation = terrainCombinedFloats.y;
@@ -1415,13 +1417,13 @@ namespace Frontiers
 		{
 		}
 
-		public override bool IgnoreProfileDataIfOutdated {
+        public override bool IgnoreProfileDataIfOutdated {
 			get {
 				return true;
 			}
 		}
 
-		public int TotalChunkPrefabs {
+		/*public int TotalChunkPrefabs {
 			get {
 				return AboveGround.SolidTerrainPrefabs.Count
 				+ AboveGround.SolidTerrainPrefabsAdjascent.Count
@@ -1433,14 +1435,14 @@ namespace Frontiers
 				+ Transitions.SolidTerrainPrefabsAdjascent.Count
 				+ Transitions.SolidTerrainPrefabsDistant.Count;
 			}
-		}
+		}*/
 		//prefab information
 		public ChunkSceneryPrefabs AboveGround = new ChunkSceneryPrefabs ();
 		public ChunkSceneryPrefabs BelowGround = new ChunkSceneryPrefabs ();
 		public ChunkSceneryPrefabs Transitions = new ChunkSceneryPrefabs ();
-	}
+    }
 
-	[Serializable]
+    [Serializable]
 	public class ChunkPlantData : Mod
 	{
 		public ChunkPlantData () : base ()
@@ -1492,7 +1494,7 @@ namespace Frontiers
 	[Serializable]
 	public class ChunkSceneryPrefabs
 	{
-		public List <ChunkPrefab> SolidTerrainPrefabs = new List <ChunkPrefab> ();
+	    public List <ChunkPrefab> SolidTerrainPrefabs = new List <ChunkPrefab> ();
 		public List <ChunkPrefab> SolidTerrainPrefabsAdjascent = new List <ChunkPrefab> ();
 		public List <ChunkPrefab> SolidTerrainPrefabsDistant = new List <ChunkPrefab> ();
 		public List <string> RiverNames = new List <string> ();
@@ -1560,7 +1562,7 @@ namespace Frontiers
 		public int HeightmapResolution = 0;
 		public int HeightmapHeight = 0;
 		public List <GroundType> SplatmapGroundTypes = new List <GroundType> ();
-		public TerrainkMaterialSettings MaterialSettings = new TerrainkMaterialSettings ();
+		//public TerrainkMaterialSettings MaterialSettings = new TerrainkMaterialSettings ();
 		public SColor GrassTint = Color.white;
 		public float WindSpeed = 0.497f;
 		public float WindSize = 0.493f;

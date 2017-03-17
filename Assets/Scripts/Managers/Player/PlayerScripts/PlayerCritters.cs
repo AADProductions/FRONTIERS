@@ -42,27 +42,27 @@ namespace Frontiers
 					Debug.Log ("Last critter in focus was null!");
 					return true;
 				}
-				//if (Skills.Get.HasLearnedSkill ("BeastMaster")) {
-				//we won't use the actual skill in this case - it's enough that the player has the skill
-				//add the option list we'll use to select the skill
-				SpawnOptionsList optionsList = gameObject.GetOrAdd <SpawnOptionsList> ();
-				optionsList.MessageType = string.Empty;//"Take " + mSkillUseTarget.DisplayName;
-				optionsList.Message = "Rename Critter";
-				optionsList.FunctionName = "OnRenameCritter";
-				optionsList.RequireManualEnable = false;
-				optionsList.OverrideBaseAvailabilty = true;
-				optionsList.FunctionTarget = gameObject;
-				optionsList.AddOption (new WIListOption ("Give Name", "GiveNameToCritter"));
-				optionsList.AddOption (new WIListOption ("Cancel", "CancelGiveNameToCritter"));
-				optionsList.ShowDoppleganger = false;
-				GUIOptionListDialog dialog = null;
-				if (optionsList.TryToSpawn (true, out dialog, null)) {
+				if (Skills.Get.HasLearnedSkill ("AnimalNamer")) {
+					//we won't use the actual skill in this case - it's enough that the player has the skill
+					//add the option list we'll use to select the skill
+					SpawnOptionsList optionsList = gameObject.GetOrAdd <SpawnOptionsList> ();
+					optionsList.MessageType = string.Empty;//"Take " + mSkillUseTarget.DisplayName;
+					optionsList.Message = "Rename Critter";
+					optionsList.FunctionName = "OnRenameCritter";
+					optionsList.RequireManualEnable = false;
+					optionsList.OverrideBaseAvailabilty = true;
 					optionsList.FunctionTarget = gameObject;
-					optionsList.PauseWhileOpen = true;
-					usingMenu = true;
-					Debug.Log ("Spawned menu!");
+					optionsList.AddOption (new WIListOption ("Give Name", "GiveNameToCritter"));
+					optionsList.AddOption (new WIListOption ("Cancel", "CancelGiveNameToCritter"));
+					optionsList.ShowDoppleganger = false;
+					GUIOptionListDialog dialog = null;
+					if (optionsList.TryToSpawn (true, out dialog, null)) {
+						optionsList.FunctionTarget = gameObject;
+						optionsList.PauseWhileOpen = true;
+						usingMenu = true;
+						Debug.Log ("Spawned menu!");
+					}
 				}
-				//}
 			}
 			return true;
 		}
@@ -137,12 +137,17 @@ namespace Frontiers
 				State.Critters.Add (newCritterState);
 				Critters.Get.SpawnFriendlyFromSaveState (newCritterState);
 			}
+
+			for (int i = 0; i < Critters.Get.FriendlyCritters.Count; i++) {
+				GUIHud.Get.ShowName (Critters.Get.FriendlyCritters [i],
+				                     Critters.Get.FriendlyCritters [i].Name);
+			}
 		}
 
 		public override void OnLocalPlayerSpawn ()
 		{
 			for (int i = 0; i < State.Critters.Count; i++) {
-				Critters.Get.SpawnFriendlyFromSaveState (State.Critters [i]);	
+				Critters.Get.SpawnFriendlyFromSaveState (State.Critters [i]);
 			}
 		}
 	}

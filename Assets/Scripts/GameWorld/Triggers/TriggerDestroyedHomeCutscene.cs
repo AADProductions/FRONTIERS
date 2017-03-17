@@ -42,7 +42,7 @@ namespace Frontiers.World
 										CreatureCutsceneAnimation = CreatureCutsceneObject.AddComponent <Animation>();
 										CreatureCutsceneAnimation.AddClip(clip, State.CutsceneClipName);
 										//this script will implement the IBodyOwner interface
-										CreatureCutsceneObject.AddComponent(State.CutsceneScriptName);
+										UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent(CreatureCutsceneObject, "Assets/Scripts/GameWorld/Triggers/TriggerDestroyedHomeCutscene.cs (45,11)", State.CutsceneScriptName);
 										IBodyOwner bodyOwner = CreatureCutsceneObject.GetComponent(typeof(IBodyOwner)) as IBodyOwner;
 										//create an empty body shell
 										GameObject creatureCutsceneBodyObject = GameObject.Instantiate(body.gameObject, transform.position, Quaternion.identity) as GameObject;

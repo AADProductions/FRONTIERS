@@ -136,7 +136,7 @@ namespace Frontiers.GUI
 
 		public override void WakeUp ()
 		{
-			Screen.showCursor = false;
+			Cursor.visible = false;
 			Get = this;
 			base.WakeUp ();
 		}
@@ -769,9 +769,9 @@ namespace Frontiers.GUI
 	    if (VRManager.VRMode) {
 				#endif
 				//software cursor only
-				Screen.showCursor = false;
+				Cursor.visible = false;
 			} else {
-				Screen.showCursor = GUIManager.ShowCursor;
+				Cursor.visible = GUIManager.ShowCursor;
 				SoftwareCursorSprite.enabled = false;
 			}
 		}

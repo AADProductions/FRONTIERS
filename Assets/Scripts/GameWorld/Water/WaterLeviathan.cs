@@ -175,7 +175,7 @@ public class WaterLeviathan : MonoBehaviour, IItemOfInterest, IHostile
 			mDamagePackage.Point = MouthObject.position;
 			mDamagePackage.Origin = MouthObject.position;
 			SetVisible (true);
-			animation.Play ();
+			GetComponent<Animation>().Play ();
 			if (Listener.IsInAudibleRange (Player.Local.Position, Position, Player.Local.AudibleRange, Globals.LeviathanMaxAudibleRange)) {
 				MasterAudio.PlaySound (MasterAudio.SoundType.Leviathan, transform, "Attack");
 				MasterAudio.PlaySound (MasterAudio.SoundType.JumpLandWater, transform, "Land");
@@ -191,7 +191,7 @@ public class WaterLeviathan : MonoBehaviour, IItemOfInterest, IHostile
 			//pretty much a guarantee that this will instakill (TODO add instakill option to damage packages?)
 			PrimaryTargetObject = null;
 
-			while (animation.isPlaying) {
+			while (GetComponent<Animation>().isPlaying) {
 				yield return null;
 			}
 

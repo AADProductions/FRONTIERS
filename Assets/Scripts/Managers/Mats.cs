@@ -54,15 +54,22 @@ namespace Frontiers
 
 		public override void OnTextureLoadStart ()
 		{
+			if (Globals.MissionDevelopmentMode) {
+				//we don't care about textures in mission dev mode
+				return;
+			}
+
+			//UNITY 5 - I've moved these back into local resources for now
+
 			//put in requests for ALL ground textures
 			//add all ground textures and normals to the same array - combined normals are not actually stored as normals
-			Mods.Get.LoadAvailableGenericTextures ("GroundTexture", false, Globals.GroundTextureResolution, Globals.GroundTextureResolution, TerrainGroundTextures);
-			Mods.Get.LoadAvailableGenericTextures ("GroundNormal", false, Globals.GroundCombinedNormalResolution, Globals.GroundCombinedNormalResolution, TerrainGroundTextures);
+			//Mods.Get.LoadAvailableGenericTextures ("GroundTexture", false, Globals.GroundTextureResolution, Globals.GroundTextureResolution, TerrainGroundTextures);
+			//Mods.Get.LoadAvailableGenericTextures ("GroundNormal", false, Globals.GroundCombinedNormalResolution, Globals.GroundCombinedNormalResolution, TerrainGroundTextures);
 			//and ALL grass textures
-			Mods.Get.LoadAvailableGenericTextures ("GrassTexture", false, Globals.GrassTextureResolution, Globals.GrassTextureResolution, TerrainGrassTextures);
+			//Mods.Get.LoadAvailableGenericTextures ("GrassTexture", false, Globals.GrassTextureResolution, Globals.GrassTextureResolution, TerrainGrassTextures);
 			//load the shared terrain normal texture
 			//this one IS stored as a normal map
-			Mods.Get.LoadAvailableGenericTextures ("GenericTerrainNormal", "SharedNormal", true, Globals.GroundCombinedNormalResolution, Globals.GroundCombinedNormalResolution, GenericTerrainNormals);
+			//Mods.Get.LoadAvailableGenericTextures ("GenericTerrainNormal", "SharedNormal", true, Globals.GroundCombinedNormalResolution, Globals.GroundCombinedNormalResolution, GenericTerrainNormals);
 
 			//now get our atlas textures
 			//Mods.Get.LoadAvailableGenericTextures("Atlas", false, AtlasTextures);
@@ -87,27 +94,29 @@ namespace Frontiers
 
 		public override void Initialize ()
 		{
+			//TODO UNITY 5
+
 			//first set all the properties
 			AFS.isLinear = false;
-			AFS.diffuseIsHDR = false;
+			/*AFS.diffuseIsHDR = false;
 			AFS.specularIsHDR = false;
 			AFS.UseLinearLightingFixTrees = false;
 			AFS.useIBL = false;
 			AFS.controlIBL = false;
 			AFS.AFS_IBL_DiffuseExposure = 1f;
 			AFS.AFS_IBL_SpecularExposure = 1f;
-			AFS.AFS_IBL_MasterExposure = 1f;
+			AFS.AFS_IBL_MasterExposure = 1f;*/
 			//we want to use the same fog settings as biomes
 			AFS.AFSFog_Mode = (int)FogMode.Linear;
 
 			//we want to use global ambient light color for shadows
 			AFS.AutosyncShadowColor = true;
 			//we want to use a sunlight reference
-			AFS.BillboardLightReference = GameWorld.Get.Sky.Components.LightSource.gameObject;
+			AFS.DirectionalLightReference = GameWorld.Get.Sky.Components.LightSource.gameObject;
 			//no billboard shadows, just fade the shadows
 			AFS.BillboardAdjustToCamera = true;
-			AFS.BillboardShadowEdgeFade = false;
-			AFS.TreeShadowDissolve = true;
+			//AFS.BillboardShadowEdgeFade = false;
+			//AFS.TreeShadowDissolve = true;
 			AFS.TreeBillboardShadows = false;
 			//regular animation on grass not normal animation
 			AFS.GrassAnimateNormal = false;
@@ -117,27 +126,29 @@ namespace Frontiers
 			//we're not using camera culling unfortunately
 			AFS.EnableCameraLayerCulling = false;
 
-			AFS.Wind = new Vector4 (0.85f, 0.05f, 0.4f, 1f);
-			AFS.WindFrequency = 1f;
-			AFS.WaveSizeForGrassshader = 2f;
-			AFS.WaveSizeFoliageShader = 10f;
-			AFS.WindMultiplierForGrassshader = 5f;
+			//AFS.Wind = new Vector4 (0.85f, 0.05f, 0.4f, 1f);
+			//AFS.WindFrequency = 1f;
+			//AFS.WaveSizeForGrassshader = 2f;
+			//AFS.WaveSizeFoliageShader = 10f;
+			//AFS.WindMultiplierForGrassshader = 5f;
 
 			//then apply the properties
 			//one-time stuff first
-			AFS.afsCheckColorSpace ();
-			AFS.afsSetupColorSpace ();
+			//
+			AFS.afsSyncFrequencies();
+			//
+			AFS.afsCheckColorSpace();
+			AFS.afsLightingSettings();
+			AFS.afsUpdateWind();
+			AFS.afsUpdateRain();
+			AFS.afsSetupTerrainEngine();
+			AFS.afsAutoSyncToTerrain();
+			AFS.afsUpdateGrassTreesBillboards();
+			AFS.afsSetupCameraLayerCulling();
+			//
+			AFS.afsFogSettings();
+			AFS.afsSetupGrassShader();
 
-			AFS.afsLightingSettings ();
-			AFS.afsSetupTerrainEngine ();
-			AFS.afsSetupGrassShader ();
-
-			AFS.afsUpdateWind ();
-			AFS.afsUpdateRain ();
-			AFS.afsAutoSyncToTerrain ();
-			AFS.afsUpdateTreeAndBillboardShaders ();
-			AFS.afsUpdateGrassTreesBillboards ();
-			AFS.afsSetupCameraLayerCulling ();
 
 			//set the preferred size of each font based on the default size & default font
 			PrintingPress40Font.sizeRelativeToPrimaryFont = 1f;
@@ -314,15 +325,12 @@ namespace Frontiers
 					return;
 				}
 				Material diffuseMaterial = new Material (DefaultDiffuseMaterial);
-				if (material.HasProperty ("_MainDiffMap")) {
-					diffuseMaterial.mainTexture = material.GetTexture ("_MainDiffMap");
-					diffuseMaterial.mainTextureScale = material.GetTextureScale ("_MainDiffMap");
-					diffuseMaterial.mainTextureOffset = material.GetTextureOffset ("_MainDiffMap");
-				}
-				if (material.HasProperty ("_DetailTintColor")) {
-					Color c = Color.Lerp (material.GetColor ("_MainTintColor"), material.GetColor ("_DetailTintColor"), 0.5f);
-					diffuseMaterial.color = c;
-				}
+                diffuseMaterial.mainTexture = material.mainTexture;
+                diffuseMaterial.mainTextureScale = material.mainTextureScale;
+                diffuseMaterial.mainTextureOffset = material.mainTextureOffset;
+                if (material.HasProperty("_Color")) {
+                    diffuseMaterial.color = material.color;
+                }
 				mLODMaterialLookup.Add (material, diffuseMaterial);
 			}
 		}

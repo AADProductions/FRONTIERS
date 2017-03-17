@@ -36,10 +36,10 @@ namespace Frontiers.GUI
 						Transform.Scale = item.transform.localScale;
 						Layer = item.gameObject.layer;
 
-						if (item.collider != null) {
+						if (item.GetComponent<Collider>() != null) {
 								HasCollider = true;
-								ColliderCenter = item.collider.bounds.center;
-								ColliderScale	= item.collider.bounds.size;
+								ColliderCenter = item.GetComponent<Collider>().bounds.center;
+								ColliderScale	= item.GetComponent<Collider>().bounds.size;
 						} else {
 								HasCollider = false;
 						}

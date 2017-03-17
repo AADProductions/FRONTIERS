@@ -39,6 +39,9 @@ namespace Frontiers.World
 		public void Start ()
 		{
 			tr = transform;
+
+            return;
+
 			flowColliderObject = tr.FindChild ("FlowCollider").gameObject;
 			WaterSubmerge.OnItemOfInterestEnterWater += OnItemOfInterestEnterWater;
 			WaterSubmerge.OnItemOfInterestExitWater += OnItemOfInterestExitWater;
@@ -66,6 +69,8 @@ namespace Frontiers.World
 
 		public void FixedUpdate ()
 		{
+            return;
+
 			if (!GameManager.Is (FGameState.InGame) || !ParentChunk.Is (ChunkMode.Primary | ChunkMode.Adjascent | ChunkMode.Immediate) || !WaterRenderer.isVisible) {
 				return;
 			}
@@ -90,14 +95,16 @@ namespace Frontiers.World
 			GameObject bottomColliderObject = gameObject.FindOrCreateChild ("BottomCollider").gameObject;
 			bottomColliderObject.layer = Globals.LayerNumFluidTerrain;
 			StaticBottomCollider = bottomColliderObject.GetOrAdd <MeshCollider> ();
-			StaticBottomCollider.sharedMesh = Mesh.sharedMesh;
-			StaticBottomCollider.isTrigger = false;
+			/*StaticBottomCollider.sharedMesh = Mesh.sharedMesh;
+			StaticBottomCollider.isTrigger = false;*/
 
 			GameObject triggerColliderObject = gameObject.FindOrCreateChild ("FlowCollider").gameObject;
 			triggerColliderObject.layer = Globals.LayerNumFluidTerrain;
 			StaticTriggerCollider = triggerColliderObject.GetOrAdd <MeshCollider> ();
-			StaticTriggerCollider.sharedMesh = Mesh.sharedMesh;
-			StaticTriggerCollider.isTrigger = true;
+			/*StaticTriggerCollider.sharedMesh = Mesh.sharedMesh;
+			StaticTriggerCollider.isTrigger = true;*/
+
+			//TODO UNITY 5
 		}
 
 		public void FixedUpdateStatic ()
@@ -171,17 +178,19 @@ namespace Frontiers.World
 		#region dynamic avatar
 		public void Update ()
 		{
-			if (!Props.DynamicMode) {
-				if (name == "Blacklake River") {
+            return;
+
+            if (!Props.DynamicMode) {
+				/*if (name == "Blacklake River") {
 					Debug.Log ("Not in dynamic mode");
-				}
+				}*/
 				return;
 			}
 
 			if (!ParentChunk.Is (ChunkMode.Primary | ChunkMode.Adjascent | ChunkMode.Immediate)) {
-				if (name == "Blacklake River") {
+				/*if (name == "Blacklake River") {
 					Debug.Log ("River Avatar: Chunk was not primary / adjascent / immediate, returning");
-				}
+				}*/
 				return;
 			}
 

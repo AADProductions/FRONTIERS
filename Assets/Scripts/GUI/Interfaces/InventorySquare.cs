@@ -402,8 +402,8 @@ namespace Frontiers.GUI
 						//make sure the doppleganger isn't covering us
 						if (Doppleganger != null) {
 								Vector3 labelPosition = StackNumberLabel.transform.position;
-								if (Doppleganger.renderer != null) {
-										labelPosition.z = Mathf.Min(labelPosition.z, -(Doppleganger.renderer.bounds.extents.z + 0.1f));
+								if (Doppleganger.GetComponent<Renderer>() != null) {
+										labelPosition.z = Mathf.Min(labelPosition.z, -(Doppleganger.GetComponent<Renderer>().bounds.extents.z + 0.1f));
 								}
 								StackNumberLabel.transform.position = labelPosition;
 						}

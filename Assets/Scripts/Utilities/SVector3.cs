@@ -302,6 +302,11 @@ public class STransform
 		Scale = transform.Scale;
 	}
 
+    public void ApplyToWorld (Transform transform) {
+        transform.position = Position;
+        transform.rotation = Quaternion.Euler(Rotation);
+    }
+
 	public void ApplyTo (Transform transform)
 	{
 		ApplyTo (transform, false);

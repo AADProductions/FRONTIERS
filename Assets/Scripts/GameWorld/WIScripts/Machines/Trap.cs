@@ -94,7 +94,7 @@ namespace Frontiers.World.WIScripts
 						LastTrapObjectPrefabSpawnPointIndex = TrabObjectPrefabSpawnPoints.NextIndex(LastTrapObjectPrefabSpawnPointIndex);
 						Transform spawnPoint = TrabObjectPrefabSpawnPoints[LastTrapObjectPrefabSpawnPointIndex];
 						GameObject trapObject = GameObject.Instantiate(TrapObjectPrefab, spawnPoint.position, spawnPoint.rotation) as GameObject;
-						TrapObject tr = (TrapObject)trapObject.GetOrAdd(State.TrapObjectScript);
+						TrapObject tr = (TrapObject)trapObject.GetOrAdd("Frontiers.World.Gameplay." + State.TrapObjectScript);
 						tr.ParentTrap = this;
 				}
 

@@ -35,8 +35,8 @@ public class CharacterTools : MonoBehaviour
 			if (cc != null) {
 				GameObject.DestroyImmediate (cc);
 			}
-			if (selectedObject.animation != null) {
-				GameObject.DestroyImmediate (selectedObject.animation);
+			if (selectedObject.GetComponent<Animation>() != null) {
+				GameObject.DestroyImmediate (selectedObject.GetComponent<Animation>());
 			}
 			TNObject tnObject = selectedObject.GetOrAdd <TNObject> ();
 			TNAutoSync tnAutoSync = selectedObject.GetOrAdd <TNAutoSync> ();
@@ -414,7 +414,7 @@ public class CharacterTools : MonoBehaviour
 				}
 
 				if (animal != null) {
-					characterWorldItem.Colliders.Add (componentAsBodyPart.collider);
+					characterWorldItem.Colliders.Add (componentAsBodyPart.GetComponent<Collider>());
 					componentAsBodyPart.Owner = characterWorldItem;
 				}
 				bodyParts.Add (componentAsBodyPart);

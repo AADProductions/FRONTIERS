@@ -239,7 +239,7 @@ namespace Frontiers
 						if (!CompassProjector.enabled) {
 								//move the compass right away if it's off
 								CompassProjector.transform.position = CompassProjectorTargetPosition;
-								CompassProjector.orthoGraphicSize = 0f;
+								CompassProjector.orthographicSize = 0f;
 								CompassProjectorCurrentColor = Color.black;
 						}
 						CompassProjectorTargetScale = 1.75f;
@@ -276,12 +276,12 @@ namespace Frontiers
 				public void Update ( ) {
 						if (CompassProjector.enabled) {
 								CompassProjector.transform.position = Vector3.Lerp(CompassProjector.transform.position, CompassProjectorTargetPosition, 0.4f);
-								CompassProjector.orthoGraphicSize = Mathf.Lerp(CompassProjector.orthoGraphicSize, CompassProjectorTargetScale, 0.125f);
+								CompassProjector.orthographicSize = Mathf.Lerp(CompassProjector.orthographicSize, CompassProjectorTargetScale, 0.125f);
 								CompassProjectorCurrentColor = Color.Lerp(CompassProjectorCurrentColor, CompassProjectorTargetColor, 0.25f);
 								CompassProjector.material.color = CompassProjectorCurrentColor;
 								//we're supposed to be shutting it off
 								if (CompassProjectorTargetScale == 0f) {
-										if (CompassProjector.orthoGraphicSize < 0.001f) {
+										if (CompassProjector.orthographicSize < 0.001f) {
 												CompassProjector.enabled = false;
 										}
 								}

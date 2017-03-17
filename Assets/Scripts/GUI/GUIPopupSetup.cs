@@ -80,7 +80,7 @@ namespace Frontiers.GUI
 						}
 						button.enabled = false;
 						popupList.enabled = false;
-						gameObject.collider.enabled	= false;
+						gameObject.GetComponent<Collider>().enabled	= false;
 						mStartupSet = true;
 				}
 
@@ -94,7 +94,7 @@ namespace Frontiers.GUI
 						}		
 						button.enabled = true;
 						popupList.enabled = true;
-						gameObject.collider.enabled	= true;
+						gameObject.GetComponent<Collider>().enabled	= true;
 						mStartupSet = true;
 				}
 

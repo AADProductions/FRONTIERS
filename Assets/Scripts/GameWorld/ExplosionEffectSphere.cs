@@ -5,7 +5,7 @@ using Frontiers;
 using Frontiers.World;
 using Frontiers.World.WIScripts;
 
-namespace Frontiers.World {
+namespace Frontiers.World.Gameplay {
 	public class ExplosionEffectSphere : EffectSphere
 	{
 			public DamagePackage ExplosionDamage;

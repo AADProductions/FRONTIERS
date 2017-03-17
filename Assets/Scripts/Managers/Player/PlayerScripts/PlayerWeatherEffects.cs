@@ -15,8 +15,8 @@ namespace Frontiers {
 			WindZone.transform.parent = player.transform;
 			WindZone.transform.ResetLocal ();
 
-			WindZone.animation.Stop ();
-			WindZone.animation.Rewind ("WindZoneIntensity");
+			WindZone.GetComponent<Animation>().Stop ();
+			WindZone.GetComponent<Animation>().Rewind ("WindZoneIntensity");
 		}
 
 		public override void OnGameStart ()
@@ -29,8 +29,8 @@ namespace Frontiers {
 			if (!GameManager.Is (FGameState.InGame) || WindZone != null)
 				return;
 
-			WindZone.animation ["WindZoneIntensity"].normalizedTime = Biomes.Get.WindIntensity;
-			WindZone.animation.Sample ();
+			WindZone.GetComponent<Animation>() ["WindZoneIntensity"].normalizedTime = Biomes.Get.WindIntensity;
+			WindZone.GetComponent<Animation>().Sample ();
 		}
 	}
 }

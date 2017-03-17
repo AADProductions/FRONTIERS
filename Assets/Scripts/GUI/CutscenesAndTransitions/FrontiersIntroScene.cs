@@ -31,7 +31,7 @@ namespace Frontiers
 			//GameWorld.Get.Sky.Day			= Biome.DaySky;
 			//GameWorld.Get.Sky.Night		= Biome.NightSky;
 			//GameWorld.Get.Sky.Atmosphere 	= Biome.Atmosphere;
-			if (Mods.Get.Runtime.CameraLUT(ref CameraLUT, CameraLUTName)) {
+			if (Colors.Get.CameraLUT(ref CameraLUT, CameraLUTName)) {
 				CameraFX.Get.SetLUT(CameraLUT);
 			} else {
 				Debug.Log("Couldn't load LUT");
@@ -54,12 +54,12 @@ namespace Frontiers
 					if (VRManager.VRMode) {
 						GameManager.Get.GameCamera.transform.position = FrontiersLogoCameraPositionStatic.transform.position;
 					} else {
-						if (!animation.isPlaying) {
-							animation.Play();
+						if (!GetComponent<Animation>().isPlaying) {
+							GetComponent<Animation>().Play();
 						}
 						GameManager.Get.GameCamera.transform.position = FrontiersLogoCameraPosition.transform.position;
 						GameManager.Get.GameCamera.transform.rotation = FrontiersLogoCameraPosition.transform.rotation;
-						GameManager.Get.GameCamera.camera.fieldOfView = FieldOfView;
+						GameManager.Get.GameCamera.GetComponent<Camera>().fieldOfView = FieldOfView;
 					}
 					break;
 			}
@@ -69,7 +69,9 @@ namespace Frontiers
 		{
 			AmbientAudio.volume = Mathf.Lerp(AmbientAudio.volume, AmbientAudioTargetVolume, 1f * Time.deltaTime);
 			GameWorld.Get.Sky.Cycle.Hour = Cycle.Hour + (float)(WorldClock.RealTime * TimeMultiplier);
-			RenderSettings.ambientLight = AmbientLight;
+			RenderSettings.ambientSkyColor = AmbientLight;
+			RenderSettings.ambientEquatorColor = Color.Lerp (RenderSettings.ambientSkyColor, Colors.Get.AmbientEquatorColor, 0.5f);
+			RenderSettings.ambientGroundColor = Color.Lerp (RenderSettings.ambientSkyColor, Colors.Get.AmbientGroundColor, 0.5f);
 		}
 
 		public void OnDestroy()

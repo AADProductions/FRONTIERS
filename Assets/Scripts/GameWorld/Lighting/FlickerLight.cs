@@ -26,9 +26,9 @@ public class FlickerLight : MonoBehaviour
 		void Start()
 		{
 				lamp = this.gameObject;
-				intens = lamp.light.intensity;
-				range = lamp.light.range;
-				lamp.light.color = col_Main;
+				intens = lamp.GetComponent<Light>().intensity;
+				range = lamp.GetComponent<Light>().range;
+				lamp.GetComponent<Light>().color = col_Main;
 		
 				StartCoroutine(Timer());
 		}
@@ -42,10 +42,10 @@ public class FlickerLight : MonoBehaviour
 		
 				intens = Mathf.SmoothStep(intens, randomIntens, (float)(Frontiers.WorldClock.ARTDeltaTime * intens_Speed));
 				range = Mathf.SmoothStep(range, randomRange, (float)(Frontiers.WorldClock.ARTDeltaTime * range_Speed));
-				lamp.light.intensity = intens;
-				lamp.light.range = range;
+				lamp.GetComponent<Light>().intensity = intens;
+				lamp.GetComponent<Light>().range = range;
 				col_Main = Color.Lerp(col_Main, refCol, (float)(Frontiers.WorldClock.ARTDeltaTime * col_Speed));
-				lamp.light.color = col_Main;
+				lamp.GetComponent<Light>().color = col_Main;
 		}
 
 		IEnumerator Timer()

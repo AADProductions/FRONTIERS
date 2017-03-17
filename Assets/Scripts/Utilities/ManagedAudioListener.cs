@@ -11,7 +11,7 @@ namespace Frontiers {
 		
 		void Awake ( )
 		{
-			Listener = camera.GetComponent <AudioListener> ( );
+			Listener = GetComponent<Camera>().GetComponent <AudioListener> ( );
 			
 			if (CurrentAudioListener != null)
 			{

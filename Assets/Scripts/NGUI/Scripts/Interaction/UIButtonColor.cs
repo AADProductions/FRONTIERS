@@ -77,7 +77,7 @@ public class UIButtonColor : MonoBehaviour
 		}
 		else
 		{
-			Renderer ren = tweenTarget.renderer;
+			Renderer ren = tweenTarget.GetComponent<Renderer>();
 
 			if (ren != null)
 			{
@@ -85,7 +85,7 @@ public class UIButtonColor : MonoBehaviour
 			}
 			else
 			{
-				Light lt = tweenTarget.light;
+				Light lt = tweenTarget.GetComponent<Light>();
 
 				if (lt != null)
 				{

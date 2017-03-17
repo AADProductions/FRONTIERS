@@ -695,7 +695,8 @@ namespace Frontiers.World
 
 			//apply custom scripts if any
 			foreach (string customWiScript in template.CustomWIScripts) {
-				newCharacter.gameObject.AddComponent (customWiScript);
+				newCharacter.gameObject.AddComponent (Type.GetType("Frontiers.World.WIScripts." + customWiScript));
+				//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent (newCharacter.gameObject, "Assets/Scripts/Managers/Characters.cs (698,5)", customWiScript);
 			}
 			#endregion
 
@@ -1093,7 +1094,8 @@ namespace Frontiers.World
 
 			//apply custom scripts if any
 			foreach (string customWiScript in template.CustomWIScripts) {
-				newCharacter.gameObject.AddComponent (customWiScript);
+				newCharacter.gameObject.AddComponent (Type.GetType("Frontiers.World.WIScripts." + customWiScript));
+				//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent (newCharacter.gameObject, "Assets/Scripts/Managers/Characters.cs (1096,5)", customWiScript);
 			}
 			#endregion
 
@@ -1191,21 +1193,32 @@ namespace Frontiers.World
 				character.State.FaceTextureName = MatchFaceTextureEthnicity (character.State.FaceTextureName, Profile.Get.CurrentGame.Character.Ethnicity);
 			}
 
-			Mods.Get.Runtime.FaceTexture (ref face, character.State.FaceTextureName);
-			Mods.Get.Runtime.BodyTexture (ref body, character.State.BodyTextureName);
-			if (!asGhost) {
-				Mods.Get.Runtime.MaskTexture (ref bodyMask, character.State.BodyMaskTextureName);
-				Mods.Get.Runtime.MaskTexture (ref faceMask, character.State.FaceMaskTextureName);
+			Material bodyMaterial = null;
+			Material faceMaterial = null;
+
+			if (Globals.MissionDevelopmentMode) {
+				//we don't care about textures in development mode
+				//we don't care about materials in development mode
+				bodyMaterial = new Material (Mats.Get.DefaultDiffuseMaterial);
+				faceMaterial = new Material (Mats.Get.DefaultDiffuseMaterial);
+			} else {
+				Mods.Get.Runtime.FaceTexture (ref face, character.State.FaceTextureName);
+				Mods.Get.Runtime.BodyTexture (ref body, character.State.BodyTextureName);
+				if (!asGhost) {
+					Mods.Get.Runtime.MaskTexture (ref bodyMask, character.State.BodyMaskTextureName);
+					Mods.Get.Runtime.MaskTexture (ref faceMask, character.State.FaceMaskTextureName);
+				}
+				//create an instance of the body material and store it
+				bodyMaterial = new Material (asGhost ? Mats.Get.CharacterGhostBodyMaterial : Mats.Get.CharacterBodyMaterial);
+				faceMaterial = new Material (asGhost ? Mats.Get.CharacterGhostFaceMaterial : Mats.Get.CharacterFaceMaterial);
+				bodyMaterial.SetTexture ("_MainTex", body);
+				faceMaterial.SetTexture ("_MainTex", face);
+				if (!asGhost) {
+					bodyMaterial.SetTexture ("_MaskTex", bodyMask);
+					faceMaterial.SetTexture ("_MaskTex", faceMask);
+				}
 			}
-			//create an instance of the body material and store it
-			Material bodyMaterial = new Material (asGhost ? Mats.Get.CharacterGhostBodyMaterial : Mats.Get.CharacterBodyMaterial);
-			Material faceMaterial = new Material (asGhost ? Mats.Get.CharacterGhostFaceMaterial : Mats.Get.CharacterFaceMaterial);
-			bodyMaterial.SetTexture ("_MainTex", body);
-			faceMaterial.SetTexture ("_MainTex", face);
-			if (!asGhost) {
-				bodyMaterial.SetTexture ("_MaskTex", bodyMask);
-				faceMaterial.SetTexture ("_MaskTex", faceMask);
-			}
+
 			//TODO apply body colors
 			CharacterBody b = (CharacterBody)character.Body;
 			b.MainMaterial = bodyMaterial;
@@ -1296,7 +1309,8 @@ namespace Frontiers.World
 
 			//apply custom scripts if any
 			foreach (string customWiScript in template.CustomWIScripts) {
-				newCharacter.gameObject.AddComponent (customWiScript);
+				newCharacter.gameObject.AddComponent (Type.GetType("Frontiers.World.WIScripts." + customWiScript));
+				//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent (newCharacter.gameObject, "Assets/Scripts/Managers/Characters.cs (1310,5)", customWiScript);
 			}
 
 			newCharacterWorlditem.tr.position = node.transform.position;

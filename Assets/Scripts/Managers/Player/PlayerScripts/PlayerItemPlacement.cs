@@ -451,7 +451,7 @@ namespace Frontiers
 						optionsList.OverrideBaseAvailabilty = true;
 						optionsList.FunctionTarget = gameObject;
 						optionsList.ScreenTarget = transform;
-						optionsList.ScreenTargetCamera = GameManager.Get.GameCamera.camera;
+						optionsList.ScreenTargetCamera = GameManager.Get.GameCamera.GetComponent<Camera>();
 						mRemoveSkillList.Clear();
 						mRemoveSkillList.AddRange(Skills.Get.SkillsByName(mRemoveItemSkillNames));
 						foreach (Skill removeItemSkill in mRemoveSkillList) {
@@ -672,14 +672,14 @@ namespace Frontiers
 								}
 						}
 
-						player.Grabber.Joint.connectedBody = item.rigidbody;
+						player.Grabber.Joint.connectedBody = item.GetComponent<Rigidbody>();
 						player.Grabber.Joint.connectedAnchor = Vector3.zero;
 						player.Grabber.Joint.anchor = Vector3.zero;
 						player.Grabber.Position = item.Position;
 						player.GrabberTargetObject.position = item.Position;
 						//kludgey
-						item.rigidbody.isKinematic = false;
-						item.rigidbody.useGravity = false;
+						item.GetComponent<Rigidbody>().isKinematic = false;
+						item.GetComponent<Rigidbody>().useGravity = false;
 
 						item.OnPlayerCarry.SafeInvoke();
 						item.RefreshHud();

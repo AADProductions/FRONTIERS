@@ -24,7 +24,7 @@ public class TOD_Camera : MonoBehaviour
 
 		public void Awake()
 		{
-				cachedCamera = camera;
+				cachedCamera = GetComponent<Camera>();
 		}
 		#if UNITY_EDITOR
 		protected void Update()

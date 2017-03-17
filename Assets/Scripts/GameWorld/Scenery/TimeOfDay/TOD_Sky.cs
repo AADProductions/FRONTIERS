@@ -634,7 +634,7 @@ public partial class TOD_Sky : MonoBehaviour
         if (Components.LightSource.shadowStrength != shadowStrength)
         #endif
         {
-            Components.LightSource.shadowStrength = shadowStrength;
+			Components.LightSource.shadowStrength = Mathf.Clamp01 (shadowStrength);
         }
         #if UNITY_EDITOR
         if (Components.LightTransform.localPosition != position)

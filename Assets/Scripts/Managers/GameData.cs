@@ -1362,13 +1362,14 @@ namespace Frontiers
 										FileAccess access = FileAccess.ReadWrite;
 
 										if (!File.Exists(fullPath)) {
+												Debug.Log ("Couldn't find LUT " + fullPath);
 												return false;
 										} else {
 												lut = new Texture2D(1024, 32, TextureFormat.RGB24, false, true);
 												lut.name = mapName;
 												lut.filterMode = FilterMode.Point;
 												lut.wrapMode = TextureWrapMode.Clamp;
-												//lut.alphaIsTransparency = false;
+												lut.alphaIsTransparency = false;
 												lut.anisoLevel = 0;
 												byte[] byteArray = File.ReadAllBytes(fullPath);
 												lut.LoadImage(byteArray);
@@ -1376,6 +1377,7 @@ namespace Frontiers
 												byteArray = null;
 												gLoadedMaps.Add(fullPath, lut);
 												gLoadedMapsMemory += 1024 * 32 * 4;
+												Debug.Log ("Found LUT " + fullPath);
 												return true;
 										}
 										return false;
@@ -1986,7 +1988,7 @@ namespace Frontiers
 										case "Splat2":
 												resolution = Globals.WorldChunkSplatMapResolution;//1024;
 												format = TextureFormat.RGBA32;
-												linear = true;
+												linear = false;
 												filtering = true;
 												break;
 
@@ -2283,7 +2285,7 @@ namespace Frontiers
 										sb.Append(string.Format("vt {0} {1}\n", v.x, v.y));
 								}
 								sb.Append("\n");
-								foreach (Vector2 v in m.uv1) {
+								foreach (Vector2 v in m.uv2) {
 										sb.Append(string.Format("vt1 {0} {1}\n", v.x, v.y));
 								}
 								sb.Append("\n");

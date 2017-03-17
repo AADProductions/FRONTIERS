@@ -283,10 +283,20 @@ namespace Frontiers
 
 		protected static WorldLight CreateWorldLight ()
 		{
+            Debug.Log("Creating world light");
+
+            if (Get.WorldLightPrefab.SpotlightTop == null) {
+                Debug.Log("SPOTLIGHT TOP WAS NULL IN PREFAB");
+            }
+
 			GameObject newWorldLightObject = GameObject.Instantiate (Get.WorldLightPrefab.gameObject, mInstantiateOffset, Quaternion.identity) as GameObject;
 			WorldLight newWorldLight = newWorldLightObject.GetComponent <WorldLight> ();
 			newWorldLight.Template = Get.DefaultTemplate;
 			newWorldLight.LightCollider.enabled = false;
+
+            if (newWorldLight.SpotlightTop == null) {
+                Debug.Log("SPOTLIGHT TOP WAS NULL!");
+            }
 
 			Get.WorldLights.Add (newWorldLight);
 			Get.ActiveWorldLights.Add (newWorldLight);

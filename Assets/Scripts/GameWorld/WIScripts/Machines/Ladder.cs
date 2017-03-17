@@ -94,6 +94,10 @@ namespace Frontiers.World.WIScripts
 
 				public void Update()
 				{
+
+            //TEMP
+            return;
+
 						bool reachedEnd = false;
 						float normalizedClimbTime = (float)((WorldClock.AdjustedRealTime - mStartTime) / (mEndTime - mStartTime));
 						climbLookTarget.position = Vector3.Lerp(startPoint.position, endPoint.position, normalizedClimbTime);

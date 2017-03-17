@@ -16,6 +16,7 @@ namespace Frontiers
 		public static BannerColorManager BannerColors;
 		public FontColorManager FontColors;
 		public List <FlagsetColor> FlagsetColors = new List <FlagsetColor>();
+		public Texture2D [] CameraLUTs;
 
 		[HideInInspector]
 		public string [] ColorNames {
@@ -29,6 +30,16 @@ namespace Frontiers
 
 		[HideInInspector]
 		protected string[] mColorNames = null;
+
+		public bool CameraLUT (ref Texture2D cameraLut, string lutName) {
+			for (int i = 0; i < CameraLUTs.Length; i++) {
+				if (CameraLUTs [i].name.Equals (lutName)) {
+					cameraLut = CameraLUTs [i];
+					return true;
+				}
+			}
+			return false;
+		}
 
 		public void SaveColors()
 		{		//find fields
@@ -330,6 +341,8 @@ namespace Frontiers
 		public Color WorldRouteMarkerRevealed = Color.white;
 		public Color WorldRouteMarkerVisited = Color.white;
 		public Color GhostColor = Color.white;
+		public Color AmbientEquatorColor = Color.white;
+		public Color AmbientGroundColor = Color.white;
 
 		[InterfaceColorAttribute]
 		public Color GenericHighValue = Color.white;

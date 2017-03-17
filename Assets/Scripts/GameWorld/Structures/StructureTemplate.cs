@@ -146,7 +146,7 @@ namespace Frontiers.World
 			Transform staticColliderHelper = start.gameObject.FindOrCreateChild ("StaticColliderHelper");
 
 			foreach (Transform child in start) {
-				if (child.renderer == null && child.collider == null && module == null) {
+				if (child.GetComponent<Renderer>() == null && child.GetComponent<Collider>() == null && module == null) {
 					//this is a module, not a static child
 					AddStaticChildrenToStructureTemplate (child, start, templateLayers);
 				} else {
@@ -172,9 +172,9 @@ namespace Frontiers.World
 						}
 
 						List <Collider> childColliders = new List <Collider> ();
-						if (child.collider != null) {
+						if (child.GetComponent<Collider>() != null) {
 							//Debug.Log ("Adding collider " + child.collider.GetType ().ToString () + " from prefab " + child.name);
-							childColliders.Add (child.collider);
+							childColliders.Add (child.GetComponent<Collider>());
 						} else {
 							//Debug.Log ("Child collider was null, looking for sub colliders");
 							Collider[] childColliderComponents = child.GetComponentsInChildren <Collider> (true);
@@ -391,7 +391,7 @@ namespace Frontiers.World
 		public static void AddStaticChildrenToStructureTemplate (Transform start, Transform module, List <StructureLayer> templateLayers)
 		{
 			foreach (Transform child in start) {
-				if (child.renderer == null && child.collider == null && module == null) {
+				if (child.GetComponent<Renderer>() == null && child.GetComponent<Collider>() == null && module == null) {
 					//this is a module, not a static child
 					AddStaticChildrenToStructureTemplate (child, start, templateLayers);
 				} else {
@@ -528,7 +528,7 @@ namespace Frontiers.World
 			}
 
 			foreach (Transform child in start) {
-				Light childLight = child.light;
+				Light childLight = child.GetComponent<Light>();
 				if (childLight != null) {
 					bool addChild = true;
 					StructureDestroyedBehavior behavior = StructureDestroyedBehavior.None;
@@ -770,8 +770,8 @@ namespace Frontiers.World
 			}
 
 			string matNames = "[Default]";
-			if (searchMats && child.transform.renderer != null) {
-				foreach (Material childMaterial in child.transform.renderer.sharedMaterials) {
+			if (searchMats && child.transform.GetComponent<Renderer>() != null) {
+				foreach (Material childMaterial in child.transform.GetComponent<Renderer>().sharedMaterials) {
 					childMaterials.Add (childMaterial.name);
 				}
 				matNames = childMaterials.JoinToString ("|");

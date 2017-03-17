@@ -152,26 +152,26 @@ namespace Frontiers.World.WIScripts
 								yield return onOpen.Current;
 							}
 							State.CurrentState = EntranceState.Opening;
-							PivotObject.animation.Play(State.AnimationOpening);
+							PivotObject.GetComponent<Animation>().Play(State.AnimationOpening);
 							MasterAudio.PlaySound(State.SoundType, transform, State.SoundOnOpen);
 						}
 						break;
 
 					case EntranceState.Open:
 						if (State.TargetState == EntranceState.Closed) {
-							PivotObject.animation.Play(State.AnimationClosing);
+							PivotObject.GetComponent<Animation>().Play(State.AnimationClosing);
 							State.CurrentState = EntranceState.Closing;
 						}
 						break;
 
 					case EntranceState.Opening:
-						if (PivotObject.animation[State.AnimationOpening].normalizedTime > 1f) {
+						if (PivotObject.GetComponent<Animation>()[State.AnimationOpening].normalizedTime > 1f) {
 							State.CurrentState = EntranceState.Open;
 						}
 						break;
 
 					case EntranceState.Closing:
-						if (PivotObject.animation[State.AnimationClosing].normalizedTime > 1f) {
+						if (PivotObject.GetComponent<Animation>()[State.AnimationClosing].normalizedTime > 1f) {
 							State.CurrentState = EntranceState.Closed;
 						}
 						break;
@@ -207,17 +207,17 @@ namespace Frontiers.World.WIScripts
 			Vector3 endPosition = Player.Local.Position;
 			//figure out which one we're starting in
 			if (ClimbThroughInner.IsIntersecting) {
-				endPosition = ClimbThroughOuter.collider.bounds.center;
+				endPosition = ClimbThroughOuter.GetComponent<Collider>().bounds.center;
 			} else if (ClimbThroughOuter.IsIntersecting) {
-				endPosition = ClimbThroughInner.collider.bounds.center;
+				endPosition = ClimbThroughInner.GetComponent<Collider>().bounds.center;
 			} else {
 				//if we're not intersecting either, get the closest
 				float distanceToInner = Vector3.Distance(Player.Local.Position, ClimbThroughInner.transform.position);
 				float distanceToOuter = Vector3.Distance(Player.Local.Position, ClimbThroughOuter.transform.position);
 				if (distanceToInner < distanceToOuter) {
-					endPosition = ClimbThroughOuter.collider.bounds.center;
+					endPosition = ClimbThroughOuter.GetComponent<Collider>().bounds.center;
 				} else {
-					endPosition = ClimbThroughInner.collider.bounds.center;
+					endPosition = ClimbThroughInner.GetComponent<Collider>().bounds.center;
 				}
 			}
 

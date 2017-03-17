@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Frontiers;
 using Frontiers.World;
 using Frontiers.World.Gameplay;
-using Pathfinding.RVO;
+////using Pathfinding.RVO;
 
 namespace Frontiers
 {
@@ -15,7 +15,7 @@ namespace Frontiers
 	{
 		public TNObject Owner;
 		public Transform tr;
-		public IAgent RVOAgent;
+		//public IAgent RVOAgent;
 
 		#region basic properties
 

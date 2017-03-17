@@ -9,6 +9,64 @@ using System;
 namespace Frontiers {
 	public class IconManager : MonoBehaviour
 	{
+		#if UNITY_EDITOR
+		[UnityEditor.MenuItem ("Frontiers/GUI/Convert NGUI atlas to UI")]
+		public static void ConvertNGUIAtlasToUI (UnityEditor.MenuCommand command) {
+
+			UIAtlas atlas = UnityEditor.Selection.activeGameObject.GetComponent <UIAtlas> ();
+			Texture2D spriteSheet = atlas.texture as Texture2D;
+			string assetPath = UnityEditor.AssetDatabase.GetAssetPath (spriteSheet.GetInstanceID ());
+			Debug.Log ("Getting asset importer at path " + assetPath);
+			UnityEditor.TextureImporter importer = UnityEditor.TextureImporter.GetAtPath (assetPath) as UnityEditor.TextureImporter;
+
+			if (atlas == null || spriteSheet == null) {
+				return;
+			}
+			List<UnityEditor.SpriteMetaData> spriteData = new List<UnityEditor.SpriteMetaData> ();
+
+			List<string> spriteNames = atlas.GetListOfSprites ();
+			int height = spriteSheet.height;
+			int width = spriteSheet.width;
+			foreach (string spriteName in spriteNames) {
+				UIAtlas.Sprite sprite = atlas.GetSprite (spriteName);
+				//flip the positions
+				Rect rect = sprite.outer;
+				//Rect rect = new Rect (0, 0, 50, 50);
+				rect.y = height - rect.y - rect.height;
+				Vector2 pivot = new Vector2 (0.5f, 0.5f);// = rect.center;
+				//pivot.y = height - pivot.y;
+				Vector4 border = Vector4.zero;
+				/*if (sprite.hasPadding) {
+					border.w = sprite.inner.width;
+					border.x = sprite.paddingRight;
+					border.y = sprite.paddingTop;
+					border.z = sprite.paddingBottom;
+				}*/
+				UnityEditor.SpriteMetaData data = new UnityEditor.SpriteMetaData ();
+				data.border = border;
+				data.pivot = pivot;
+				data.rect = rect;
+				data.name = spriteName;
+				data.alignment = 0;
+				Debug.Log ("Created sprite " + spriteName + " with rect: "
+				+ "xMin" + rect.xMin + ", "
+				+ "xMax" + rect.xMax + ", "
+				+ "yMin" + rect.yMin + ", "
+				+ "yMax" + rect.yMax + "\n"
+				+ "pivotx " + pivot.x + ", "
+				+ "pivoty " + pivot.y);
+				spriteData.Add (data);
+			}
+
+			importer.spriteImportMode = UnityEditor.SpriteImportMode.Multiple;
+			importer.spritesheet = spriteData.ToArray ();
+
+			//UnityEditor.AssetDatabase.StartAssetEditing ();
+			UnityEditor.AssetDatabase.ImportAsset (importer.assetPath);
+			//UnityEditor.AssetDatabase.StopAssetEditing ();
+		}
+		#endif
+
 		public UIAtlas MapIconAtlas;
 
 		public List <FlagsetIcon> FlagsetIcons = new List <FlagsetIcon> ();

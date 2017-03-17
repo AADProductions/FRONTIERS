@@ -45,7 +45,7 @@ namespace Frontiers.World.WIScripts
 								//this will put us back in our group where we belong
 								worlditem.UnlockTransform();
 								transform.localPosition = new Vector3(-5000f, -5000f, -5000f);
-								worlditem.rigidbody.isKinematic	= true;
+								worlditem.GetComponent<Rigidbody>().isKinematic	= true;
 						}
 				}
 		}

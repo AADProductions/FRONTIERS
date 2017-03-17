@@ -47,9 +47,9 @@ namespace Frontiers
 			ParticlePath.simulationSpace = ParticleSystemSimulationSpace.World;
 			ParticlePath.playOnAwake = false;
 			ParticlePath.loop = false;
-			ParticlePath.renderer.material = Mats.Get.WorldPathGroundParticleMaterial;
-			ParticlePath.renderer.receiveShadows = false;
-			ParticlePath.renderer.castShadows = false;
+			ParticlePath.GetComponent<Renderer>().material = Mats.Get.WorldPathGroundParticleMaterial;
+			ParticlePath.GetComponent<Renderer>().receiveShadows = false;
+			ParticlePath.GetComponent<Renderer>().castShadows = false;
 			ParticlePath.Stop();
 
 			particles = new ParticleSystem.Particle [NumParticles];
@@ -67,7 +67,7 @@ namespace Frontiers
 
 			for (int i = 0; i < NumParticles; i++) {
 				ParticleSystem.Particle p = particles[i];
-				p.lifetime = 100f;
+				p.remainingLifetime = 100f;
 				p.startLifetime = Time.time;
 				p.size = 1f;
 				p.velocity = Vector3.forward * i;

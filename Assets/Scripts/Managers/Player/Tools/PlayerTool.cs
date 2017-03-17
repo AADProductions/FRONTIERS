@@ -336,8 +336,8 @@ namespace Frontiers
 				{
 
 						mDopplegangerLocked = true;
-						animation.Play(animationName, AnimationPlayMode.Stop);
-						while (animation[animationName].normalizedTime < 1f) {	//wait for animation to play out
+						GetComponent<Animation>().Play(animationName, AnimationPlayMode.Stop);
+						while (GetComponent<Animation>()[animationName].normalizedTime < 1f) {	//wait for animation to play out
 								yield return null;
 						}
 						mDopplegangerLocked = false;
@@ -996,7 +996,7 @@ namespace Frontiers
 										worlditem.LockTransform(tr);
 										worlditem.tr.localPosition = equipPos;
 										worlditem.tr.localRotation = Quaternion.Euler(equipRot);
-										worlditem.rigidbody.isKinematic = true;
+										worlditem.GetComponent<Rigidbody>().isKinematic = true;
 										ToolColliders.AddRange(worlditem.Colliders);
 										//and we're done
 										return;

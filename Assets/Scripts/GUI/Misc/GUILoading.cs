@@ -357,28 +357,28 @@ namespace Frontiers.GUI
 						//Debug.Log ("GUILOAING: LoadFinishOverTime");
 						ActivityInfo = "Finished Loading...";
 						DetailsInfo = string.Empty;
-						LoadingCompass.animation["NGUIScaleDown"].normalizedTime = 0f;
-						LoadingCompass.animation.Play("NGUIScaleDown");
+						LoadingCompass.GetComponent<Animation>()["NGUIScaleDown"].normalizedTime = 0f;
+						LoadingCompass.GetComponent<Animation>().Play("NGUIScaleDown");
 						IsLoading = false;
 						yield return null;
-						while (LoadingCompass.animation["NGUIScaleDown"].normalizedTime < 0.95f) {	//wait for the animation to complete
-								LoadingCompass.animation["NGUIScaleDown"].time += (float)WorldClock.RTDeltaTimeSmooth;
-								LoadingCompass.animation.Sample();
+						while (LoadingCompass.GetComponent<Animation>()["NGUIScaleDown"].normalizedTime < 0.95f) {	//wait for the animation to complete
+								LoadingCompass.GetComponent<Animation>()["NGUIScaleDown"].time += (float)WorldClock.RTDeltaTimeSmooth;
+								LoadingCompass.GetComponent<Animation>().Sample();
 								//Debug.Log (LoadingCompass.animation ["NGUIScaleDown"].normalizedTime);
 								BackgroundSprite.alpha = Mathf.Lerp(BackgroundSprite.alpha, 0f, (float)WorldClock.RTDeltaTimeSmooth * 2.5f);
 								BackgroundOverlaySprite.alpha = BackgroundSprite.alpha * BackgroundSpriteAlphaMultiplier;
 								QuoteText.alpha = BackgroundSprite.alpha;
 								yield return null;
 						}
-						LoadingCompass.animation.Stop();
+						LoadingCompass.GetComponent<Animation>().Stop();
 						while (BackgroundSprite.alpha > 0.05f) {
 								BackgroundSprite.alpha = Mathf.Lerp(BackgroundSprite.alpha, 0f, (float)WorldClock.RTDeltaTimeSmooth * 2.5f);
 								BackgroundOverlaySprite.alpha = BackgroundSprite.alpha * BackgroundSpriteAlphaMultiplier;
 								QuoteText.alpha = BackgroundSprite.alpha;
 								yield return null;
 						}
-						LoadingCompass.animation["NGUIScaleUp"].normalizedTime = 0f;
-						LoadingCompass.animation.Sample();
+						LoadingCompass.GetComponent<Animation>()["NGUIScaleUp"].normalizedTime = 0f;
+						LoadingCompass.GetComponent<Animation>().Sample();
 						LoadingCompass.transform.localScale = Vector3.zero;
 						LoadingCompass.SetActive(false);
 						BackgroundSprite.alpha = 0f;
@@ -401,13 +401,13 @@ namespace Frontiers.GUI
 						LoadingCompass.SetActive(true);
 						ActivityInfo = "Loading...";
 						DetailsInfo = string.Empty;
-						LoadingCompass.animation["NGUIScaleUp"].normalizedTime = 0f;
-						LoadingCompass.animation.Play("NGUIScaleUp");
+						LoadingCompass.GetComponent<Animation>()["NGUIScaleUp"].normalizedTime = 0f;
+						LoadingCompass.GetComponent<Animation>().Play("NGUIScaleUp");
 						yield return null;
 						LoadingCompassArrowPanel.enabled = true;
-						while (LoadingCompass.animation["NGUIScaleUp"].normalizedTime < 0.97f) {	//wait for the animation to complete
-								LoadingCompass.animation["NGUIScaleUp"].time += (float)WorldClock.RTDeltaTimeSmooth;
-								LoadingCompass.animation.Sample();
+						while (LoadingCompass.GetComponent<Animation>()["NGUIScaleUp"].normalizedTime < 0.97f) {	//wait for the animation to complete
+								LoadingCompass.GetComponent<Animation>()["NGUIScaleUp"].time += (float)WorldClock.RTDeltaTimeSmooth;
+								LoadingCompass.GetComponent<Animation>().Sample();
 								//Debug.Log (LoadingCompass.animation ["NGUIScaleUp"].normalizedTime);
 								QuoteText.alpha = Mathf.Lerp(QuoteText.alpha, 1.0f, (float)WorldClock.RTDeltaTimeSmooth * 5f);
 								if (GameManager.Is(FGameState.Startup)) {
@@ -419,8 +419,8 @@ namespace Frontiers.GUI
 								}
 								yield return null;
 						}
-						LoadingCompass.animation["NGUIScaleUp"].normalizedTime = 1f;
-						LoadingCompass.animation.Sample();
+						LoadingCompass.GetComponent<Animation>()["NGUIScaleUp"].normalizedTime = 1f;
+						LoadingCompass.GetComponent<Animation>().Sample();
 						BackgroundSprite.alpha = backgroundAlphaTarget;
 						BackgroundOverlaySprite.alpha = backgroundAlphaTarget * BackgroundSpriteAlphaMultiplier;
 						yield return null;

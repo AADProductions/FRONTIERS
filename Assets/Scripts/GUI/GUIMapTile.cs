@@ -54,7 +54,7 @@ namespace Frontiers.GUI
 						name = chunkToDisplay.Name.ToString();
 
 						transform.localPosition = new Vector3(ChunkToDisplay.TileOffset.x, ChunkToDisplay.TileOffset.z, 0f);
-						MapTextureObject.renderer.enabled = true;
+						MapTextureObject.GetComponent<Renderer>().enabled = true;
 						TileBackground.localScale = new Vector3(Globals.WorldChunkSize, Globals.WorldChunkSize, Globals.WorldChunkTerrainHeight);
 						DragObject.target = dragTarget;
 						IsArbitrary = true;
@@ -67,7 +67,7 @@ namespace Frontiers.GUI
 				{
 						Vector3 offset = new Vector3((xTileOffset * Globals.WorldChunkSize) + Globals.WorldChunkOffsetX, 0f, (zTileOffset * Globals.WorldChunkSize) + Globals.WorldChunkOffsetZ);
 						transform.localPosition = new Vector3(offset.x, offset.z, 0f);
-						MapTextureObject.renderer.enabled = true;
+						MapTextureObject.GetComponent<Renderer>().enabled = true;
 						TileBackground.localScale = new Vector3(Globals.WorldChunkSize, Globals.WorldChunkSize, Globals.WorldChunkTerrainHeight);
 						DragObject.target = dragTarget;
 						ChunkToDisplay = WorldMapChunk.Empty;
@@ -80,11 +80,11 @@ namespace Frontiers.GUI
 						Texture2D mapTexture = null;
 						Texture2D alphaTexture = null;
 						if (!IsArbitrary && Mods.Get.Runtime.ChunkMap(ref mapTexture, ChunkToDisplay.Name, "ColorOverlay")) {// "MiniHeightMap")) {
-								MapTextureObject.renderer.enabled = true;
-								MapTextureObject.renderer.material.SetTexture("_MainTex", mapTexture);
-								MapTextureObject.renderer.material.SetTexture("_Mask", mapTexture);
+								MapTextureObject.GetComponent<Renderer>().enabled = true;
+								MapTextureObject.GetComponent<Renderer>().material.SetTexture("_MainTex", mapTexture);
+								MapTextureObject.GetComponent<Renderer>().material.SetTexture("_Mask", mapTexture);
 						} else {
-								MapTextureObject.renderer.enabled = false;
+								MapTextureObject.GetComponent<Renderer>().enabled = false;
 						}
 						//TODO set failsafe water texture
 						MapTextureObject.layer = Globals.LayerNumGUIMap;

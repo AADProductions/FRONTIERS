@@ -149,6 +149,12 @@ namespace Frontiers.World
 
 		public static bool SpawnCreature (CreatureDen den, WIGroup group, Vector3 spawnPosition, bool isDead, string causeOfDeath, float timeSinceDeath, out Creature newCreature)
 		{
+			if (Globals.MissionDevelopmentMode) {
+				//we don't care about creatures in mission dev mode
+				newCreature = null;
+				return false;
+			}
+
 			newCreature = null;
 			CreatureTemplate template = null;
 			if (mTemplateLookup.TryGetValue (den.State.NameOfCreature.ToLower ().Trim (), out template)) {

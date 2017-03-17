@@ -75,9 +75,9 @@ namespace Frontiers
 
 								if (Player.Local.HasSpawned) {
 										try {
-												TerrainTypePlane.renderer.material.SetTexture("_MainTex", GameWorld.Get.PrimaryChunk.ChunkDataMaps["AboveGroundTerrainType"]);
+												TerrainTypePlane.GetComponent<Renderer>().material.SetTexture("_MainTex", GameWorld.Get.PrimaryChunk.ChunkDataMaps["AboveGroundTerrainType"]);
 										} catch {
-												TerrainTypePlane.renderer.material.SetTexture("_MainTex", null);
+												TerrainTypePlane.GetComponent<Renderer>().material.SetTexture("_MainTex", null);
 										
 												//whoops didn't have terrain type
 										}

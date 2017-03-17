@@ -51,7 +51,7 @@ namespace Frontiers.World
 				public void Awake()
 				{
 						tr = transform;
-						rb = rigidbody;
+						rb = GetComponent<Rigidbody>();
 						tr.localScale = tr.localScale * UnityEngine.Random.Range(0.75f, 1.25f);
 				}
 

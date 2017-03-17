@@ -73,14 +73,14 @@ namespace Frontiers.World.WIScripts
 		protected IEnumerator SetFlooded (bool flooded)
 		{
 			while (worlditem.Group == null) {
-				Debug.Log ("Group was null, waiting...");
+				//Debug.Log ("Group was null, waiting...");
 				yield return null;
 			}
 
 			while (river == null) {
 				worlditem.Group.GetParentChunk ().GetRiver (RiverName, out river);
 				worlditem.Group.GetParentChunk ().GetRiver (RiverEndName, out riverEnd);
-				Debug.Log ("Waiting for river...");
+				//Debug.Log ("Waiting for river...");
 				yield return null;
 			}
 

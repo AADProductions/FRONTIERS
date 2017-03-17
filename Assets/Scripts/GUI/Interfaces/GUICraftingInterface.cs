@@ -491,10 +491,10 @@ namespace Frontiers.GUI
 				{
 						//Debug.Log ("Setting craft all to " + enabled);
 						if (enabled) {
-								CraftAllButton.collider.enabled = true;
+								CraftAllButton.GetComponent<Collider>().enabled = true;
 								CraftAllButton.GetComponent <GUIButtonSetup>().SetEnabled();
 						} else {
-								CraftAllButton.collider.enabled = false;
+								CraftAllButton.GetComponent<Collider>().enabled = false;
 								CraftAllButton.GetComponent <GUIButtonSetup>().SetDisabled();
 						}
 				}
@@ -503,10 +503,10 @@ namespace Frontiers.GUI
 				{
 						//Debug.Log ("Setting craft one to " + enabled);
 						if (enabled) {
-								CraftOneButton.collider.enabled = true;
+								CraftOneButton.GetComponent<Collider>().enabled = true;
 								CraftOneButton.GetComponent <GUIButtonSetup>().SetEnabled();
 						} else {
-								CraftOneButton.collider.enabled = false;
+								CraftOneButton.GetComponent<Collider>().enabled = false;
 								CraftOneButton.GetComponent <GUIButtonSetup>().SetDisabled();
 						}
 				}

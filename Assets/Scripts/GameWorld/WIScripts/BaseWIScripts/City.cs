@@ -138,6 +138,13 @@ namespace Frontiers.World.WIScripts
 
 		public IEnumerator SpawnCharactersOverTime ()
 		{
+			if (Globals.MissionDevelopmentMode) {
+				//we don't care about random characters in mission dev mode
+				HasSpawnedCharacters = true;
+				mSpawningCharacters = false;
+				yield break;
+			}
+
 			List <ActionNodeState> actionNodeStates = null;
 			while (!GameManager.Is (FGameState.InGame) || (mSpawningCharacters && (location.LocationGroup == null || !location.LocationGroup.Is (WIGroupLoadState.Loaded)))) {
 				yield return null;

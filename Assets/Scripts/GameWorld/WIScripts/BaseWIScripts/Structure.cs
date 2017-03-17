@@ -473,14 +473,14 @@ namespace Frontiers.World.WIScripts
 			//normal exterior colliders
 			for (int i = ExteriorBoxColliders.LastIndex (); i >= 0; i--) {
 				if (ExteriorBoxColliders [i] != null) {
-					ExteriorBoxColliders [i].rigidbody.detectCollisions = enableColliders;
+					ExteriorBoxColliders [i].GetComponent<Rigidbody>().detectCollisions = enableColliders;
 				} else {
 					ExteriorBoxColliders.RemoveAt (i);
 				}
 			}
 			for (int i = ExteriorMeshColliders.LastIndex (); i >= 0; i--) {
 				if (ExteriorMeshColliders [i] != null) {
-					ExteriorMeshColliders [i].rigidbody.detectCollisions = enableColliders;
+					ExteriorMeshColliders [i].GetComponent<Rigidbody>().detectCollisions = enableColliders;
 				} else {
 					ExteriorMeshColliders.RemoveAt (i);
 				}
@@ -491,14 +491,14 @@ namespace Frontiers.World.WIScripts
 				if (ExteriorBoxCollidersDestroyed [i] == null) {
 					ExteriorBoxCollidersDestroyed.RemoveAt (i);
 				} else {
-					ExteriorBoxCollidersDestroyed [i].rigidbody.detectCollisions = enableColliders;
+					ExteriorBoxCollidersDestroyed [i].GetComponent<Rigidbody>().detectCollisions = enableColliders;
 				}
 			}
 			for (int i = ExteriorMeshCollidersDestroyed.LastIndex (); i >= 0; i--) {
 				if (ExteriorMeshCollidersDestroyed [i] == null) {
 					ExteriorMeshCollidersDestroyed.RemoveAt (i);
 				} else {
-					ExteriorMeshCollidersDestroyed [i].rigidbody.detectCollisions = enableColliders;
+					ExteriorMeshCollidersDestroyed [i].GetComponent<Rigidbody>().detectCollisions = enableColliders;
 				}
 			}
 
@@ -506,14 +506,14 @@ namespace Frontiers.World.WIScripts
 			enableColliders = DisplayInterior && (forceOn || IsDestroyed || Is (StructureLoadState.InteriorLoaded));
 			for (int i = InteriorBoxColliders.LastIndex (); i >= 0; i--) {
 				if (InteriorBoxColliders [i] != null) {
-					InteriorBoxColliders [i].rigidbody.detectCollisions = enableColliders;
+					InteriorBoxColliders [i].GetComponent<Rigidbody>().detectCollisions = enableColliders;
 				} else {
 					InteriorBoxColliders.RemoveAt (i);
 				}
 			}
 			for (int i = InteriorMeshColliders.LastIndex (); i >= 0; i--) {
 				if (InteriorMeshColliders [i] != null) {
-					InteriorMeshColliders [i].rigidbody.detectCollisions = enableColliders;
+					InteriorMeshColliders [i].GetComponent<Rigidbody>().detectCollisions = enableColliders;
 				} else {
 					InteriorMeshColliders.RemoveAt (i);
 				}
@@ -530,14 +530,14 @@ namespace Frontiers.World.WIScripts
 				if (InteriorBoxCollidersDestroyed [i] == null) {
 					InteriorBoxCollidersDestroyed.RemoveAt (i);
 				} else {
-					InteriorBoxCollidersDestroyed [i].rigidbody.detectCollisions = enableColliders;
+					InteriorBoxCollidersDestroyed [i].GetComponent<Rigidbody>().detectCollisions = enableColliders;
 				}
 			}
 			for (int i = InteriorMeshCollidersDestroyed.LastIndex (); i >= 0; i--) {
 				if (InteriorMeshCollidersDestroyed [i] == null) {
 					InteriorMeshCollidersDestroyed.RemoveAt (i);
 				} else {
-					InteriorMeshCollidersDestroyed [i].rigidbody.detectCollisions = enableColliders;
+					InteriorMeshCollidersDestroyed [i].GetComponent<Rigidbody>().detectCollisions = enableColliders;
 				}
 			}
 
@@ -825,7 +825,46 @@ namespace Frontiers.World.WIScripts
 			InnerEntrances.Clear ();
 		}
 
-		public IEnumerator CreateStructureGroups (StructureLoadState forState)
+        #if UNITY_EDITOR
+        public void EditorCreateStructureGroups() {
+
+            Debug.Log("Creating groups for " + name);
+
+            WIGroup worldItemGroup = gameObject.GetOrAdd<WIGroup>();
+            mWorldItem = gameObject.GetComponent<WorldItem>();
+            worldItemGroup.RefreshEditor();
+            StructureBase = gameObject.FindOrCreateChild(GroupNameExterior).gameObject;
+            State.PrimaryBuilderOffset.ApplyTo(StructureBase.transform);
+            StructureBase.transform.parent = worldItemGroup.transform;
+            StructureGroup = worldItemGroup.gameObject.FindOrCreateChild(GroupNameExterior).gameObject.GetOrAdd<WIGroup>();
+            StructureGroup.ParentGroup = worldItemGroup;
+            StructureGroup.RefreshEditor();
+            StructureGroup.ParentStructure = this;
+
+            WIGroup interiorBaseGroup = StructureGroup.gameObject.FindOrCreateChild(GroupNameInterior(State.BaseInteriorVariant)).gameObject.GetOrAdd<WIGroup>();
+            interiorBaseGroup.ParentGroup = StructureGroup;
+            interiorBaseGroup.RefreshEditor();
+            interiorBaseGroup.Props.Interior = true;
+            if (State.ForceExteriorGroups) {
+                interiorBaseGroup.Props.Interior = false;
+            }
+            interiorBaseGroup.ParentStructure = this;
+
+            for (int i = 0; i < State.AdditionalInteriorVariants.Count; i++) {
+                int interiorVariant = State.AdditionalInteriorVariants[i];
+                WIGroup interiorGroup = StructureGroup.gameObject.FindOrCreateChild(GroupNameInterior(interiorVariant)).gameObject.GetOrAdd<WIGroup>();
+                interiorGroup.ParentGroup = StructureGroup;
+                interiorGroup.RefreshEditor();
+                interiorGroup.Props.Interior = true;
+                if (State.ForceExteriorGroups) {
+                    interiorGroup.Props.Interior = false;
+                }
+                interiorGroup.ParentStructure = this;
+            }
+        }
+        #endif
+
+        public IEnumerator CreateStructureGroups (StructureLoadState forState)
 		{
 			if (StructureGroup == null) {
 				Location location = worlditem.Get <Location> ();

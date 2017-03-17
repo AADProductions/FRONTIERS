@@ -110,6 +110,20 @@ namespace Frontiers.World
 		#region editing structures
 
 		#if UNITY_EDITOR
+		[UnityEditor.MenuItem ("Frontiers/Structures/Clear Structures")]
+		static void ClearStructures() {
+			foreach (UnityEngine.Object obj in UnityEditor.Selection.objects) {
+				GameObject sbGo = obj as GameObject;
+				if (sbGo != null) {
+					Debug.Log ("Clearing " + sbGo.name);
+					StructureBuilder sb = sbGo.GetComponent<StructureBuilder> ();
+					if (sb != null) {
+						StructureBuilder.EditorClearStructure (sb.transform);
+					}
+				}
+			}
+		}
+
 		public void DuplicateAsMeshStructure ()
 		{
 			Transform normal = transform.FindChild ("==NORMAL==");
@@ -236,7 +250,7 @@ namespace Frontiers.World
 												}
 											}
 										}
-										instantiatedPrefab.renderer.materials = variationsArray;
+										instantiatedPrefab.GetComponent<Renderer>().materials = variationsArray;
 									}
 								}
 								staticPieces.Clear ();

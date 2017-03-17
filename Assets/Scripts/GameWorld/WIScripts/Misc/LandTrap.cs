@@ -114,12 +114,12 @@ namespace Frontiers.World.WIScripts
 						SkillUpdating = false;
 						switch (Mode) {
 								case TrapMode.Set:
-										animation.Play(AnimationOpenClipName);
+										GetComponent<Animation>().Play(AnimationOpenClipName);
 										Refresh();
 										break;
 
 								default:
-										animation.Play(AnimationCloseClipName);
+										GetComponent<Animation>().Play(AnimationCloseClipName);
 										break;
 						}
 						TrapCollider.enabled = true;
@@ -242,7 +242,7 @@ namespace Frontiers.World.WIScripts
 				{
 						//TODO play misfire sound
 						Mode = TrapMode.Misfired;
-						animation.Play(AnimationCloseClipName);
+						GetComponent<Animation>().Play(AnimationCloseClipName);
 						MasterAudio.PlaySound(MasterAudio.SoundType.Machines, transform, "HuntingTrapTrigger");
 						GUI.GUIManager.PostWarning("Trap misfired");
 						State.NumTimesMisfired++;
@@ -252,14 +252,14 @@ namespace Frontiers.World.WIScripts
 				{
 						if (Mode == TrapMode.Set) {
 								Mode = TrapMode.Disabled;
-								animation.Play(AnimationCloseClipName);
+								GetComponent<Animation>().Play(AnimationCloseClipName);
 								worlditem.RefreshHud();
 								return true;
 						} else {
 								Mode = TrapMode.Set;
 								MasterAudio.PlaySound(MasterAudio.SoundType.Machines, transform, "HuntingTrapSet");
 								State.SkillOnSet = skillLevel;
-								animation.Play(AnimationOpenClipName);
+								GetComponent<Animation>().Play(AnimationOpenClipName);
 								worlditem.RefreshHud();
 								return true;
 						}
@@ -281,7 +281,7 @@ namespace Frontiers.World.WIScripts
 								State.Damage.Target = target;
 								DamageManager.Get.SendDamage(State.Damage);
 						}
-						animation.Play(AnimationCloseClipName);
+						GetComponent<Animation>().Play(AnimationCloseClipName);
 				}
 
 				protected List <ICreatureDen> mIntersectingDens = new List<ICreatureDen>();

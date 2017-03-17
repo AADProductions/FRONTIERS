@@ -343,7 +343,8 @@ namespace Frontiers
 		public IEnumerator PlayMusic (MusicType music, MusicVolume volume)
 		{
 			//TEMP
-			//yield break;
+			//TODO UNITY 5
+			yield break;
 			//TEMP
 
 			while (!Manager.IsAwake <Mods> ()) {
@@ -413,7 +414,13 @@ namespace Frontiers
 				//Debug.Log(fullPath);
 				loader = new WWW ("file:///" + System.Uri.EscapeDataString (fullPath));
 				//Debug.Log("AUDIO MANAGER: loading " + fullPath);
-				FadingInAudio.clip = loader.GetAudioClip (false, true, AudioType.OGGVORBIS);
+				//TODO UNITY 5
+				try {
+					FadingInAudio.clip = loader.GetAudioClip (false, true, AudioType.OGGVORBIS);
+				} catch (Exception e) {
+					Debug.Log ("AUDIO MANAGER: ERROR when loading audio clip: " + e.ToString ());
+					yield break;
+				}
 				if (!string.IsNullOrEmpty (loader.error)) {
 					Debug.Log ("AUDIO MANAGER: ERROR when loading audio clip: " + loader.error);
 					loader.Dispose ();

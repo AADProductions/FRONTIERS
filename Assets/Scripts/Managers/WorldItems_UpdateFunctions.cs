@@ -91,6 +91,9 @@ namespace Frontiers.World
 
 		public void Update ()
 		{
+            if (!mInitialized)
+                return;
+
 			if (SuspendWorldItemUpdates)
 				return;
 
@@ -151,29 +154,33 @@ namespace Frontiers.World
 				mInvisibleCounter++;
 			}
 
-			if (mActiveCounter > mActiveCounterMax) {
-				mActiveCounter = 0;
-				ActiveRadiusComparer.PlayerPosition = LastPlayerPosition;
-				ActiveRadiusComparer.LastUpdate = LastActiveDistanceUpdate;
-				StartCoroutine (CleanWorldItemList (ActiveSet, ActiveWorldItems, ActiveRadiusComparer, 10, 50));
-			}
+            try {
+                if (mActiveCounter > mActiveCounterMax) {
+                    mActiveCounter = 0;
+                    ActiveRadiusComparer.PlayerPosition = LastPlayerPosition;
+                    ActiveRadiusComparer.LastUpdate = LastActiveDistanceUpdate;
+                    StartCoroutine(CleanWorldItemList(ActiveSet, ActiveWorldItems, ActiveRadiusComparer, 10, 50));
+                }
 
-			if (mVisibleCounter > mVisibleCounterMax) {
-				mVisibleCounter = 0;
-				VisibleRadiusComparer.PlayerPosition = LastPlayerPosition;
-				VisibleRadiusComparer.LastUpdate = LastActiveDistanceUpdate;
-				StartCoroutine (CleanWorldItemList (VisibleSet, VisibleWorldItems, VisibleRadiusComparer, 25, 75));
-			}
+                if (mVisibleCounter > mVisibleCounterMax) {
+                    mVisibleCounter = 0;
+                    VisibleRadiusComparer.PlayerPosition = LastPlayerPosition;
+                    VisibleRadiusComparer.LastUpdate = LastActiveDistanceUpdate;
+                    StartCoroutine(CleanWorldItemList(VisibleSet, VisibleWorldItems, VisibleRadiusComparer, 25, 75));
+                }
 
-			if (mInvisibleCounter > mInvisibleCounterMax) {
-				mInvisibleCounter = 0;
-				InvisibleRadiusComparer.PlayerPosition = LastPlayerPosition;
-				InvisibleRadiusComparer.LastUpdate = LastActiveDistanceUpdate;
-				LockedComparer.PlayerPosition = LastPlayerPosition;
-				LockedComparer.LastUpdate = LastActiveDistanceUpdate;
-				StartCoroutine (CleanWorldItemList (InvisibleSet, InvisibleWorldItems, InvisibleRadiusComparer, 50, 100));
-				StartCoroutine (CleanWorldItemList (LockedSet, LockedWorldItems, LockedComparer, 50, 200));
-			}
+                if (mInvisibleCounter > mInvisibleCounterMax) {
+                    mInvisibleCounter = 0;
+                    InvisibleRadiusComparer.PlayerPosition = LastPlayerPosition;
+                    InvisibleRadiusComparer.LastUpdate = LastActiveDistanceUpdate;
+                    LockedComparer.PlayerPosition = LastPlayerPosition;
+                    LockedComparer.LastUpdate = LastActiveDistanceUpdate;
+                    StartCoroutine(CleanWorldItemList(InvisibleSet, InvisibleWorldItems, InvisibleRadiusComparer, 50, 100));
+                    StartCoroutine(CleanWorldItemList(LockedSet, LockedWorldItems, LockedComparer, 50, 200));
+                }
+            } catch (Exception e) {
+                Debug.LogException(e);
+            }
 		}
 
 		protected IEnumerator CleanWorldItemList (List <WorldItem> sortedList, HashSet <WorldItem> masterList, WIRadiusComparer sorter, int removalsPerFrame, int numToSortAtOnce)

@@ -166,6 +166,7 @@ namespace Frontiers
 
 		public override void OnGameLoadFinish()
 		{
+			Debug.Log ("On game load finish in local player");
 			Scripts.OnGameLoadFinish();
 		}
 
@@ -297,13 +298,17 @@ namespace Frontiers
 
 		protected void StealGameCamera()
 		{
-			if (!GameManager.Is(FGameState.Cutscene)) {
+			Debug.Log ("Stealing game camera");
+
+			if (!GameManager.Is (FGameState.Cutscene)) {
 				Camera gameCamera = GameManager.Get.GameCamera;
 				if (gameCamera.transform.parent != FPSCameraSeat) {
 					gameCamera.transform.parent = FPSCameraSeat;
-					gameCamera.transform.ResetLocal();
+					gameCamera.transform.ResetLocal ();
 				}
 				gameCamera.fieldOfView = Profile.Get.CurrentPreferences.Video.FieldOfView;
+			} else {
+				Debug.Log ("Couldn't steal game camera, in cutscene");
 			}
 		}
 

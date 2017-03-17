@@ -37,17 +37,17 @@ public class WaterUpdate : MonoBehaviour
 		if (!GameManager.Is (FGameState.InGame))
 			return;
 
-		renderer.material.SetColor ("_FogColor", TOD_Sky.GlobalFogColor);// Color.Lerp (RenderSettings.ambientLight, RenderSettings.fogColor, 0.5f));//Biomes.Get.CurrentWaterFogColor);
-		renderer.material.SetColor ("_FoamColor", Color.Lerp (GameWorld.Get.Sky.SunColor, Color.white, 0.85f));// Biomes.Get.CurrentWaterFoamColor);
-		renderer.material.SetColor ("_CrestColor", Color.Lerp (GameWorld.Get.Sky.SunColor, Color.white, 0.85f));
-		renderer.material.SetColor ("_WaveColor", Color.Lerp (GameWorld.Get.Sky.SunColor, Color.white, 0.85f));
-		renderer.material.SetFloat ("_FogFar", RenderSettings.fogEndDistance);
+		GetComponent<Renderer>().material.SetColor ("_FogColor", TOD_Sky.GlobalFogColor);// Color.Lerp (RenderSettings.ambientLight, RenderSettings.fogColor, 0.5f));//Biomes.Get.CurrentWaterFogColor);
+		GetComponent<Renderer>().material.SetColor ("_FoamColor", Color.Lerp (GameWorld.Get.Sky.SunColor, Color.white, 0.85f));// Biomes.Get.CurrentWaterFoamColor);
+		GetComponent<Renderer>().material.SetColor ("_CrestColor", Color.Lerp (GameWorld.Get.Sky.SunColor, Color.white, 0.85f));
+		GetComponent<Renderer>().material.SetColor ("_WaveColor", Color.Lerp (GameWorld.Get.Sky.SunColor, Color.white, 0.85f));
+		GetComponent<Renderer>().material.SetFloat ("_FogFar", RenderSettings.fogEndDistance);
 
 		OffsetX = transform.position.x * WaterScale;
         OffsetY = transform.position.z * WaterScale;
 
 		//get MASTER animation Speed
-		animationSpeed = renderer.material.GetFloat("_AnimSpeed");
+		animationSpeed = GetComponent<Renderer>().material.GetFloat("_AnimSpeed");
 //		animationSpeed = Mathf.Clamp01 (animationSpeed);
 
 //		//set speed limits
@@ -68,8 +68,8 @@ public class WaterUpdate : MonoBehaviour
 		FoamTexOffset.x = (float) (((foam_speed.x * WorldClock.AdjustedRealTime * animationSpeed) - OffsetX / FoamTextureTiling) % FoamTextureTiling);
 		FoamTexOffset.y = (float) (((foam_speed.y * WorldClock.AdjustedRealTime * animationSpeed) - OffsetY / FoamTextureTiling) % FoamTextureTiling);
 
-		renderer.material.SetTextureOffset("_HeightMap", HeightMap1Offset);
-		renderer.material.SetTextureOffset("_HeightMap2", HeightMap2Offset);
-		renderer.material.SetTextureOffset("_FoamTex", FoamTexOffset);
+		GetComponent<Renderer>().material.SetTextureOffset("_HeightMap", HeightMap1Offset);
+		GetComponent<Renderer>().material.SetTextureOffset("_HeightMap2", HeightMap2Offset);
+		GetComponent<Renderer>().material.SetTextureOffset("_FoamTex", FoamTexOffset);
 	}
 }

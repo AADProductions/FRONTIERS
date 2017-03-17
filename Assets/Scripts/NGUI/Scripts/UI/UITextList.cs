@@ -1,6 +1,6 @@
 //----------------------------------------------
 //            NGUI: Next-Gen UI kit
-// Copyright © 2011-2012 Tasharen Entertainment
+// Copyright Â© 2011-2012 Tasharen Entertainment
 //----------------------------------------------
 
 using UnityEngine;
@@ -100,7 +100,7 @@ public class UITextList : MonoBehaviour
 		if (textLabel == null) textLabel = GetComponentInChildren<UILabel>();
 		if (textLabel != null) textLabel.lineWidth = 0;
 
-		Collider col = collider;
+		Collider col = GetComponent<Collider>();
 
 		if (col != null)
 		{

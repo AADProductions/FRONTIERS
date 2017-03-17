@@ -266,7 +266,11 @@ namespace Frontiers
 		{
 			Material[] lodMaterials = new Material [regularMaterials.Length];
 			for (int i = 0; i < regularMaterials.Length; i++) {
-				lodMaterials [i] = Mats.Get.GetLODMaterial (regularMaterials [i]);
+				if (Globals.MissionDevelopmentMode) {
+					lodMaterials [i] = Mats.Get.DefaultDiffuseMaterial;
+				} else {
+					lodMaterials [i] = Mats.Get.GetLODMaterial (regularMaterials [i]);
+				}
 			}
 			return lodMaterials;
 		}
@@ -310,8 +314,8 @@ namespace Frontiers
 			mGeneratedMeshes = new Dictionary <string, Mesh> ();
 			mTemplateLookup = new Dictionary<string, StructureTemplate> ();
 
-			ColliderKeeper.rigidbody.detectCollisions = false;
-			ColliderKeeper.rigidbody.isKinematic = true;
+			ColliderKeeper.GetComponent<Rigidbody>().detectCollisions = false;
+			ColliderKeeper.GetComponent<Rigidbody>().isKinematic = true;
 			ColliderKeeper.gameObject.layer = Globals.LayerNumHidden;
 			ColliderKeeper.gameObject.SetActive (false);
 
@@ -486,19 +490,22 @@ namespace Frontiers
 		public override void Initialize ()
 		{
 			if (Application.isPlaying) {
-				for (int i = 0; i < StructurePacks.Count; i++) {
-					foreach (KeyValuePair <string,StructurePackPrefab> spp in StructurePacks [i].StaticPrefabLookup) {
-						if (spp.Value.MRenderer != null) {
-							Material[] materials = spp.Value.MRenderer.sharedMaterials;
-							for (int m = 0; m < materials.Length; m++) {
-								Mats.Get.CreateLODMaterial (materials [m]);
+				if (!Globals.MissionDevelopmentMode) {
+					//we don't care about lod mats in mission dev mode
+					for (int i = 0; i < StructurePacks.Count; i++) {
+						foreach (KeyValuePair <string,StructurePackPrefab> spp in StructurePacks [i].StaticPrefabLookup) {
+							if (spp.Value.MRenderer != null) {
+								Material[] materials = spp.Value.MRenderer.sharedMaterials;
+								for (int m = 0; m < materials.Length; m++) {
+									Mats.Get.CreateLODMaterial (materials [m]);
+								}
 							}
 						}
 					}
-				}
-
-				for (int i = 0; i < SharedMaterials.Count; i++) {
-					Mats.Get.CreateLODMaterial (SharedMaterials [i]);
+					
+					for (int i = 0; i < SharedMaterials.Count; i++) {
+						Mats.Get.CreateLODMaterial (SharedMaterials [i]);
+					}
 				}
 
 				//create and initialize structure builders
@@ -564,12 +571,15 @@ namespace Frontiers
 				MinorBuilder.LODDestroyedCombiner = MinorLODCombinerDestroyed;
 				MinorBuilder.ColliderCombiner = MinorColliderCombiner;
 
-				StartCoroutine (BuildChunkPrefabs ());
+				//StartCoroutine (BuildChunkPrefabs ());
 
 				//set these to something unlikely to see much else
 				PreloaderCamera.cullingMask = Globals.LayerGUIRaycastFallThrough;
 				PreloaderRenderer.gameObject.layer = Globals.LayerNumGUIRaycastFallThrough;
-			}
+
+                enabled = true;
+                mInitialized = true;
+            }
 		}
 
 		public override void OnModsLoadStart ()
@@ -609,7 +619,7 @@ namespace Frontiers
 			yield break;
 		}
 
-		protected IEnumerator BuildChunkPrefabs ()
+		/*protected IEnumerator BuildChunkPrefabs ()
 		{
 			int numBuiltThisFrame = 0;
 			for (int i = 0; i < Globals.MaxChunkPrefabsPerChunk * Globals.MaxSpawnedChunks; i++) {
@@ -633,7 +643,7 @@ namespace Frontiers
 
 			enabled = true;
 			mInitialized = true;
-		}
+		}*/
 
 		public void RefreshStructureShadowSettings (bool structureShadows, bool sceneryObjectShadows)
 		{
@@ -1076,7 +1086,10 @@ namespace Frontiers
 		{
 			while (mInitialized) {
 				yield return null;
-				if (mMaterialsToLoad.Count > 0) {
+
+				if (Globals.MissionDevelopmentMode) { 
+					yield return null;
+				} else if (mMaterialsToLoad.Count > 0) {
 					#if UNITY_EDITOR
 					PreloaderCamera.rect = EditorPreloadCameraDepth;
 					PreloaderCamera.depth = 100f;
@@ -1307,6 +1320,12 @@ namespace Frontiers
 
 		public bool SharedMaterial (string materialName, out Material sharedMaterial)
 		{
+			//if we're in development mode always return basic material
+			if (Globals.MissionDevelopmentMode) {
+				sharedMaterial = Mats.Get.DefaultDiffuseMaterial;
+				return true;
+			}
+
 			//every time we get a shared material
 			//we set our preloader to look at it
 			if (mSharedMaterialLookup.TryGetValue (materialName, out sharedMaterial)) {
@@ -1393,7 +1412,7 @@ namespace Frontiers
 
 		#region chunk prefabs
 
-		public static void UnloadChunkPrefab (ChunkPrefab chunkPrefab)//, WorldChunk chunk, ChunkMode mode)
+		/*public static void UnloadChunkPrefab (ChunkPrefab chunkPrefab)//, WorldChunk chunk, ChunkMode mode)
 		{
 			if (chunkPrefab == null || !chunkPrefab.IsLoaded) {
 				return;
@@ -1481,17 +1500,23 @@ namespace Frontiers
 			Material cfoSharedMaterial = null;
 			List <Material> cfoSharedMaterialList = new List<Material> ();
 
-			for (int i = 0; i < chunkPrefab.SharedMaterialNames.Count; i++) {
-				if (Get.mSharedMaterialLookup.TryGetValue (chunkPrefab.SharedMaterialNames [i], out cfoSharedMaterial)) {
-					cfoSharedMaterialList.Add (cfoSharedMaterial);
-				} else {
-					Debug.Log ("COULDN'T FIND SHARED MATERIAL " + chunkPrefab.SharedMaterialNames [i] + ", using empty material");
-					cfoSharedMaterialList.Add (null);
+			if (Globals.MissionDevelopmentMode) {
+				//we don't care about materials in mission dev mode
+				cfoSharedMaterialList.Add (Mats.Get.DefaultDiffuseMaterial);
+			} else {
+				//do textures normally
+				for (int i = 0; i < chunkPrefab.SharedMaterialNames.Count; i++) {
+					if (Get.mSharedMaterialLookup.TryGetValue (chunkPrefab.SharedMaterialNames [i], out cfoSharedMaterial)) {
+						cfoSharedMaterialList.Add (cfoSharedMaterial);
+					} else {
+						Debug.Log ("COULDN'T FIND SHARED MATERIAL " + chunkPrefab.SharedMaterialNames [i] + ", using empty material");
+						cfoSharedMaterialList.Add (null);
+					}
 				}
-			}
 
-			if (chunkPrefab.EnableSnow) {
-				cfoSharedMaterialList.Add (Mats.Get.SnowOverlayMaterial);
+				if (chunkPrefab.EnableSnow) {
+					cfoSharedMaterialList.Add (Mats.Get.SnowOverlayMaterial);
+				}
 			}
 
 			cfoSharedMaterialArray = cfoSharedMaterialList.ToArray ();
@@ -1544,7 +1569,7 @@ namespace Frontiers
 			}
 
 			yield break;
-		}
+		}*/
 
 		public static void CopyMeshData (Mesh mesh, MeshCombiner.BufferedMesh bufferedMesh)
 		{
@@ -1559,7 +1584,7 @@ namespace Frontiers
 			bufferedMesh.Colors = mesh.colors;
 			bufferedMesh.Tangents = mesh.tangents;
 			bufferedMesh.UV = mesh.uv;
-			bufferedMesh.UV1 = mesh.uv1;
+			bufferedMesh.UV1 = mesh.uv2;
 			bufferedMesh.UV2 = mesh.uv2;
 
 			bufferedMesh.Topology = new MeshTopology [mesh.subMeshCount];
@@ -1580,7 +1605,7 @@ namespace Frontiers
 			}
 		}
 
-		public ChunkPrefabObject CreateEmptyPrefabObject ()
+		/*public ChunkPrefabObject CreateEmptyPrefabObject ()
 		{
 			ChunkPrefabObject cfo = new ChunkPrefabObject ();
 			SceneryObjects.Add (cfo);
@@ -1632,7 +1657,7 @@ namespace Frontiers
 
 			cfo.tr = cfo.go.transform;
 			return cfo;
-		}
+		}*/
 		/*protected static Material[] cfoSharedMaterialArray;
 				protected static Material cfoSharedMaterial = null;
 				protected static List <Material> cfoSharedMaterialList;

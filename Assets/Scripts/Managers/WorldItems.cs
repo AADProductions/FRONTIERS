@@ -775,7 +775,7 @@ namespace Frontiers.World
 						dopRot += equippable.EquipRotation;
 					}
 					foreach (Transform lightSource in item.transform) {
-						if (lightSource.light != null) {
+						if (lightSource.GetComponent<Light>() != null) {
 							GameObject clonedLightSource = GameObject.Instantiate(lightSource.gameObject) as GameObject;
 							clonedLightSource.transform.parent = doppleGanger.transform;
 							clonedLightSource.transform.localPosition = lightSource.transform.localPosition;
@@ -818,8 +818,8 @@ namespace Frontiers.World
 
 			Bounds objectBounds = new Bounds(doppleganger.transform.position, Vector3.zero);
 			List <Renderer> renderers = new List<Renderer>();
-			if (doppleganger.renderer != null) {
-				renderers.Add(doppleganger.renderer);
+			if (doppleganger.GetComponent<Renderer>() != null) {
+				renderers.Add(doppleganger.GetComponent<Renderer>());
 			} else {
 				renderers.AddRange(doppleganger.GetComponentsInChildren <Renderer>(false));
 			}
@@ -865,7 +865,7 @@ namespace Frontiers.World
 		public static void GetDopplegangerBounds(GameObject doppleganger, ref Bounds bounds)
 		{
 			bounds.center = doppleganger.transform.position;
-			Renderer dopRenderer = doppleganger.renderer;
+			Renderer dopRenderer = doppleganger.GetComponent<Renderer>();
 			if (dopRenderer != null) {
 				bounds = dopRenderer.bounds;
 				//don't bother with child renderers
@@ -1340,7 +1340,7 @@ namespace Frontiers.World
 				default:
 					break;
 			}
-			worlditem.Colliders.Add(worlditem.gameObject.collider);
+			worlditem.Colliders.Add(worlditem.gameObject.GetComponent<Collider>());
 		}
 
 		public static float ConvertKGToRigidBodyWeight(float weightInKG)
@@ -1477,7 +1477,7 @@ namespace Frontiers.World
 					return true;
 				}
 			}
-			return GetIOIFromGameObject(other.collider.gameObject, out ioi, out bodyPart, out critter);
+			return GetIOIFromGameObject(other.GetComponent<Collider>().gameObject, out ioi, out bodyPart, out critter);
 		}
 
 		public static bool GetIOIFromGameObject(GameObject go, out IItemOfInterest ioi)

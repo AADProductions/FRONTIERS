@@ -60,7 +60,7 @@ namespace Frontiers.World
 				public void Awake()
 				{
 						gameObject.AddComponent <Rigidbody>();
-						gameObject.rigidbody.isKinematic = true;
+						gameObject.GetComponent<Rigidbody>().isKinematic = true;
 						gameObject.tag = "Fire";
 						gameObject.layer = Globals.LayerNumScenery;
 						ThermalState = GooThermalState.Normal;

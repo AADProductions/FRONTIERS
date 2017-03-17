@@ -66,7 +66,7 @@ public class UICursor : MonoBehaviour
 				mTrans.position = finalPosition;
 
 				// For pixel-perfect results
-				if (uiCamera.isOrthoGraphic)
+				if (uiCamera.orthographic)
 				{
 					mTrans.localPosition = NGUIMath.ApplyHalfPixelOffset(mTrans.localPosition, mTrans.localScale);
 				}

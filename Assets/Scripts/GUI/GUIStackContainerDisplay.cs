@@ -110,7 +110,7 @@ namespace Frontiers.GUI
 						if (mCollidersEnabled != enable) {
 								mCollidersEnabled = enable;
 								for (int i = 0; i < InventorySquares.Count; i++) {
-										InventorySquares[i].collider.enabled = enable;
+										InventorySquares[i].GetComponent<Collider>().enabled = enable;
 								}
 						}
 				}

@@ -23,7 +23,7 @@ public class GUIStackDisplay : GUIObject
 
 		public void EnableColliders(bool enable)
 		{
-				StackDisplay.collider.enabled = enable;
+				StackDisplay.GetComponent<Collider>().enabled = enable;
 		}
 
 		protected WIStackEnabler mEnabler = null;

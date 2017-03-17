@@ -207,7 +207,7 @@ namespace Frontiers.World.WIScripts
 			optionsList.OverrideBaseAvailabilty = true;
 			optionsList.FunctionTarget = gameObject;
 			optionsList.ScreenTarget = transform;
-			optionsList.ScreenTargetCamera = GameManager.Get.GameCamera.camera;
+			optionsList.ScreenTargetCamera = GameManager.Get.GameCamera.GetComponent<Camera>();
 			mRemoveSkillList.Clear ();
 			mRemoveSkillList.AddRange (Skills.Get.SkillsByName (mRemoveItemSkillNames));
 			foreach (Skill removeItemSkill in mRemoveSkillList) {

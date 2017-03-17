@@ -92,6 +92,9 @@ namespace Frontiers.World.WIScripts
 
 		protected IEnumerator DemolishStructureOverTime ( ) {
 
+            while (structure == null) {
+                yield return null;
+            }
 			Debug.Log ("Calling destroy structure on " + structure.name + " from demolition controller");
 			structure.DestroyStructure ();
 

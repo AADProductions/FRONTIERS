@@ -176,6 +176,9 @@ namespace Frontiers.World.WIScripts
 
 		public void FixedUpdate ()
 		{
+			if (Globals.MissionDevelopmentMode)
+				return;
+
 			if (SpawnedFish.Count == 0) {
 				enabled = false;
 			}
@@ -223,6 +226,9 @@ namespace Frontiers.World.WIScripts
 		#endif
 		protected IEnumerator SpawnFish ()
 		{
+			if (Globals.MissionDevelopmentMode)
+				yield break;
+
 			mSpawningFish = true;
 			Vector3 critterPosition = Position;
 			for (int i = 0; i < NumFishToSpawn; i++) {
@@ -232,7 +238,7 @@ namespace Frontiers.World.WIScripts
 				critterPosition.z = critterPosition.z + UnityEngine.Random.Range (-Radius, Radius);
 				if (Critters.Get.SpawnCritter (State.NameOfFish, critterPosition, out critter)) {
 					//make sure the fish have to stay on the same plane
-					critter.rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+					critter.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
 					critter.UsePlayerTargetHeight = false;
 					critter.TargetHeight = WaterLevel;
 					critter.Den = this;

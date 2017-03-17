@@ -172,7 +172,7 @@ namespace Frontiers.World
 				}
 			}
 			BarrierCollider.enabled = false;
-			collider.enabled = false;
+			GetComponent<Collider>().enabled = false;
 			return true;
 		}
 
@@ -246,7 +246,7 @@ namespace Frontiers.World
 				}
 			}
 			BarrierCollider.enabled = true;
-			collider.enabled = true;
+			GetComponent<Collider>().enabled = true;
 			return true;
 		}
 

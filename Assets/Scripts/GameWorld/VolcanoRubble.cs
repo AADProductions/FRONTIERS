@@ -30,8 +30,8 @@ namespace Frontiers
 					if (!Chunks [i].activeSelf) {
 						Chunks [i].transform.position = transform.position;
 						Chunks [i].gameObject.SetActive (true);
-						Chunks [i].rigidbody.AddForce (rubbleDirection * ForceMultiplier);
-						Chunks [i].audio.Play ();
+						Chunks [i].GetComponent<Rigidbody>().AddForce (rubbleDirection * ForceMultiplier);
+						Chunks [i].GetComponent<AudioSource>().Play ();
 					}
 				}
 			}

@@ -103,8 +103,8 @@ namespace Frontiers.World
 				Transform stateObjectTransform = transform.FindChild (state.Name);
 				if (stateObjectTransform != null) {
 					state.StateObject = stateObjectTransform.gameObject;
-					state.StateRenderer = state.StateObject.renderer;
-					state.StateCollider = state.StateObject.collider;
+					state.StateRenderer = state.StateObject.GetComponent<Renderer>();
+					state.StateCollider = state.StateObject.GetComponent<Collider>();
 
 					if (mDefaultState == null) {
 						if (string.IsNullOrEmpty (DefaultState)) {
@@ -371,8 +371,8 @@ namespace Frontiers.World
 					foreach (Transform child in transform) {
 						if ((child.CompareTag ("StateChild") || child.CompareTag ("WorldItem")) && child.name == newState.Name) {
 							newState.StateObject = child.gameObject;
-							newState.StateRenderer = child.renderer;
-							newState.StateCollider = child.collider;
+							newState.StateRenderer = child.GetComponent<Renderer>();
+							newState.StateCollider = child.GetComponent<Collider>();
 							newState.StateObject.SetActive (true);
 							break;
 						}
@@ -479,8 +479,8 @@ namespace Frontiers.World
 					MasterAudio.PlaySound (newState.SoundType, newState.StateObject.transform, newState.SoundOnChange);
 				}
 				if (!string.IsNullOrEmpty (newState.AnimationOnChange)) {
-					if (newState.StateObject.animation != null) {
-						newState.StateObject.animation.Play (newState.AnimationOnChange);
+					if (newState.StateObject.GetComponent<Animation>() != null) {
+						newState.StateObject.GetComponent<Animation>().Play (newState.AnimationOnChange);
 					}
 				}
 				if (newState.EarthQuakeOnChange > 0f) {

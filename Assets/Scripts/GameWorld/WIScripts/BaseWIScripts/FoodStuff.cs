@@ -685,8 +685,8 @@ namespace Frontiers.World.WIScripts
 								if (worlditem.gameObject.HasComponent <MeshRenderer>(out worldItemMR)) {
 										GameObject.DestroyImmediate(worldItemMR);
 								}
-								if (worlditem.collider != null) {
-										GameObject.DestroyImmediate(worlditem.collider);
+								if (worlditem.GetComponent<Collider>() != null) {
+										GameObject.DestroyImmediate(worlditem.GetComponent<Collider>());
 								}
 						}
 

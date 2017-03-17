@@ -417,7 +417,8 @@ namespace Frontiers
 					Skill newSkill = null;
 					if (!string.IsNullOrEmpty (skillSaveState.ClassName)) {
 						//if we use a custom script then add it now
-						Component skillComponent = newSkillObject.AddComponent (skillSaveState.ClassName);
+						Component skillComponent = newSkillObject.AddComponent (Type.GetType ("Frontiers.World.Gameplay." + skillSaveState.ClassName));
+						//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent (newSkillObject, "Assets/Scripts/Managers/Skills.cs (420,34)", skillSaveState.ClassName);
 						newSkill = skillComponent as Skill;
 					} else {
 						//otherwise just use the normal skill
@@ -530,7 +531,8 @@ namespace Frontiers
 										Skill newSkill = null;
 										if (!string.IsNullOrEmpty(skillSaveState.ClassName)) {
 												//if we use a custom script then add it now
-												Component skillComponent = newSkillObject.AddComponent(skillSaveState.ClassName);
+												Component skillComponent = newSkillObject.AddComponent (Type.GetType ("Frontiers.World.Gameplay." + skillSaveState.ClassName));
+												//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent(newSkillObject, "Assets/Scripts/Managers/Skills.cs (533,40)", skillSaveState.ClassName);
 												newSkill = skillComponent as Skill;
 										} else {
 												//otherwise just use the normal skill

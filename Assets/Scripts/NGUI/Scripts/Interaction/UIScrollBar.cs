@@ -1,6 +1,6 @@
 //----------------------------------------------
 //            NGUI: Next-Gen UI kit
-// Copyright � 2011-2012 Tasharen Entertainment
+// Copyright ï¿½ 2011-2012 Tasharen Entertainment
 //----------------------------------------------
 
 using UnityEngine;
@@ -116,9 +116,9 @@ public class UIScrollBar : MonoBehaviour
 												ForceUpdate();
 
 												// Update the colliders as well
-												if (mBG.collider != null)
+												if (mBG.GetComponent<Collider>() != null)
 														NGUITools.AddWidgetCollider(mBG.gameObject);
-												if (mFG.collider != null)
+												if (mFG.GetComponent<Collider>() != null)
 														NGUITools.AddWidgetCollider(mFG.gameObject);
 										}
 								}
@@ -302,14 +302,14 @@ public class UIScrollBar : MonoBehaviour
 
 		void Start()
 		{
-				if (background != null && background.collider != null) {
+				if (background != null && background.GetComponent<Collider>() != null) {
 						background.tag = Globals.TagActiveObject;
 						UIEventListener listener = UIEventListener.Get(background.gameObject);
 						listener.onPress += OnPressBackground;
 						listener.onDrag += OnDragBackground;
 				}
 
-				if (foreground != null && foreground.collider != null) {
+				if (foreground != null && foreground.GetComponent<Collider>() != null) {
 						foreground.tag = Globals.TagActiveObject;
 						UIEventListener listener = UIEventListener.Get(foreground.gameObject);
 						listener.onPress += OnPressForeground;

@@ -91,14 +91,14 @@ namespace Frontiers.World
 						if (!IsActive) {
 								spline.enabled = false;
 								PathMesh.enabled = false;
-								PathMesh.renderer.enabled = false;
+								PathMesh.GetComponent<Renderer>().enabled = false;
 								PathMesh.updateMode = SplineMesh.UpdateMode.DontUpdate;
 								return;
 						}
 
 						spline.enabled = true;
 						PathMesh.enabled = true;
-						PathMesh.renderer.enabled = true;
+						PathMesh.GetComponent<Renderer>().enabled = true;
 						PathMesh.updateMode = SplineMesh.UpdateMode.EveryFrame;
 
 						SplineNode1.position = ConnectionPathMarker.worlditem.tr.position;
@@ -126,7 +126,7 @@ namespace Frontiers.World
 										break;
 						}
 
-						PathMesh.renderer.material.SetColor("_TintColor", CurrentColor);
+						PathMesh.GetComponent<Renderer>().material.SetColor("_TintColor", CurrentColor);
 				}
 
 				public void Finish()

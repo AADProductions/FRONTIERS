@@ -481,12 +481,6 @@ namespace Frontiers
 				yield return null;
 			}
 			mLoadingInfo = "Interior structure is built";
-			//wait for primary chunk to add details
-			//TODO move this into game world
-			while (!GameWorld.Get.PrimaryChunk.HasLoadedTerrainDetails || !GameWorld.Get.PrimaryChunk.HasAddedTerrainTrees) {
-				mLoadingInfo = "Waiting for chunk to load details";
-				yield return null;
-			}
 			Player.Local.Surroundings.StartupStructure = mStartupStructure;
 
 			yield return null;

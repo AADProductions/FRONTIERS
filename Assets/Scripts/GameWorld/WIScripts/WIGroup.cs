@@ -280,20 +280,21 @@ namespace Frontiers.World
 		{
 			if (Props == null)
 				Props = new WIGroupProps();
-		
-			if (ChildGroups == null)
-				ChildGroups = new List <WIGroup>(Props.UnloadedChildGroups.Count + 1);
 
-			if (ChildItems == null)
-				ChildItems = new HashSet <WorldItem>();
+            if (ChildGroups == null) {
+                ChildGroups = new List<WIGroup>(Props.UnloadedChildGroups.Count + 1);
+            }
 
+            if (ChildItems == null) {
+                ChildItems = new HashSet<WorldItem>();
+            }
 
 			tr = transform;
-			DontDestroyOnLoad(tr);
 			mLoadState = WIGroupLoadState.Uninitialized;
 			mChildItemLookup = new Dictionary<string, WorldItem>();
 			mChildGroupLookup = new Dictionary<string, WIGroup>();
-			//mStackItemsToLoad = new Queue<StackItem>();
+            //mStackItemsToLoad = new Queue<StackItem>();
+            mLoadState = WIGroupLoadState.Uninitialized;
 		}
 
 		public void Initialize()
@@ -319,6 +320,13 @@ namespace Frontiers.World
 					mChildGroupLookup.Add(childGroup.FileName, childGroup);
 				}
 			}
+
+            foreach (WorldItem childItem in ChildItems) {
+                if (!mChildItemLookup.ContainsKey (childItem.FileName)) {
+                    mChildItemLookup.Add(childItem.FileName, childItem);
+                }
+            }
+
 			LoadState = WIGroupLoadState.Initialized;
 			mInstantiatePosition = tr.position;
 
@@ -471,25 +479,29 @@ namespace Frontiers.World
 				//Debug.Log("Trying to add child group " + childGroup.Path + " to group while it's unloading / unloaded");
 				return false;
 			}
-			//we assume that group ownership check and the like have been
-			//resolved by the time this function is called
-			if (childGroup != this && !ChildGroups.Contains(childGroup)) {
-				childGroup.Props.TerrainType = Props.TerrainType;
-				//increment file name - this shouldn't be necessary very often
-				//but better safe than sorry
-				string fileName	= childGroup.FileName;
-				int maxIncrements = 100;
-				int increment = 0;
-				if (!Props.UnloadedChildGroups.Remove(fileName)) {
-					while (mChildGroupLookup.ContainsKey(fileName)) {
-						fileName = IncrementFileName(fileName, ref increment);
-						if (increment > maxIncrements) {
-							Debug.Log("Reached max increments in child groups: " + fileName);
-							break;
-						}
-					}
-				}
-				mChildGroupLookup.Add(fileName, childGroup);
+            //we assume that group ownership check and the like have been
+            //resolved by the time this function is called
+            if (childGroup != this && !ChildGroups.Contains(childGroup)) {
+                childGroup.Props.TerrainType = Props.TerrainType;
+                //increment file name - this shouldn't be necessary very often
+                //but better safe than sorry
+                string fileName = childGroup.FileName;
+                int maxIncrements = 100;
+                int increment = 0;
+                if (!Props.UnloadedChildGroups.Remove(fileName)) {
+                    while (mChildGroupLookup.ContainsKey(fileName)) {
+                        fileName = IncrementFileName(fileName, ref increment);
+                        if (increment > maxIncrements) {
+                            Debug.Log("Reached max increments in child groups: " + fileName);
+                            break;
+                        }
+                    }
+                }
+                if (mChildGroupLookup.ContainsKey(fileName)) {
+                    mChildGroupLookup[fileName] = childGroup;
+                } else {
+                    mChildGroupLookup.Add(fileName, childGroup);
+                }
 				childGroup.Props.FileName = fileName;
 				childGroup.ParentGroup = this;
 				//childGroup.transform.parent = transform;
@@ -654,7 +666,7 @@ namespace Frontiers.World
 				}
 			}
 
-			return group;
+			return group != null;
 		}
 
 		public int NumChildItemsByCategory(string categoryName, int maxNeeded)
@@ -870,7 +882,8 @@ namespace Frontiers.World
 			mChildItemLookup.Clear();
 			mChildGroupLookup.Clear();
 			ChildItems.Clear();
-			//Debug.Log("Finished unloading in " + name);
+            //Debug.Log("Finished unloading in " + name);
+            gameObject.SetActive(false);
 			yield break;
 		}
 
@@ -956,12 +969,14 @@ namespace Frontiers.World
 		#endregion
 
 		public void Load()
-		{		//TODO remove this now that WIGroups handle loading / unloading
-			WIGroups.Load(this);
+		{
+            //Debug.Log("Loading group " + name);
+            //TODO remove this now that WIGroups handle loading / unloading
+		    WIGroups.Load(this);
 		}
 
 		public void Unload()
-		{		//TODO remove this now that WIGroups handle loading / unloading
+		{   //TODO remove this now that WIGroups handle loading / unloading
 			WIGroups.Unload(this);
 		}
 
@@ -1357,7 +1372,10 @@ namespace Frontiers.World
 			}
 
 			Dictionary <string, WorldItem> addedItems = new Dictionary <string, WorldItem>();
-
+            
+            if (Props == null) {
+                Props = new WIGroupProps();
+            }
 			Props.FileName = gameObject.name;
 			Chunk = gameObject.GetComponent <WorldChunk>();
 
@@ -1424,6 +1442,10 @@ namespace Frontiers.World
 				if (Application.isPlaying) {
 					return;
 				}
+
+                if (HasParentGroup) {
+                    Props.StoreInChunkScene = ParentGroup.Props.StoreInChunkScene;
+                }
 
 				if (!EditorLoaded) {
 					Debug.Log("GROUP " + Props.PathName + " IS NOT SAFE TO SAVE, SKIPPING");
@@ -1505,6 +1527,9 @@ namespace Frontiers.World
 				Debug.Log("Unloading editor...");
 				UnloadEditor();
 			}
+            if (ChildItems == null) {
+                ChildItems = new HashSet<WorldItem>();
+            }
 			foreach (WorldItem item in ChildItems) {
 				if (item == null) {
 					GUILayout.Button ("NULL");
@@ -1544,8 +1569,9 @@ namespace Frontiers.World
 
 		public string FileName = "NewGroup";
 		public bool IgnoreOnSave = true;
-		//child objects
-		public List <string> UnloadedChildGroups = new List <string>();
+        public bool StoreInChunkScene = true;
+        //child objects
+        public List <string> UnloadedChildGroups = new List <string>();
 		public List <string> UnloadedChildItems = new List <string>();
 		//general props
 		public string UniqueID = string.Empty;

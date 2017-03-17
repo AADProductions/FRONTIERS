@@ -32,6 +32,10 @@ namespace Frontiers.World
 		}
 
 		public void SpawnFriendlyFromSaveState (CritterSaveState state) {
+
+			if (Globals.MissionDevelopmentMode)
+				return;
+
 			Critter friendly = null;
 			if (SpawnCritter (state.Type, Player.Local.Position, out friendly)) {
 				friendly.Friendly = true;
@@ -57,6 +61,9 @@ namespace Frontiers.World
 
 		public void Update ()
 		{
+			if (Globals.MissionDevelopmentMode)
+				return;
+
 			if (!GameManager.Is (FGameState.InGame) || !Player.Local.HasSpawned) {
 				return;
 			}
@@ -87,6 +94,13 @@ namespace Frontiers.World
 				for (int i = FriendlyCritters.LastIndex (); i >= 0; i--) {
 					if (FriendlyCritters [i] == null) {
 						FriendlyCritters.RemoveAt (i);
+					}
+				}
+
+				for (int i = ActiveCritters.LastIndex (); i >= 0; i--) {
+					if (ActiveCritters [i] != null && ActiveCritters [i].Friendly) {
+						FriendlyCritters.Add (ActiveCritters [i]);
+						ActiveCritters.RemoveAt (i);
 					}
 				}
 			}

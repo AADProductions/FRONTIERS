@@ -458,9 +458,9 @@ namespace Frontiers.World.WIScripts
 		#endregion
 
 		protected bool mSpawnedDeactivatedOrb = false;
-		public static string Speech1 = "eɗǁuabaɭaʒəɡ uaɗaw ʒipuaws";
-		public static string Speech2 = "eɗəadeaŋsuiɠ ɡluaɓ uiɭzzliimuej";
-		public static string OrbName = "oajʃawɡ";
+		public static string Speech1 = "eÉ—ÇuabaÉ­aÊ’É™É¡ uaÉ—aw Ê’ipuaws";
+		public static string Speech2 = "eÉ—É™adeaÅ‹suiÉ  É¡luaÉ“ uiÉ­zzliimuej";
+		public static string OrbName = "oajÊƒawÉ¡";
 		protected static GenericWorldItem gDeactivatedOrbGenericWorldItem = null;
 		protected static GenericWorldItem gOrbGemGenericWorldItem = null;
 		protected PowerBeam mPowerBeam = null;
@@ -494,9 +494,9 @@ namespace Frontiers.World.WIScripts
 			OrbFlarePlane = root.FindChild ("OrbFlarePlane");
 			LocalFlareMaterial = OrbFlarePlane.GetComponent <Renderer> ().material;
 
-			OrbSpotlightBottom = root.FindChild ("OrbSpotlightBottom").light;
-			OrbSpotlightForward = root.FindChild ("OrbSpotlightForward").light;
-			OrbPointLight = root.FindChild ("OrbPointLight").light;
+			OrbSpotlightBottom = root.FindChild ("OrbSpotlightBottom").GetComponent<Light>();
+			OrbSpotlightForward = root.FindChild ("OrbSpotlightForward").GetComponent<Light>();
+			OrbPointLight = root.FindChild ("OrbPointLight").GetComponent<Light>();
 
 			//we'll find the gem pivot and light pivot in the orb's root
 			LuminiteGemPivot = root.FindChild ("OrbLuminiteGemPivot");
@@ -515,7 +515,7 @@ namespace Frontiers.World.WIScripts
 			PowerSource.FXOnLosePower = "RipEffect";
 			PowerSource.FXOnPowerSourceRemoved = "ShieldEffectSubtleGold";
 			PowerSource.PowerSourceDopplegangerParent = LuminiteGemPivot;
-			PowerSource.PowerAudio = root.FindChild ("OrbPowerAudio").audio;
+			PowerSource.PowerAudio = root.FindChild ("OrbPowerAudio").GetComponent<AudioSource>();
 			PowerSource.Refresh ();
 
 			if (PowerSource.HasPower) {

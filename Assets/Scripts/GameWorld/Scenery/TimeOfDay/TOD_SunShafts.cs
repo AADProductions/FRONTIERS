@@ -121,7 +121,7 @@ class TOD_SunShafts : TOD_PostEffectsBase
         // This actually has to be checked every frame
         if (UseDepthTexture)
         {
-            camera.depthTextureMode |= DepthTextureMode.Depth;
+            GetComponent<Camera>().depthTextureMode |= DepthTextureMode.Depth;
         }
 
         // Selected resolution
@@ -143,7 +143,7 @@ class TOD_SunShafts : TOD_PostEffectsBase
         }
 
         // Sun position
-        Vector3 v = camera.WorldToViewportPoint(sky.Components.SunTransform.position);
+        Vector3 v = GetComponent<Camera>().WorldToViewportPoint(sky.Components.SunTransform.position);
 
         sunShaftsMaterial.SetVector("_BlurRadius4", new Vector4(1.0f, 1.0f, 0.0f, 0.0f) * SunShaftBlurRadius);
         sunShaftsMaterial.SetVector("_SunPosition", new Vector4(v.x, v.y, v.z, MaxRadius));

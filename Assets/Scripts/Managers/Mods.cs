@@ -190,7 +190,7 @@ namespace Frontiers
 		{
 			//give the other managers a second to put in their requests
 			yield return null;
-			while (TexturesToLoad.Count > 0) {
+			/*while (TexturesToLoad.Count > 0) {
 				TextureLoadRequest tlr = TexturesToLoad.Dequeue ();
 				//get a list of textures from that mod folder with that search string in the name
 				List <string> availableTextures = null;
@@ -226,7 +226,7 @@ namespace Frontiers
 				}
 				yield return null;
 				Resources.UnloadUnusedAssets ();
-			}
+			}*/
 			Manager.TexturesLoadFinish ();
 			yield break;
 		}
@@ -235,16 +235,25 @@ namespace Frontiers
 		//pre-loads and caches all the textures with this keyword in this folder
 		public void LoadAvailableGenericTextures (string textureKeyword, string textureType, bool asNormalMap, int desiredWidth, int desiredHeight, List <Texture2D> textures)
 		{
+			if (Globals.MissionDevelopmentMode)
+				return;
+
 			TexturesToLoad.Enqueue (new TextureLoadRequest (textureKeyword, textureType, asNormalMap, desiredWidth, desiredHeight, textures));
 		}
 
 		public void LoadAvailableGenericTextures (string textureType, bool asNormalMap, List <Texture2D> textures)
 		{
+			if (Globals.MissionDevelopmentMode)
+				return;
+
 			TexturesToLoad.Enqueue (new TextureLoadRequest (string.Empty, textureType, asNormalMap, -1, -1, textures));
 		}
 
 		public void LoadAvailableGenericTextures (string textureType, bool asNormalMap, int desiredWidth, int desiredHeight, List <Texture2D> textures)
 		{
+			if (Globals.MissionDevelopmentMode)
+				return;
+
 			TexturesToLoad.Enqueue (new TextureLoadRequest (string.Empty, textureType, asNormalMap, desiredWidth, desiredHeight, textures));
 		}
 
@@ -329,16 +338,6 @@ namespace Frontiers
 					return true;
 				}
 				return false;
-			}
-
-			public bool CameraLUT (ref Texture2D lut, string lutName)
-			{
-				if (!GameData.IO.LoadLUT (ref lut, lutName, DataType.Profile)) {
-					if (!GameData.IO.LoadLUT (ref lut, lutName, DataType.World)) {
-						return GameData.IO.LoadLUT (ref lut, lutName, DataType.Base);
-					}
-				}
-				return true;
 			}
 
 			public bool BodyTexture (ref Texture2D bodyTexture, string textureName)

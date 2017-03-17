@@ -1335,7 +1335,7 @@ namespace Frontiers.World.Gameplay
 	public class SkillInfo
 	{
 		public int SkillLevel;
-//arbitrary skill level assigned for book distribution
+		//arbitrary skill level assigned for book distribution
 		public string GivenName = string.Empty;
 		[Multiline]
 		public string
@@ -1361,9 +1361,9 @@ namespace Frontiers.World.Gameplay
 	{
 		public SkillUsageType Type = SkillUsageType.Once;
 		public bool PassiveUsage = false;
-//skill is 'always on'
+		//skill is 'always on'
 		public bool RealTimeDuration = false;
-//pauses when the game is paused
+		//pauses when the game is paused
 		public SkillBroadcastResultTime BroadcastType = SkillBroadcastResultTime.OnUseStart;
 		public bool AppearInContextMenus = true;
 		public bool CanFail = false;

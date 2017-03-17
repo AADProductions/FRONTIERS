@@ -412,7 +412,7 @@ namespace Frontiers.World
 		{
 			BoxCollider[] colliders = lookIn.GetComponentsInChildren <BoxCollider> ();
 			foreach (BoxCollider collider in colliders) {
-				if (collider.renderer == null && collider.name == "Collider") {
+				if (collider.GetComponent<Renderer>() == null && collider.name == "Collider") {
 					GameObject newCollider = copyTo.gameObject.CreateChild ("Collider").gameObject;
 					newCollider.transform.position = collider.transform.position;
 					newCollider.transform.rotation = collider.transform.rotation;
@@ -506,8 +506,13 @@ namespace Frontiers.World
 				string triggerState = triggerStatePair.Value.Value;
 
 				GameObject newTriggerObject = startTriggers.gameObject.CreateChild (triggerName).gameObject;
-				WorldTrigger worldTriggerScript	= newTriggerObject.AddComponent (triggerScriptName) as WorldTrigger;
-				worldTriggerScript.UpdateTriggerState (triggerState, null);
+				WorldTrigger worldTriggerScript	= newTriggerObject.AddComponent (Type.GetType("Frontiers.World.Triggers." + triggerScriptName)) as WorldTrigger;
+                //UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent (newTriggerObject, "Assets/Scripts/GameWorld/Structures/StructureBuilder_EditorFunctions.cs (509,39)", triggerScriptName) as WorldTrigger;
+                try {
+                    worldTriggerScript.UpdateTriggerState(triggerState, null, true);
+                } catch (Exception e) {
+                    Debug.LogException(e);
+                }
 			}
 
 			foreach (StructureLayer staticLayer in templateGroup.StaticStructureLayers) {
@@ -551,7 +556,7 @@ namespace Frontiers.World
 										}
 									}
 								}
-								instantiatedPrefab.renderer.materials = variationsArray;
+								instantiatedPrefab.GetComponent<Renderer>().materials = variationsArray;
 							}
 						}
 						staticPieces.Clear ();
@@ -580,7 +585,8 @@ namespace Frontiers.World
 							customCollidersNormal++;
 						}
 
-						customColliderObject.AddComponent (colliderLayer.PackName);
+						//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent (customColliderObject, "Assets/Scripts/GameWorld/Structures/StructureBuilder_EditorFunctions.cs (583,7)", colliderLayer.PackName);
+						customColliderObject.AddComponent (Type.GetType(colliderLayer.PackName));
 						customColliderObject.transform.localPosition = piece.Position;
 						customColliderObject.transform.localRotation = Quaternion.Euler (piece.Rotation);
 						customColliderObject.transform.localScale = piece.Scale;
@@ -845,10 +851,12 @@ namespace Frontiers.World
 			Transform normal = start.gameObject.FindOrCreateChild ("==NORMAL==");
 			Transform footprint = start.gameObject.FindOrCreateChild ("__FOOTPRINT");
 			Transform shingle = start.gameObject.FindOrCreateChild ("__SHINGLE");
+			Transform tempFoundation = start.gameObject.FindOrCreateChild ("__TEMP_FOUNDATION");
 			GameObject.DestroyImmediate (destroyed.gameObject);
 			GameObject.DestroyImmediate (normal.gameObject);
 			GameObject.DestroyImmediate (footprint.gameObject);
 			GameObject.DestroyImmediate (shingle.gameObject);
+			GameObject.DestroyImmediate (tempFoundation.gameObject);
 		}
 		#endif
 	}

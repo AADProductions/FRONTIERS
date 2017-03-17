@@ -256,7 +256,7 @@ namespace Frontiers.World.WIScripts
 										lightGameObject.transform.parent = FXPivot;
 										lightGameObject.transform.localPosition = smokeParticlesTransform.localPosition;
 										smokeParticlesTransform.parent = lightGameObject.transform;
-										PointLights.Add(lightGameObject.light);
+										PointLights.Add(lightGameObject.GetComponent<Light>());
 								}
 
 								FXPivot.Rotate(0f, SmokeParticlesRange / NumSmokeSources, 0f);

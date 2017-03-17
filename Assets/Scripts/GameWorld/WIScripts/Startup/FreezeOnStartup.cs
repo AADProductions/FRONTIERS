@@ -8,17 +8,17 @@ namespace Frontiers.World
 		public override void Awake ( )
 		{
 			base.Awake ( );
-			rigidbody.isKinematic = true;
+			GetComponent<Rigidbody>().isKinematic = true;
 		}
 		
 		public void Start ( )
 		{
-			rigidbody.isKinematic = true;
+			GetComponent<Rigidbody>().isKinematic = true;
 		}
 		
 		public void FixedUpdate ( )
 		{
-			rigidbody.isKinematic = true;
+			GetComponent<Rigidbody>().isKinematic = true;
 			Finish ( );
 		}
 	}

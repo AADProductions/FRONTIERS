@@ -27,7 +27,7 @@ namespace Frontiers.World
 
 		public void Start ()
 		{
-			r = renderer;
+			r = GetComponent<Renderer>();
 			WaterMaterial = r.material;//get an instance of the material
 			//get MASTER animation Speed
 			animationSpeed = WaterMaterial.GetFloat ("_AnimSpeed");

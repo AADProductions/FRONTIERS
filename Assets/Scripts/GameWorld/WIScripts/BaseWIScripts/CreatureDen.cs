@@ -96,6 +96,7 @@ namespace Frontiers.World.WIScripts
 
 		public override void OnInitialized()
 		{
+
 			Spawner spawner = null;
 			/*if (worlditem.Is <Spawner>(out spawner)) {
 				//get the hostile template for creatures to draw from
@@ -309,6 +310,11 @@ namespace Frontiers.World.WIScripts
 		#endif
 		public void FixedUpdate()
 		{
+			if (Globals.MissionDevelopmentMode) {
+				//we don't care about creatures in mission testing mode
+				return;
+			}
+
 			if (SpawnedCreatures.Count == 0) {
 				enabled = false;
 			}

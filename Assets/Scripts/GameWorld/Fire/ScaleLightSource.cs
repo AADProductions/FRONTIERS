@@ -8,7 +8,7 @@ public class ScaleLightSource : MonoBehaviour {
 	
 	void Start ( )
 	{
-		LightSource = transform.FindChild ("Light_Source").light;	
+		LightSource = transform.FindChild ("Light_Source").GetComponent<Light>();	
 	}
 	
 	void Update ( )

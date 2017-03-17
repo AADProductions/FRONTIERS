@@ -33,7 +33,7 @@ public class InlandLeviathan : WaterLeviathan
 			Renderers [i].enabled = true;
 		}
 		Wake.enableEmission = true;
-		animation.Play ("BehemothLeviathanDormant");
+		GetComponent<Animation>().Play ("BehemothLeviathanDormant");
 		yield break;
 	}
 

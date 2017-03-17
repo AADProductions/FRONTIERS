@@ -1,6 +1,6 @@
 //----------------------------------------------
 //            NGUI: Next-Gen UI kit
-// Copyright © 2011-2012 Tasharen Entertainment
+// Copyright Â© 2011-2012 Tasharen Entertainment
 //----------------------------------------------
 
 using UnityEngine;
@@ -215,7 +215,7 @@ public class UICamera : MonoBehaviour
 		public Camera cachedCamera {
 				get {
 						if (mCam == null)
-								mCam = camera;
+								mCam = GetComponent<Camera>();
 						return mCam;
 				}
 		}
@@ -520,7 +520,7 @@ public class UICamera : MonoBehaviour
 
 				// If no event receiver mask was specified, use the camera's mask
 				if (eventReceiverMask == -1)
-						eventReceiverMask = camera.cullingMask;
+						eventReceiverMask = GetComponent<Camera>().cullingMask;
 		}
 
 		/// <summary>

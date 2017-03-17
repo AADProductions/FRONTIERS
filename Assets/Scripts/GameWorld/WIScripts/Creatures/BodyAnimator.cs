@@ -195,7 +195,7 @@ public class BodyAnimator : MonoBehaviour
 
 		animator.applyRootMotion = false;
 		animator.updateMode = AnimatorUpdateMode.Normal;
-		animator.cullingMode = AnimatorCullingMode.BasedOnRenderers;
+		animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
 
 		if (UseOverrideController) {
 			//override clips with this creature's animation clips

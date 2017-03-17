@@ -82,7 +82,8 @@ namespace Frontiers.World.WIScripts
 								Skill skill = null;
 								if (Skills.Get.SkillByName(ParentSkillName, out skill)) {
 										//apply curse skill to target
-										SkillEffectScript ses = weapon.State.Damage.Target.gameObject.AddComponent(mParentSkill.Extensions.AddComponentOnUse) as SkillEffectScript;
+										SkillEffectScript ses = weapon.State.Damage.Target.gameObject.AddComponent (Type.GetType ("Frontiers.World.Gameplay." + mParentSkill.Extensions.AddComponentOnUse)) as SkillEffectScript;
+										//UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent(weapon.State.Damage.Target.gameObject, "Assets/Scripts/GameWorld/WIScripts/Magic/WeaponSkillModifier.cs (85,35)", mParentSkill.Extensions.AddComponentOnUse) as SkillEffectScript;
 										ses.ParentSkill = ParentSkill;
 								}
 						}

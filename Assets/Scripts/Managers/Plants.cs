@@ -17,7 +17,9 @@ namespace Frontiers
 	{
 		public static Plants Get;
 		public GameObject Prototypes;
-		public List <GameObject> PathWeedPrototypes = new List<GameObject> ();
+        public GameObject PlantInstancePrefab;
+        public GameObject RuntimePlantInstancePrefab;
+        public List <GameObject> PathWeedPrototypes = new List<GameObject> ();
 		public List <GameObject> TerrainPlantPrototypes = new List<GameObject> ();
 		public DamagePackage ThornDamage = new DamagePackage ();
 		public static float MinimumGatheringSkillToRevealBasicProps = 0.25f;
@@ -88,15 +90,13 @@ namespace Frontiers
 						return terrainPlantPrototype != null;*/
 		}
 
-		public bool GetTerrainPlantPrototypes (List<TerrainPrototypeTemplate> treeTemplates, TreeInstanceTemplate[] treeInstances, ref TreePrototype[] treePrototypes, ref TreeColliderTemplate[] colliderTemplates)
+		public bool GetTerrainPlantPrototypes (TreePrototype[] treePrototypes, ref TreeColliderTemplate[] colliderTemplates)
 		{
 			//Debug.Log ("++++++++++++++++++ GetTerrainPlantPrototypes ++++++++++++++++++++++");
-			bool useSubstitutes = Profile.Get.CurrentPreferences.Video.TerrainReduceTreeVariation;
-			GameObject prefab = null;
-			TreeColliderTemplate colliderTemplate = null;
+			//bool useSubstitutes = Profile.Get.CurrentPreferences.Video.TerrainReduceTreeVariation;
 
-			//if we're using substitutes we have to rebuild the tree templates list
-			if (useSubstitutes) {
+            //if we're using substitutes we have to rebuild the tree templates list
+            /*if (useSubstitutes) {
 				//then go through and flatten down the templates
 				for (int i = 0; i < treeTemplates.Count; i++) {
 					//Debug.Log ("- Checking template " + i.ToString ());
@@ -120,13 +120,13 @@ namespace Frontiers
 								break;
 							}
 						}
-					}/* else {
+					} else {
 						Debug.Log ("Prefab " + prefab.name + " has NO low-quality substitute, adding directly");
 						//if we're not using a substitute just add the prefab directly
 						newTreeTemplates.Add (treeTemplates [i]);
 						treePrefabsList.Add (prefab);
 						colliderTemplatesList.Add (colliderTemplate);
-					}*/
+					}
 					//if we're using a replacement, add it to the lookup so we can update our instances
 					if (substituteIndex >= 0) {
 						replacementLookup.Add (originalIndex, substituteIndex);
@@ -141,19 +141,6 @@ namespace Frontiers
 						//Debug.Log ("This tree hasn't been added yet, adding now");
 					}
 				}
-
-				/*Debug.Log ("=====PREVIOUS LIST:" + treeTemplates.Count.ToString () + "=====");
-				for (int i = 0; i < treeTemplates.Count; i++) {
-					Debug.Log (treeTemplates [i].AssetName);
-				}
-				Debug.Log ("=====NEW LIST:" + newTreeTemplates.Count.ToString () + "=====");
-				for (int i = 0; i < newTreeTemplates.Count; i++) {
-					Debug.Log (newTreeTemplates [i].AssetName);
-				}
-				Debug.Log ("==========");
-				foreach (KeyValuePair <int,int> replacement in replacementLookup) {
-					Debug.Log (replacement.Key.ToString () + " : " + replacement.Value.ToString ());
-				}*/
 				//now that we're done, clear the old list and add the new list
 				treeTemplates.Clear ();
 				treeTemplates.AddRange (newTreeTemplates);
@@ -174,9 +161,9 @@ namespace Frontiers
 					}
 					treeInstances [i] = t;
 				}
-				replacementLookup.Clear ();
-				//Debug.Log ("Num replaced: " + numReplaced.ToString ());
-			} else {
+				replacementLookup.Clear ();*/
+            //Debug.Log ("Num replaced: " + numReplaced.ToString ());
+            /*} else {
 				//if we're not using substitutes this is a lot easier
 				//just go down the line and get all the prefabs
 				for (int i = 0; i < treeTemplates.Count; i++) {
@@ -185,28 +172,14 @@ namespace Frontiers
 					treePrefabsList.Add (prefab);
 					colliderTemplatesList.Add (colliderTemplate);
 				}
-			}
-			//now that we've got a final tree templates list
-			//create all the actual prototypes
-			for (int i = 0; i < treeTemplates.Count; i++) {
-				/*if (treeTemplates [i].AssetName.Equals ("PlantInstancePrefab")) {
-					//skip all plant instance prefabs
-					continue;
-				}*/
-				TreePrototype tree = new TreePrototype ();
-				tree.prefab = treePrefabsList [i];
-				treePrototypesList.Add (tree);
-			}
-			treePrototypes = treePrototypesList.ToArray ();
-			colliderTemplates = colliderTemplatesList.ToArray ();
+			}*/
 
-			//clear everything
-			treePrefabsList.Clear ();
-			colliderTemplatesList.Clear ();
-			treePrototypesList.Clear ();
-			newTreeTemplates.Clear ();
-			replacementLookup.Clear ();
-			//Debug.Log ("++++++++++++++++++ DONE ++++++++++++++++++++++");
+            for (int i = 0; i < treePrototypes.Length; i++) {
+                colliderTemplatesList.Add(treePrototypes[i].prefab.GetComponent<TreeColliderTemplate>());
+            }
+
+			treePrototypes = treePrototypesList.ToArray ();
+            colliderTemplates = colliderTemplatesList.ToArray();
 			return true;
 		}
 
@@ -232,7 +205,7 @@ namespace Frontiers
 				gPlantFlowerBuilderHelper = gameObject.FindOrCreateChild ("PlantFlowerBuilderHelper").transform;
 				Prototypes = gameObject.FindOrCreateChild ("Prototypes").gameObject;
 			}
-		}
+        }
 
 		public override void Initialize ()
 		{
@@ -280,7 +253,10 @@ namespace Frontiers
 
 			int numDetailLayers = Profile.Get.CurrentPreferences.Video.TerrainMaxDetailLayers;
 			DefaultDetailPrototypes = new DetailPrototype [numDetailLayers];
-			for (int i = 0; i < DefaultDetailPrototypes.Length; i++) {
+            for (int i = 0; i < TerrainPlantPrototypes.Count; i++) {
+                mTerrainPlantLookup.Add(TerrainPlantPrototypes[i].name, TerrainPlantPrototypes[i]);
+            }
+            for (int i = 0; i < DefaultDetailPrototypes.Length; i++) {
 				DefaultDetailPrototypes [i] = DefaultDetailPrototype;
 			}
 
@@ -290,9 +266,6 @@ namespace Frontiers
 		public override void OnModsLoadFinish ()
 		{
 			StartCoroutine (LoadPlantDataAndBuildMeshes ());
-			for (int i = 0; i < TerrainPlantPrototypes.Count; i++) {
-				mTerrainPlantLookup.Add (TerrainPlantPrototypes [i].name, TerrainPlantPrototypes [i]);
-			}
 			int numDetailLayers = Frontiers.Profile.Get.CurrentPreferences.Video.TerrainMaxDetailLayers;
 			DefaultDetailPrototypes = new DetailPrototype [numDetailLayers];
 			for (int i = 0; i < DefaultDetailPrototypes.Length; i++) {
@@ -980,7 +953,7 @@ namespace Frontiers
 			bufferedMesh.Colors = mesh.colors;
 			bufferedMesh.Tangents = mesh.tangents;
 			bufferedMesh.UV = mesh.uv;
-			bufferedMesh.UV1 = mesh.uv1;
+			bufferedMesh.UV1 = mesh.uv2;
 			bufferedMesh.UV2 = mesh.uv2;
 
 			bufferedMesh.Topology = new MeshTopology [mesh.subMeshCount];

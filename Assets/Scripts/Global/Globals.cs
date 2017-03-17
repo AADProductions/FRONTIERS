@@ -6,6 +6,8 @@ using System.Reflection;
 
 public static class Globals
 {
+	public static bool MissionDevelopmentMode = false;
+
 	public static float PlantBaseCurrencyValueArctic = 12.5f;
 	public static float PlantBaseCurrencyValueTemperate = 5f;
 	public static float PlantBaseCurrencyValueTropical = 10f;
@@ -663,7 +665,7 @@ public static class Globals
 	public static string WorldChunkSplatMapNamePrefix = "Splat";
 	public static string WorldChunkColorMapNamePrefix = "Color";
 	public static int WorldChunkDetailLayers = 12;
-	public static bool DevMode = true;
+	public static bool DevMode = false;
 	//inventory
 	public static int MaxStacksPerContainer = 10;
 	public static int NumInventoryStackContainers = 5;

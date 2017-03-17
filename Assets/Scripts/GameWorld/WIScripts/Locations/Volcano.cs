@@ -30,9 +30,9 @@ namespace Frontiers.World.WIScripts
 		}
 
 		public bool HourStart (double timeStamp) {
-			if (!animation.isPlaying) {
+			if (!GetComponent<Animation>().isPlaying) {
 				if (UnityEngine.Random.value > State.ChanceOfErupting) {
-					animation.Play ();
+					GetComponent<Animation>().Play ();
 				}
 			}
 			return true;

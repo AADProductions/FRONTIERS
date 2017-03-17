@@ -89,7 +89,7 @@ public class HideWithMagic : MonoBehaviour
 						}
 				}
 		
-				MagicBarrier.renderer.enabled = false;
+				MagicBarrier.GetComponent<Renderer>().enabled = false;
 				Audio.PlayOneShot(DispelClip);
 		
 				GameObject.Destroy(gameObject, 1.5f);

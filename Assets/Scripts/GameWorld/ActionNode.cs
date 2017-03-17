@@ -368,7 +368,7 @@ namespace Frontiers.World
 								State.Transform.CopyFrom (transform);
 						}
 
-						if (State.UseTrigger && gameObject.collider == null) {
+						if (State.UseTrigger && gameObject.GetComponent<Collider>() == null) {
 								SphereCollider col = gameObject.AddComponent <SphereCollider>();
 								col.radius = State.TriggerRadius;
 								mMinimumRadius = State.TriggerRadius;

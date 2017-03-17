@@ -58,8 +58,8 @@ namespace Frontiers.GUI
 								EditButton.enabled = false;
 								Icon.enabled = false;
 								Background.enabled = false;
-								if (collider != null) {
-										collider.enabled = false;
+								if (GetComponent<Collider>() != null) {
+										GetComponent<Collider>().enabled = false;
 								}
 						}
 				}

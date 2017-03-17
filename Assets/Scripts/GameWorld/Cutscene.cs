@@ -293,10 +293,10 @@ namespace Frontiers
 						}
 
 						if (!string.IsNullOrEmpty(CameraAnimationStarting)) {
-								CameraSeat.animation.Play(CameraAnimationStarting, AnimationPlayMode.Stop);
+								CameraSeat.GetComponent<Animation>().Play(CameraAnimationStarting, AnimationPlayMode.Stop);
 						}
 						if (!string.IsNullOrEmpty(LookTargetAnimationStarting)) {
-								CameraLookTarget.animation.Play(LookTargetAnimationStarting, AnimationPlayMode.Stop);
+								CameraLookTarget.GetComponent<Animation>().Play(LookTargetAnimationStarting, AnimationPlayMode.Stop);
 						}
 						//get the camera animatinon started before hijacking
 						Player.Local.HijackControl();
@@ -317,12 +317,12 @@ namespace Frontiers
 								if (HoldStaticCameraStart >= 0) {
 										startTime += HoldStaticCameraStart;
 								} else if (!string.IsNullOrEmpty(CameraAnimationStarting)) {
-										startTime += CameraSeat.animation[CameraAnimationStarting].length;
+										startTime += CameraSeat.GetComponent<Animation>()[CameraAnimationStarting].length;
 								}
 						} else {
 								//otherwise just use the camera animation
 								if (!string.IsNullOrEmpty(CameraAnimationStarting)) {
-										startTime += CameraSeat.animation[CameraAnimationStarting].length;
+										startTime += CameraSeat.GetComponent<Animation>()[CameraAnimationStarting].length;
 								}
 						}
 
@@ -391,14 +391,14 @@ namespace Frontiers
 								if (HoldStaticCameraStart >= 0) {
 										endDuration = HoldStaticCameraEnd;
 								} else if (!string.IsNullOrEmpty(CameraAnimationFinishing)) {
-										endDuration = CameraSeat.animation[CameraAnimationFinishing].length;
+										endDuration = CameraSeat.GetComponent<Animation>()[CameraAnimationFinishing].length;
 								}
 								//in vr mode we need at least 1 second to fade out
 								endDuration = Mathf.Max(1f, endDuration);
 						} else {
 								//otherwise just use the camera animation
 								if (!string.IsNullOrEmpty(CameraAnimationFinishing)) {
-										endDuration = CameraSeat.animation[CameraAnimationFinishing].length;
+										endDuration = CameraSeat.GetComponent<Animation>()[CameraAnimationFinishing].length;
 								}
 						}
 
@@ -423,7 +423,7 @@ namespace Frontiers
 						}
 
 						if (!VRMode && !string.IsNullOrEmpty(CameraAnimationFinishing)) {
-								while (CameraSeat.animation[CameraAnimationFinishing].normalizedTime < 1f) {
+								while (CameraSeat.GetComponent<Animation>()[CameraAnimationFinishing].normalizedTime < 1f) {
 										yield return null;
 								}
 						}
@@ -439,10 +439,10 @@ namespace Frontiers
 						if (State == CutsceneState.Idling) {
 								State = CutsceneState.Finishing;
 								if (!string.IsNullOrEmpty(CameraAnimationFinishing)) {
-										CameraSeat.animation.Play(CameraAnimationFinishing, AnimationPlayMode.Stop);
+										CameraSeat.GetComponent<Animation>().Play(CameraAnimationFinishing, AnimationPlayMode.Stop);
 								}
 								if (!string.IsNullOrEmpty(LookTargetAnimationFinishing)) {
-										CameraLookTarget.animation.Play(LookTargetAnimationStarting, AnimationPlayMode.Stop);
+										CameraLookTarget.GetComponent<Animation>().Play(LookTargetAnimationStarting, AnimationPlayMode.Stop);
 								}
 						}
 				}

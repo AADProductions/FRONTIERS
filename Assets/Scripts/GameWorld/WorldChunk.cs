@@ -12,7 +12,7 @@ using Frontiers.World.WIScripts;
 
 namespace Frontiers.World
 {
-	[ExecuteInEditMode]
+	//[ExecuteInEditMode]
 	public partial class WorldChunk : MonoBehaviour
 	{
 		//world chunk is where 99% of all non-worlditem 'stuff' is managed
@@ -79,7 +79,7 @@ namespace Frontiers.World
 		public ChunkTerrainData TerrainData = new ChunkTerrainData ();
 		//stuff that's generated at runtime
 		public List <River> Rivers = new List <River> ();
-		public Material PrimaryMaterial = null;
+		//public Material PrimaryMaterial = null;
 		public Terrain PrimaryTerrain = null;
 		public TerrainCollider PrimaryCollider = null;
 		//public Rigidbody PrimaryRigidBody = null;
@@ -116,18 +116,6 @@ namespace Frontiers.World
 			}
 		}
 
-		public bool HasLoadedTerrainDetails {
-			get {
-				return mHasLoadedTerrainDetails;
-			}
-		}
-
-		public bool HasAddedTerrainTrees {
-			get {
-				return mHasAddedTerrainTrees;
-			}
-		}
-
 		public bool GroupsUnloaded {
 			get {
 				if (AboveGroundGroup != null && BelowGroundGroup != null) {
@@ -136,16 +124,9 @@ namespace Frontiers.World
 				return true;
 			}
 		}
-
-		protected bool mHasLoadedTerrainObjects;
-		protected bool mHasLoadedTerrainTextures;
-		protected bool mHasLoadedTerrainDetails;
-		protected bool mReduceTreeVariation;
-		protected bool mHasAddedTerrainTrees;
+        
 		protected bool mHasAddedRivers;
-		protected bool mHasGeneratedTerrain;
 		protected bool mHasLoadedTransforms;
-		protected bool mHasLoadedChunkMaps;
 		protected ChunkMode mTargetMode = ChunkMode.Unloaded;
 		protected ChunkMode mCurrentMode = ChunkMode.Unloaded;
 		protected bool mInitialized = false;
@@ -205,11 +186,24 @@ namespace Frontiers.World
 
 		#region initialization
 
-		public void Awake ()
+		public void Start ()
 		{
 			LoadChunkTransforms (false);
 			mCurrentMode = ChunkMode.Unloaded;
 			mTargetMode = ChunkMode.Unloaded;
+            mInitialized = false;
+            mChunkName = ChunkName(State);
+
+            Initialize();
+        }
+
+		void CalculateBounds( ) {
+			Vector3 boundsSize = Vector3.zero;
+			Vector3 boundsOffset = Vector3.zero;
+			boundsSize = new Vector3 (State.SizeX, Globals.ChunkMaximumYBounds, State.SizeZ);
+			boundsOffset = transform.position + Vector3.one * (boundsSize.x / 2);
+			boundsOffset.y = State.YOffset;
+			mChunkBounds = new Bounds (boundsOffset, boundsSize);
 		}
 
 		public void Initialize ()
@@ -217,7 +211,7 @@ namespace Frontiers.World
 			if (mInitialized)
 				return;
 
-			mChunkName = ChunkName (State);
+            mChunkName = ChunkName (State);
 			mChunkDataDirectory = ChunkDataDirectory (mChunkName);
 			gameObject.name = mChunkName;
 			//initialize assumes that the chunk state has been loaded
@@ -225,28 +219,25 @@ namespace Frontiers.World
 			ChunkGroup = WIGroups.GetOrAdd (gameObject, mChunkName, WIGroups.Get.World, null);
 			ChunkGroup.Props.IgnoreOnSave = true;
 
-			//set this so we know if we're supposed to substitute tree instances
-			mReduceTreeVariation = Profile.Get.CurrentPreferences.Video.TerrainReduceTreeVariation;
-
+            Transforms.WorldItems.gameObject.SetActive(true);
+            Transforms.AboveGroundWorldItems.gameObject.SetActive(true);
+            Transforms.BelowGroundWorldItems.gameObject.SetActive(true);
+            Transforms.AboveGroundStaticDistant.gameObject.SetActive(true);
+            
 			Mods.Get.Runtime.LoadMod <ChunkTriggerData> (ref TriggerData, mChunkDataDirectory, "Triggers");
 			Mods.Get.Runtime.LoadMod <ChunkNodeData> (ref NodeData, mChunkDataDirectory, "Nodes");
-			Mods.Get.Runtime.LoadMod <ChunkSceneryData> (ref SceneryData, mChunkDataDirectory, "Scenery");
+			//Mods.Get.Runtime.LoadMod <ChunkSceneryData> (ref SceneryData, mChunkDataDirectory, "Scenery");
 			Mods.Get.Runtime.LoadMod <ChunkTerrainData> (ref TerrainData, mChunkDataDirectory, "Terrain");
 
-			for (int i = 0; i < SceneryData.AboveGround.RiverNames.Count; i++) {
+			/*for (int i = 0; i < SceneryData.AboveGround.RiverNames.Count; i++) {
 				//Debug.Log("Loading river " + SceneryData.AboveGround.RiverNames[i]);
 				River river = null;
 				if (Mods.Get.Runtime.LoadMod <River> (ref river, "River", SceneryData.AboveGround.RiverNames [i])) {
 					Rivers.Add (river);
 				}
-			}
+			}*/
 
-			Vector3 boundsSize = Vector3.zero;
-			Vector3 boundsOffset = Vector3.zero;
-			boundsSize = new Vector3 (State.SizeX, Globals.ChunkMaximumYBounds, State.SizeZ);
-			boundsOffset = transform.position + Vector3.one * (boundsSize.x / 2);
-			boundsOffset.y = State.YOffset;
-			mChunkBounds = new Bounds (boundsOffset, boundsSize);
+			CalculateBounds ();
 
 			mChunkScale.Set (State.SizeX, Globals.ChunkMaximumYBounds, State.SizeZ);
 
@@ -291,31 +282,90 @@ namespace Frontiers.World
 					ChunkDataMaps.Add ("Ground" + groundIndex.ToString (), Diffuse);
 				}
 			}
-			Texture2D chunkMap = null;
-			//Debug.Log ("Getting terrain color overlay in " + Name);
-			if (Mods.Get.Runtime.ChunkMap (ref chunkMap, Name, "ColorOverlay")) {
+
+            ChunkDataMaps.Add("ColorOverlay", PrimaryTerrain.materialTemplate.GetTexture("_CustomColorMap") as Texture2D);
+            ChunkDataMaps.Add("Splat1", PrimaryTerrain.materialTemplate.GetTexture("_Splat2") as Texture2D);
+            ChunkDataMaps.Add("Splat2", PrimaryTerrain.materialTemplate.GetTexture("_Splat2") as Texture2D);
+
+            Texture2D chunkMap = null;
+            //Debug.Log ("Getting terrain color overlay in " + Name);
+            /*if (Mods.Get.Runtime.ChunkMap (ref chunkMap, Name, "ColorOverlay")) {
 				ChunkDataMaps.Add ("ColorOverlay", chunkMap);
-			}
-			if (Mods.Get.Runtime.ChunkMap (ref chunkMap, Name, "AboveGroundTerrainType")) {
+			}*/
+			if (GameWorld.Get.ChunkMap (ref chunkMap, Name, "AboveGroundTerrainType")) {
 				ChunkDataMaps.Add ("AboveGroundTerrainType", chunkMap);
 			}
-			if (Mods.Get.Runtime.ChunkMap (ref chunkMap, Name, "BelowGroundTerrainType")) {
+			if (GameWorld.Get.ChunkMap (ref chunkMap, Name, "BelowGroundTerrainType")) {
 				ChunkDataMaps.Add ("BelowGroundTerrainType", chunkMap);
 			}
-			if (Mods.Get.Runtime.ChunkMap (ref chunkMap, Name, "RegionData")) {
+			if (GameWorld.Get.ChunkMap (ref chunkMap, Name, "RegionData")) {
 				ChunkDataMaps.Add ("RegionData", chunkMap);
 			}
-			if (Mods.Get.Runtime.ChunkMap (ref chunkMap, Name, "Splat1")) {
+            /*if (Mods.Get.Runtime.ChunkMap (ref chunkMap, Name, "Splat1")) {
 				ChunkDataMaps.Add ("Splat1", chunkMap);
 			}
 			if (Mods.Get.Runtime.ChunkMap (ref chunkMap, Name, "Splat2")) {
 				ChunkDataMaps.Add ("Splat2", chunkMap);
-			}
+			}*/
 
-			//now start coroutines that load the nodes
-			CreateNodesAndTriggers ();
+            //now start coroutines that load the nodes
+            CreateNodesAndTriggers ();
 
-			mInitialized = true;
+            //activate the main terrain
+            PrimaryTerrain.gameObject.layer = Globals.LayerNumSolidTerrain;
+            PrimaryTerrain.enabled = true;
+            PrimaryCollider = PrimaryTerrain.GetComponent<TerrainCollider>();
+
+            //set the static objects
+            DetailPrototype[] details = PrimaryTerrain.terrainData.detailPrototypes;
+            for (int i = 0; i < details.Length; i++) {
+                if (details[i].usePrototypeMesh) {
+                    if (details[i].renderMode == DetailRenderMode.VertexLit) {
+                        details[i].renderMode = DetailRenderMode.Grass;
+                    }
+                    if (details[i].prototype == null) {
+                        Debug.Log("DETAIL " + i + " WAS NULL IN CHUNK " + name);
+                    } else if (details[i].prototype.name.Contains("Static")) {
+                        details[i].dryColor = Colors.Alpha(details[i].dryColor, 0f);
+                        details[i].healthyColor = Colors.Alpha(details[i].healthyColor, 0f);
+                    }
+                }
+            }
+            PrimaryTerrain.terrainData.detailPrototypes = details;
+
+            //remove plant instance prefab, replace it with an empty one
+            TreePrototype[] treePrototypes = PrimaryTerrain.terrainData.treePrototypes;
+            for (int i = 0; i < treePrototypes.Length; i++) {
+                if (treePrototypes[i].prefab == Plants.Get.PlantInstancePrefab) {
+                    treePrototypes[i].prefab = Plants.Get.RuntimePlantInstancePrefab;
+                }
+            }
+            PrimaryTerrain.terrainData.treePrototypes = treePrototypes;
+
+            if (ColliderTemplates != null) {
+                Array.Clear(ColliderTemplates, 0, ColliderTemplates.Length);
+                ColliderTemplates = null;
+                Plants.Get.GetTerrainPlantPrototypes(treePrototypes, ref ColliderTemplates);
+            }
+
+            /*if (!GameManager.Get.NoTreesMode) {
+                TreePrototype[] treePrototypes = null;
+                if (ColliderTemplates != null) {
+                    Array.Clear(ColliderTemplates, 0, ColliderTemplates.Length);
+                    ColliderTemplates = null;
+                }
+                //Debug.Log("Getting tree prototypes for " + Name);
+                Plants.Get.GetTerrainPlantPrototypes(TerrainData.TreeTemplates, TreeData.TreeInstances, ref treePrototypes, ref ColliderTemplates);
+                //PrimaryTerrain.terrainData.treePrototypes = treePrototypes;
+            }*/
+
+            //turn everything off initially
+            Transforms.AboveGroundStaticImmediate.gameObject.SetActive(false);
+            Transforms.AboveGroundStaticAdjascent.gameObject.SetActive(false);
+            Transforms.AboveGroundStaticDistant.gameObject.SetActive(false);
+            Transforms.BelowGroundStatic.gameObject.SetActive(false);
+
+            mInitialized = true;
 		}
 
 		public void LoadChunkTransforms (bool editor)
@@ -358,331 +408,10 @@ namespace Frontiers.World
 			mHasLoadedTransforms = false;
 		}
 
-		#endregion
+        #endregion
 
-		#region generation
-
-		public IEnumerator GenerateTerrain (Terrain newPrimaryTerrain, bool showAboveGround)
-		{
-			PrimaryTerrain = newPrimaryTerrain;
-			PrimaryTerrain.transform.position = State.TileOffset;
-			ShowAboveGround (showAboveGround);//TODO necessary?
-
-			if (Mods.Get.Runtime.TerrainHeights (gHeights, TerrainData.HeightmapResolution, Name, 0)) {
-				PrimaryTerrain.terrainData.SetHeights (0, 0, gHeights);
-				PrimaryTerrain.terrainData.size = new Vector3 (State.SizeX, TerrainData.HeightmapHeight, State.SizeZ);
-			}
-			//clear the heights, they're in the terrain now
-			Array.Clear (gHeights, 0, gHeights.GetLength (0) * gHeights.GetLength (1));
-			PrimaryTerrain.enabled = true;
-			PrimaryCollider = PrimaryTerrain.GetComponent <TerrainCollider> ();
-			//PrimaryRigidBody = PrimaryTerrain.GetComponent <Rigidbody>();
-			if (PrimaryCollider.terrainData != PrimaryTerrain.terrainData) {
-				PrimaryCollider.terrainData = PrimaryTerrain.terrainData;
-			}
-			//PrimaryRigidBody.detectCollisions = true;
-			PrimaryCollider.enabled = true;
-			PrimaryMaterial = PrimaryTerrain.materialTemplate;
-			//PrimaryMaterial = PrimaryTerrain.GetComponent <Renderer> ().sharedMaterial;
-			PrimaryTerrain.Flush ();
-			yield return null;
-			//give the terrain a second to breathe
-			LoadChunkTransforms (false);
-			var loadChunkGroups = LoadChunkGroups ();
-			while (loadChunkGroups.MoveNext ()) {
-				yield return loadChunkGroups.Current;
-			}
-			mHasGeneratedTerrain = true;
-			yield break;
-		}
-
-		public IEnumerator RefreshTerrainTextures ()
-		{
-			//Debug.Log("Refreshing terrain textures");
-			try {
-				PrimaryMaterial.name = Name + " Material";
-				TerrainData.MaterialSettings.ApplySettings (PrimaryMaterial);
-				TerrainData.MaterialSettings.ApplyMaps (PrimaryMaterial, Name, ChunkDataMaps);
-			} catch (Exception e) {
-				Debug.Log ("Error while refreshing terrain textures, proceeding normally: " + e.ToString ());
-			}
-			yield break;
-		}
-
-		public IEnumerator RefreshTerrainObjects ()
-		{
-			if (PrimaryTerrain == null) {
-				//whoops, no big deal
-				yield break;
-			}
-			DetailPrototype[] detailPrototypes = null;
-			if (VRManager.VRMode && Profile.Get.CurrentPreferences.Video.VRDisableExtraGrassLayers) {
-				Debug.Log ("VR mode and disable extra grass layers");
-				//don't add any grass
-				//TODO add one layer of default grass specified in WorldChunk
-				detailPrototypes = new DetailPrototype [0];
-			} else {
-				//replace existing prototypes with new ones
-				int numDetailLayers = Frontiers.Profile.Get.CurrentPreferences.Video.TerrainMaxDetailLayers;
-				detailPrototypes = new DetailPrototype [numDetailLayers];
-				for (int i = 0; i < numDetailLayers; i++) {
-					if (i < TerrainData.DetailTemplates.Count) {
-						TerrainPrototypeTemplate tpt = TerrainData.DetailTemplates [i];
-						DetailPrototype detailPrototype = new DetailPrototype ();
-						detailPrototype.bendFactor = tpt.BendFactor;
-						detailPrototype.dryColor = tpt.DryColor;
-						detailPrototype.healthyColor = tpt.HealthyColor;
-						detailPrototype.maxHeight = tpt.MaxHeight;
-						detailPrototype.maxWidth = tpt.MaxWidth;
-						detailPrototype.minHeight = tpt.MinHeight;
-						detailPrototype.maxHeight = tpt.MaxHeight;
-						detailPrototype.noiseSpread = tpt.NoiseSpread;
-						detailPrototype.renderMode = tpt.RenderMode;
-						detailPrototype.usePrototypeMesh = tpt.UsePrototypeMesh;
-
-						if (detailPrototype.usePrototypeMesh) {	//load a gameobject prototype
-							GameObject prototype = null;
-							if (Plants.Get.GetTerrainPlantPrototype (tpt.AssetName, out prototype)) {
-								detailPrototype.prototype = prototype;
-								if (tpt.AssetName.Contains ("Static_")) {
-									//static objects aren't affected by wind
-									//and they always use the grass render mode
-									detailPrototype.dryColor = Colors.Alpha (tpt.DryColor, 0f);
-									detailPrototype.healthyColor = Colors.Alpha (tpt.HealthyColor, 0f);
-									detailPrototype.renderMode = DetailRenderMode.Grass;
-								}
-							}
-						} else {//just load a texture
-							Texture2D grassTexture = null;
-							if (Mats.Get.GetTerrainGrassTexture (tpt.AssetName, out grassTexture)) {
-								detailPrototype.prototypeTexture = grassTexture;
-								detailPrototype.renderMode = DetailRenderMode.Grass;//never use billboard
-							}
-						}
-						//set the new prototype
-						detailPrototypes [i] = detailPrototype;
-					} else {
-						//pad out the detail prototypes so we always end up with max layers
-						detailPrototypes [i] = Plants.Get.DefaultDetailPrototype;
-					}
-					yield return null;
-				}
-			}
-
-			if (!GameManager.Get.NoTreesMode) {
-				TreePrototype[] treePrototypes = null;
-				if (ColliderTemplates != null) {
-					Array.Clear (ColliderTemplates, 0, ColliderTemplates.Length);
-					ColliderTemplates = null;
-				}
-				//Debug.Log("Getting tree prototypes for " + Name);
-				Plants.Get.GetTerrainPlantPrototypes (TerrainData.TreeTemplates, TreeData.TreeInstances, ref treePrototypes, ref ColliderTemplates);
-				PrimaryTerrain.terrainData.treePrototypes = treePrototypes;
-			}
-
-			PrimaryTerrain.terrainData.detailPrototypes = detailPrototypes;
-			//PrimaryTerrain.terrainData.RefreshPrototypes();
-			PrimaryTerrain.Flush ();
-
-			mHasLoadedTerrainObjects = true;
-			yield break;
-		}
-
-		public IEnumerator AddTerainFX (ChunkMode mode)
-		{
-			//this has been slowly broken up and moved into worlditems
-			//eg waterfalls
-			//but particle effects are making a comeback! so i'm keeping it around for later
-			yield break;
-		}
-
-		public IEnumerator AddTerrainDetails (ChunkMode targetMode)
-		{
-			if (VRManager.VRMode && Profile.Get.CurrentPreferences.Video.VRDisableExtraGrassLayers) {
-				Debug.Log ("Skipping terrain details because we're in vr mode and we're skipping extra grass layers in " + mChunkName);
-				//TODO add 1 grass layer
-				mAddingTerrainDetails = false;
-				mHasLoadedTerrainDetails = true;
-				yield break;
-			}
-
-			//whoops got called twice, no big deal
-			if (mAddingTerrainDetails) {
-				Debug.Log ("Already adding terrain details in " + mChunkName + ", quitting");
-				yield break;
-			}
-
-			mAddingTerrainDetails = true;
-
-			if (mDetailSlice == null) {
-				mDetailSlice = new int [Globals.WorldChunkDetailSliceResolution, Globals.WorldChunkDetailSliceResolution];
-			}
-			if (mFilledSlices == null) {
-				mFilledSlices = new HashSet <string> ();
-			}
-
-			int numDetailLayers = PrimaryTerrain.terrainData.detailPrototypes.Length;
-			int numSlices = Globals.WorldChunkDetailResolution / Globals.WorldChunkDetailSliceResolution;
-			int xOffset = 0;
-			int yOffset = 0;
-			float waitTime = 0f;
-			bool needToClearArray = true;//always clear it the first time
-			bool needToSetData = false;
-			string sliceName = string.Empty;
-
-			for (int layerNum = 0; layerNum < numDetailLayers; layerNum++) {
-				if (!HasPrimaryTerrain || mTargetMode == ChunkMode.Unloaded) {
-					Debug.Log ("Stopping terrain data filling due to data changing in " + Name);
-					mAddingTerrainDetails = false;
-					yield break;
-				}
-				//Debug.Log("Attempting to load " + layerNum.ToString() + " out of " + numDetailLayers.ToString() + " in chunk " + mChunkName);
-				//check to see if this is an 'empty' layer
-				if (PrimaryTerrain.terrainData.detailPrototypes [layerNum] == Plants.Get.DefaultDetailPrototype) {
-					//if it is, skip it
-					//Debug.Log("Skipping default detail prototype layer " + layerNum.ToString() + " in chunk " + mChunkName);
-					continue;
-				}
-				//if it's a legit layer
-				//get the slices for this layer
-				for (int xs = 0; xs < numSlices; xs++) {
-					if (!HasPrimaryTerrain || mTargetMode == ChunkMode.Unloaded) {
-						Debug.Log ("Stopping terrain data filling due to data changing in " + Name);
-						mAddingTerrainDetails = false;
-						yield break;
-					}
-
-					for (int ys = 0; ys < numSlices; ys++) {
-						//are we still trying to load?
-						if (!HasPrimaryTerrain || mTargetMode == ChunkMode.Unloaded) {
-							Debug.Log ("Stopping terrain data filling due to data changing in " + Name);
-							mAddingTerrainDetails = false;
-							yield break;
-						}
-
-						xOffset = xs * Globals.WorldChunkDetailSliceResolution;
-						yOffset = ys * Globals.WorldChunkDetailSliceResolution;
-						sliceName = SliceName (layerNum, xs, ys);
-						if (!Mods.Get.Runtime.LoadTerrainDetailSlice (mDetailSlice, ChunkDataDirectory (Name), sliceName)) {
-							//if it doesn't we need to make sure this spot is empty
-							//have we filled this spot before?
-							if (mFilledSlices.Remove (sliceName)) {
-								//we have! it's been removed now so we'll know it's empty next time
-								needToSetData = true;
-							}
-							if (needToClearArray) {
-								//if we have to, get rid of the data already in the array
-								Array.Clear (mDetailSlice, 0, mDetailSlice.GetLength (0) * mDetailSlice.GetLength (1));
-								needToClearArray = false;
-							}
-						} else {
-							mFilledSlices.Add (sliceName);//we'll have to erase this later so add the slice name
-							needToClearArray = true;//we'll have to clear the detail slice array next time around
-							needToSetData = true;//we've found a slice so we need to set it
-						}
-						//if we actually need to do something...
-						if (needToSetData) {
-							//Debug.Log("Setting detail layer section in " + layerNum.ToString() + " in " + Name);
-							//now set the detail in the terrain
-							//invert the x and y offset
-							//why? either it's some commonly understood array slicing thing
-							//or else unity is just fucking with me
-							//i don't know take your pick
-							PrimaryTerrain.terrainData.SetDetailLayer (yOffset, xOffset, layerNum, mDetailSlice);
-							if (Player.Local.HasSpawned) {
-								if (mTargetMode == ChunkMode.Distant) {
-									waitTime = 0.15f;
-								} else if (mTargetMode == ChunkMode.Adjascent) {
-									waitTime = 0.1f;
-								} else if (mTargetMode != ChunkMode.Primary) {
-									waitTime = 0.05f;
-								} else {
-									waitTime = 0.005f;
-								}
-								double start = Frontiers.WorldClock.RealTime;
-								while (Frontiers.WorldClock.RealTime < start + waitTime) {
-									yield return null;
-								}
-							} else {
-								yield return null;
-							}
-						}
-					}
-				}
-			}
-
-			//this gobbles up a lot of memory
-			//this is probably where the prologue crash is hitting hardest
-			PrimaryTerrain.Flush ();
-			mAddingTerrainDetails = false;
-			mHasLoadedTerrainDetails = true;
-			yield break;
-		}
-
-		public void SetReducedTreeVariation (bool reduceTreeVariation)
-		{
-			if (mReduceTreeVariation != reduceTreeVariation) {
-
-			}
-			mReduceTreeVariation = reduceTreeVariation;
-		}
-
-		public IEnumerator AddTerrainTrees ()
-		{
-			if (GameManager.Get.NoTreesMode) {
-				mHasAddedTerrainTrees = true;
-				yield break;
-			}
-
-			//sort trees into groups
-			int numPrototypes = TerrainData.TreeTemplates.Count;// PrimaryTerrain.terrainData.treePrototypes.Length;
-			int numAddedThisFrame = 0;
-			TreeInstanceTemplate[] trees = TreeData.TreeInstances;
-			/*List <TreeInstance> treeInstances = new List<TreeInstance>();
-			int numTreesAdded = 0;
-			for (int i = 0; i < trees.Length; i++) {
-				treeInstances.Add(trees[i].ToInstance);
-				if (numTreesAdded > 50) {
-					numTreesAdded = 0;
-					yield return null;
-				}
-				numTreesAdded++;
-			}
-			yield return null;
-			PrimaryTerrain.terrainData.treeInstances = treeInstances.ToArray ();
-			treeInstances.Clear();*/
-			//for (int p = 0; p < numPrototypes; p++) {
-			for (int i = 0; i < trees.Length; i++) {
-				//if (trees[i].FinalPrototypeIndex == p) {
-				//unfortunately this all has to be done in ONE frame
-				//otherwise unity's terrain will crash
-				PrimaryTerrain.AddTreeInstance (TreeInstances [i].ToInstance);
-				//}
-				numAddedThisFrame++;
-				if (numAddedThisFrame > 100) {
-					if (mTargetMode == ChunkMode.Unloaded) {
-						Debug.Log ("Chunk is unloaded, skipping adding terrain trees");
-						yield break;
-					}
-					if (Player.Local.HasSpawned && mTargetMode != ChunkMode.Primary) {
-						PrimaryTerrain.Flush ();
-						numAddedThisFrame = 0;
-						yield return null;
-					}
-				}
-			}
-			//after we've added all trees of one type
-			//take a break
-			//}
-			//flush this right away since other stuff will take a while to add
-			PrimaryTerrain.Flush ();
-			mHasAddedTerrainTrees = true;
-			yield return null;
-			yield break;
-		}
-
-		protected static bool gAddingTreesToChunk = false;
-
+        #region generation
+        
 		public IEnumerator AddRivers (ChunkMode targetMode)
 		{
 			for (int i = 0; i < Rivers.Count; i++) {
@@ -721,7 +450,7 @@ namespace Frontiers.World
 		public void CreateNodesAndTriggers ()
 		{
 			foreach (KeyValuePair <string, KeyValuePair <string, string>> triggerStatePair in TriggerData.TriggerStates) {
-				AddTrigger (triggerStatePair, Transforms.Triggers, false);
+				AddTrigger (triggerStatePair, Transforms.Triggers, false, false);
 			}
 
 			foreach (KeyValuePair <string, List <ActionNodeState>> actionNodeStateList in NodeData.NodeStates) {
@@ -773,15 +502,17 @@ namespace Frontiers.World
 			return actionNodes;
 		}
 
-		public void AddTrigger (KeyValuePair <string, KeyValuePair<string, string>> triggerStatePair, Transform triggerParentTransform, bool addToTriggerStates)
+		public void AddTrigger (KeyValuePair <string, KeyValuePair<string, string>> triggerStatePair, Transform triggerParentTransform, bool addToTriggerStates, bool useLocalTransform)
 		{
 			string triggerName = triggerStatePair.Key;
 			string triggerScriptName = triggerStatePair.Value.Key;
 			string triggerState = triggerStatePair.Value.Value;
 
-			GameObject newTriggerObject = triggerParentTransform.gameObject.CreateChild (triggerName).gameObject;
-			WorldTrigger worldTriggerScript	= newTriggerObject.AddComponent (triggerScriptName) as WorldTrigger;
-			worldTriggerScript.UpdateTriggerState (triggerState, this);
+			GameObject newTriggerObject = triggerParentTransform.gameObject.FindOrCreateChild (triggerName).gameObject;
+			Debug.Log ("Trying to add component of type Frontiers.World." + triggerScriptName);
+			//WorldTrigger worldTriggerScript	= UnityEngineInternal.APIUpdaterRuntimeServices.AddComponent (newTriggerObject, "Assets/Scripts/GameWorld/WorldChunk.cs (799,38)", triggerScriptName) as WorldTrigger;
+			WorldTrigger worldTriggerScript	= newTriggerObject.GetOrAdd (Type.GetType("Frontiers.World." + triggerScriptName)) as WorldTrigger;
+			worldTriggerScript.UpdateTriggerState (triggerState, this, useLocalTransform);
 			newTriggerObject.transform.parent = Transforms.Triggers;
 			//this will update its local transform so the next time it loads it'll be in the right spot
 			worldTriggerScript.RefreshTransform ();
@@ -799,7 +530,7 @@ namespace Frontiers.World
 				//don't enable or disable the collider this causes a huge physics lurch
 			}
 
-			for (int i = 0; i < SceneryData.AboveGround.SolidTerrainPrefabs.Count; i++) {
+			/*for (int i = 0; i < SceneryData.AboveGround.SolidTerrainPrefabs.Count; i++) {
 				ChunkPrefab chunkPrefab = SceneryData.AboveGround.SolidTerrainPrefabs [i];
 				if (chunkPrefab.IsLoaded) {
 					chunkPrefab.LoadedObject.ShowAboveGround (show);
@@ -826,7 +557,7 @@ namespace Frontiers.World
 				if (chunkPrefab.IsLoaded) {
 					chunkPrefab.LoadedObject.ShowAboveGround (show);
 				}
-			}
+			}*/
 
 		}
 
@@ -840,7 +571,7 @@ namespace Frontiers.World
 
 		public void OnGameUnload ()
 		{
-			for (int i = 0; i < SceneryData.AboveGround.SolidTerrainPrefabs.Count; i++) {
+			/*for (int i = 0; i < SceneryData.AboveGround.SolidTerrainPrefabs.Count; i++) {
 				Structures.UnloadChunkPrefab (SceneryData.AboveGround.SolidTerrainPrefabs [i]);
 			}
 			for (int i = 0; i < SceneryData.AboveGround.SolidTerrainPrefabs.Count; i++) {
@@ -848,7 +579,7 @@ namespace Frontiers.World
 			}
 			for (int i = 0; i < SceneryData.AboveGround.SolidTerrainPrefabs.Count; i++) {
 				Structures.UnloadChunkPrefab (SceneryData.AboveGround.SolidTerrainPrefabsDistant [i]);
-			}
+			}*/
 		}
 
 		public void OnGameSave ()
@@ -927,7 +658,10 @@ namespace Frontiers.World
 
 		public void UnloadTerrain ()
 		{
-			PrimaryCollider = null;
+            //NO LONGER NECESSARY
+            return;
+
+			/*PrimaryCollider = null;
 			//PrimaryRigidBody = null;
 			PrimaryMaterial = null;
 			if (HasPrimaryTerrain) {
@@ -944,13 +678,16 @@ namespace Frontiers.World
 			//try to reclaim our detail layer memory
 			//System.GC.Collect();
 			//Resources.UnloadUnusedAssets();
-			//mHasAddedRivers = false; keep rivers around indefinitely?
+			//mHasAddedRivers = false; keep rivers around indefinitely?*/
 		}
 
 		public void RemoveTerrainPrototypes ()
 		{
-			//clear all the crap from the prototypes and such
-			PrimaryTerrain.terrainData.treeInstances = new TreeInstance [0];
+            //NO LONGER NECESSARY
+            return;
+
+            //clear all the crap from the prototypes and such
+            /*PrimaryTerrain.terrainData.treeInstances = new TreeInstance [0];
 			PrimaryTerrain.terrainData.treePrototypes = new TreePrototype [0];
 			//never clear this - it'll cause a huge lurch while we change the number of active detail layers
 			DetailPrototype [] detailPrototypes = PrimaryTerrain.terrainData.detailPrototypes;
@@ -958,7 +695,7 @@ namespace Frontiers.World
 				detailPrototypes [i] = Plants.Get.DefaultDetailPrototype;
 			}
 			PrimaryTerrain.terrainData.detailPrototypes = detailPrototypes;
-			PrimaryTerrain.terrainData.RefreshPrototypes ();
+			PrimaryTerrain.terrainData.RefreshPrototypes ();*/
 		}
 
 		public IEnumerator ClearTransforms ()
@@ -1218,7 +955,46 @@ namespace Frontiers.World
 			return gNameBuilder.ToString ();
 		}
 
-		#endregion
+        #endregion
+
+        int editorVisibilityCheck = 0;
+        public bool SuspendVisibilityUpdate = false;
+
+        public void UpdateVisibility (Vector3 cameraPos) {
+            if (SuspendVisibilityUpdate) {
+                return;
+            }
+
+            editorVisibilityCheck++;
+            if (editorVisibilityCheck < 5) {
+                return;
+            }
+            editorVisibilityCheck = 0;
+            CalculateBounds ();			
+			PrimaryTerrain.gameObject.SetActive (true);
+            SetTransformVisibility(Transforms.AboveGroundWorldItems, cameraPos);
+        }
+
+        public void SetAllTransformsVisible (Transform start, bool visible) {
+            foreach (Transform c in start) {
+                c.gameObject.SetActive(visible);
+                SetAllTransformsVisible(c, visible);
+            }
+        }
+
+        public void SetTransformVisibility(Transform tr, Vector3 cameraPos) {
+            WorldItem wi = tr.GetComponent<WorldItem>();
+            if (wi != null) {
+                if (Vector3.Distance(cameraPos, wi.Position) < wi.VisibleDistance) {
+                    wi.gameObject.SetActive(true);
+                } else {
+                    wi.gameObject.SetActive(false);
+                }
+            }
+            foreach (Transform c in tr) {
+                SetTransformVisibility(c, cameraPos);
+            }
+        }
 
 		protected static TreeInstanceTemplate[] gEmptyTreeInstances;
 		protected static PlantInstanceTemplate[] gEmptyPlantInstances;

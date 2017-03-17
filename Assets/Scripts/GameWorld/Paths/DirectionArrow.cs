@@ -81,7 +81,7 @@ public class DirectionArrow : MonoBehaviour, IItemOfInterest
 				//copy the material beause we'll need to change its color
 				ArrowMaterial = new Material(Mats.Get.DirectionArrowMaterial);
 				ArrowMaterial.color = Color.black;
-				ArrowTransform.renderer.sharedMaterial = ArrowMaterial;
+				ArrowTransform.GetComponent<Renderer>().sharedMaterial = ArrowMaterial;
 				ArrowTransform.localScale = new Vector3(1f, 0.001f, 1f);
 				ArrowTransform.gameObject.layer = Globals.LayerNumScenery;
 

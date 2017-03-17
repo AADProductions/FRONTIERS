@@ -386,6 +386,64 @@ namespace Frontiers
 			}
 
 			int numPrefabsInstantiated = 0;
+            if (GUILayout.Button("Rebuild materials")) {
+                foreach (UnityEngine.Object obj in UnityEditor.Selection.objects) {
+                    Material mat = obj as Material;
+                    if (mat != null) {
+                        if (mat.shader.name.Contains("BumpedSpecularWithDetail")) {
+                            Texture diff = mat.GetTexture("_MainDiffMap");
+                            Texture bump = mat.GetTexture("_MainBumpMap");
+                            Texture detailBump = mat.GetTexture("_DetailBumpMap");
+                            Texture detailDiff = mat.GetTexture("_DetailDiffMap");
+
+                            Vector2 bumpScale = mat.GetTextureScale("_DetailBumpMap");
+                            Vector2 diffScale = mat.GetTextureScale("_DetailDiffMap");
+                            Vector2 bumpOffset = mat.GetTextureOffset("_DetailBumpMap");
+                            Vector2 diffOffset = mat.GetTextureOffset("_DetailDiffMap");
+
+                            Vector2 detailBumpScale = mat.GetTextureScale("_DetailBumpMap");
+                            Vector2 detailDiffScale = mat.GetTextureScale("_DetailDiffMap");
+                            Vector2 detailBumpOffset = mat.GetTextureOffset("_DetailBumpMap");
+                            Vector2 detailDiffOffset = mat.GetTextureOffset("_DetailDiffMap");
+
+                            float bumpAmount = mat.GetFloat("_MainBumpiness");
+                            float detailBumpAmount = mat.GetFloat("_DetailBumpiness");
+                            float glossiness = mat.GetFloat("_MainGlosLvl");
+                            float shininess = mat.GetFloat("_MainSpecLvl");
+                                                      
+
+                            Color specColor = mat.GetColor("_MainSpecColor");
+                            Color mainColor = mat.GetColor("_MainTintColor");
+
+                            specColor = Color.Lerp(specColor, Color.black, 1f - glossiness);
+
+                            mat.shader = Shader.Find("Standard (Specular setup)");
+                            mat.mainTexture = diff;
+                            mat.SetTexture("_BumpMap", bump);
+                            mat.SetTexture("_DetailNormalMap", detailBump);
+                            mat.SetTexture("_DetailAlbedoMap", detailDiff);
+                            mat.SetTexture("_DetailMask", diff);
+
+                            //mat.SetTextureScale("_BumpMap", bumpScale);
+                            //mat.SetTextureScale("_MainText", diffScale);
+                            //mat.SetTextureOffset("_BumpMap", bumpOffset);
+                            //mat.mainTextureOffset = diffOffset;
+
+                            mat.SetTextureScale("_DetailNormalMap", detailBumpScale);
+                            mat.SetTextureScale("_DetailAlbedoMap", detailDiffScale);
+                            mat.SetTextureOffset("_DetailNormalMap", detailBumpOffset);
+                            mat.SetTextureOffset("_DetailAlbedoMap", detailDiffOffset);
+                            
+                            mat.SetFloat("_GlossMapScale", shininess);
+                            mat.SetFloat("_BumpScale", bumpAmount);
+                            mat.SetFloat("_DetailNormalMapScale", detailBumpAmount);
+
+                            mat.SetColor("_Color", mainColor);
+                            mat.SetColor("_SpecColor", specColor);
+                        }
+                    }
+                }
+            }
 			if (GUILayout.Button ("Create LOD Prefabs")) {
 				RefreshPaths ();
 				//check to see if there's an LOD prefab for each LOD mesh available
@@ -515,8 +573,8 @@ namespace Frontiers
 							c.enabled = false;
 						}
 						foreach (Transform child in prefab.transform) {
-							if (child.collider != null) {
-								child.collider.enabled = false;
+							if (child.GetComponent<Collider>() != null) {
+								child.GetComponent<Collider>().enabled = false;
 							}
 						}
 					}
@@ -781,7 +839,11 @@ namespace Frontiers
 			UnityEditor.EditorUtility.SetDirty (this);
 		}
 
-		public void EditorInstantiateChunkPrefab (ChunkPrefab chunkPrefab, Transform tr)
+        public void EditorSetUpChunkPrefab (GameObject chunkPrefab) {
+
+        }
+
+        public void EditorInstantiateChunkPrefab (ChunkPrefab chunkPrefab, Transform tr)
 		{
 			StructurePack pack = null;
 			if (mStructurePackLookup.TryGetValue (chunkPrefab.PackName, out pack)) {

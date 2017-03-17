@@ -17,7 +17,7 @@ public class WorldItemTools : MonoBehaviour
 	[MenuItem ("Frontiers/Play Animation")]
 	static void PlayAnimation ( )
 	{
-		UnityEditor.Selection.activeGameObject.animation.Play ();
+		UnityEditor.Selection.activeGameObject.GetComponent<Animation>().Play ();
 	}
 
 	[MenuItem ("Frontiers/Initialize Template")]
@@ -243,7 +243,7 @@ public class WorldItemTools : MonoBehaviour
 			worlditem.Props = new WIProps ( );
 		}
 
-		if (worlditemGameObject.rigidbody == null)
+		if (worlditemGameObject.GetComponent<Rigidbody>() == null)
 		{
 			worlditemGameObject.AddComponent <Rigidbody> ( );
 		}

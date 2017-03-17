@@ -210,7 +210,7 @@ namespace Frontiers.World.WIScripts
 			if (AnimationTarget != null) {
 				anim = AnimationTarget;
 			} else {
-				anim = PivotObject.animation;
+				anim = PivotObject.GetComponent<Animation>();
 			}
 
 			while (State.CurrentState != State.TargetState) {
